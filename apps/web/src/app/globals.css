@@ -198,13 +198,615 @@ h2 {
   margin-bottom: 24px;
 }
 
+<<<<<<< Updated upstream
+=======
+.scheduleShell {
+  width: min(1180px, calc(100% - 40px));
+}
+
+.scheduleList {
+  display: grid;
+  gap: 24px;
+  max-width: 920px;
+  margin: 0 auto 38px;
+}
+
+.scheduleDay {
+  border: 1px solid var(--line);
+  border-radius: 30px;
+  background:
+    radial-gradient(circle at 0% 0%, rgba(240, 196, 91, 0.2), transparent 15rem),
+    rgba(255, 251, 241, 0.76);
+  padding: clamp(16px, 3vw, 24px);
+  box-shadow: var(--soft-shadow);
+  backdrop-filter: blur(10px);
+}
+
+.scheduleDayHeader {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 18px;
+  margin-bottom: 14px;
+}
+
+.scheduleDayHeader h2 {
+  text-transform: capitalize;
+}
+
+.scheduleDayHeader span {
+  color: var(--red);
+  font-family: "Courier New", monospace;
+  font-size: 0.72rem;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.scheduleDayMatches {
+  display: grid;
+  gap: 10px;
+}
+
+.scheduleMatchCard {
+  border: 1px solid rgba(70, 55, 35, 0.13);
+  border-radius: 24px;
+  background: rgba(255, 255, 255, 0.54);
+  padding: clamp(14px, 2.4vw, 20px);
+}
+
+.predictionMatchCard {
+  position: relative;
+  transition:
+    border-color 180ms ease,
+    box-shadow 180ms ease,
+    transform 180ms ease;
+}
+
+.predictionMatchCard.isOpen {
+  border-color: rgba(179, 58, 39, 0.28);
+  box-shadow: 0 18px 44px rgba(43, 34, 20, 0.12);
+}
+
+.matchNumberBadge {
+  position: absolute;
+  top: -10px;
+  left: 16px;
+  z-index: 1;
+  border: 1px solid rgba(255, 248, 233, 0.82);
+  border-radius: 999px;
+  background: var(--ink);
+  color: var(--cream);
+  padding: 5px 9px;
+  font-family: "Courier New", monospace;
+  font-size: 0.62rem;
+  font-weight: 900;
+  letter-spacing: 0.06em;
+  line-height: 1;
+  text-transform: uppercase;
+  box-shadow: 0 8px 16px rgba(43, 34, 20, 0.16);
+}
+
+.predictionMatchButton {
+  display: grid;
+  width: 100%;
+  gap: 10px;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  padding: 0;
+  text-align: inherit;
+  cursor: pointer;
+}
+
+.predictionMatchButton:hover .fixtureCenter,
+.predictionMatchButton:focus-visible .fixtureCenter {
+  color: var(--red);
+}
+
+.predictionMatchButton:focus-visible {
+  outline: 2px solid rgba(179, 58, 39, 0.42);
+  outline-offset: 6px;
+  border-radius: 18px;
+}
+
+.matchDisclosure {
+  justify-self: center;
+  border: 1px solid rgba(70, 55, 35, 0.12);
+  border-radius: 999px;
+  background: rgba(255, 248, 233, 0.82);
+  color: var(--red);
+  padding: 6px 10px;
+  font-family: "Courier New", monospace;
+  font-size: 0.68rem;
+  font-weight: 900;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.matchPredictionPanel {
+  display: grid;
+  gap: 12px;
+  margin-top: 14px;
+  border-top: 1px solid rgba(70, 55, 35, 0.12);
+  padding-top: 14px;
+}
+
+.matchPredictionHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.matchPredictionHeader strong {
+  display: block;
+  font-size: 1rem;
+  letter-spacing: -0.02em;
+}
+
+.matchPredictionHeader span {
+  display: block;
+  margin-top: 3px;
+  color: var(--muted);
+  font-size: 0.82rem;
+}
+
+.finalScoreBadge {
+  border-radius: 999px;
+  background: var(--ink);
+  color: var(--cream) !important;
+  padding: 8px 11px;
+  font-family: "Courier New", monospace;
+  font-size: 0.72rem !important;
+  font-weight: 900;
+  white-space: nowrap;
+}
+
+.matchPredictionGrid {
+  display: grid;
+  gap: 8px;
+}
+
+.matchPredictionRow {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(112px, auto);
+  align-items: center;
+  gap: 12px;
+  border: 1px solid rgba(70, 55, 35, 0.12);
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.46);
+  padding: 10px 12px;
+}
+
+.matchPredictionModel {
+  min-width: 0;
+}
+
+.matchPredictionModel strong {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.matchPredictionModel span,
+.predictionPoints span {
+  display: block;
+  margin-top: 2px;
+  color: var(--muted);
+  font-size: 0.76rem;
+}
+
+.predictedScorePill {
+  border-radius: 999px;
+  background: rgba(24, 19, 13, 0.08);
+  padding: 8px 11px;
+  font-family: "Courier New", monospace;
+  font-size: 0.78rem;
+  font-weight: 900;
+  white-space: nowrap;
+}
+
+.predictionPoints {
+  display: grid;
+  justify-items: end;
+  min-width: 0;
+}
+
+.predictionPoints strong {
+  color: var(--red);
+  font-family: "Courier New", monospace;
+  font-size: 0.8rem;
+  font-weight: 900;
+  white-space: nowrap;
+}
+
+.emptyPredictionPanel {
+  border: 1px dashed rgba(70, 55, 35, 0.2);
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.38);
+  padding: 14px;
+  text-align: center;
+}
+
+.emptyPredictionPanel strong {
+  display: block;
+  margin-bottom: 4px;
+}
+
+.emptyPredictionPanel p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.86rem;
+}
+
+.scheduleMatchCard .fixtureLine {
+  grid-template-columns: minmax(0, 1fr) minmax(72px, auto) minmax(0, 1fr);
+}
+
+.knockoutSection {
+  max-width: 1280px;
+  margin: 0 auto;
+  border: 1px solid var(--line);
+  border-radius: 34px;
+  background:
+    radial-gradient(circle at 100% 0%, rgba(32, 79, 53, 0.2), transparent 20rem),
+    radial-gradient(circle at 2% 78%, rgba(179, 58, 39, 0.12), transparent 18rem),
+    linear-gradient(150deg, rgba(255, 248, 233, 0.9), rgba(240, 212, 129, 0.38));
+  padding: clamp(18px, 3vw, 30px);
+  box-shadow: var(--shadow);
+}
+
+.knockoutHeader {
+  align-items: flex-start;
+  margin-bottom: 20px;
+}
+
+.knockoutHeader .sectionKicker {
+  margin-bottom: 8px;
+}
+
+.bracketNote {
+  max-width: 640px;
+  margin: 10px 0 0;
+  color: var(--muted);
+  font-size: 0.95rem;
+  line-height: 1.45;
+}
+
+.bracketScroller {
+  overflow-x: auto;
+  padding: 12px 6px 20px;
+  scrollbar-color: rgba(179, 58, 39, 0.44) rgba(255, 255, 255, 0.34);
+}
+
+.bracketArena {
+  display: grid;
+  grid-template-columns: minmax(760px, 1fr) minmax(190px, 0.64fr) minmax(760px, 1fr);
+  align-items: center;
+  gap: 20px;
+  min-width: 1740px;
+}
+
+.bracketSide {
+  display: grid;
+  position: relative;
+  align-items: center;
+  gap: 16px;
+  min-height: 990px;
+}
+
+.bracketSide::before {
+  position: absolute;
+  top: 52px;
+  bottom: 28px;
+  width: 1px;
+  background: linear-gradient(to bottom, transparent, rgba(32, 79, 53, 0.2), transparent);
+  content: "";
+}
+
+.bracketSideLeft {
+  grid-template-columns: 1.1fr 0.98fr 0.92fr 0.88fr;
+}
+
+.bracketSideLeft::before {
+  right: 10px;
+}
+
+.bracketSideRight {
+  grid-template-columns: 0.88fr 0.92fr 0.98fr 1.1fr;
+}
+
+.bracketSideRight::before {
+  left: 10px;
+}
+
+.bracketFinalColumn {
+  display: grid;
+  position: relative;
+  align-content: center;
+  gap: 34px;
+  min-height: 990px;
+}
+
+.bracketFinalColumn::before {
+  position: absolute;
+  top: 18%;
+  bottom: 18%;
+  left: 50%;
+  z-index: 0;
+  width: 2px;
+  background: linear-gradient(to bottom, transparent, rgba(179, 58, 39, 0.3), transparent);
+  content: "";
+}
+
+.bracketRound {
+  display: grid;
+  position: relative;
+  z-index: 1;
+  align-content: center;
+  gap: 12px;
+  min-height: 100%;
+}
+
+.bracketRound h3 {
+  justify-self: center;
+  margin: 0;
+  border: 1px solid rgba(70, 55, 35, 0.13);
+  border-radius: 999px;
+  background: rgba(255, 248, 233, 0.8);
+  color: rgba(24, 19, 13, 0.78);
+  font-family: "Courier New", monospace;
+  font-size: 0.72rem;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  padding: 8px 12px;
+  text-align: center;
+  text-transform: uppercase;
+  box-shadow: 0 8px 20px rgba(43, 34, 20, 0.06);
+}
+
+.bracketMatches {
+  display: grid;
+  align-content: center;
+  gap: 14px;
+  min-height: 100%;
+}
+
+.bracketRound[data-count="8"] .bracketMatches {
+  gap: 10px;
+}
+
+.bracketRound[data-count="4"] .bracketMatches {
+  gap: 40px;
+}
+
+.bracketRound[data-count="2"] .bracketMatches {
+  gap: 130px;
+}
+
+.bracketFinalColumn .bracketRound {
+  min-height: auto;
+}
+
+.bracketFinalColumn .bracketMatches {
+  min-height: auto;
+}
+
+.bracketMatchCard {
+  position: relative;
+  min-height: 126px;
+  border: 1px solid rgba(70, 55, 35, 0.16);
+  border-radius: 20px;
+  background:
+    linear-gradient(135deg, rgba(255, 255, 255, 0.86), rgba(255, 248, 233, 0.6)),
+    rgba(255, 255, 255, 0.72);
+  padding: 17px 10px 10px;
+  box-shadow:
+    0 12px 28px rgba(43, 34, 20, 0.08),
+    inset 0 1px 0 rgba(255, 255, 255, 0.74);
+}
+
+.bracketFinalColumn .bracketMatchCard {
+  min-height: 146px;
+  border-color: rgba(179, 58, 39, 0.24);
+  border-width: 2px;
+  background:
+    radial-gradient(circle at 50% 0%, rgba(240, 196, 91, 0.4), transparent 70%),
+    rgba(255, 251, 241, 0.92);
+}
+
+.bracketMatchCard.isOpen {
+  z-index: 3;
+}
+
+.bracketMatchCard .matchDisclosure {
+  display: none;
+}
+
+.bracketMatchCard .fixtureMatchup {
+  gap: 7px;
+}
+
+.bracketMatchCard .fixtureLine {
+  grid-template-columns: minmax(0, 1fr);
+  gap: 6px;
+}
+
+.bracketMatchCard .fixtureTeam {
+  width: 100%;
+  justify-content: space-between;
+  border: 1px solid rgba(70, 55, 35, 0.1);
+  border-radius: 13px;
+  background: rgba(255, 255, 255, 0.55);
+  padding: 6px 7px;
+  font-size: 0.76rem;
+  line-height: 1.1;
+}
+
+.bracketMatchCard .fixtureTeam > span:not(.countryFlag) {
+  min-width: 0;
+}
+
+.bracketMatchCard .awayFixtureTeam .countryFlag {
+  order: 2;
+}
+
+.bracketMatchCard .awayFixtureTeam > span:not(.countryFlag) {
+  order: 1;
+}
+
+.bracketMatchCard .countryFlag {
+  width: 22px;
+  height: 16px;
+}
+
+.bracketMatchCard .seedFlag {
+  font-size: 0.54rem;
+}
+
+.bracketMatchCard .fixtureCenter {
+  justify-self: center;
+  min-width: 66px;
+  border-radius: 999px;
+  background: var(--ink);
+  color: var(--cream);
+  padding: 5px 8px;
+  font-size: 0.72rem;
+  letter-spacing: 0;
+  text-align: center;
+}
+
+.bracketMatchCard .fixtureMeta {
+  overflow: hidden;
+  color: rgba(70, 55, 35, 0.68);
+  font-family: "Courier New", monospace;
+  font-size: 0.63rem;
+  font-weight: 800;
+  text-overflow: ellipsis;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.bracketMatchCard .matchPredictionHeader {
+  align-items: flex-start;
+  flex-direction: column;
+}
+
+.bracketMatchCard .matchPredictionRow {
+  grid-template-columns: minmax(0, 1fr);
+  justify-items: start;
+}
+
+.bracketMatchCard .predictionPoints {
+  justify-items: start;
+}
+
+.bracketMatchCard::after {
+  display: none;
+}
+
+.bracketMatchCard:hover {
+  transform: translateY(-2px);
+}
+
+.bracketRound:nth-last-child(-n+2) .bracketMatchCard::after {
+  display: none;
+}
+
+.matchDetailList {
+  max-width: 900px;
+  margin: 0 auto;
+}
+
+.matchDetailCard {
+  padding: clamp(18px, 3vw, 30px);
+}
+
+.predictionTable {
+  gap: 10px;
+}
+
+.predictionRow {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto auto;
+  align-items: center;
+  gap: 14px;
+  border: 1px solid rgba(70, 55, 35, 0.13);
+  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.52);
+  padding: 14px 16px;
+}
+
+>>>>>>> Stashed changes
 .reason {
   color: var(--muted);
   font-family: "Courier New", monospace;
   font-size: 0.85rem;
 }
 
+<<<<<<< Updated upstream
 @media (max-width: 760px) {
+=======
+@keyframes riseIn {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.hero,
+.leaderSpotlight,
+.panel {
+  animation: riseIn 420ms ease both;
+}
+
+@media (max-width: 940px) {
+  .leaderSpotlight {
+    grid-template-columns: 1fr;
+    max-width: 820px;
+  }
+
+  .focusStats {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .modelMatchRow {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .modelScoreLine {
+    justify-content: flex-start;
+  }
+
+  .resultTag {
+    justify-items: start;
+  }
+
+  .matchPreviewGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .scheduleShell {
+    width: min(100% - 28px, 1060px);
+  }
+
+  .bracketArena {
+    grid-template-columns: minmax(720px, 1fr) 180px minmax(720px, 1fr);
+    min-width: 1640px;
+  }
+}
+
+@media (max-width: 700px) {
+>>>>>>> Stashed changes
   .shell {
     width: min(100% - 20px, 1120px);
     padding: 24px 0;

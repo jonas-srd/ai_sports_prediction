@@ -84,5 +84,46 @@ function formatScore(home: number | null, away: number | null): string {
     return "TBD";
   }
 
+<<<<<<< Updated upstream
   return `${home} - ${away}`;
+=======
+  if (!match.utcDate) {
+    return "Open";
+  }
+
+  return new Intl.DateTimeFormat("en-GB", {
+    hour: "2-digit",
+    minute: "2-digit",
+    timeZone: "Europe/Berlin"
+  }).format(new Date(match.utcDate));
+}
+
+function formatMatchMeta(match: DashboardMatch): string | null {
+  const details = [formatCompetition(match.competition), match.venue, formatDate(match.utcDate)].filter(Boolean);
+  return details.length > 0 ? details.join(" / ") : null;
+}
+
+function formatCompetition(value?: string): string | null {
+  if (!value) {
+    return null;
+  }
+
+  return value
+    .replace("FIFA World Cup", "World Cup")
+    .replace("GROUP_STAGE", "Group stage")
+    .replace(/GROUP_([A-L])\b/g, "Group $1")
+    .replaceAll(" - ", " / ");
+}
+
+function formatDate(value?: string): string | null {
+  if (!value) {
+    return null;
+  }
+
+  return new Intl.DateTimeFormat("en-GB", {
+    month: "short",
+    day: "numeric",
+    timeZone: "Europe/Berlin"
+  }).format(new Date(value));
+>>>>>>> Stashed changes
 }
