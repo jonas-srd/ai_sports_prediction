@@ -154,10 +154,13 @@ function getSqliteDbPath(): string {
     return resolve(process.env.SQLITE_DB_PATH);
   }
 
-  const fromWebWorkspace = resolve(process.cwd(), "../../data/world-cup.db");
-  const fromRepoRoot = resolve(process.cwd(), "data/world-cup.db");
+  const candidates = [
+    resolve(process.cwd(), "data/world-cup.db"),
+    resolve(process.cwd(), "../data/world-cup.db"),
+    resolve(process.cwd(), "../../data/world-cup.db")
+  ];
 
-  return existsSync(fromWebWorkspace) ? fromWebWorkspace : fromRepoRoot;
+  return candidates.find((candidate) => existsSync(candidate)) ?? candidates[0];
 }
 
 function rowsToMatches(rows: DbMatchRow[]): DashboardMatch[] {

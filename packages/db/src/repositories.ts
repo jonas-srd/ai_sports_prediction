@@ -73,6 +73,17 @@ export async function listMatches(db: SqliteDb): Promise<MatchRow[]> {
   `).all() as MatchRow[];
 }
 
+export async function listUpcomingMatches(db: SqliteDb, limit = 1, from = new Date()): Promise<MatchRow[]> {
+  return db.prepare(`
+    select id, utc_date, competition, home_team, away_team, status, home_score, away_score
+    from matches
+    where utc_date >= ?
+      and status in ('SCHEDULED', 'TIMED')
+    order by utc_date asc
+    limit ?
+  `).all(from.toISOString(), limit) as MatchRow[];
+}
+
 export async function upsertPrediction(
   db: SqliteDb,
   prediction: Omit<PredictionRow, "id" | "created_at">

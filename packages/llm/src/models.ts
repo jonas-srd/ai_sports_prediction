@@ -10,12 +10,34 @@ export type LlmModel = {
 };
 
 export const LLM_MODELS: LlmModel[] = [
-  { id: "openai/gpt-4o", name: "GPT-4o", provider: "OpenAI", active: true },
-  { id: "anthropic/claude-3.5-sonnet", name: "Claude 3.5 Sonnet", provider: "Anthropic", active: true },
-  { id: "google/gemini-pro-1.5", name: "Gemini Pro 1.5", provider: "Google", active: true },
-  { id: "x-ai/grok-2", name: "Grok 2", provider: "xAI", active: true },
-  { id: "meta-llama/llama-3.1-70b-instruct", name: "Llama 3.1 70B", provider: "Meta", active: true },
-  { id: "mistralai/mistral-large", name: "Mistral Large", provider: "Mistral", active: true },
-  { id: "deepseek/deepseek-chat", name: "DeepSeek Chat", provider: "DeepSeek", active: true },
-  { id: "perplexity/llama-3.1-sonar-large-128k-online", name: "Perplexity Sonar Large", provider: "Perplexity", active: true }
+  { id: "openrouter/owl-alpha", name: "Owl Alpha Free", provider: "OpenRouter", active: true },
+  { id: "nex-agi/nex-n2-pro:free", name: "Nex N2 Pro Free", provider: "Nex AGI", active: true },
+  { id: "nvidia/nemotron-3-ultra-550b-a55b:free", name: "Nemotron 3 Ultra Free", provider: "NVIDIA", active: true },
+  { id: "nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free", name: "Nemotron 3 Nano Omni Free", provider: "NVIDIA", active: true },
+  { id: "poolside/laguna-xs.2:free", name: "Laguna XS.2 Free", provider: "Poolside", active: true },
+  { id: "nex-agi/nex-n2:free", name: "Nex N2 Free", provider: "Nex AGI", active: true },
+  { id: "moonshotai/kimi-k2.6:free", name: "Kimi K2.6 Free", provider: "Moonshot AI", active: true },
+  { id: "deepseek/deepseek-v4-flash:free", name: "DeepSeek V4 Flash Free", provider: "DeepSeek", active: true }
 ];
+
+export function getConfiguredLlmModels(): LlmModel[] {
+  const configuredIds = process.env.OPENROUTER_MODEL_IDS
+    ?.split(",")
+    .map((modelId) => modelId.trim())
+    .filter(Boolean);
+
+  if (!configuredIds || configuredIds.length === 0) {
+    return LLM_MODELS;
+  }
+
+  return configuredIds.map((modelId) => {
+    const knownModel = LLM_MODELS.find((model) => model.id === modelId);
+
+    return knownModel ?? {
+      id: modelId,
+      name: modelId,
+      provider: "OpenRouter",
+      active: true
+    };
+  });
+}

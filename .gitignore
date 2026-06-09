@@ -4,6 +4,9 @@ node_modules
 dist
 .env
 .env.local
+.venv
+__pycache__
+*.pyc
 *.log
 .DS_Store
 data/*.db
