@@ -32,6 +32,15 @@ export function TeamMatchup({ homeTeam, awayTeam, center, meta, compact = false 
 }
 
 function TeamFlag({ teamName }: { teamName: string }) {
+  const seedLabel = getSeedFlagLabel(teamName);
+  if (seedLabel) {
+    return (
+      <span className="countryFlag seedFlag" aria-hidden="true">
+        {seedLabel}
+      </span>
+    );
+  }
+
   const flag = getTeamFlag(teamName);
   if (!flag) {
     return <span className="countryFlag countryFlagFallback" aria-hidden="true" />;
@@ -46,4 +55,19 @@ function TeamFlag({ teamName }: { teamName: string }) {
       srcSet={flag.srcSet}
     />
   );
+}
+
+function getSeedFlagLabel(teamName: string): string | null {
+  const winnerGroup = teamName.match(/^Sieger Gruppe ([A-L])$/);
+  if (winnerGroup) return `1${winnerGroup[1]}`;
+
+  const runnerUpGroup = teamName.match(/^Zweiter Gruppe ([A-L])$/);
+  if (runnerUpGroup) return `2${runnerUpGroup[1]}`;
+
+  if (teamName.startsWith("Bester Dritter ")) return "3x";
+  if (teamName.startsWith("Sieger Spiel ")) return "S";
+  if (teamName.startsWith("Verlierer Spiel ")) return "V";
+  if (teamName === "Offen") return "?";
+
+  return null;
 }

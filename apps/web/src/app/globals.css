@@ -576,6 +576,24 @@ h2 {
     rgba(24, 19, 13, 0.04);
 }
 
+.seedFlag {
+  display: inline-grid;
+  place-items: center;
+  border-radius: 999px;
+  background:
+    linear-gradient(135deg, rgba(240, 196, 91, 0.92), rgba(179, 58, 39, 0.82)),
+    var(--gold);
+  color: var(--cream);
+  font-family: "Courier New", monospace;
+  font-size: 0.58rem;
+  font-weight: 900;
+  letter-spacing: -0.03em;
+  text-transform: uppercase;
+  box-shadow:
+    0 0 0 1px rgba(24, 19, 13, 0.14),
+    0 6px 14px rgba(179, 58, 39, 0.18);
+}
+
 .fixtureCenter {
   color: var(--ink);
   font-family: "Courier New", monospace;
@@ -730,33 +748,239 @@ h2 {
   padding: clamp(14px, 2.4vw, 20px);
 }
 
+.predictionMatchCard {
+  position: relative;
+  transition:
+    border-color 180ms ease,
+    box-shadow 180ms ease,
+    transform 180ms ease;
+}
+
+.predictionMatchCard.isOpen {
+  border-color: rgba(179, 58, 39, 0.28);
+  box-shadow: 0 18px 44px rgba(43, 34, 20, 0.12);
+}
+
+.matchNumberBadge {
+  position: absolute;
+  top: -10px;
+  left: 16px;
+  z-index: 1;
+  border: 1px solid rgba(255, 248, 233, 0.82);
+  border-radius: 999px;
+  background: var(--ink);
+  color: var(--cream);
+  padding: 5px 9px;
+  font-family: "Courier New", monospace;
+  font-size: 0.62rem;
+  font-weight: 900;
+  letter-spacing: 0.06em;
+  line-height: 1;
+  text-transform: uppercase;
+  box-shadow: 0 8px 16px rgba(43, 34, 20, 0.16);
+}
+
+.predictionMatchButton {
+  display: grid;
+  width: 100%;
+  gap: 10px;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  padding: 0;
+  text-align: inherit;
+  cursor: pointer;
+}
+
+.predictionMatchButton:hover .fixtureCenter,
+.predictionMatchButton:focus-visible .fixtureCenter {
+  color: var(--red);
+}
+
+.predictionMatchButton:focus-visible {
+  outline: 2px solid rgba(179, 58, 39, 0.42);
+  outline-offset: 6px;
+  border-radius: 18px;
+}
+
+.matchDisclosure {
+  justify-self: center;
+  border: 1px solid rgba(70, 55, 35, 0.12);
+  border-radius: 999px;
+  background: rgba(255, 248, 233, 0.82);
+  color: var(--red);
+  padding: 6px 10px;
+  font-family: "Courier New", monospace;
+  font-size: 0.68rem;
+  font-weight: 900;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.matchPredictionPanel {
+  display: grid;
+  gap: 12px;
+  margin-top: 14px;
+  border-top: 1px solid rgba(70, 55, 35, 0.12);
+  padding-top: 14px;
+}
+
+.matchPredictionHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.matchPredictionHeader strong {
+  display: block;
+  font-size: 1rem;
+  letter-spacing: -0.02em;
+}
+
+.matchPredictionHeader span {
+  display: block;
+  margin-top: 3px;
+  color: var(--muted);
+  font-size: 0.82rem;
+}
+
+.finalScoreBadge {
+  border-radius: 999px;
+  background: var(--ink);
+  color: var(--cream) !important;
+  padding: 8px 11px;
+  font-family: "Courier New", monospace;
+  font-size: 0.72rem !important;
+  font-weight: 900;
+  white-space: nowrap;
+}
+
+.matchPredictionGrid {
+  display: grid;
+  gap: 8px;
+}
+
+.matchPredictionRow {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(112px, auto);
+  align-items: center;
+  gap: 12px;
+  border: 1px solid rgba(70, 55, 35, 0.12);
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.46);
+  padding: 10px 12px;
+}
+
+.matchPredictionModel {
+  min-width: 0;
+}
+
+.matchPredictionModel strong {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.matchPredictionModel span,
+.predictionPoints span {
+  display: block;
+  margin-top: 2px;
+  color: var(--muted);
+  font-size: 0.76rem;
+}
+
+.predictedScorePill {
+  border-radius: 999px;
+  background: rgba(24, 19, 13, 0.08);
+  padding: 8px 11px;
+  font-family: "Courier New", monospace;
+  font-size: 0.78rem;
+  font-weight: 900;
+  white-space: nowrap;
+}
+
+.predictionPoints {
+  display: grid;
+  justify-items: end;
+  min-width: 0;
+}
+
+.predictionPoints strong {
+  color: var(--red);
+  font-family: "Courier New", monospace;
+  font-size: 0.8rem;
+  font-weight: 900;
+  white-space: nowrap;
+}
+
+.emptyPredictionPanel {
+  border: 1px dashed rgba(70, 55, 35, 0.2);
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.38);
+  padding: 14px;
+  text-align: center;
+}
+
+.emptyPredictionPanel strong {
+  display: block;
+  margin-bottom: 4px;
+}
+
+.emptyPredictionPanel p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.86rem;
+}
+
 .scheduleMatchCard .fixtureLine {
   grid-template-columns: minmax(0, 1fr) minmax(72px, auto) minmax(0, 1fr);
 }
 
 .knockoutSection {
-  max-width: 1120px;
+  max-width: 1280px;
   margin: 0 auto;
   border: 1px solid var(--line);
   border-radius: 34px;
   background:
-    radial-gradient(circle at 100% 0%, rgba(32, 79, 53, 0.16), transparent 18rem),
-    linear-gradient(150deg, rgba(255, 248, 233, 0.86), rgba(240, 212, 129, 0.34));
-  padding: clamp(18px, 3vw, 28px);
+    radial-gradient(circle at 100% 0%, rgba(32, 79, 53, 0.2), transparent 20rem),
+    radial-gradient(circle at 2% 78%, rgba(179, 58, 39, 0.12), transparent 18rem),
+    linear-gradient(150deg, rgba(255, 248, 233, 0.9), rgba(240, 212, 129, 0.38));
+  padding: clamp(18px, 3vw, 30px);
   box-shadow: var(--shadow);
+}
+
+.knockoutHeader {
+  align-items: flex-start;
+  margin-bottom: 20px;
+}
+
+.knockoutHeader .sectionKicker {
+  margin-bottom: 8px;
+}
+
+.bracketNote {
+  max-width: 640px;
+  margin: 10px 0 0;
+  color: var(--muted);
+  font-size: 0.95rem;
+  line-height: 1.45;
 }
 
 .bracketScroller {
   overflow-x: auto;
-  padding: 4px 4px 14px;
+  padding: 12px 6px 18px;
+  scrollbar-color: rgba(179, 58, 39, 0.44) rgba(255, 255, 255, 0.34);
 }
 
 .bracketGrid {
   display: grid;
-  grid-template-columns: repeat(6, minmax(190px, 1fr));
+  grid-template-columns: repeat(6, minmax(220px, 1fr));
   align-items: stretch;
-  gap: 22px;
-  min-width: 1080px;
+  gap: 30px;
+  min-width: 1360px;
 }
 
 .bracketRound {
@@ -766,14 +990,20 @@ h2 {
 }
 
 .bracketRound h3 {
+  justify-self: center;
   margin: 0;
-  color: rgba(24, 19, 13, 0.72);
+  border: 1px solid rgba(70, 55, 35, 0.13);
+  border-radius: 999px;
+  background: rgba(255, 248, 233, 0.8);
+  color: rgba(24, 19, 13, 0.78);
   font-family: "Courier New", monospace;
   font-size: 0.72rem;
   font-weight: 900;
   letter-spacing: 0.08em;
+  padding: 8px 12px;
   text-align: center;
   text-transform: uppercase;
+  box-shadow: 0 8px 20px rgba(43, 34, 20, 0.06);
 }
 
 .bracketMatches {
@@ -806,24 +1036,55 @@ h2 {
 
 .bracketMatchCard {
   position: relative;
-  min-height: 92px;
-  border: 1px solid rgba(70, 55, 35, 0.13);
-  border-radius: 22px;
-  background: rgba(255, 255, 255, 0.58);
-  padding: 12px;
-  box-shadow: 0 10px 24px rgba(43, 34, 20, 0.06);
+  min-height: 108px;
+  border: 1px solid rgba(70, 55, 35, 0.16);
+  border-radius: 24px;
+  background:
+    linear-gradient(135deg, rgba(255, 255, 255, 0.86), rgba(255, 248, 233, 0.6)),
+    rgba(255, 255, 255, 0.72);
+  padding: 18px 13px 13px;
+  box-shadow:
+    0 12px 28px rgba(43, 34, 20, 0.08),
+    inset 0 1px 0 rgba(255, 255, 255, 0.74);
+}
+
+.bracketMatchCard.isOpen {
+  z-index: 3;
+}
+
+.bracketMatchCard .matchDisclosure {
+  padding: 5px 8px;
+  font-size: 0.58rem;
+}
+
+.bracketMatchCard .matchPredictionHeader {
+  align-items: flex-start;
+  flex-direction: column;
+}
+
+.bracketMatchCard .matchPredictionRow {
+  grid-template-columns: minmax(0, 1fr);
+  justify-items: start;
+}
+
+.bracketMatchCard .predictionPoints {
+  justify-items: start;
 }
 
 .bracketMatchCard::after {
   position: absolute;
   top: 50%;
-  right: -23px;
-  width: 22px;
-  border-top: 2px solid rgba(70, 55, 35, 0.18);
+  right: -31px;
+  width: 30px;
+  border-top: 2px solid rgba(32, 79, 53, 0.22);
   content: "";
 }
 
-.bracketRound:last-child .bracketMatchCard::after {
+.bracketMatchCard:hover {
+  transform: translateY(-2px);
+}
+
+.bracketRound:nth-last-child(-n+2) .bracketMatchCard::after {
   display: none;
 }
 
@@ -996,6 +1257,20 @@ h2 {
   .scheduleMatchCard .countryFlag {
     width: 24px;
     height: 17px;
+  }
+
+  .matchPredictionHeader {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .matchPredictionRow {
+    grid-template-columns: 1fr;
+    justify-items: start;
+  }
+
+  .predictionPoints {
+    justify-items: start;
   }
 
   .knockoutSection {

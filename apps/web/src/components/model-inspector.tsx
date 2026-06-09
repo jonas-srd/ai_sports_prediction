@@ -6,6 +6,7 @@
  */
 import { useMemo } from "react";
 import type { DashboardMatch } from "@/lib/dashboard-data";
+import { getMatchupLabels } from "@/lib/match-display";
 import { calculatePredictionScore, type ScoreResult } from "@/lib/scorer";
 import { TeamMatchup } from "@/components/team-matchup";
 
@@ -83,29 +84,32 @@ export function ModelInspector({ matches, selectedModel, inline = false }: Model
             <p>Sync more fixtures or run predictions for this model.</p>
           </div>
         ) : (
-          rows.map((row) => (
-            <div className="modelMatchRow" key={row.match.id}>
-              <div className="modelMatchTeams">
-                <TeamMatchup
-                  compact
-                  homeTeam={row.match.homeTeam}
-                  awayTeam={row.match.awayTeam}
-                  center={formatMatchCenter(row.match)}
-                  meta={formatMatchMeta(row.match)}
-                />
-              </div>
+          rows.map((row) => {
+            const labels = getMatchupLabels(row.match, matches);
+            return (
+              <div className="modelMatchRow" key={row.match.id}>
+                <div className="modelMatchTeams">
+                  <TeamMatchup
+                    compact
+                    homeTeam={labels.homeTeamLabel}
+                    awayTeam={labels.awayTeamLabel}
+                    center={formatMatchCenter(row.match)}
+                    meta={formatMatchMeta(row.match)}
+                  />
+                </div>
 
-              <div className="modelScoreLine">
-                <span>Pick {formatPrediction(row.prediction)}</span>
-                <span>Final {formatScore(row.match.actualHome, row.match.actualAway)}</span>
-              </div>
+                <div className="modelScoreLine">
+                  <span>Pick {formatPrediction(row.prediction)}</span>
+                  <span>Final {formatScore(row.match.actualHome, row.match.actualAway)}</span>
+                </div>
 
-              <div className="resultTag">
-                <strong>{row.score ? `${row.score.points} pts` : row.prediction ? "pending" : "no pick"}</strong>
-                <span>{row.score ? formatReason(row.score.reason) : "not scored"}</span>
+                <div className="resultTag">
+                  <strong>{row.score ? `${row.score.points} pts` : row.prediction ? "pending" : "no pick"}</strong>
+                  <span>{row.score ? formatReason(row.score.reason) : "not scored"}</span>
+                </div>
               </div>
-            </div>
-          ))
+            );
+          })
         )}
       </div>
     </section>
@@ -147,7 +151,7 @@ function formatMatchCenter(match: DashboardMatch): string {
   }
 
   if (!match.utcDate) {
-    return "TBD";
+    return "Open";
   }
 
   return new Intl.DateTimeFormat("en-GB", {
@@ -176,12 +180,12 @@ function formatCompetition(value?: string): string | null {
 
 function formatMatchDate(value?: string): string {
   if (!value) {
-    return "Date TBD";
+    return "Date open";
   }
 
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) {
-    return "Date TBD";
+    return "Date open";
   }
 
   return new Intl.DateTimeFormat("en-GB", {
@@ -203,7 +207,7 @@ function formatPrediction(prediction: DashboardMatch["predictions"][number] | un
 
 function formatScore(home: number | null, away: number | null): string {
   if (home === null || away === null) {
-    return "TBD";
+    return "open";
   }
 
   return `${home} - ${away}`;

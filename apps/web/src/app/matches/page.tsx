@@ -5,7 +5,8 @@
 import Link from "next/link";
 import type { DashboardMatch } from "@/lib/dashboard-data";
 import { getDashboardMatches } from "@/lib/dashboard-data";
-import { TeamMatchup } from "@/components/team-matchup";
+import { getBracketSortValue, getDisplayMatch, getOfficialMatchNumber } from "@/lib/match-display";
+import { MatchPredictionCard } from "@/components/match-prediction-card";
 
 type ScheduleDay = {
   key: string;
@@ -36,7 +37,7 @@ export default function MatchesPage() {
         <p className="eyebrow">World Cup 2026</p>
         <h1>Schedule</h1>
         <p className="heroText">
-          Group-stage fixtures by day, then knockout matches as a bracket.
+          Group-stage fixtures by day, then knockout matches as a bracket. Click any match to inspect model picks.
         </p>
       </section>
 
@@ -48,16 +49,18 @@ export default function MatchesPage() {
               <span>View groups</span>
             </div>
             <div className="scheduleDayMatches">
-              {day.matches.map((match) => (
-                <article className="scheduleMatchCard" key={match.id}>
-                  <TeamMatchup
-                    homeTeam={match.homeTeam}
-                    awayTeam={match.awayTeam}
+              {day.matches.map((match) => {
+                const displayMatch = getDisplayMatch(match, matches);
+                return (
+                  <MatchPredictionCard
+                    className="scheduleMatchCard"
+                    key={match.id}
+                    match={displayMatch}
                     center={formatMatchCenter(match)}
                     meta={formatMatchMeta(match)}
                   />
-                </article>
-              ))}
+                );
+              })}
             </div>
           </section>
         ))}
@@ -65,9 +68,16 @@ export default function MatchesPage() {
 
       {bracketRounds.length > 0 ? (
         <section className="knockoutSection">
-          <div className="scheduleDayHeader">
-            <h2>Knockout bracket</h2>
-            <span>View knockout ties</span>
+          <div className="scheduleDayHeader knockoutHeader">
+            <div>
+              <p className="sectionKicker">Knockout</p>
+              <h2>Turnierbaum</h2>
+              <p className="bracketNote">
+                Offizielle Wege der WM 2026: keine leeren Platzhalter, sondern Gruppensieger,
+                Gruppenzweite und Folgesieger je Spiel.
+              </p>
+            </div>
+            <span>32 Teams / 5 Runden</span>
           </div>
           <div className="bracketScroller">
             <div className="bracketGrid">
@@ -75,17 +85,21 @@ export default function MatchesPage() {
                 <section className="bracketRound" key={round.key}>
                   <h3>{round.label}</h3>
                   <div className="bracketMatches">
-                    {round.matches.map((match) => (
-                      <article className="bracketMatchCard" key={match.id}>
-                        <TeamMatchup
+                    {round.matches.map((match) => {
+                      const matchNumber = getOfficialMatchNumber(match);
+                      const displayMatch = getDisplayMatch(match, matches);
+                      return (
+                        <MatchPredictionCard
                           compact
-                          homeTeam={match.homeTeam}
-                          awayTeam={match.awayTeam}
+                          badge={matchNumber ? `Spiel ${matchNumber}` : undefined}
+                          className="bracketMatchCard"
+                          key={match.id}
+                          match={displayMatch}
                           center={formatMatchCenter(match)}
                           meta={formatBracketMeta(match)}
                         />
-                      </article>
-                    ))}
+                      );
+                    })}
                   </div>
                 </section>
               ))}
@@ -123,7 +137,7 @@ function groupMatchesByDay(matches: DashboardMatch[]): ScheduleDay[] {
 function groupKnockoutRounds(matches: DashboardMatch[]): BracketRound[] {
   const rounds = new Map<string, BracketRound>();
 
-  for (const match of matches.sort(compareMatches)) {
+  for (const match of [...matches].sort(compareBracketMatches)) {
     const key = getRoundKey(match);
     const round = rounds.get(key) ?? {
       key,
@@ -160,8 +174,8 @@ function getRoundOrder(round: string): number {
     LAST_16: 2,
     QUARTER_FINALS: 3,
     SEMI_FINALS: 4,
-    THIRD_PLACE: 5,
-    FINAL: 6,
+    FINAL: 5,
+    THIRD_PLACE: 6,
     KNOCKOUT: 99
   };
 
@@ -170,13 +184,13 @@ function getRoundOrder(round: string): number {
 
 function formatRoundLabel(round: string): string {
   const labels: Record<string, string> = {
-    LAST_32: "Round of 32",
-    LAST_16: "Round of 16",
-    QUARTER_FINALS: "Quarter-finals",
-    SEMI_FINALS: "Semi-finals",
-    THIRD_PLACE: "Third-place match",
-    FINAL: "Final",
-    KNOCKOUT: "Knockout stage"
+    LAST_32: "Runde der letzten 32",
+    LAST_16: "Achtelfinale",
+    QUARTER_FINALS: "Viertelfinale",
+    SEMI_FINALS: "Halbfinale",
+    THIRD_PLACE: "Spiel um Platz 3",
+    FINAL: "Finale",
+    KNOCKOUT: "K.o.-Phase"
   };
 
   return labels[round] ?? round;
@@ -184,6 +198,10 @@ function formatRoundLabel(round: string): string {
 
 function compareMatches(a: DashboardMatch, b: DashboardMatch): number {
   return getTimeValue(a.utcDate) - getTimeValue(b.utcDate);
+}
+
+function compareBracketMatches(a: DashboardMatch, b: DashboardMatch): number {
+  return getBracketSortValue(a) - getBracketSortValue(b) || compareMatches(a, b);
 }
 
 function compareDateKeys(a: string, b: string): number {
@@ -222,12 +240,12 @@ function getTimeValue(value?: string): number {
 
 function formatDayLabel(value?: string): string {
   if (!value) {
-    return "Date TBD";
+    return "Date open";
   }
 
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) {
-    return "Date TBD";
+    return "Date open";
   }
 
   return new Intl.DateTimeFormat("en-GB", {
@@ -247,7 +265,7 @@ function formatMatchCenter(match: DashboardMatch): string {
   }
 
   if (!match.utcDate) {
-    return "TBD";
+    return "Open";
   }
 
   return new Intl.DateTimeFormat("en-GB", {
@@ -280,24 +298,24 @@ function formatCompetition(value?: string): string | null {
   const details: string[] = [];
 
   if (value.includes("GROUP_STAGE")) {
-    details.push("Group stage");
+    details.push("Gruppenphase");
   } else if (value.includes("LAST_32")) {
-    details.push("Round of 32");
+    details.push("Runde der letzten 32");
   } else if (value.includes("LAST_16")) {
-    details.push("Round of 16");
+    details.push("Achtelfinale");
   } else if (value.includes("QUARTER_FINALS")) {
-    details.push("Quarter-finals");
+    details.push("Viertelfinale");
   } else if (value.includes("SEMI_FINALS")) {
-    details.push("Semi-finals");
+    details.push("Halbfinale");
   } else if (value.includes("THIRD_PLACE")) {
-    details.push("Third-place match");
+    details.push("Spiel um Platz 3");
   } else if (value.includes("FINAL")) {
-    details.push("Final");
+    details.push("Finale");
   }
 
   const group = value.match(/GROUP_([A-Z])/);
   if (group) {
-    details.push(`Group ${group[1]}`);
+    details.push(`Gruppe ${group[1]}`);
   }
 
   if (details.length > 0) {

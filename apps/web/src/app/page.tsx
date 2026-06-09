@@ -5,12 +5,14 @@
 import Link from "next/link";
 import type { DashboardMatch } from "@/lib/dashboard-data";
 import { getDashboardMatches, getLeaderboard } from "@/lib/dashboard-data";
+import { getDisplayMatch } from "@/lib/match-display";
 import { InteractiveLeaderboard } from "@/components/interactive-leaderboard";
 import { TeamMatchup } from "@/components/team-matchup";
 
 export default function HomePage() {
   const leaderboard = getLeaderboard();
   const matches = getDashboardMatches();
+  const displayMatches = matches.map((match) => getDisplayMatch(match, matches));
   const leader = leaderboard[0];
 
   return (
@@ -57,7 +59,7 @@ export default function HomePage() {
         </aside>
       </section>
 
-      <InteractiveLeaderboard leaderboard={leaderboard} matches={matches} />
+      <InteractiveLeaderboard leaderboard={leaderboard} matches={displayMatches} />
 
       <section className="panel matchesPanel">
         <div className="panelHeader">
@@ -68,17 +70,19 @@ export default function HomePage() {
           <Link href="/matches">Open details</Link>
         </div>
         <div className="matchList matchPreviewGrid">
-          {matches.slice(0, 8).map((match) => (
-            <div className="matchCard" key={match.id}>
-              <TeamMatchup
-                compact
-                homeTeam={match.homeTeam}
-                awayTeam={match.awayTeam}
-                center={formatMatchCenter(match)}
-                meta={formatMatchMeta(match)}
-              />
-            </div>
-          ))}
+          {displayMatches.slice(0, 8).map((match) => {
+            return (
+              <div className="matchCard" key={match.id}>
+                <TeamMatchup
+                  compact
+                  homeTeam={match.homeTeam}
+                  awayTeam={match.awayTeam}
+                  center={formatMatchCenter(match)}
+                  meta={formatMatchMeta(match)}
+                />
+              </div>
+            );
+          })}
         </div>
       </section>
     </main>
@@ -91,7 +95,7 @@ function formatMatchCenter(match: DashboardMatch): string {
   }
 
   if (!match.utcDate) {
-    return "TBD";
+    return "Open";
   }
 
   return new Intl.DateTimeFormat("en-GB", {
