@@ -1,0 +1,22 @@
+{
+  "name": "llm-kicktipp",
+  "version": "0.1.0",
+  "private": true,
+  "description": "48h MVP for comparing football score predictions from multiple LLMs.",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev": "npm run dev --workspace @llm-kicktipp/web",
+    "build": "npm run build --workspaces --if-present",
+    "typecheck": "npm run typecheck --workspaces --if-present",
+    "seed:fixtures": "npm run seed:fixtures --workspace @llm-kicktipp/cron",
+    "sync:football-data": "npm run sync:football-data --workspace @llm-kicktipp/cron",
+    "predict": "npm run predict --workspace @llm-kicktipp/cron",
+    "score": "npm run score --workspace @llm-kicktipp/cron"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

@@ -1,0 +1,22 @@
+[
+  {
+    "id": "sample-2026-06-09-ger-fra",
+    "utcDate": "2026-06-09T19:00:00.000Z",
+    "competition": "World Cup",
+    "homeTeam": "Germany",
+    "awayTeam": "France",
+    "status": "SCHEDULED",
+    "homeScore": null,
+    "awayScore": null
+  },
+  {
+    "id": "sample-2026-06-09-bra-arg",
+    "utcDate": "2026-06-09T21:00:00.000Z",
+    "competition": "World Cup",
+    "homeTeam": "Brazil",
+    "awayTeam": "Argentina",
+    "status": "SCHEDULED",
+    "homeScore": null,
+    "awayScore": null
+  }
+]

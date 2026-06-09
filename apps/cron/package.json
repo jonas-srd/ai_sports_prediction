@@ -1,0 +1,23 @@
+{
+  "name": "@llm-kicktipp/cron",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "seed:fixtures": "tsx src/jobs/seed-sample-fixtures.ts",
+    "sync:football-data": "tsx src/jobs/sync-football-data.ts",
+    "predict": "tsx src/jobs/predict-today.ts",
+    "score": "tsx src/jobs/score-results.ts",
+    "typecheck": "tsc -p tsconfig.json --noEmit"
+  },
+  "dependencies": {
+    "@llm-kicktipp/db": "0.1.0",
+    "@llm-kicktipp/llm": "0.1.0",
+    "@llm-kicktipp/scorer": "0.1.0",
+    "tsx": "latest"
+  },
+  "devDependencies": {
+    "@types/node": "latest",
+    "typescript": "latest"
+  }
+}
