@@ -3,14 +3,16 @@
  * It finds finished matches with predictions, applies Kicktipp-style scoring, and upserts points into the scores table.
  */
 import "../load-env";
-import { createSqliteDb, getDefaultDbPath, listUnscoredFinishedPredictions, upsertScore } from "@llm-kicktipp/db";
+import { createSqliteDb, getDefaultDbPath, listFinishedPredictions, upsertScore } from "@llm-kicktipp/db";
 import { calculatePredictionScore } from "@llm-kicktipp/scorer";
 
 async function main() {
   const db = createSqliteDb();
-  const predictions = await listUnscoredFinishedPredictions(db);
+  const includeAlreadyScored = process.argv.includes("--all");
+  const predictions = await listFinishedPredictions(db, { includeAlreadyScored });
 
   console.log(`Found ${predictions.length} predictions for finished matches.`);
+  console.log(includeAlreadyScored ? "Mode: recalculating all finished predictions." : "Mode: scoring only unscored predictions.");
   console.log(`SQLite DB: ${getDefaultDbPath()}`);
 
   for (const prediction of predictions) {

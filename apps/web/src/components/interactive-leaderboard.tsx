@@ -1,0 +1,74 @@
+"use client";
+
+/**
+ * Purpose: Clickable leaderboard that opens the selected model drilldown below it.
+ * Model details appear inline after a model row is selected.
+ */
+import { useState } from "react";
+import Link from "next/link";
+import type { DashboardMatch } from "@/lib/dashboard-data";
+import { ModelInspector } from "@/components/model-inspector";
+
+type LeaderboardEntry = {
+  model: string;
+  provider: string;
+  points: number;
+  exact: number;
+};
+
+type InteractiveLeaderboardProps = {
+  leaderboard: LeaderboardEntry[];
+  matches: DashboardMatch[];
+};
+
+export function InteractiveLeaderboard({ leaderboard, matches }: InteractiveLeaderboardProps) {
+  const [selectedModel, setSelectedModel] = useState<string | null>(null);
+
+  return (
+    <section className="contentStack">
+      <div className="panel leaderboardPanel">
+        <div className="panelHeader">
+          <div>
+            <p className="sectionKicker">Model ranking</p>
+            <h2>Leaderboard</h2>
+          </div>
+          <Link href="/matches">View matches</Link>
+        </div>
+
+        {leaderboard.length === 0 ? (
+          <div className="emptyState">
+            <strong>No ranking yet</strong>
+            <p>Run predictions first, then click a model here to inspect its details.</p>
+          </div>
+        ) : (
+          <div className="leaderboard">
+            {leaderboard.map((entry, index) => (
+              <div className="leaderboardItem" key={entry.model}>
+                <button
+                  className={`rankRow leaderboardButton${selectedModel === entry.model ? " isSelected" : ""}`}
+                  type="button"
+                  onClick={() => setSelectedModel(selectedModel === entry.model ? null : entry.model)}
+                >
+                  <span className="rank">#{index + 1}</span>
+                  <div>
+                    <strong>{entry.model}</strong>
+                    <p>{entry.provider}</p>
+                  </div>
+                  <span className="points">{entry.points} pts</span>
+                </button>
+
+                {selectedModel === entry.model ? (
+                  <ModelInspector
+                    inline
+                    matches={matches}
+                    selectedModel={entry.model}
+                  />
+                ) : null}
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    </section>
+  );
+}

@@ -44,7 +44,8 @@ export class OpenRouterClient {
             content: prompt
           }
         ],
-        temperature: 0.2
+        temperature: 0.2,
+        max_tokens: 300
       })
     });
 

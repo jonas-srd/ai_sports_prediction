@@ -15,6 +15,7 @@ export type MatchRow = {
   competition: string;
   home_team: string;
   away_team: string;
+  venue: string | null;
   status: string;
   home_score: number | null;
   away_score: number | null;

@@ -47,6 +47,8 @@ FOOTBALL_DATA_API_KEY=your_football_data_key
 FOOTBALL_DATA_COMPETITION=WC
 FOOTBALL_DATA_SEASON=2026
 OPENROUTER_API_KEY=your_openrouter_key
+OPENROUTER_TEST_MODEL=openai/gpt-4o
+OPENROUTER_MODEL_IDS=
 SQLITE_DB_PATH=
 ```
 
@@ -78,16 +80,46 @@ Optional API-Football fallback for historical smoke tests:
 npm run sync:api-football -- --season=2022
 ```
 
+Check that OpenRouter works:
+
+```bash
+npm run openrouter:smoke
+```
+
+List currently free OpenRouter models:
+
+```bash
+npm run openrouter:list-free
+```
+
 Run daily predictions for today's matches:
 
 ```bash
 npm run predict
 ```
 
+Run predictions for the next scheduled match if there are no matches today:
+
+```bash
+npm run predict:next
+```
+
+Limit the number of upcoming matches:
+
+```bash
+npm run predict:next -- --limit=3
+```
+
 Score finished matches:
 
 ```bash
 npm run score
+```
+
+Recalculate all existing finished-match scores after changing the scoring system:
+
+```bash
+npm run score -- --all
 ```
 
 Start the local website:
@@ -105,9 +137,9 @@ http://localhost:3000
 ## Scoring
 
 ```text
-4 points: exact result
-3 points: correct goal difference
-2 points: correct tendency
+5 points: exact result
+2 points: correct goal difference
+1 point: correct tendency
 0 points: miss
 ```
 
@@ -122,6 +154,35 @@ Header: X-Auth-Token: FOOTBALL_DATA_API_KEY
 ```
 
 The API key is only used in local server-side scripts under `apps/cron`. Do not expose it through frontend code or a `NEXT_PUBLIC_` variable.
+
+## OpenRouter
+
+OpenRouter is used as the single LLM gateway:
+
+```text
+POST https://openrouter.ai/api/v1/chat/completions
+Header: Authorization: Bearer OPENROUTER_API_KEY
+```
+
+The default project setup uses eight models from `packages/llm/src/models.ts`.
+
+To override the model list without editing code, set comma-separated OpenRouter model IDs:
+
+```text
+OPENROUTER_MODEL_IDS=openrouter/owl-alpha,nex-agi/nex-n2-pro:free,moonshotai/kimi-k2.6:free
+```
+
+For a cheap first test, set only one model:
+
+```text
+OPENROUTER_MODEL_IDS=meta-llama/llama-3.2-3b-instruct
+```
+
+The mainstream 8-model setup uses paid OpenRouter models and requires credits:
+
+```text
+OPENROUTER_MODEL_IDS=openai/gpt-4o,anthropic/claude-sonnet-4.5,google/gemini-3.5-flash,x-ai/grok-4.20,mistralai/mistral-large,deepseek/deepseek-r1,perplexity/sonar-pro,meta-llama/llama-3.2-3b-instruct
+```
 
 ## Public Deployment Later
 
@@ -143,7 +204,10 @@ Pragmatic public options later:
 - `apps/cron/src/jobs/init-db.ts`: creates the local SQLite database and tables.
 - `apps/cron/src/jobs/sync-football-data.ts`: fetches World Cup fixtures/results from football-data.org into SQLite.
 - `apps/cron/src/jobs/sync-api-football.ts`: optional API-Football fallback for historical smoke tests.
+- `apps/cron/src/jobs/openrouter-smoke-test.ts`: checks the OpenRouter API key with one model.
+- `apps/cron/src/jobs/openrouter-list-free-models.ts`: lists currently free OpenRouter text models.
 - `apps/cron/src/jobs/predict-today.ts`: loads today's matches, calls OpenRouter, stores predictions.
+- `apps/cron/src/jobs/predict-next.ts`: predicts the next scheduled matches for local testing.
 - `apps/cron/src/jobs/score-results.ts`: scores finished matches using Kicktipp rules.
 - `packages/db`: SQLite connection, schema, and repository helpers.
 - `packages/llm`: model IDs, prompt construction, and OpenRouter calls.
