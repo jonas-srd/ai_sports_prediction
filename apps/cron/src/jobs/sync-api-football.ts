@@ -28,9 +28,11 @@ type ApiFootballFixture = {
   teams: {
     home: {
       name: string;
+      winner?: boolean | null;
     };
     away: {
       name: string;
+      winner?: boolean | null;
     };
   };
   goals: {
@@ -38,11 +40,28 @@ type ApiFootballFixture = {
     away: number | null;
   };
   score: {
+    halftime?: ApiFootballScore | null;
     fulltime: {
       home: number | null;
       away: number | null;
     };
+    extratime?: ApiFootballScore | null;
+    penalty?: ApiFootballScore | null;
   };
+};
+
+type ApiFootballScore = {
+  home: number | null;
+  away: number | null;
+};
+
+type NormalizedResult = {
+  score90: ApiFootballScore;
+  scoreFull: ApiFootballScore;
+  scoreExtraTime: ApiFootballScore;
+  penalties: ApiFootballScore;
+  resultWinner: MatchRow["result_winner"];
+  actualAdvancer: MatchRow["actual_advancer"];
 };
 
 type ApiFootballResponse = {
@@ -88,6 +107,7 @@ async function main() {
 function toMatchRow(item: ApiFootballFixture): MatchRow {
   const season = String(item.league.season);
   const stage = normalizeStage(item.league.round);
+  const result = normalizeResult(item);
 
   return {
     id: `api-football-${item.fixture.id}`,
@@ -97,16 +117,78 @@ function toMatchRow(item: ApiFootballFixture): MatchRow {
     away_team: item.teams.away.name,
     venue: formatVenue(item.fixture.venue),
     status: normalizeStatus(item.fixture.status.short),
-    home_score: item.goals.home ?? item.score.fulltime.home,
-    away_score: item.goals.away ?? item.score.fulltime.away,
+    home_score: result.scoreFull.home,
+    away_score: result.scoreFull.away,
+    home_score_90: result.score90.home,
+    away_score_90: result.score90.away,
+    home_score_full: result.scoreFull.home,
+    away_score_full: result.scoreFull.away,
+    home_score_extra_time: result.scoreExtraTime.home,
+    away_score_extra_time: result.scoreExtraTime.away,
+    home_penalties: result.penalties.home,
+    away_penalties: result.penalties.away,
+    result_duration: item.fixture.status.short,
+    result_winner: result.resultWinner,
+    actual_advancer: isKnockoutStage(stage) ? result.actualAdvancer : null,
     source: "api-football",
     source_match_id: String(item.fixture.id),
     tournament_edition: `FIFA World Cup ${season}`,
     stage,
     group_name: parseGroupName(item.league.round),
     matchday: null,
-    is_knockout: stage ? stage !== "group_stage" : null
+    is_knockout: stage ? isKnockoutStage(stage) : null
   };
+}
+
+function normalizeResult(item: ApiFootballFixture): NormalizedResult {
+  const score90 = item.score.fulltime ?? { home: null, away: null };
+  const scoreExtraTime = item.score.extratime ?? { home: null, away: null };
+  const penalties = item.score.penalty ?? { home: null, away: null };
+  const goals = item.goals;
+  const scoreFull = hasCompleteScore(scoreExtraTime)
+    ? scoreExtraTime
+    : hasCompleteScore(goals)
+      ? goals
+      : score90;
+  const resultWinner = winnerFromTeamFlags(item)
+    ?? resultFromNonDrawScore(penalties)
+    ?? resultFromScore(scoreFull);
+
+  return {
+    score90,
+    scoreFull,
+    scoreExtraTime,
+    penalties,
+    resultWinner,
+    actualAdvancer: resultWinner === "home" || resultWinner === "away" ? resultWinner : null
+  };
+}
+
+function winnerFromTeamFlags(item: ApiFootballFixture): MatchRow["result_winner"] {
+  if (item.teams.home.winner === true) return "home";
+  if (item.teams.away.winner === true) return "away";
+  if (item.teams.home.winner === false && item.teams.away.winner === false) return "draw";
+  return null;
+}
+
+function hasCompleteScore(score: ApiFootballScore): boolean {
+  return score.home !== null && score.away !== null;
+}
+
+function resultFromScore(score: ApiFootballScore): MatchRow["result_winner"] {
+  if (!hasCompleteScore(score)) return null;
+  if ((score.home as number) > (score.away as number)) return "home";
+  if ((score.home as number) < (score.away as number)) return "away";
+  return "draw";
+}
+
+function resultFromNonDrawScore(score: ApiFootballScore): MatchRow["actual_advancer"] {
+  const result = resultFromScore(score);
+  return result === "home" || result === "away" ? result : null;
+}
+
+function isKnockoutStage(stage: string | null): boolean {
+  return stage !== null && stage !== "group_stage";
 }
 
 function formatVenue(venue: ApiFootballFixture["fixture"]["venue"]): string | null {

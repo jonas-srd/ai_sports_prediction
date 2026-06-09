@@ -108,6 +108,36 @@ test("computes knockout advancement metrics when actual advancer is available", 
   assert.equal(result.advancementLogLoss, -Math.log(0.65));
 });
 
+test("keeps 90-minute result separate from full-match knockout outcome", () => {
+  const result = evaluateBenchmarkPrediction(
+    {
+      homeWin90Prob: 0.25,
+      draw90Prob: 0.5,
+      awayWin90Prob: 0.25,
+      expectedHomeGoals90: 1,
+      expectedAwayGoals90: 1,
+      mostLikelyScore90: { home: 1, away: 1 },
+      homeWinFullProb: 0.6,
+      drawFullProb: 0,
+      awayWinFullProb: 0.4,
+      mostLikelyScoreFull: { home: 2, away: 1 },
+      homeAdvancesProb: 0.6,
+      awayAdvancesProb: 0.4
+    },
+    {
+      score90: { home: 1, away: 1 },
+      actualFullResult: "home",
+      actualAdvancer: "home"
+    }
+  );
+
+  assert.equal(result.actualResult90, "draw");
+  assert.equal(result.actualResultFull, "home");
+  assert.equal(result.actualAdvancer, "home");
+  assert.equal(result.topOutcomeCorrect90, true);
+  assert.equal(result.advancementAccuracy, true);
+});
+
 test("leaves advancement metrics null without an actual advancer", () => {
   const result = evaluateBenchmarkPrediction(
     {

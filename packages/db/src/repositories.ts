@@ -75,6 +75,17 @@ export async function upsertMatches(db: SqliteDb, matches: MatchRow[]): Promise<
       status,
       home_score,
       away_score,
+      home_score_90,
+      away_score_90,
+      home_score_full,
+      away_score_full,
+      home_score_extra_time,
+      away_score_extra_time,
+      home_penalties,
+      away_penalties,
+      result_duration,
+      result_winner,
+      actual_advancer,
       source,
       source_match_id,
       tournament_edition,
@@ -94,6 +105,17 @@ export async function upsertMatches(db: SqliteDb, matches: MatchRow[]): Promise<
       @status,
       @home_score,
       @away_score,
+      @home_score_90,
+      @away_score_90,
+      @home_score_full,
+      @away_score_full,
+      @home_score_extra_time,
+      @away_score_extra_time,
+      @home_penalties,
+      @away_penalties,
+      @result_duration,
+      @result_winner,
+      @actual_advancer,
       @source,
       @source_match_id,
       @tournament_edition,
@@ -112,6 +134,17 @@ export async function upsertMatches(db: SqliteDb, matches: MatchRow[]): Promise<
       status = excluded.status,
       home_score = excluded.home_score,
       away_score = excluded.away_score,
+      home_score_90 = excluded.home_score_90,
+      away_score_90 = excluded.away_score_90,
+      home_score_full = excluded.home_score_full,
+      away_score_full = excluded.away_score_full,
+      home_score_extra_time = excluded.home_score_extra_time,
+      away_score_extra_time = excluded.away_score_extra_time,
+      home_penalties = excluded.home_penalties,
+      away_penalties = excluded.away_penalties,
+      result_duration = excluded.result_duration,
+      result_winner = excluded.result_winner,
+      actual_advancer = excluded.actual_advancer,
       source = excluded.source,
       source_match_id = excluded.source_match_id,
       tournament_edition = excluded.tournament_edition,
@@ -147,6 +180,17 @@ export async function listTodayMatches(db: SqliteDb, date = new Date()): Promise
       status,
       home_score,
       away_score,
+      home_score_90,
+      away_score_90,
+      home_score_full,
+      away_score_full,
+      home_score_extra_time,
+      away_score_extra_time,
+      home_penalties,
+      away_penalties,
+      result_duration,
+      result_winner,
+      actual_advancer,
       source,
       source_match_id,
       tournament_edition,
@@ -172,6 +216,17 @@ export async function listMatches(db: SqliteDb): Promise<MatchRow[]> {
       status,
       home_score,
       away_score,
+      home_score_90,
+      away_score_90,
+      home_score_full,
+      away_score_full,
+      home_score_extra_time,
+      away_score_extra_time,
+      home_penalties,
+      away_penalties,
+      result_duration,
+      result_winner,
+      actual_advancer,
       source,
       source_match_id,
       tournament_edition,
@@ -196,6 +251,17 @@ export async function listUpcomingMatches(db: SqliteDb, limit = 1, from = new Da
       status,
       home_score,
       away_score,
+      home_score_90,
+      away_score_90,
+      home_score_full,
+      away_score_full,
+      home_score_extra_time,
+      away_score_extra_time,
+      home_penalties,
+      away_penalties,
+      result_duration,
+      result_winner,
+      actual_advancer,
       source,
       source_match_id,
       tournament_edition,
@@ -626,6 +692,17 @@ export async function listFinishedBenchmarkPredictionsForEvaluation(
       m.status as match_status,
       m.home_score as match_home_score,
       m.away_score as match_away_score,
+      m.home_score_90 as match_home_score_90,
+      m.away_score_90 as match_away_score_90,
+      m.home_score_full as match_home_score_full,
+      m.away_score_full as match_away_score_full,
+      m.home_score_extra_time as match_home_score_extra_time,
+      m.away_score_extra_time as match_away_score_extra_time,
+      m.home_penalties as match_home_penalties,
+      m.away_penalties as match_away_penalties,
+      m.result_duration as match_result_duration,
+      m.result_winner as match_result_winner,
+      m.actual_advancer as match_actual_advancer,
       m.source as match_source,
       m.source_match_id as match_source_match_id,
       m.tournament_edition as match_tournament_edition,
@@ -637,8 +714,8 @@ export async function listFinishedBenchmarkPredictionsForEvaluation(
     inner join matches m on m.id = bp.match_id
     left join prediction_evaluations pe on pe.prediction_id = bp.id
     where m.status = 'FINISHED'
-      and m.home_score is not null
-      and m.away_score is not null
+      and m.home_score_90 is not null
+      and m.away_score_90 is not null
       and bp.is_valid_for_scoring = 1
       and bp.home_win_90_prob is not null
       and bp.draw_90_prob is not null
@@ -668,6 +745,17 @@ export async function listFinishedBenchmarkPredictionsForEvaluation(
       status: row.match_status,
       home_score: row.match_home_score,
       away_score: row.match_away_score,
+      home_score_90: row.match_home_score_90,
+      away_score_90: row.match_away_score_90,
+      home_score_full: row.match_home_score_full,
+      away_score_full: row.match_away_score_full,
+      home_score_extra_time: row.match_home_score_extra_time,
+      away_score_extra_time: row.match_away_score_extra_time,
+      home_penalties: row.match_home_penalties,
+      away_penalties: row.match_away_penalties,
+      result_duration: row.match_result_duration,
+      result_winner: row.match_result_winner,
+      actual_advancer: row.match_actual_advancer,
       source: row.match_source,
       source_match_id: row.match_source_match_id,
       tournament_edition: row.match_tournament_edition,
@@ -777,6 +865,17 @@ export async function upsertScore(
 }
 
 type MatchParams = MatchRow & {
+  home_score_90: number | null;
+  away_score_90: number | null;
+  home_score_full: number | null;
+  away_score_full: number | null;
+  home_score_extra_time: number | null;
+  away_score_extra_time: number | null;
+  home_penalties: number | null;
+  away_penalties: number | null;
+  result_duration: string | null;
+  result_winner: string | null;
+  actual_advancer: string | null;
   source: string | null;
   source_match_id: string | null;
   tournament_edition: string | null;
@@ -807,6 +906,17 @@ type BenchmarkPredictionWithMatchDbRow = BenchmarkPredictionDbRow & {
   match_status: string;
   match_home_score: number | null;
   match_away_score: number | null;
+  match_home_score_90: number | null;
+  match_away_score_90: number | null;
+  match_home_score_full: number | null;
+  match_away_score_full: number | null;
+  match_home_score_extra_time: number | null;
+  match_away_score_extra_time: number | null;
+  match_home_penalties: number | null;
+  match_away_penalties: number | null;
+  match_result_duration: string | null;
+  match_result_winner: MatchRow["result_winner"];
+  match_actual_advancer: MatchRow["actual_advancer"];
   match_source: string | null;
   match_source_match_id: string | null;
   match_tournament_edition: string | null;
@@ -876,6 +986,17 @@ type BenchmarkPredictionParams = Required<Pick<NewBenchmarkPredictionRow, "id">>
 function toMatchParams(match: MatchRow): MatchParams {
   return {
     ...match,
+    home_score_90: match.home_score_90 ?? null,
+    away_score_90: match.away_score_90 ?? null,
+    home_score_full: match.home_score_full ?? null,
+    away_score_full: match.away_score_full ?? null,
+    home_score_extra_time: match.home_score_extra_time ?? null,
+    away_score_extra_time: match.away_score_extra_time ?? null,
+    home_penalties: match.home_penalties ?? null,
+    away_penalties: match.away_penalties ?? null,
+    result_duration: match.result_duration ?? null,
+    result_winner: match.result_winner ?? null,
+    actual_advancer: match.actual_advancer ?? null,
     source: match.source ?? null,
     source_match_id: match.source_match_id ?? null,
     tournament_edition: match.tournament_edition ?? null,

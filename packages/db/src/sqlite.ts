@@ -51,6 +51,17 @@ function initializeSchema(db: SqliteDb): void {
       status text not null default 'SCHEDULED',
       home_score integer,
       away_score integer,
+      home_score_90 integer,
+      away_score_90 integer,
+      home_score_full integer,
+      away_score_full integer,
+      home_score_extra_time integer,
+      away_score_extra_time integer,
+      home_penalties integer,
+      away_penalties integer,
+      result_duration text,
+      result_winner text check (result_winner is null or result_winner in ('home', 'draw', 'away')),
+      actual_advancer text check (actual_advancer is null or actual_advancer in ('home', 'away')),
       created_at text not null default current_timestamp,
       updated_at text not null default current_timestamp
     );
@@ -231,6 +242,17 @@ function initializeSchema(db: SqliteDb): void {
   `);
 
   ensureColumn(db, "matches", "venue", "text");
+  ensureColumn(db, "matches", "home_score_90", "integer");
+  ensureColumn(db, "matches", "away_score_90", "integer");
+  ensureColumn(db, "matches", "home_score_full", "integer");
+  ensureColumn(db, "matches", "away_score_full", "integer");
+  ensureColumn(db, "matches", "home_score_extra_time", "integer");
+  ensureColumn(db, "matches", "away_score_extra_time", "integer");
+  ensureColumn(db, "matches", "home_penalties", "integer");
+  ensureColumn(db, "matches", "away_penalties", "integer");
+  ensureColumn(db, "matches", "result_duration", "text");
+  ensureColumn(db, "matches", "result_winner", "text check (result_winner is null or result_winner in ('home', 'draw', 'away'))");
+  ensureColumn(db, "matches", "actual_advancer", "text check (actual_advancer is null or actual_advancer in ('home', 'away'))");
   ensureColumn(db, "matches", "source", "text");
   ensureColumn(db, "matches", "source_match_id", "text");
   ensureColumn(db, "matches", "tournament_edition", "text");
@@ -242,6 +264,7 @@ function initializeSchema(db: SqliteDb): void {
   ensureColumn(db, "models", "model_family", "text");
   ensureColumn(db, "models", "supports_tool_access", "integer");
   ensureColumn(db, "models", "is_open_weight", "integer");
+  backfillLegacyGroupStageResultColumns(db);
 }
 
 function ensureColumn(db: SqliteDb, table: string, column: string, definition: string): void {
@@ -249,4 +272,33 @@ function ensureColumn(db: SqliteDb, table: string, column: string, definition: s
   if (!columns.some((entry) => entry.name === column)) {
     db.exec(`alter table ${table} add column ${column} ${definition}`);
   }
+}
+
+function backfillLegacyGroupStageResultColumns(db: SqliteDb): void {
+  db.exec(`
+    update matches
+    set
+      home_score_90 = coalesce(home_score_90, home_score),
+      away_score_90 = coalesce(away_score_90, away_score),
+      home_score_full = coalesce(home_score_full, home_score),
+      away_score_full = coalesce(away_score_full, away_score),
+      result_winner = coalesce(
+        result_winner,
+        case
+          when home_score > away_score then 'home'
+          when home_score < away_score then 'away'
+          when home_score = away_score then 'draw'
+          else null
+        end
+      )
+    where status = 'FINISHED'
+      and coalesce(is_knockout, 0) = 0
+      and (
+        stage = 'group_stage'
+        or group_name is not null
+        or matchday is not null
+      )
+      and home_score is not null
+      and away_score is not null
+  `);
 }

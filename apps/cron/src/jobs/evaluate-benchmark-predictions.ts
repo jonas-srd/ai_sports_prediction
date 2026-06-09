@@ -9,9 +9,9 @@ import {
   upsertPredictionEvaluation
 } from "@llm-kicktipp/db";
 import type {
-  AdvancerClass,
   BenchmarkPredictionRow,
   MatchRow,
+  MatchResultClass,
   NewPredictionEvaluationRow
 } from "@llm-kicktipp/db";
 import { evaluateBenchmarkPrediction } from "@llm-kicktipp/scorer";
@@ -31,16 +31,17 @@ async function main() {
 
   for (const row of rows) {
     const prediction = toPredictionForEvaluation(row);
-    const actualScore = toActualScore(row.matches);
+    const actualScore90 = toActualScore90(row.matches);
 
-    if (!prediction || !actualScore) {
+    if (!prediction || !actualScore90) {
       skipped += 1;
       continue;
     }
 
     const metrics = evaluateBenchmarkPrediction(prediction, {
-      score90: actualScore,
-      actualAdvancer: inferActualAdvancer(row.matches, actualScore)
+      score90: actualScore90,
+      actualFullResult: getActualFullResult(row.matches),
+      actualAdvancer: row.matches.actual_advancer ?? null
     });
 
     await upsertPredictionEvaluation(db, toEvaluationRow(row.id, metrics));
@@ -100,31 +101,38 @@ function toPredictionForEvaluation(row: BenchmarkPredictionRow): BenchmarkPredic
   };
 }
 
-function toActualScore(match: MatchRow): Scoreline | null {
-  if (match.home_score === null || match.away_score === null) {
+function toActualScore90(match: MatchRow): Scoreline | null {
+  if (match.home_score_90 === null || match.home_score_90 === undefined
+    || match.away_score_90 === null || match.away_score_90 === undefined) {
     return null;
   }
 
   return {
-    home: match.home_score,
-    away: match.away_score
+    home: match.home_score_90,
+    away: match.away_score_90
   };
 }
 
-function inferActualAdvancer(match: MatchRow, actualScore: Scoreline): AdvancerClass | null {
-  if (!match.is_knockout) {
+function getActualFullResult(match: MatchRow): MatchResultClass | null {
+  if (match.result_winner) {
+    return match.result_winner;
+  }
+
+  if (match.home_score_full === null || match.home_score_full === undefined
+    || match.away_score_full === null || match.away_score_full === undefined) {
     return null;
   }
 
-  if (actualScore.home > actualScore.away) {
-    return "home";
-  }
+  return resultFromScore({
+    home: match.home_score_full,
+    away: match.away_score_full
+  });
+}
 
-  if (actualScore.away > actualScore.home) {
-    return "away";
-  }
-
-  return null;
+function resultFromScore(score: Scoreline): MatchResultClass {
+  if (score.home > score.away) return "home";
+  if (score.home < score.away) return "away";
+  return "draw";
 }
 
 function toEvaluationRow(

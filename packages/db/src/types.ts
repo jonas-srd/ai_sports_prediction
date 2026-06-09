@@ -23,6 +23,17 @@ export type MatchRow = {
   status: string;
   home_score: number | null;
   away_score: number | null;
+  home_score_90?: number | null;
+  away_score_90?: number | null;
+  home_score_full?: number | null;
+  away_score_full?: number | null;
+  home_score_extra_time?: number | null;
+  away_score_extra_time?: number | null;
+  home_penalties?: number | null;
+  away_penalties?: number | null;
+  result_duration?: string | null;
+  result_winner?: MatchResultClass | null;
+  actual_advancer?: AdvancerClass | null;
   source?: string | null;
   source_match_id?: string | null;
   tournament_edition?: string | null;
