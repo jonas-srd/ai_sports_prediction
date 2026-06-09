@@ -1,0 +1,2 @@
+# Python dependencies for local helper scripts.
+# The main application currently uses Node.js/TypeScript, so no Python packages are required yet.

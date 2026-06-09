@@ -1,94 +1,72 @@
 /**
- * Purpose: Match detail page for inspecting per-model predictions.
- * This page makes bad JSON, model drift, and scoring differences easy to spot during the MVP phase.
+ * Purpose: Match schedule page.
+ * Group-stage games are shown by day; knockout games are shown as a bracket-style tree.
  */
 import Link from "next/link";
+import type { DashboardMatch } from "@/lib/dashboard-data";
 import { getDashboardMatches } from "@/lib/dashboard-data";
-import { calculatePredictionScore } from "@/lib/scorer";
+import { getBracketSortValue, getDisplayMatch, getOfficialMatchNumber } from "@/lib/match-display";
+import { MatchPredictionCard } from "@/components/match-prediction-card";
 
-type BracketLayout = {
-  left: BracketRound[];
-  center: BracketRound[];
-  right: BracketRound[];
+type ScheduleDay = {
+  key: string;
+  label: string;
+  matches: DashboardMatch[];
+};
+
+type BracketRound = {
+  key: string;
+  label: string;
+  matches: DashboardMatch[];
 };
 
 export default function MatchesPage() {
   const matches = getDashboardMatches();
-<<<<<<< Updated upstream
-=======
   const groupStageMatches = matches.filter((match) => !isKnockoutMatch(match));
   const knockoutMatches = matches.filter(isKnockoutMatch);
   const scheduleDays = groupMatchesByDay(groupStageMatches);
-  const bracketLayout = buildBracketLayout(knockoutMatches);
-  const hasBracketMatches = [...bracketLayout.left, ...bracketLayout.center, ...bracketLayout.right]
-    .some((round) => round.matches.length > 0);
->>>>>>> Stashed changes
+  const bracketRounds = groupKnockoutRounds(knockoutMatches);
 
   return (
-    <main className="shell">
+    <main className="shell scheduleShell">
       <nav className="topNav">
         <Link href="/">Back to ranking</Link>
       </nav>
 
-      <section className="hero compactHero">
-        <div>
-          <p className="eyebrow">Daily predictions</p>
-          <h1>Matches and model picks</h1>
-        </div>
+      <section className="hero heroCentered compactHero">
+        <p className="eyebrow">World Cup 2026</p>
+        <h1>Schedule</h1>
+        <p className="heroText">
+          Group-stage fixtures by day, then knockout matches as a bracket. Click any match to inspect model picks.
+        </p>
       </section>
 
-      <section className="matchDetailList">
-        {matches.map((match) => (
-          <article className="panel" key={match.id}>
-            <div className="matchHeader">
-              <h2>
-                {match.homeTeam} vs {match.awayTeam}
-              </h2>
-              <strong>
-                {formatScore(match.actualHome, match.actualAway)}
-              </strong>
+      <section className="scheduleList">
+        {scheduleDays.map((day) => (
+          <section className="scheduleDay" key={day.key}>
+            <div className="scheduleDayHeader">
+              <h2>{day.label}</h2>
+              <span>View groups</span>
             </div>
-
-            <div className="predictionTable">
-              {match.predictions.length === 0 ? (
-                <div className="predictionRow">
-                  <div>
-                    <strong>No predictions yet</strong>
-                    <p>Run the daily prediction script after syncing matches.</p>
-                  </div>
-                </div>
-              ) : (
-                match.predictions.map((prediction) => {
-                  const score = match.actualHome === null || match.actualAway === null
-                    ? null
-                    : calculatePredictionScore(
-                        { home: prediction.predictedHome, away: prediction.predictedAway },
-                        { home: match.actualHome, away: match.actualAway }
-                      );
-
-                  return (
-                    <div className="predictionRow" key={`${match.id}-${prediction.model}`}>
-                      <div>
-                        <strong>{prediction.model}</strong>
-                        <p>{prediction.provider}</p>
-                      </div>
-                      <span>
-                        {prediction.predictedHome} - {prediction.predictedAway}
-                      </span>
-                      <span className="points">{score ? `${score.points} pts` : "pending"}</span>
-                      <span className="reason">{score?.reason ?? "not scored"}</span>
-                    </div>
-                  );
-                })
-              )}
+            <div className="scheduleDayMatches">
+              {day.matches.map((match) => {
+                const displayMatch = getDisplayMatch(match, matches);
+                return (
+                  <MatchPredictionCard
+                    className="scheduleMatchCard"
+                    key={match.id}
+                    match={displayMatch}
+                    center={formatMatchCenter(match)}
+                    meta={formatMatchMeta(match)}
+                  />
+                );
+              })}
             </div>
-          </article>
+          </section>
         ))}
       </section>
-<<<<<<< Updated upstream
-=======
 
-      {hasBracketMatches ? (
+      {bracketRounds.length > 0 ? (
         <section className="knockoutSection">
           <div className="scheduleDayHeader knockoutHeader">
             <div>
@@ -102,55 +80,34 @@ export default function MatchesPage() {
             <span>32 Teams / 5 Runden</span>
           </div>
           <div className="bracketScroller">
-            <div className="bracketArena">
-              <div className="bracketSide bracketSideLeft">
-                {bracketLayout.left.map((round) => renderBracketRound(round, matches))}
-              </div>
-              <div className="bracketFinalColumn">
-                {bracketLayout.center.map((round) => renderBracketRound(round, matches))}
-              </div>
-              <div className="bracketSide bracketSideRight">
-                {bracketLayout.right.map((round) => renderBracketRound(round, matches))}
-              </div>
+            <div className="bracketGrid">
+              {bracketRounds.map((round) => (
+                <section className="bracketRound" key={round.key}>
+                  <h3>{round.label}</h3>
+                  <div className="bracketMatches">
+                    {round.matches.map((match) => {
+                      const matchNumber = getOfficialMatchNumber(match);
+                      const displayMatch = getDisplayMatch(match, matches);
+                      return (
+                        <MatchPredictionCard
+                          compact
+                          badge={matchNumber ? `Spiel ${matchNumber}` : undefined}
+                          className="bracketMatchCard"
+                          key={match.id}
+                          match={displayMatch}
+                          center={formatMatchCenter(match)}
+                          meta={formatBracketMeta(match)}
+                        />
+                      );
+                    })}
+                  </div>
+                </section>
+              ))}
             </div>
           </div>
         </section>
       ) : null}
->>>>>>> Stashed changes
     </main>
-  );
-}
-
-<<<<<<< Updated upstream
-function formatScore(home: number | null, away: number | null): string {
-  if (home === null || away === null) {
-    return "TBD";
-  }
-
-  return `${home} - ${away}`;
-=======
-function renderBracketRound(round: BracketRound, matches: DashboardMatch[]) {
-  return (
-    <section className="bracketRound" data-count={round.matches.length} key={round.key}>
-      <h3>{round.label}</h3>
-      <div className="bracketMatches">
-        {round.matches.map((match) => {
-          const matchNumber = getOfficialMatchNumber(match);
-          const displayMatch = getDisplayMatch(match, matches);
-          return (
-            <MatchPredictionCard
-              compact
-              badge={matchNumber ? `Spiel ${matchNumber}` : undefined}
-              className="bracketMatchCard"
-              key={match.id}
-              match={displayMatch}
-              center={formatMatchCenter(match)}
-              meta={formatBracketMeta(match)}
-            />
-          );
-        })}
-      </div>
-    </section>
   );
 }
 
@@ -177,54 +134,66 @@ function groupMatchesByDay(matches: DashboardMatch[]): ScheduleDay[] {
     .sort((a, b) => compareDateKeys(a.key, b.key));
 }
 
-function buildBracketLayout(matches: DashboardMatch[]): BracketLayout {
-  const byMatchNumber = new Map<number, DashboardMatch>();
+function groupKnockoutRounds(matches: DashboardMatch[]): BracketRound[] {
+  const rounds = new Map<string, BracketRound>();
 
   for (const match of [...matches].sort(compareBracketMatches)) {
-    const matchNumber = getOfficialMatchNumber(match);
-    if (matchNumber) {
-      byMatchNumber.set(matchNumber, match);
-    }
+    const key = getRoundKey(match);
+    const round = rounds.get(key) ?? {
+      key,
+      label: formatRoundLabel(key),
+      matches: []
+    };
+
+    round.matches.push(match);
+    rounds.set(key, round);
   }
 
-  return {
-    left: [
-      createBracketRound("left-last-32", "Letzte 32", [74, 77, 73, 75, 83, 84, 81, 82], byMatchNumber),
-      createBracketRound("left-last-16", "Achtelfinale", [89, 90, 93, 94], byMatchNumber),
-      createBracketRound("left-quarter", "Viertelfinale", [97, 98], byMatchNumber),
-      createBracketRound("left-semi", "Halbfinale", [101], byMatchNumber)
-    ],
-    center: [
-      createBracketRound("final", "Finale", [104], byMatchNumber),
-      createBracketRound("third-place", "Platz 3", [103], byMatchNumber)
-    ],
-    right: [
-      createBracketRound("right-semi", "Halbfinale", [102], byMatchNumber),
-      createBracketRound("right-quarter", "Viertelfinale", [99, 100], byMatchNumber),
-      createBracketRound("right-last-16", "Achtelfinale", [91, 92, 95, 96], byMatchNumber),
-      createBracketRound("right-last-32", "Letzte 32", [76, 78, 79, 80, 86, 88, 85, 87], byMatchNumber)
-    ]
-  };
-}
-
-function createBracketRound(
-  key: string,
-  label: string,
-  matchNumbers: number[],
-  matches: Map<number, DashboardMatch>
-): BracketRound {
-  return {
-    key,
-    label,
-    matches: matchNumbers
-      .map((matchNumber) => matches.get(matchNumber))
-      .filter((match): match is DashboardMatch => Boolean(match))
-  };
+  return [...rounds.values()].sort((a, b) => getRoundOrder(a.key) - getRoundOrder(b.key));
 }
 
 function isKnockoutMatch(match: DashboardMatch): boolean {
   const competition = match.competition ?? "";
   return !competition.includes("GROUP_STAGE");
+}
+
+function getRoundKey(match: DashboardMatch): string {
+  const competition = match.competition ?? "";
+  if (competition.includes("LAST_32")) return "LAST_32";
+  if (competition.includes("LAST_16")) return "LAST_16";
+  if (competition.includes("QUARTER_FINALS")) return "QUARTER_FINALS";
+  if (competition.includes("SEMI_FINALS")) return "SEMI_FINALS";
+  if (competition.includes("THIRD_PLACE")) return "THIRD_PLACE";
+  if (competition.includes("FINAL")) return "FINAL";
+  return "KNOCKOUT";
+}
+
+function getRoundOrder(round: string): number {
+  const order: Record<string, number> = {
+    LAST_32: 1,
+    LAST_16: 2,
+    QUARTER_FINALS: 3,
+    SEMI_FINALS: 4,
+    FINAL: 5,
+    THIRD_PLACE: 6,
+    KNOCKOUT: 99
+  };
+
+  return order[round] ?? 99;
+}
+
+function formatRoundLabel(round: string): string {
+  const labels: Record<string, string> = {
+    LAST_32: "Runde der letzten 32",
+    LAST_16: "Achtelfinale",
+    QUARTER_FINALS: "Viertelfinale",
+    SEMI_FINALS: "Halbfinale",
+    THIRD_PLACE: "Spiel um Platz 3",
+    FINAL: "Finale",
+    KNOCKOUT: "K.o.-Phase"
+  };
+
+  return labels[round] ?? round;
 }
 
 function compareMatches(a: DashboardMatch, b: DashboardMatch): number {
@@ -344,7 +313,7 @@ function formatCompetition(value?: string): string | null {
     details.push("Finale");
   }
 
-  const group = value.match(/GROUP_([A-L])\b/);
+  const group = value.match(/GROUP_([A-Z])/);
   if (group) {
     details.push(`Gruppe ${group[1]}`);
   }
@@ -372,5 +341,4 @@ function formatShortDayLabel(value?: string): string | null {
     month: "2-digit",
     timeZone: "Europe/Berlin"
   }).format(date);
->>>>>>> Stashed changes
 }

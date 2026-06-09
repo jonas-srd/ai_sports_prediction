@@ -5,10 +5,14 @@
   "type": "module",
   "scripts": {
     "db:init": "tsx src/jobs/init-db.ts",
+    "db:status": "tsx src/jobs/db-status.ts",
     "seed:fixtures": "tsx src/jobs/seed-sample-fixtures.ts",
     "sync:football-data": "tsx src/jobs/sync-football-data.ts",
     "sync:api-football": "tsx src/jobs/sync-api-football.ts",
+    "openrouter:smoke": "tsx src/jobs/openrouter-smoke-test.ts",
+    "openrouter:list-free": "tsx src/jobs/openrouter-list-free-models.ts",
     "predict": "tsx src/jobs/predict-today.ts",
+    "predict:next": "tsx src/jobs/predict-next.ts",
     "score": "tsx src/jobs/score-results.ts",
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },

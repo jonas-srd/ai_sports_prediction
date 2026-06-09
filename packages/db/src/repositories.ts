@@ -30,13 +30,14 @@ export async function upsertModels(db: SqliteDb, models: ModelRow[]): Promise<vo
 
 export async function upsertMatches(db: SqliteDb, matches: MatchRow[]): Promise<void> {
   const statement = db.prepare(`
-    insert into matches (id, utc_date, competition, home_team, away_team, status, home_score, away_score, updated_at)
-    values (@id, @utc_date, @competition, @home_team, @away_team, @status, @home_score, @away_score, current_timestamp)
+    insert into matches (id, utc_date, competition, home_team, away_team, venue, status, home_score, away_score, updated_at)
+    values (@id, @utc_date, @competition, @home_team, @away_team, @venue, @status, @home_score, @away_score, current_timestamp)
     on conflict(id) do update set
       utc_date = excluded.utc_date,
       competition = excluded.competition,
       home_team = excluded.home_team,
       away_team = excluded.away_team,
+      venue = excluded.venue,
       status = excluded.status,
       home_score = excluded.home_score,
       away_score = excluded.away_score,
@@ -58,7 +59,7 @@ export async function listTodayMatches(db: SqliteDb, date = new Date()): Promise
   end.setUTCDate(end.getUTCDate() + 1);
 
   return db.prepare(`
-    select id, utc_date, competition, home_team, away_team, status, home_score, away_score
+    select id, utc_date, competition, home_team, away_team, venue, status, home_score, away_score
     from matches
     where utc_date >= ? and utc_date < ?
     order by utc_date asc
@@ -67,10 +68,21 @@ export async function listTodayMatches(db: SqliteDb, date = new Date()): Promise
 
 export async function listMatches(db: SqliteDb): Promise<MatchRow[]> {
   return db.prepare(`
-    select id, utc_date, competition, home_team, away_team, status, home_score, away_score
+    select id, utc_date, competition, home_team, away_team, venue, status, home_score, away_score
     from matches
     order by utc_date asc
   `).all() as MatchRow[];
+}
+
+export async function listUpcomingMatches(db: SqliteDb, limit = 1, from = new Date()): Promise<MatchRow[]> {
+  return db.prepare(`
+    select id, utc_date, competition, home_team, away_team, venue, status, home_score, away_score
+    from matches
+    where utc_date >= ?
+      and status in ('SCHEDULED', 'TIMED')
+    order by utc_date asc
+    limit ?
+  `).all(from.toISOString(), limit) as MatchRow[];
 }
 
 export async function upsertPrediction(
@@ -112,7 +124,10 @@ export async function upsertPrediction(
   });
 }
 
-export async function listUnscoredFinishedPredictions(db: SqliteDb): Promise<Array<PredictionRow & { matches: MatchRow }>> {
+export async function listFinishedPredictions(
+  db: SqliteDb,
+  options: { includeAlreadyScored?: boolean } = {}
+): Promise<Array<PredictionRow & { matches: MatchRow }>> {
   const rows = db.prepare(`
     select
       p.id as prediction_id,
@@ -129,6 +144,7 @@ export async function listUnscoredFinishedPredictions(db: SqliteDb): Promise<Arr
       m.competition,
       m.home_team,
       m.away_team,
+      m.venue,
       m.status,
       m.home_score,
       m.away_score
@@ -138,8 +154,8 @@ export async function listUnscoredFinishedPredictions(db: SqliteDb): Promise<Arr
     where m.status = 'FINISHED'
       and m.home_score is not null
       and m.away_score is not null
-      and s.id is null
-  `).all() as Array<{
+      and (? = 1 or s.id is null)
+  `).all(options.includeAlreadyScored ? 1 : 0) as Array<{
     prediction_id: string;
     match_id: string;
     model_id: string;
@@ -154,6 +170,7 @@ export async function listUnscoredFinishedPredictions(db: SqliteDb): Promise<Arr
     competition: string;
     home_team: string;
     away_team: string;
+    venue: string | null;
     status: string;
     home_score: number | null;
     away_score: number | null;
@@ -175,11 +192,16 @@ export async function listUnscoredFinishedPredictions(db: SqliteDb): Promise<Arr
       competition: row.competition,
       home_team: row.home_team,
       away_team: row.away_team,
+      venue: row.venue,
       status: row.status,
       home_score: row.home_score,
       away_score: row.away_score
     }
   }));
+}
+
+export async function listUnscoredFinishedPredictions(db: SqliteDb): Promise<Array<PredictionRow & { matches: MatchRow }>> {
+  return listFinishedPredictions(db, { includeAlreadyScored: false });
 }
 
 export async function upsertScore(

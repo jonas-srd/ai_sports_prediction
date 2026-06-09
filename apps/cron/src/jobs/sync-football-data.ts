@@ -13,6 +13,7 @@ type FootballDataMatch = {
   stage?: string;
   group?: string | null;
   matchday?: number | null;
+  venue?: string | null;
   competition: {
     code: string;
     name: string;
@@ -81,6 +82,7 @@ function toMatchRow(match: FootballDataMatch): MatchRow {
     competition: formatCompetition(match),
     home_team: formatTeamName(match.homeTeam),
     away_team: formatTeamName(match.awayTeam),
+    venue: match.venue ?? null,
     status: normalizeStatus(match.status),
     home_score: match.score.fullTime.home,
     away_score: match.score.fullTime.away

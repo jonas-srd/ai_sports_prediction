@@ -10,6 +10,10 @@ type ApiFootballFixture = {
   fixture: {
     id: number;
     date: string;
+    venue?: {
+      name: string | null;
+      city: string | null;
+    };
     status: {
       short: string;
       long: string;
@@ -88,10 +92,19 @@ function toMatchRow(item: ApiFootballFixture): MatchRow {
     competition: item.league.round ? `${item.league.name} - ${item.league.round}` : item.league.name,
     home_team: item.teams.home.name,
     away_team: item.teams.away.name,
+    venue: formatVenue(item.fixture.venue),
     status: normalizeStatus(item.fixture.status.short),
     home_score: item.goals.home ?? item.score.fulltime.home,
     away_score: item.goals.away ?? item.score.fulltime.away
   };
+}
+
+function formatVenue(venue: ApiFootballFixture["fixture"]["venue"]): string | null {
+  if (!venue?.name && !venue?.city) {
+    return null;
+  }
+
+  return [venue.name, venue.city].filter(Boolean).join(", ");
 }
 
 function normalizeStatus(status: string): string {

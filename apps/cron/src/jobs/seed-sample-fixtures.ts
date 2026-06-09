@@ -15,6 +15,7 @@ type SampleFixture = {
   competition: string;
   homeTeam: string;
   awayTeam: string;
+  venue?: string | null;
   status: string;
   homeScore: number | null;
   awayScore: number | null;
@@ -31,6 +32,7 @@ async function main() {
     competition: fixture.competition,
     home_team: fixture.homeTeam,
     away_team: fixture.awayTeam,
+    venue: fixture.venue ?? null,
     status: fixture.status,
     home_score: fixture.homeScore,
     away_score: fixture.awayScore
