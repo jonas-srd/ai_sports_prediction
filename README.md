@@ -163,7 +163,7 @@ The default project setup uses eight models from `packages/llm/src/models.ts`.
 To override the model list without editing code, set comma-separated OpenRouter model IDs:
 
 ```text
-OPENROUTER_MODEL_IDS=openrouter/owl-alpha,nex-agi/nex-n2-pro:free,nvidia/nemotron-3-ultra-550b-a55b:free
+OPENROUTER_MODEL_IDS=openrouter/owl-alpha,nex-agi/nex-n2-pro:free,moonshotai/kimi-k2.6:free
 ```
 
 For a free first test, set only one model:

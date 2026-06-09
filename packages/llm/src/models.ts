@@ -12,12 +12,7 @@ export type LlmModel = {
 export const LLM_MODELS: LlmModel[] = [
   { id: "openrouter/owl-alpha", name: "Owl Alpha Free", provider: "OpenRouter", active: true },
   { id: "nex-agi/nex-n2-pro:free", name: "Nex N2 Pro Free", provider: "Nex AGI", active: true },
-  { id: "nvidia/nemotron-3-ultra-550b-a55b:free", name: "Nemotron 3 Ultra Free", provider: "NVIDIA", active: true },
-  { id: "nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free", name: "Nemotron 3 Nano Omni Free", provider: "NVIDIA", active: true },
-  { id: "poolside/laguna-xs.2:free", name: "Laguna XS.2 Free", provider: "Poolside", active: true },
-  { id: "nex-agi/nex-n2:free", name: "Nex N2 Free", provider: "Nex AGI", active: true },
-  { id: "moonshotai/kimi-k2.6:free", name: "Kimi K2.6 Free", provider: "Moonshot AI", active: true },
-  { id: "deepseek/deepseek-v4-flash:free", name: "DeepSeek V4 Flash Free", provider: "DeepSeek", active: true }
+  { id: "moonshotai/kimi-k2.6:free", name: "Kimi K2.6 Free", provider: "Moonshot AI", active: true }
 ];
 
 export function getConfiguredLlmModels(): LlmModel[] {
