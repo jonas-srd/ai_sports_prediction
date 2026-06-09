@@ -19,11 +19,15 @@ import type {
   TimingStatus
 } from "@llm-kicktipp/db";
 import {
+  buildPredictionRepairPrompt,
   buildPredictionPrompt,
   getConfiguredLlmModels,
+  markRepairedValidation,
   OpenRouterClient,
-  PREDICTION_PROMPT_TEMPLATE_ID
+  PREDICTION_PROMPT_TEMPLATE_ID,
+  validatePredictionContent
 } from "@llm-kicktipp/llm";
+import type { PredictionValidationResult } from "@llm-kicktipp/llm";
 
 type BenchmarkAccessCondition = "closed_book" | "open_book";
 
@@ -109,7 +113,14 @@ async function main() {
           });
           const actualPredictionTimeUtc = new Date().toISOString();
           const timing = getTimingMetadata(match, args.horizon, actualPredictionTimeUtc);
-          const parsedFields = parseBenchmarkPredictionContent(completion.content);
+          const matchIsKnockout = isMatchKnockout(match);
+          const initialValidation = validatePredictionContent(completion.content, {
+            isKnockout: matchIsKnockout
+          });
+          const repair = initialValidation.isValidForScoring
+            ? null
+            : await attemptRepair(openRouter, model.id, completion.content, initialValidation, matchIsKnockout);
+          const finalValidation = repair?.validation ?? initialValidation;
 
           await upsertBenchmarkPrediction(db, {
             run_id: runId,
@@ -140,7 +151,11 @@ async function main() {
             input_tokens: completion.inputTokens,
             output_tokens: completion.outputTokens,
             cost_usd: completion.costUsd,
-            ...parsedFields,
+            ...toValidationStorageFields(
+              finalValidation,
+              repair !== null,
+              repair?.rawResponse ?? null
+            ),
             tools_enabled: completion.toolMetadata.toolsEnabled,
             tool_type: completion.toolMetadata.toolType,
             tool_calls_observed: completion.toolMetadata.toolCallsObserved,
@@ -150,7 +165,13 @@ async function main() {
             open_book_compliance: completion.toolMetadata.openBookCompliance
           });
 
-          console.log(formatSuccessLog(match, model.name, condition, completion.toolMetadata.openBookCompliance));
+          console.log(formatSuccessLog(
+            match,
+            model.name,
+            condition,
+            completion.toolMetadata.openBookCompliance,
+            finalValidation.status
+          ));
         } catch (error) {
           const failedAt = new Date().toISOString();
           await upsertBenchmarkPrediction(db, {
@@ -177,7 +198,7 @@ async function main() {
             temperature: BENCHMARK_TEMPERATURE,
             top_p: BENCHMARK_TOP_P,
             max_tokens: BENCHMARK_MAX_TOKENS,
-            validation_status: "api_error",
+            validation_status: getApiFailureStatus(error),
             is_valid_for_scoring: false,
             tools_enabled: condition.accessCondition === "open_book",
             tool_type: condition.accessCondition === "open_book" ? "openrouter:web_search" : null,
@@ -261,8 +282,12 @@ function toPromptMatch(match: MatchRow) {
     tournamentEdition: match.tournament_edition ?? "FIFA World Cup 2026",
     stage: match.stage ?? inferStage(match.competition),
     venue: match.venue,
-    isKnockout: match.is_knockout ?? inferIsKnockout(match.competition)
+    isKnockout: isMatchKnockout(match)
   };
+}
+
+function isMatchKnockout(match: MatchRow): boolean {
+  return Boolean(match.is_knockout ?? inferIsKnockout(match.competition) ?? false);
 }
 
 function inferStage(competition: string): string | null {
@@ -332,75 +357,98 @@ function getMinutesBeforeKickoff(match: MatchRow, actualPredictionTimeUtc: strin
   return Math.round((kickoffMs - actualMs) / 60_000);
 }
 
-function parseBenchmarkPredictionContent(content: string): Partial<NewBenchmarkPredictionRow> {
+async function attemptRepair(
+  openRouter: OpenRouterClient,
+  modelId: string,
+  previousResponse: string,
+  initialValidation: PredictionValidationResult,
+  isKnockout: boolean
+): Promise<{ validation: PredictionValidationResult; rawResponse: unknown }> {
+  const repairPrompt = buildPredictionRepairPrompt({
+    previousResponse,
+    validationErrors: initialValidation.validationErrors
+  });
+
   try {
-    const parsed = JSON.parse(extractFirstJsonObject(content)) as Record<string, unknown>;
-    const score90 = readScoreObject(parsed.most_likely_score_90);
-    const scoreFull = readScoreObject(parsed.most_likely_score_full);
+    const completion = await openRouter.createChatCompletion(modelId, repairPrompt, {
+      temperature: BENCHMARK_TEMPERATURE,
+      topP: BENCHMARK_TOP_P,
+      n: BENCHMARK_N,
+      maxTokens: BENCHMARK_MAX_TOKENS
+    });
+    const repairedValidation = validatePredictionContent(completion.content, { isKnockout });
+    const validation = markRepairedValidation(repairedValidation.isValidForScoring
+      ? repairedValidation
+      : {
+          ...repairedValidation,
+          validationErrors: [
+            ...initialValidation.validationErrors.map((error) => `initial_${error}`),
+            ...repairedValidation.validationErrors.map((error) => `repair_${error}`)
+          ]
+        });
 
     return {
-      home_win_90_prob: readNumber(parsed.home_win_90_prob),
-      draw_90_prob: readNumber(parsed.draw_90_prob),
-      away_win_90_prob: readNumber(parsed.away_win_90_prob),
-      expected_home_goals_90: readNumber(parsed.expected_home_goals_90),
-      expected_away_goals_90: readNumber(parsed.expected_away_goals_90),
-      most_likely_score_90_home: score90.home,
-      most_likely_score_90_away: score90.away,
-      home_win_full_prob: readNumber(parsed.home_win_full_prob),
-      draw_full_prob: readNumber(parsed.draw_full_prob),
-      away_win_full_prob: readNumber(parsed.away_win_full_prob),
-      most_likely_score_full_home: scoreFull.home,
-      most_likely_score_full_away: scoreFull.away,
-      home_advances_prob: readNullableNumber(parsed.home_advances_prob),
-      away_advances_prob: readNullableNumber(parsed.away_advances_prob),
-      confidence: readNumber(parsed.confidence),
-      reason: typeof parsed.reason === "string" ? parsed.reason : null
+      validation,
+      rawResponse: completion.rawResponse
     };
-  } catch {
-    return {};
+  } catch (error) {
+    const validation = markRepairedValidation({
+      ...initialValidation,
+      validationErrors: [
+        ...initialValidation.validationErrors,
+        `repair_api_error: ${errorMessage(error)}`
+      ]
+    });
+
+    return {
+      validation,
+      rawResponse: serializeError(error)
+    };
   }
 }
 
-function extractFirstJsonObject(text: string): string {
-  const trimmed = text.trim();
-  if (trimmed.startsWith("{")) {
-    return trimmed;
-  }
-
-  const start = trimmed.indexOf("{");
-  const end = trimmed.lastIndexOf("}");
-  if (start === -1 || end === -1 || end <= start) {
-    throw new Error("No JSON object found.");
-  }
-
-  return trimmed.slice(start, end + 1);
-}
-
-function readScoreObject(value: unknown): { home: number | null; away: number | null } {
-  if (!isRecord(value)) {
-    return { home: null, away: null };
-  }
+function toValidationStorageFields(
+  validation: PredictionValidationResult,
+  repairAttempted: boolean,
+  repairRawResponse: unknown
+): Partial<NewBenchmarkPredictionRow> {
+  const fields = validation.isValidForScoring && validation.fields
+    ? {
+        home_win_90_prob: validation.fields.home_win_90_prob,
+        draw_90_prob: validation.fields.draw_90_prob,
+        away_win_90_prob: validation.fields.away_win_90_prob,
+        expected_home_goals_90: validation.fields.expected_home_goals_90,
+        expected_away_goals_90: validation.fields.expected_away_goals_90,
+        most_likely_score_90_home: validation.fields.most_likely_score_90_home,
+        most_likely_score_90_away: validation.fields.most_likely_score_90_away,
+        home_win_full_prob: validation.fields.home_win_full_prob,
+        draw_full_prob: validation.fields.draw_full_prob,
+        away_win_full_prob: validation.fields.away_win_full_prob,
+        most_likely_score_full_home: validation.fields.most_likely_score_full_home,
+        most_likely_score_full_away: validation.fields.most_likely_score_full_away,
+        home_advances_prob: validation.fields.home_advances_prob,
+        away_advances_prob: validation.fields.away_advances_prob,
+        confidence: validation.fields.confidence,
+        reason: validation.fields.reason
+      }
+    : {};
 
   return {
-    home: readInteger(value.home),
-    away: readInteger(value.away)
+    ...fields,
+    validation_status: validation.status,
+    is_valid_for_scoring: validation.isValidForScoring,
+    repair_attempted: repairAttempted,
+    repair_raw_response: repairRawResponse,
+    normalization_applied: validation.normalizationApplied,
+    normalized_fields: validation.normalizedFields,
+    validation_errors: validation.validationErrors,
+    prob_sum_90_original: validation.probSum90Original,
+    prob_sum_90_final: validation.probSum90Final,
+    prob_sum_full_original: validation.probSumFullOriginal,
+    prob_sum_full_final: validation.probSumFullFinal,
+    prob_sum_advancement_original: validation.probSumAdvancementOriginal,
+    prob_sum_advancement_final: validation.probSumAdvancementFinal
   };
-}
-
-function readInteger(value: unknown): number | null {
-  return Number.isInteger(value) ? value as number : null;
-}
-
-function readNumber(value: unknown): number | null {
-  return typeof value === "number" && Number.isFinite(value) ? value : null;
-}
-
-function readNullableNumber(value: unknown): number | null {
-  return value === null ? null : readNumber(value);
-}
-
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === "object" && value !== null;
 }
 
 function serializeError(error: unknown): Record<string, unknown> {
@@ -415,17 +463,35 @@ function serializeError(error: unknown): Record<string, unknown> {
   return { error: String(error) };
 }
 
+function errorMessage(error: unknown): string {
+  return error instanceof Error ? error.message : String(error);
+}
+
+function getApiFailureStatus(error: unknown): "api_error" | "timeout" {
+  const message = errorMessage(error).toLowerCase();
+  const name = error instanceof Error ? error.name.toLowerCase() : "";
+
+  return name.includes("timeout")
+    || name.includes("abort")
+    || message.includes("timeout")
+    || message.includes("timed out")
+    ? "timeout"
+    : "api_error";
+}
+
 function formatSuccessLog(
   match: MatchRow,
   modelName: string,
   condition: BenchmarkCondition,
-  compliance: string
+  compliance: string,
+  validationStatus: string
 ): string {
   return [
     `${match.home_team} vs ${match.away_team}`,
     modelName,
     `${condition.accessCondition}/${condition.promptStrategy}`,
-    `search=${compliance}`
+    `search=${compliance}`,
+    `validation=${validationStatus}`
   ].join(" | ");
 }
 
