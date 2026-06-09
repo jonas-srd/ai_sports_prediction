@@ -23,10 +23,10 @@ The project uses a local SQLite database by default to avoid cloud database over
 ## Local Data Flow
 
 ```text
-API-Football -> data/world-cup.db -> LLM predictions -> scores -> website
+football-data.org -> data/world-cup.db -> LLM predictions -> scores -> website
 ```
 
-1. Fetch World Cup matches from API-Football into SQLite.
+1. Fetch World Cup matches from football-data.org into SQLite.
 2. Run the prediction script once per match day.
 3. Store all LLM predictions in SQLite.
 4. Sync results again after matches finish.
@@ -43,9 +43,9 @@ copy .env.example .env
 Fill in `.env`:
 
 ```text
-API_FOOTBALL_KEY=your_api_football_key
-API_FOOTBALL_LEAGUE_ID=1
-API_FOOTBALL_SEASON=2026
+FOOTBALL_DATA_API_KEY=your_football_data_key
+FOOTBALL_DATA_COMPETITION=WC
+FOOTBALL_DATA_SEASON=2026
 OPENROUTER_API_KEY=your_openrouter_key
 SQLITE_DB_PATH=
 ```
@@ -66,10 +66,16 @@ Initialize the local SQLite DB:
 npm run db:init
 ```
 
-Fetch all World Cup 2026 fixtures/results from API-Football:
+Fetch all World Cup fixtures/results from football-data.org:
 
 ```bash
-npm run sync:api-football
+npm run sync:football-data
+```
+
+Optional API-Football fallback for historical smoke tests:
+
+```bash
+npm run sync:api-football -- --season=2022
 ```
 
 Run daily predictions for today's matches:
@@ -105,13 +111,14 @@ http://localhost:3000
 0 points: miss
 ```
 
-## API-Football
+## football-data.org
 
-The World Cup sync uses API-Football by API-SPORTS:
+The primary World Cup sync uses football-data.org:
 
 ```text
-GET https://v3.football.api-sports.io/fixtures?league=1&season=2026
-Header: x-apisports-key: API_FOOTBALL_KEY
+GET https://api.football-data.org/v4/competitions/WC/matches
+Query: season=2026
+Header: X-Auth-Token: FOOTBALL_DATA_API_KEY
 ```
 
 The API key is only used in local server-side scripts under `apps/cron`. Do not expose it through frontend code or a `NEXT_PUBLIC_` variable.
@@ -134,7 +141,8 @@ Pragmatic public options later:
 
 - `apps/web`: Next.js dashboard. Reads `data/world-cup.db` locally when available, otherwise shows sample data.
 - `apps/cron/src/jobs/init-db.ts`: creates the local SQLite database and tables.
-- `apps/cron/src/jobs/sync-api-football.ts`: fetches World Cup fixtures/results into SQLite.
+- `apps/cron/src/jobs/sync-football-data.ts`: fetches World Cup fixtures/results from football-data.org into SQLite.
+- `apps/cron/src/jobs/sync-api-football.ts`: optional API-Football fallback for historical smoke tests.
 - `apps/cron/src/jobs/predict-today.ts`: loads today's matches, calls OpenRouter, stores predictions.
 - `apps/cron/src/jobs/score-results.ts`: scores finished matches using Kicktipp rules.
 - `packages/db`: SQLite connection, schema, and repository helpers.

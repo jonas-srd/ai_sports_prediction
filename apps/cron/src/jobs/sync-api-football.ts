@@ -52,8 +52,9 @@ async function main() {
     throw new Error("Missing API_FOOTBALL_KEY. Add it to .env, not to frontend code.");
   }
 
-  const leagueId = process.env.API_FOOTBALL_LEAGUE_ID ?? "1";
-  const season = process.env.API_FOOTBALL_SEASON ?? "2026";
+  const args = parseCliArgs(process.argv.slice(2));
+  const leagueId = args.league ?? process.env.API_FOOTBALL_LEAGUE_ID ?? "1";
+  const season = args.season ?? process.env.API_FOOTBALL_SEASON ?? "2026";
   const url = new URL("https://v3.football.api-sports.io/fixtures");
 
   url.searchParams.set("league", leagueId);
@@ -68,7 +69,7 @@ async function main() {
   const body = (await response.json()) as ApiFootballResponse;
 
   if (!response.ok || hasApiErrors(body.errors)) {
-    throw new Error(`API-Football sync failed: ${JSON.stringify(body.errors)}`);
+    throw new Error(formatApiFootballError(body.errors, season));
   }
 
   const matches = body.response.map(toMatchRow);
@@ -107,6 +108,39 @@ function hasApiErrors(errors: ApiFootballResponse["errors"]): boolean {
   }
 
   return Object.keys(errors).length > 0;
+}
+
+function parseCliArgs(args: string[]): { league?: string; season?: string } {
+  const parsed: { league?: string; season?: string } = {};
+
+  for (const arg of args) {
+    const [key, value] = arg.replace(/^--/, "").split("=");
+
+    if (key === "league" && value) {
+      parsed.league = value;
+    }
+
+    if (key === "season" && value) {
+      parsed.season = value;
+    }
+  }
+
+  return parsed;
+}
+
+function formatApiFootballError(errors: ApiFootballResponse["errors"], season: string): string {
+  const serialized = JSON.stringify(errors);
+
+  if (serialized.includes("Free plans do not have access to this season")) {
+    return [
+      `API-Football free plan does not allow season ${season}.`,
+      "For a local smoke test, run: npm run sync:api-football -- --season=2022",
+      "For real World Cup 2026 data, use an API-Football plan that includes season 2026 or seed fixtures manually.",
+      `Original API error: ${serialized}`
+    ].join("\n");
+  }
+
+  return `API-Football sync failed: ${serialized}`;
 }
 
 main().catch((error) => {

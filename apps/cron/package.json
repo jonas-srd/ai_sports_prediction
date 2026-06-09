@@ -6,6 +6,7 @@
   "scripts": {
     "db:init": "tsx src/jobs/init-db.ts",
     "seed:fixtures": "tsx src/jobs/seed-sample-fixtures.ts",
+    "sync:football-data": "tsx src/jobs/sync-football-data.ts",
     "sync:api-football": "tsx src/jobs/sync-api-football.ts",
     "predict": "tsx src/jobs/predict-today.ts",
     "score": "tsx src/jobs/score-results.ts",

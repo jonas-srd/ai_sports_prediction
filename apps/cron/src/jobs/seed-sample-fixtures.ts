@@ -1,6 +1,6 @@
 /**
  * Purpose: Seeds local SQLite with sample fixtures from data/fixtures.sample.json.
- * Use this before the real API-Football integration is configured.
+ * Use this before the real football data integration is configured.
  */
 import "../load-env";
 import { readFile } from "node:fs/promises";
