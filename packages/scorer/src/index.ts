@@ -32,3 +32,5 @@ export function calculatePredictionScore(predicted: MatchScore, actual: MatchSco
 
   return { points: 0, reason: "miss" };
 }
+
+export * from "./benchmark";

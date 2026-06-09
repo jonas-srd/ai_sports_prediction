@@ -610,6 +610,75 @@ export async function getPredictionEvaluationByPredictionId(
   return row ?? null;
 }
 
+export async function listFinishedBenchmarkPredictionsForEvaluation(
+  db: SqliteDb,
+  options: { includeAlreadyEvaluated?: boolean } = {}
+): Promise<Array<BenchmarkPredictionRow & { matches: MatchRow }>> {
+  const rows = db.prepare(`
+    select
+      bp.*,
+      m.id as match_id_value,
+      m.utc_date as match_utc_date,
+      m.competition as match_competition,
+      m.home_team as match_home_team,
+      m.away_team as match_away_team,
+      m.venue as match_venue,
+      m.status as match_status,
+      m.home_score as match_home_score,
+      m.away_score as match_away_score,
+      m.source as match_source,
+      m.source_match_id as match_source_match_id,
+      m.tournament_edition as match_tournament_edition,
+      m.stage as match_stage,
+      m.group_name as match_group_name,
+      m.matchday as match_matchday,
+      m.is_knockout as match_is_knockout
+    from benchmark_predictions bp
+    inner join matches m on m.id = bp.match_id
+    left join prediction_evaluations pe on pe.prediction_id = bp.id
+    where m.status = 'FINISHED'
+      and m.home_score is not null
+      and m.away_score is not null
+      and bp.is_valid_for_scoring = 1
+      and bp.home_win_90_prob is not null
+      and bp.draw_90_prob is not null
+      and bp.away_win_90_prob is not null
+      and bp.expected_home_goals_90 is not null
+      and bp.expected_away_goals_90 is not null
+      and bp.most_likely_score_90_home is not null
+      and bp.most_likely_score_90_away is not null
+      and bp.home_win_full_prob is not null
+      and bp.draw_full_prob is not null
+      and bp.away_win_full_prob is not null
+      and bp.most_likely_score_full_home is not null
+      and bp.most_likely_score_full_away is not null
+      and (? = 1 or pe.id is null)
+    order by m.utc_date asc, bp.predictor_id asc, bp.forecast_horizon asc, bp.access_condition asc, bp.prompt_strategy asc
+  `).all(options.includeAlreadyEvaluated ? 1 : 0) as BenchmarkPredictionWithMatchDbRow[];
+
+  return rows.map((row) => ({
+    ...parseBenchmarkPredictionRow(row),
+    matches: {
+      id: row.match_id_value,
+      utc_date: row.match_utc_date,
+      competition: row.match_competition,
+      home_team: row.match_home_team,
+      away_team: row.match_away_team,
+      venue: row.match_venue,
+      status: row.match_status,
+      home_score: row.match_home_score,
+      away_score: row.match_away_score,
+      source: row.match_source,
+      source_match_id: row.match_source_match_id,
+      tournament_edition: row.match_tournament_edition,
+      stage: row.match_stage,
+      group_name: row.match_group_name,
+      matchday: row.match_matchday,
+      is_knockout: row.match_is_knockout
+    }
+  }));
+}
+
 export async function listFinishedPredictions(
   db: SqliteDb,
   options: { includeAlreadyScored?: boolean } = {}
@@ -726,6 +795,25 @@ type BenchmarkPredictionDbRow = Omit<
   normalized_fields: string;
   validation_errors: string;
   tool_trace: string | null;
+};
+
+type BenchmarkPredictionWithMatchDbRow = BenchmarkPredictionDbRow & {
+  match_id_value: string;
+  match_utc_date: string;
+  match_competition: string;
+  match_home_team: string;
+  match_away_team: string;
+  match_venue: string | null;
+  match_status: string;
+  match_home_score: number | null;
+  match_away_score: number | null;
+  match_source: string | null;
+  match_source_match_id: string | null;
+  match_tournament_edition: string | null;
+  match_stage: string | null;
+  match_group_name: string | null;
+  match_matchday: number | null;
+  match_is_knockout: number;
 };
 
 type BenchmarkPredictionParams = Required<Pick<NewBenchmarkPredictionRow, "id">> & BenchmarkPredictionIdentity & {

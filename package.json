@@ -21,6 +21,7 @@
     "predict": "npm run predict --workspace @llm-kicktipp/cron",
     "predict:next": "npm run predict:next --workspace @llm-kicktipp/cron",
     "benchmark:predict": "npm run benchmark:predict --workspace @llm-kicktipp/cron",
+    "benchmark:evaluate": "npm run benchmark:evaluate --workspace @llm-kicktipp/cron",
     "score": "npm run score --workspace @llm-kicktipp/cron"
   },
   "engines": {
