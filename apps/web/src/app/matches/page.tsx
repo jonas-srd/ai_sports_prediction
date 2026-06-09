@@ -1,11 +1,11 @@
 /**
  * Purpose: Match schedule page.
- * Group-stage games are shown by day; knockout games are shown as readable bracket sectors.
+ * Group-stage games are shown by day; knockout games are shown as an interactive bracket.
  */
 import Link from "next/link";
 import type { DashboardMatch } from "@/lib/dashboard-data";
 import { getDashboardMatches } from "@/lib/dashboard-data";
-import { getBracketSortValue, getDisplayMatch, getOfficialMatchNumber } from "@/lib/match-display";
+import { getDisplayMatch, getOfficialMatchNumber } from "@/lib/match-display";
 import { MatchPredictionCard } from "@/components/match-prediction-card";
 
 type ScheduleDay = {
@@ -14,23 +14,16 @@ type ScheduleDay = {
   matches: DashboardMatch[];
 };
 
-type BracketRound = {
-  key: string;
-  label: string;
-  matches: DashboardMatch[];
-};
-
-type BracketSector = {
-  key: string;
-  title: string;
-  subtitle: string;
-  columns: BracketColumn[];
-};
-
 type BracketColumn = {
   key: string;
   label: string;
-  matches: DashboardMatch[];
+  matchNumbers: number[];
+};
+
+type BracketHalf = {
+  key: string;
+  label: string;
+  columns: BracketColumn[];
 };
 
 export default function MatchesPage() {
@@ -38,9 +31,7 @@ export default function MatchesPage() {
   const groupStageMatches = matches.filter((match) => !isKnockoutMatch(match));
   const knockoutMatches = matches.filter(isKnockoutMatch);
   const scheduleDays = groupMatchesByDay(groupStageMatches);
-  const bracketRounds = groupKnockoutRounds(knockoutMatches);
-  const bracketSectors = buildBracketSectors(knockoutMatches);
-  const championshipRounds = buildChampionshipRounds(knockoutMatches);
+  const knockoutByNumber = getMatchesByOfficialNumber(knockoutMatches);
 
   return (
     <main className="shell scheduleShell">
@@ -55,6 +46,43 @@ export default function MatchesPage() {
           Group-stage fixtures by day, then knockout matches as a bracket. Click any match to inspect model picks.
         </p>
       </section>
+
+      {knockoutMatches.length > 0 ? (
+        <section className="knockoutSection">
+          <div className="bracketHeader">
+            <p className="sectionKicker">Knockout</p>
+            <h2>World Cup 2026 Bracket</h2>
+            <p>
+              Click any match to inspect model predictions. The left and right halves meet in the final lane.
+            </p>
+          </div>
+
+          <section className="bracketBoard" aria-label="Interactive knockout bracket">
+            <div className="bracketHalf bracketHalfLeft">
+              {LEFT_BRACKET.columns.map((column) =>
+                renderBracketColumn(column, knockoutByNumber, matches)
+              )}
+            </div>
+
+            <div className="bracketFinalLane">
+              <div className="finalLaneCard">
+                <span className="finalLaneLabel">Final</span>
+                {renderBracketMatch(104, knockoutByNumber, matches, "final")}
+              </div>
+              <div className="finalLaneCard finalLaneCardMuted">
+                <span className="finalLaneLabel">Third place</span>
+                {renderBracketMatch(103, knockoutByNumber, matches, "standard")}
+              </div>
+            </div>
+
+            <div className="bracketHalf bracketHalfRight">
+              {RIGHT_BRACKET.columns.map((column) =>
+                renderBracketColumn(column, knockoutByNumber, matches)
+              )}
+            </div>
+          </section>
+        </section>
+      ) : null}
 
       <section className="scheduleList">
         {scheduleDays.map((day) => (
@@ -80,145 +108,31 @@ export default function MatchesPage() {
           </section>
         ))}
       </section>
-
-      {bracketRounds.length > 0 ? (
-        <section className="knockoutSection">
-          <div className="scheduleDayHeader knockoutHeader">
-            <div>
-              <p className="sectionKicker">Knockout</p>
-              <h2>Turnierbaum</h2>
-              <p className="bracketNote">
-                Vier klare Pfade statt einer breiten Scroll-Wand: jede Box zeigt, welche Spiele
-                zusammenlaufen. Halbfinale, Finale und Platz 3 stehen separat darunter.
-              </p>
-            </div>
-            <span>32 Teams / 5 Runden</span>
-          </div>
-          <div className="bracketSummary" aria-label="Knockout round overview">
-            {bracketRounds.map((round) => (
-              <div className="bracketSummaryItem" key={round.key}>
-                <strong>{round.matches.length}</strong>
-                <span>{round.label}</span>
-              </div>
-            ))}
-          </div>
-          <div className="bracketSectors">
-            {bracketSectors.map((sector) => (
-              <section className="bracketSector" key={sector.key}>
-                <div className="bracketSectorHeader">
-                  <div>
-                    <p>{sector.subtitle}</p>
-                    <h3>{sector.title}</h3>
-                  </div>
-                  <span>{getSectorMatchCount(sector)} Spiele</span>
-                </div>
-                <div className="bracketSectorGrid">
-                  {sector.columns.map((column) => (
-                    <div className="bracketSectorColumn" key={column.key}>
-                      <h4>{column.label}</h4>
-                      <div className="bracketMatches">
-                        {column.matches.map((match) => renderBracketMatch(match, matches))}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </section>
-            ))}
-          </div>
-          <div className="championshipLane">
-            {championshipRounds.map((round) => (
-              <section className="championshipRound" key={round.key}>
-                <h3>{round.label}</h3>
-                <div className="championshipMatches">
-                  {round.matches.map((match) => renderBracketMatch(match, matches))}
-                </div>
-              </section>
-            ))}
-          </div>
-        </section>
-      ) : null}
     </main>
   );
 }
 
-const BRACKET_SECTOR_DEFINITIONS = [
-  {
-    key: "sector-a",
-    title: "Pfad A",
-    subtitle: "Viertel oben links",
-    columns: [
-      { key: "last32", label: "Letzte 32", matchNumbers: [74, 77, 73, 75] },
-      { key: "last16", label: "Achtelfinale", matchNumbers: [89, 90] },
-      { key: "quarter", label: "Viertelfinale", matchNumbers: [97] }
-    ]
-  },
-  {
-    key: "sector-b",
-    title: "Pfad B",
-    subtitle: "Viertel oben rechts",
-    columns: [
-      { key: "last32", label: "Letzte 32", matchNumbers: [83, 84, 81, 82] },
-      { key: "last16", label: "Achtelfinale", matchNumbers: [93, 94] },
-      { key: "quarter", label: "Viertelfinale", matchNumbers: [98] }
-    ]
-  },
-  {
-    key: "sector-c",
-    title: "Pfad C",
-    subtitle: "Viertel unten links",
-    columns: [
-      { key: "last32", label: "Letzte 32", matchNumbers: [76, 78, 79, 80] },
-      { key: "last16", label: "Achtelfinale", matchNumbers: [91, 92] },
-      { key: "quarter", label: "Viertelfinale", matchNumbers: [99] }
-    ]
-  },
-  {
-    key: "sector-d",
-    title: "Pfad D",
-    subtitle: "Viertel unten rechts",
-    columns: [
-      { key: "last32", label: "Letzte 32", matchNumbers: [86, 88, 85, 87] },
-      { key: "last16", label: "Achtelfinale", matchNumbers: [95, 96] },
-      { key: "quarter", label: "Viertelfinale", matchNumbers: [100] }
-    ]
-  }
-] as const;
+const LEFT_BRACKET: BracketHalf = {
+  key: "left",
+  label: "Left half",
+  columns: [
+    { key: "left-32", label: "Round of 32", matchNumbers: [74, 77, 73, 75, 76, 78, 79, 80] },
+    { key: "left-16", label: "Round of 16", matchNumbers: [89, 90, 91, 92] },
+    { key: "left-qf", label: "Quarter-finals", matchNumbers: [97, 99] },
+    { key: "left-sf", label: "Semi-final", matchNumbers: [101] }
+  ]
+};
 
-const CHAMPIONSHIP_DEFINITIONS = [
-  { key: "semis", label: "Halbfinale", matchNumbers: [101, 102] },
-  { key: "finals", label: "Finale & Platz 3", matchNumbers: [104, 103] }
-] as const;
-
-function buildBracketSectors(matches: DashboardMatch[]): BracketSector[] {
-  const byMatchNumber = getMatchesByOfficialNumber(matches);
-
-  return BRACKET_SECTOR_DEFINITIONS.map((sector) => ({
-    key: sector.key,
-    title: sector.title,
-    subtitle: sector.subtitle,
-    columns: sector.columns
-      .map((column) => ({
-        key: column.key,
-        label: column.label,
-        matches: column.matchNumbers
-          .map((matchNumber) => byMatchNumber.get(matchNumber))
-          .filter((match): match is DashboardMatch => Boolean(match))
-      }))
-      .filter((column) => column.matches.length > 0)
-  })).filter((sector) => sector.columns.length > 0);
-}
-
-function buildChampionshipRounds(matches: DashboardMatch[]): BracketColumn[] {
-  const byMatchNumber = getMatchesByOfficialNumber(matches);
-
-  return CHAMPIONSHIP_DEFINITIONS.map((round) => ({
-    key: round.key,
-    label: round.label,
-    matches: round.matchNumbers
-      .map((matchNumber) => byMatchNumber.get(matchNumber))
-      .filter((match): match is DashboardMatch => Boolean(match))
-  })).filter((round) => round.matches.length > 0);
-}
+const RIGHT_BRACKET: BracketHalf = {
+  key: "right",
+  label: "Right half",
+  columns: [
+    { key: "right-sf", label: "Semi-final", matchNumbers: [102] },
+    { key: "right-qf", label: "Quarter-finals", matchNumbers: [98, 100] },
+    { key: "right-16", label: "Round of 16", matchNumbers: [93, 94, 95, 96] },
+    { key: "right-32", label: "Round of 32", matchNumbers: [83, 84, 81, 82, 86, 88, 85, 87] }
+  ]
+};
 
 function getMatchesByOfficialNumber(matches: DashboardMatch[]): Map<number, DashboardMatch> {
   const byMatchNumber = new Map<number, DashboardMatch>();
@@ -233,23 +147,53 @@ function getMatchesByOfficialNumber(matches: DashboardMatch[]): Map<number, Dash
   return byMatchNumber;
 }
 
-function getSectorMatchCount(sector: BracketSector): number {
-  return sector.columns.reduce((total, column) => total + column.matches.length, 0);
+function renderBracketColumn(
+  column: BracketColumn,
+  knockoutByNumber: Map<number, DashboardMatch>,
+  contextMatches: DashboardMatch[]
+) {
+  return (
+    <section className={`bracketColumn bracketColumn-${column.matchNumbers.length}`} key={column.key}>
+      <h3>{column.label}</h3>
+      <div className="bracketColumnMatches">
+        {column.matchNumbers.map((matchNumber) =>
+          renderBracketMatch(matchNumber, knockoutByNumber, contextMatches, "standard")
+        )}
+      </div>
+    </section>
+  );
 }
 
-function renderBracketMatch(match: DashboardMatch, contextMatches: DashboardMatch[]) {
-  const matchNumber = getOfficialMatchNumber(match);
-  const displayMatch = getDisplayMatch(match, contextMatches);
+function renderBracketMatch(
+  matchNumber: number,
+  knockoutByNumber: Map<number, DashboardMatch>,
+  contextMatches: DashboardMatch[],
+  variant: "standard" | "final"
+) {
+  const match = knockoutByNumber.get(matchNumber);
+  const displayMatch = match ? getDisplayMatch(match, contextMatches) : null;
+
+  if (!displayMatch) {
+    return (
+      <article className={`bracketGameCard bracketGameCard-${variant}`} key={matchNumber}>
+        <span className="matchNumberBadge">Match {matchNumber}</span>
+        <div className="bracketPlaceholder">
+          <strong>TBD</strong>
+          <span>Fixture not loaded</span>
+        </div>
+      </article>
+    );
+  }
 
   return (
     <MatchPredictionCard
       compact
-      badge={matchNumber ? `Spiel ${matchNumber}` : undefined}
-      className="bracketMatchCard"
-      key={match.id}
+      badge={`Match ${matchNumber}`}
+      center={formatMatchCenter(displayMatch)}
+      className={`bracketGameCard bracketGameCard-${variant}`}
+      key={matchNumber}
       match={displayMatch}
-      center={formatMatchCenter(match)}
-      meta={formatBracketMeta(match)}
+      meta={formatMatchMeta(displayMatch)}
     />
   );
 }
@@ -277,74 +221,13 @@ function groupMatchesByDay(matches: DashboardMatch[]): ScheduleDay[] {
     .sort((a, b) => compareDateKeys(a.key, b.key));
 }
 
-function groupKnockoutRounds(matches: DashboardMatch[]): BracketRound[] {
-  const rounds = new Map<string, BracketRound>();
-
-  for (const match of [...matches].sort(compareBracketMatches)) {
-    const key = getRoundKey(match);
-    const round = rounds.get(key) ?? {
-      key,
-      label: formatRoundLabel(key),
-      matches: []
-    };
-
-    round.matches.push(match);
-    rounds.set(key, round);
-  }
-
-  return [...rounds.values()].sort((a, b) => getRoundOrder(a.key) - getRoundOrder(b.key));
-}
-
 function isKnockoutMatch(match: DashboardMatch): boolean {
   const competition = match.competition ?? "";
   return !competition.includes("GROUP_STAGE");
 }
 
-function getRoundKey(match: DashboardMatch): string {
-  const competition = match.competition ?? "";
-  if (competition.includes("LAST_32")) return "LAST_32";
-  if (competition.includes("LAST_16")) return "LAST_16";
-  if (competition.includes("QUARTER_FINALS")) return "QUARTER_FINALS";
-  if (competition.includes("SEMI_FINALS")) return "SEMI_FINALS";
-  if (competition.includes("THIRD_PLACE")) return "THIRD_PLACE";
-  if (competition.includes("FINAL")) return "FINAL";
-  return "KNOCKOUT";
-}
-
-function getRoundOrder(round: string): number {
-  const order: Record<string, number> = {
-    LAST_32: 1,
-    LAST_16: 2,
-    QUARTER_FINALS: 3,
-    SEMI_FINALS: 4,
-    FINAL: 5,
-    THIRD_PLACE: 6,
-    KNOCKOUT: 99
-  };
-
-  return order[round] ?? 99;
-}
-
-function formatRoundLabel(round: string): string {
-  const labels: Record<string, string> = {
-    LAST_32: "Runde der letzten 32",
-    LAST_16: "Achtelfinale",
-    QUARTER_FINALS: "Viertelfinale",
-    SEMI_FINALS: "Halbfinale",
-    THIRD_PLACE: "Spiel um Platz 3",
-    FINAL: "Finale",
-    KNOCKOUT: "K.o.-Phase"
-  };
-
-  return labels[round] ?? round;
-}
-
 function compareMatches(a: DashboardMatch, b: DashboardMatch): number {
   return getTimeValue(a.utcDate) - getTimeValue(b.utcDate);
-}
-
-function compareBracketMatches(a: DashboardMatch, b: DashboardMatch): number {
-  return getBracketSortValue(a) - getBracketSortValue(b) || compareMatches(a, b);
 }
 
 function compareDateKeys(a: string, b: string): number {
@@ -423,16 +306,6 @@ function formatMatchMeta(match: DashboardMatch): string | null {
   return details.length > 0 ? details.join(" - ") : null;
 }
 
-function formatBracketMeta(match: DashboardMatch): string | null {
-  const details = [
-    formatShortDayLabel(match.utcDate),
-    formatCompetition(match.competition),
-    match.venue
-  ].filter(Boolean);
-
-  return details.length > 0 ? details.join(" - ") : null;
-}
-
 function formatCompetition(value?: string): string | null {
   if (!value) {
     return null;
@@ -441,24 +314,24 @@ function formatCompetition(value?: string): string | null {
   const details: string[] = [];
 
   if (value.includes("GROUP_STAGE")) {
-    details.push("Gruppenphase");
+    details.push("Group stage");
   } else if (value.includes("LAST_32")) {
-    details.push("Runde der letzten 32");
+    details.push("Round of 32");
   } else if (value.includes("LAST_16")) {
-    details.push("Achtelfinale");
+    details.push("Round of 16");
   } else if (value.includes("QUARTER_FINALS")) {
-    details.push("Viertelfinale");
+    details.push("Quarter-finals");
   } else if (value.includes("SEMI_FINALS")) {
-    details.push("Halbfinale");
+    details.push("Semi-finals");
   } else if (value.includes("THIRD_PLACE")) {
-    details.push("Spiel um Platz 3");
+    details.push("Third place");
   } else if (value.includes("FINAL")) {
-    details.push("Finale");
+    details.push("Final");
   }
 
   const group = value.match(/GROUP_([A-Z])/);
   if (group) {
-    details.push(`Gruppe ${group[1]}`);
+    details.push(`Group ${group[1]}`);
   }
 
   if (details.length > 0) {
@@ -466,22 +339,4 @@ function formatCompetition(value?: string): string | null {
   }
 
   return value.replace("FIFA World Cup", "World Cup");
-}
-
-function formatShortDayLabel(value?: string): string | null {
-  if (!value) {
-    return null;
-  }
-
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) {
-    return null;
-  }
-
-  return new Intl.DateTimeFormat("en-GB", {
-    weekday: "short",
-    day: "2-digit",
-    month: "2-digit",
-    timeZone: "Europe/Berlin"
-  }).format(date);
 }
