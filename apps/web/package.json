@@ -10,7 +10,6 @@
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
   "dependencies": {
-    "@llm-kicktipp/scorer": "0.1.0",
     "next": "latest",
     "react": "latest",
     "react-dom": "latest"

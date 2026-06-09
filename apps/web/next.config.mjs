@@ -1,6 +1,4 @@
 /** @type {import('next').NextConfig} */
-const nextConfig = {
-  transpilePackages: ["@llm-kicktipp/scorer"]
-};
+const nextConfig = {};
 
 export default nextConfig;

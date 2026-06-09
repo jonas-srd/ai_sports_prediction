@@ -2,7 +2,7 @@
  * Purpose: Provides sample dashboard data until the Supabase API routes are connected.
  * This keeps the frontend buildable and useful before real match data exists.
  */
-import { calculatePredictionScore } from "@llm-kicktipp/scorer";
+import { calculatePredictionScore } from "@/lib/scorer";
 
 export type DashboardPrediction = {
   model: string;

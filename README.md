@@ -46,15 +46,15 @@ Create the database tables by running `supabase/schema.sql` in the Supabase SQL 
 
 ## Public Deployment
 
-Use Vercel for the public website. The repo includes `vercel.json` so Vercel builds only the Next.js web app while still installing dependencies from the monorepo root.
+Use Vercel for the public website. Deploy only `apps/web`; the web app is self-contained for hosting, while the cron and shared packages can remain in the repo for backend work.
 
 Recommended Vercel settings:
 
 ```text
 Framework Preset: Next.js
-Root Directory: ./
+Root Directory: apps/web
 Install Command: npm install
-Build Command: npm run build --workspace @llm-kicktipp/web
+Build Command: npm run build
 Output Directory: leave empty / default
 ```
 
@@ -62,7 +62,7 @@ Steps:
 
 1. Push this repository to GitHub.
 2. Import the GitHub repository in Vercel.
-3. Keep the root directory as the repository root, not `apps/web`.
+3. Set the root directory to `apps/web`.
 4. Add the environment variables from `.env.example` in Vercel Project Settings.
 5. Deploy.
 

@@ -3,8 +3,8 @@
  * This page makes bad JSON, model drift, and scoring differences easy to spot during the MVP phase.
  */
 import Link from "next/link";
-import { calculatePredictionScore } from "@llm-kicktipp/scorer";
 import { sampleMatches } from "@/lib/dashboard-data";
+import { calculatePredictionScore } from "@/lib/scorer";
 
 export default function MatchesPage() {
   return (
