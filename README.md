@@ -55,7 +55,7 @@ Framework Preset: Next.js
 Root Directory: ./
 Install Command: npm install
 Build Command: npm run build --workspace @llm-kicktipp/web
-Output Directory: apps/web/.next
+Output Directory: leave empty / default
 ```
 
 Steps:
