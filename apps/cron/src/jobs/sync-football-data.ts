@@ -76,6 +76,9 @@ async function main() {
 }
 
 function toMatchRow(match: FootballDataMatch): MatchRow {
+  const season = process.env.FOOTBALL_DATA_SEASON ?? "2026";
+  const stage = normalizeStage(match.stage);
+
   return {
     id: `football-data-${match.id}`,
     utc_date: match.utcDate,
@@ -85,7 +88,14 @@ function toMatchRow(match: FootballDataMatch): MatchRow {
     venue: match.venue ?? null,
     status: normalizeStatus(match.status),
     home_score: match.score.fullTime.home,
-    away_score: match.score.fullTime.away
+    away_score: match.score.fullTime.away,
+    source: "football-data.org",
+    source_match_id: String(match.id),
+    tournament_edition: `FIFA World Cup ${season}`,
+    stage,
+    group_name: match.group ?? null,
+    matchday: match.matchday ?? null,
+    is_knockout: stage ? stage !== "group_stage" : null
   };
 }
 
@@ -104,6 +114,27 @@ function normalizeStatus(status: string): string {
   if (status === "POSTPONED") return "POSTPONED";
   if (status === "CANCELLED") return "CANCELLED";
   return "LIVE";
+}
+
+function normalizeStage(stage?: string): string | null {
+  switch (stage) {
+    case "GROUP_STAGE":
+      return "group_stage";
+    case "LAST_32":
+      return "round_of_32";
+    case "LAST_16":
+      return "round_of_16";
+    case "QUARTER_FINALS":
+      return "quarterfinal";
+    case "SEMI_FINALS":
+      return "semifinal";
+    case "THIRD_PLACE":
+      return "third_place";
+    case "FINAL":
+      return "final";
+    default:
+      return stage?.toLowerCase() ?? null;
+  }
 }
 
 main().catch((error) => {

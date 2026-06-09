@@ -86,6 +86,9 @@ async function main() {
 }
 
 function toMatchRow(item: ApiFootballFixture): MatchRow {
+  const season = String(item.league.season);
+  const stage = normalizeStage(item.league.round);
+
   return {
     id: `api-football-${item.fixture.id}`,
     utc_date: item.fixture.date,
@@ -95,7 +98,14 @@ function toMatchRow(item: ApiFootballFixture): MatchRow {
     venue: formatVenue(item.fixture.venue),
     status: normalizeStatus(item.fixture.status.short),
     home_score: item.goals.home ?? item.score.fulltime.home,
-    away_score: item.goals.away ?? item.score.fulltime.away
+    away_score: item.goals.away ?? item.score.fulltime.away,
+    source: "api-football",
+    source_match_id: String(item.fixture.id),
+    tournament_edition: `FIFA World Cup ${season}`,
+    stage,
+    group_name: parseGroupName(item.league.round),
+    matchday: null,
+    is_knockout: stage ? stage !== "group_stage" : null
   };
 }
 
@@ -113,6 +123,26 @@ function normalizeStatus(status: string): string {
   if (["PST"].includes(status)) return "POSTPONED";
   if (["CANC", "ABD", "AWD", "WO"].includes(status)) return "CANCELLED";
   return "LIVE";
+}
+
+function normalizeStage(round?: string): string | null {
+  const normalized = round?.toLowerCase() ?? "";
+
+  if (!normalized) return null;
+  if (normalized.includes("group")) return "group_stage";
+  if (normalized.includes("round of 32") || normalized.includes("last 32")) return "round_of_32";
+  if (normalized.includes("round of 16") || normalized.includes("last 16")) return "round_of_16";
+  if (normalized.includes("quarter")) return "quarterfinal";
+  if (normalized.includes("semi")) return "semifinal";
+  if (normalized.includes("third") || normalized.includes("3rd")) return "third_place";
+  if (normalized.includes("final")) return "final";
+
+  return normalized.replace(/[^a-z0-9]+/g, "_").replace(/^_+|_+$/g, "");
+}
+
+function parseGroupName(round?: string): string | null {
+  const match = round?.match(/group\s+([A-L])/i);
+  return match ? `GROUP_${match[1].toUpperCase()}` : null;
 }
 
 function hasApiErrors(errors: ApiFootballResponse["errors"]): boolean {

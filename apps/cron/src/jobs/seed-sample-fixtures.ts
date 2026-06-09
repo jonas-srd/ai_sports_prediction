@@ -35,7 +35,14 @@ async function main() {
     venue: fixture.venue ?? null,
     status: fixture.status,
     home_score: fixture.homeScore,
-    away_score: fixture.awayScore
+    away_score: fixture.awayScore,
+    source: "sample",
+    source_match_id: fixture.id,
+    tournament_edition: "FIFA World Cup 2026",
+    stage: fixture.competition.includes("GROUP_STAGE") ? "group_stage" : null,
+    group_name: parseGroupName(fixture.competition),
+    matchday: null,
+    is_knockout: fixture.competition.includes("GROUP_STAGE") ? 0 : null
   }));
 
   const db = createSqliteDb();
@@ -50,3 +57,8 @@ main().catch((error) => {
   console.error(error);
   process.exitCode = 1;
 });
+
+function parseGroupName(competition: string): string | null {
+  const match = competition.match(/GROUP_([A-L])/);
+  return match ? `GROUP_${match[1]}` : null;
+}
