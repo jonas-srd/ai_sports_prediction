@@ -35,10 +35,6 @@ export default function MatchesPage() {
 
   return (
     <main className="shell scheduleShell">
-      <nav className="topNav">
-        <Link href="/">Back to ranking</Link>
-      </nav>
-
       <section className="hero heroCentered compactHero">
         <p className="eyebrow">World Cup 2026</p>
         <h1>Schedule</h1>

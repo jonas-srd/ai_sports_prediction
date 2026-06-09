@@ -59,6 +59,55 @@ a {
   -webkit-tap-highlight-color: transparent;
 }
 
+.siteNav {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  border-bottom: 1px solid var(--line);
+  background: rgba(244, 239, 227, 0.88);
+  backdrop-filter: blur(14px);
+}
+
+.siteNavInner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: min(1060px, calc(100% - 40px));
+  margin: 0 auto;
+  padding: 14px 0;
+}
+
+.siteNavLogo {
+  color: var(--ink);
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 1.05rem;
+  font-weight: 900;
+  letter-spacing: -0.03em;
+}
+
+.siteNavLinks {
+  display: flex;
+  gap: 6px;
+}
+
+.siteNavLinks a {
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: rgba(255, 248, 233, 0.72);
+  padding: 8px 14px;
+  color: var(--ink);
+  font-family: "Courier New", monospace;
+  font-size: 0.78rem;
+  font-weight: 900;
+  letter-spacing: 0.04em;
+}
+
+.siteNavLinks a:hover {
+  border-color: rgba(179, 58, 39, 0.34);
+  background: rgba(255, 248, 233, 0.92);
+  color: var(--red);
+}
+
 .shell {
   width: min(1060px, calc(100% - 40px));
   margin: 0 auto;
