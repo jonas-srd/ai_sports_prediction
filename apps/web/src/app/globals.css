@@ -969,83 +969,186 @@ h2 {
   line-height: 1.45;
 }
 
-.bracketScroller {
-  overflow-x: auto;
-  padding: 12px 6px 18px;
-  scrollbar-color: rgba(179, 58, 39, 0.44) rgba(255, 255, 255, 0.34);
-}
-
-.bracketGrid {
+.bracketSummary {
   display: grid;
-  grid-template-columns: repeat(6, minmax(220px, 1fr));
-  align-items: stretch;
-  gap: 30px;
-  min-width: 1360px;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 10px;
+  margin-bottom: 18px;
 }
 
-.bracketRound {
-  display: grid;
-  align-content: center;
-  gap: 12px;
+.bracketSummaryItem {
+  border: 1px solid rgba(70, 55, 35, 0.12);
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.48);
+  padding: 12px;
 }
 
-.bracketRound h3 {
-  justify-self: center;
-  margin: 0;
-  border: 1px solid rgba(70, 55, 35, 0.13);
-  border-radius: 999px;
-  background: rgba(255, 248, 233, 0.8);
-  color: rgba(24, 19, 13, 0.78);
+.bracketSummaryItem strong,
+.bracketSectorHeader span {
+  display: block;
+  color: var(--red);
   font-family: "Courier New", monospace;
-  font-size: 0.72rem;
+  font-size: 0.78rem;
+  font-weight: 900;
+}
+
+.bracketSummaryItem strong {
+  margin-bottom: 4px;
+  font-size: 1.45rem;
+  line-height: 1;
+}
+
+.bracketSummaryItem span {
+  display: block;
+  color: var(--muted);
+  font-size: 0.76rem;
+  font-weight: 800;
+  line-height: 1.2;
+}
+
+.bracketSectors {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.bracketSector,
+.championshipLane {
+  border: 1px solid rgba(70, 55, 35, 0.14);
+  border-radius: 28px;
+  background:
+    linear-gradient(135deg, rgba(255, 255, 255, 0.58), rgba(255, 248, 233, 0.4)),
+    rgba(255, 251, 241, 0.54);
+  box-shadow: var(--soft-shadow);
+}
+
+.bracketSector {
+  padding: 16px;
+}
+
+.bracketSectorHeader {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.bracketSectorHeader p {
+  margin: 0 0 4px;
+  color: rgba(179, 58, 39, 0.78);
+  font-family: "Courier New", monospace;
+  font-size: 0.68rem;
   font-weight: 900;
   letter-spacing: 0.08em;
-  padding: 8px 12px;
+  text-transform: uppercase;
+}
+
+.bracketSectorHeader h3,
+.championshipRound h3 {
+  margin: 0;
+  font-size: clamp(1.35rem, 2vw, 1.8rem);
+  line-height: 1;
+  letter-spacing: -0.045em;
+}
+
+.bracketSectorHeader span {
+  border: 1px solid rgba(70, 55, 35, 0.12);
+  border-radius: 999px;
+  background: rgba(255, 248, 233, 0.82);
+  padding: 7px 9px;
+  white-space: nowrap;
+}
+
+.bracketSectorGrid {
+  display: grid;
+  grid-template-columns: 1.3fr 1fr 0.9fr;
+  gap: 10px;
+}
+
+.bracketSectorColumn {
+  position: relative;
+  display: grid;
+  align-content: start;
+  gap: 8px;
+}
+
+.bracketSectorColumn:not(:last-child)::after {
+  position: absolute;
+  top: 36px;
+  right: -7px;
+  bottom: 8px;
+  border-right: 2px solid rgba(32, 79, 53, 0.16);
+  content: "";
+}
+
+.bracketSectorColumn h4 {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  margin: 0;
+  border: 1px solid rgba(70, 55, 35, 0.12);
+  border-radius: 999px;
+  background: rgba(255, 248, 233, 0.92);
+  color: rgba(24, 19, 13, 0.74);
+  font-family: "Courier New", monospace;
+  font-size: 0.64rem;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  padding: 7px 9px;
   text-align: center;
   text-transform: uppercase;
-  box-shadow: 0 8px 20px rgba(43, 34, 20, 0.06);
 }
 
 .bracketMatches {
   display: grid;
-  align-content: center;
+  align-content: start;
+  gap: 9px;
+}
+
+.championshipLane {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin-top: 16px;
+  padding: 16px;
+  background:
+    radial-gradient(circle at 50% 0%, rgba(240, 196, 91, 0.22), transparent 18rem),
+    linear-gradient(135deg, rgba(32, 79, 53, 0.12), rgba(255, 248, 233, 0.54));
+}
+
+.championshipRound {
+  display: grid;
+  align-content: start;
   gap: 12px;
-  min-height: 100%;
 }
 
-.bracketRound:nth-child(2) .bracketMatches {
-  gap: 22px;
-  padding: 16px 0;
+.championshipRound h3 {
+  text-align: center;
 }
 
-.bracketRound:nth-child(3) .bracketMatches {
-  gap: 42px;
-  padding: 38px 0;
-}
-
-.bracketRound:nth-child(4) .bracketMatches {
-  gap: 68px;
-  padding: 64px 0;
-}
-
-.bracketRound:nth-child(5) .bracketMatches,
-.bracketRound:nth-child(6) .bracketMatches {
-  gap: 82px;
-  padding: 94px 0;
+.championshipMatches {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
 }
 
 .bracketMatchCard {
   position: relative;
-  min-height: 108px;
+  min-height: 96px;
   border: 1px solid rgba(70, 55, 35, 0.16);
-  border-radius: 24px;
+  border-radius: 20px;
   background:
     linear-gradient(135deg, rgba(255, 255, 255, 0.86), rgba(255, 248, 233, 0.6)),
     rgba(255, 255, 255, 0.72);
-  padding: 18px 13px 13px;
+  padding: 17px 10px 10px;
   box-shadow:
-    0 12px 28px rgba(43, 34, 20, 0.08),
+    0 10px 24px rgba(43, 34, 20, 0.075),
     inset 0 1px 0 rgba(255, 255, 255, 0.74);
+  transition:
+    border-color 180ms ease,
+    box-shadow 180ms ease,
+    transform 180ms ease;
 }
 
 .bracketMatchCard.isOpen {
@@ -1054,7 +1157,7 @@ h2 {
 
 .bracketMatchCard .matchDisclosure {
   padding: 5px 8px;
-  font-size: 0.58rem;
+  font-size: 0.56rem;
 }
 
 .bracketMatchCard .matchPredictionHeader {
@@ -1071,21 +1174,43 @@ h2 {
   justify-items: start;
 }
 
-.bracketMatchCard::after {
-  position: absolute;
-  top: 50%;
-  right: -31px;
-  width: 30px;
-  border-top: 2px solid rgba(32, 79, 53, 0.22);
-  content: "";
-}
-
 .bracketMatchCard:hover {
+  border-color: rgba(179, 58, 39, 0.24);
+  box-shadow: 0 14px 30px rgba(43, 34, 20, 0.11);
   transform: translateY(-2px);
 }
 
-.bracketRound:nth-last-child(-n+2) .bracketMatchCard::after {
-  display: none;
+.bracketMatchCard .fixtureLine {
+  grid-template-columns: minmax(0, 1fr) minmax(58px, auto) minmax(0, 1fr);
+  gap: 7px;
+}
+
+.bracketMatchCard .fixtureTeam {
+  font-size: 0.78rem;
+  line-height: 1.12;
+}
+
+.bracketMatchCard .countryFlag {
+  width: 21px;
+  height: 15px;
+}
+
+.bracketMatchCard .fixtureCenter {
+  font-size: 0.78rem;
+}
+
+.bracketMatchCard .fixtureMeta {
+  display: -webkit-box;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  font-size: 0.67rem;
+}
+
+.bracketMatchCard .matchNumberBadge {
+  left: 10px;
+  padding: 4px 7px;
+  font-size: 0.56rem;
 }
 
 .matchDetailList {
@@ -1168,8 +1293,20 @@ h2 {
     width: min(100% - 28px, 1060px);
   }
 
-  .bracketGrid {
-    grid-template-columns: repeat(6, 210px);
+  .bracketSummary {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .bracketSectors {
+    grid-template-columns: 1fr;
+  }
+
+  .bracketSectorGrid {
+    grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr) minmax(0, 0.9fr);
+  }
+
+  .championshipLane {
+    grid-template-columns: 1fr;
   }
 }
 
@@ -1276,6 +1413,43 @@ h2 {
   .knockoutSection {
     border-radius: 26px;
     padding: 16px 12px;
+  }
+
+  .bracketSummary {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .bracketSector {
+    border-radius: 22px;
+    padding: 12px;
+  }
+
+  .bracketSectorHeader {
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .bracketSectorGrid,
+  .championshipMatches {
+    grid-template-columns: 1fr;
+  }
+
+  .bracketSectorColumn:not(:last-child)::after {
+    display: none;
+  }
+
+  .bracketSectorColumn h4 {
+    position: static;
+    justify-self: start;
+  }
+
+  .championshipLane {
+    border-radius: 22px;
+    padding: 12px;
+  }
+
+  .bracketMatchCard .fixtureLine {
+    grid-template-columns: minmax(0, 1fr) minmax(54px, auto) minmax(0, 1fr);
   }
 
 }

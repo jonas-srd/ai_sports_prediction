@@ -1,6 +1,6 @@
 /**
  * Purpose: Match schedule page.
- * Group-stage games are shown by day; knockout games are shown as a bracket-style tree.
+ * Group-stage games are shown by day; knockout games are shown as readable bracket sectors.
  */
 import Link from "next/link";
 import type { DashboardMatch } from "@/lib/dashboard-data";
@@ -20,12 +20,27 @@ type BracketRound = {
   matches: DashboardMatch[];
 };
 
+type BracketSector = {
+  key: string;
+  title: string;
+  subtitle: string;
+  columns: BracketColumn[];
+};
+
+type BracketColumn = {
+  key: string;
+  label: string;
+  matches: DashboardMatch[];
+};
+
 export default function MatchesPage() {
   const matches = getDashboardMatches();
   const groupStageMatches = matches.filter((match) => !isKnockoutMatch(match));
   const knockoutMatches = matches.filter(isKnockoutMatch);
   const scheduleDays = groupMatchesByDay(groupStageMatches);
   const bracketRounds = groupKnockoutRounds(knockoutMatches);
+  const bracketSectors = buildBracketSectors(knockoutMatches);
+  const championshipRounds = buildChampionshipRounds(knockoutMatches);
 
   return (
     <main className="shell scheduleShell">
@@ -73,41 +88,169 @@ export default function MatchesPage() {
               <p className="sectionKicker">Knockout</p>
               <h2>Turnierbaum</h2>
               <p className="bracketNote">
-                Offizielle Wege der WM 2026: keine leeren Platzhalter, sondern Gruppensieger,
-                Gruppenzweite und Folgesieger je Spiel.
+                Vier klare Pfade statt einer breiten Scroll-Wand: jede Box zeigt, welche Spiele
+                zusammenlaufen. Halbfinale, Finale und Platz 3 stehen separat darunter.
               </p>
             </div>
             <span>32 Teams / 5 Runden</span>
           </div>
-          <div className="bracketScroller">
-            <div className="bracketGrid">
-              {bracketRounds.map((round) => (
-                <section className="bracketRound" key={round.key}>
-                  <h3>{round.label}</h3>
-                  <div className="bracketMatches">
-                    {round.matches.map((match) => {
-                      const matchNumber = getOfficialMatchNumber(match);
-                      const displayMatch = getDisplayMatch(match, matches);
-                      return (
-                        <MatchPredictionCard
-                          compact
-                          badge={matchNumber ? `Spiel ${matchNumber}` : undefined}
-                          className="bracketMatchCard"
-                          key={match.id}
-                          match={displayMatch}
-                          center={formatMatchCenter(match)}
-                          meta={formatBracketMeta(match)}
-                        />
-                      );
-                    })}
+          <div className="bracketSummary" aria-label="Knockout round overview">
+            {bracketRounds.map((round) => (
+              <div className="bracketSummaryItem" key={round.key}>
+                <strong>{round.matches.length}</strong>
+                <span>{round.label}</span>
+              </div>
+            ))}
+          </div>
+          <div className="bracketSectors">
+            {bracketSectors.map((sector) => (
+              <section className="bracketSector" key={sector.key}>
+                <div className="bracketSectorHeader">
+                  <div>
+                    <p>{sector.subtitle}</p>
+                    <h3>{sector.title}</h3>
                   </div>
-                </section>
-              ))}
-            </div>
+                  <span>{getSectorMatchCount(sector)} Spiele</span>
+                </div>
+                <div className="bracketSectorGrid">
+                  {sector.columns.map((column) => (
+                    <div className="bracketSectorColumn" key={column.key}>
+                      <h4>{column.label}</h4>
+                      <div className="bracketMatches">
+                        {column.matches.map((match) => renderBracketMatch(match, matches))}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </section>
+            ))}
+          </div>
+          <div className="championshipLane">
+            {championshipRounds.map((round) => (
+              <section className="championshipRound" key={round.key}>
+                <h3>{round.label}</h3>
+                <div className="championshipMatches">
+                  {round.matches.map((match) => renderBracketMatch(match, matches))}
+                </div>
+              </section>
+            ))}
           </div>
         </section>
       ) : null}
     </main>
+  );
+}
+
+const BRACKET_SECTOR_DEFINITIONS = [
+  {
+    key: "sector-a",
+    title: "Pfad A",
+    subtitle: "Viertel oben links",
+    columns: [
+      { key: "last32", label: "Letzte 32", matchNumbers: [74, 77, 73, 75] },
+      { key: "last16", label: "Achtelfinale", matchNumbers: [89, 90] },
+      { key: "quarter", label: "Viertelfinale", matchNumbers: [97] }
+    ]
+  },
+  {
+    key: "sector-b",
+    title: "Pfad B",
+    subtitle: "Viertel oben rechts",
+    columns: [
+      { key: "last32", label: "Letzte 32", matchNumbers: [83, 84, 81, 82] },
+      { key: "last16", label: "Achtelfinale", matchNumbers: [93, 94] },
+      { key: "quarter", label: "Viertelfinale", matchNumbers: [98] }
+    ]
+  },
+  {
+    key: "sector-c",
+    title: "Pfad C",
+    subtitle: "Viertel unten links",
+    columns: [
+      { key: "last32", label: "Letzte 32", matchNumbers: [76, 78, 79, 80] },
+      { key: "last16", label: "Achtelfinale", matchNumbers: [91, 92] },
+      { key: "quarter", label: "Viertelfinale", matchNumbers: [99] }
+    ]
+  },
+  {
+    key: "sector-d",
+    title: "Pfad D",
+    subtitle: "Viertel unten rechts",
+    columns: [
+      { key: "last32", label: "Letzte 32", matchNumbers: [86, 88, 85, 87] },
+      { key: "last16", label: "Achtelfinale", matchNumbers: [95, 96] },
+      { key: "quarter", label: "Viertelfinale", matchNumbers: [100] }
+    ]
+  }
+] as const;
+
+const CHAMPIONSHIP_DEFINITIONS = [
+  { key: "semis", label: "Halbfinale", matchNumbers: [101, 102] },
+  { key: "finals", label: "Finale & Platz 3", matchNumbers: [104, 103] }
+] as const;
+
+function buildBracketSectors(matches: DashboardMatch[]): BracketSector[] {
+  const byMatchNumber = getMatchesByOfficialNumber(matches);
+
+  return BRACKET_SECTOR_DEFINITIONS.map((sector) => ({
+    key: sector.key,
+    title: sector.title,
+    subtitle: sector.subtitle,
+    columns: sector.columns
+      .map((column) => ({
+        key: column.key,
+        label: column.label,
+        matches: column.matchNumbers
+          .map((matchNumber) => byMatchNumber.get(matchNumber))
+          .filter((match): match is DashboardMatch => Boolean(match))
+      }))
+      .filter((column) => column.matches.length > 0)
+  })).filter((sector) => sector.columns.length > 0);
+}
+
+function buildChampionshipRounds(matches: DashboardMatch[]): BracketColumn[] {
+  const byMatchNumber = getMatchesByOfficialNumber(matches);
+
+  return CHAMPIONSHIP_DEFINITIONS.map((round) => ({
+    key: round.key,
+    label: round.label,
+    matches: round.matchNumbers
+      .map((matchNumber) => byMatchNumber.get(matchNumber))
+      .filter((match): match is DashboardMatch => Boolean(match))
+  })).filter((round) => round.matches.length > 0);
+}
+
+function getMatchesByOfficialNumber(matches: DashboardMatch[]): Map<number, DashboardMatch> {
+  const byMatchNumber = new Map<number, DashboardMatch>();
+
+  for (const match of matches) {
+    const matchNumber = getOfficialMatchNumber(match);
+    if (matchNumber) {
+      byMatchNumber.set(matchNumber, match);
+    }
+  }
+
+  return byMatchNumber;
+}
+
+function getSectorMatchCount(sector: BracketSector): number {
+  return sector.columns.reduce((total, column) => total + column.matches.length, 0);
+}
+
+function renderBracketMatch(match: DashboardMatch, contextMatches: DashboardMatch[]) {
+  const matchNumber = getOfficialMatchNumber(match);
+  const displayMatch = getDisplayMatch(match, contextMatches);
+
+  return (
+    <MatchPredictionCard
+      compact
+      badge={matchNumber ? `Spiel ${matchNumber}` : undefined}
+      className="bracketMatchCard"
+      key={match.id}
+      match={displayMatch}
+      center={formatMatchCenter(match)}
+      meta={formatBracketMeta(match)}
+    />
   );
 }
 
