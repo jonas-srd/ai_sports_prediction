@@ -72,18 +72,29 @@ export class OpenRouterClient {
 function parsePredictionJson(content: string): Omit<LlmPrediction, "rawResponse"> {
   const trimmed = content.trim();
   const jsonText = trimmed.startsWith("{") ? trimmed : extractFirstJsonObject(trimmed);
-  const parsed = JSON.parse(jsonText) as Partial<LlmPrediction>;
+  const parsed = JSON.parse(jsonText) as Partial<LlmPrediction> & {
+    most_likely_score_90?: {
+      home?: unknown;
+      away?: unknown;
+    };
+  };
+  const home = readInteger(parsed.home) ?? readInteger(parsed.most_likely_score_90?.home);
+  const away = readInteger(parsed.away) ?? readInteger(parsed.most_likely_score_90?.away);
 
-  if (!Number.isInteger(parsed.home) || !Number.isInteger(parsed.away)) {
-    throw new Error(`Prediction JSON must contain integer home and away scores: ${content}`);
+  if (home === undefined || away === undefined) {
+    throw new Error(`Prediction JSON must contain integer home and away scores or most_likely_score_90: ${content}`);
   }
 
   return {
-    home: parsed.home,
-    away: parsed.away,
+    home,
+    away,
     confidence: typeof parsed.confidence === "number" ? parsed.confidence : undefined,
     reason: typeof parsed.reason === "string" ? parsed.reason : undefined
   };
+}
+
+function readInteger(value: unknown): number | undefined {
+  return Number.isInteger(value) ? value as number : undefined;
 }
 
 function extractFirstJsonObject(text: string): string {
