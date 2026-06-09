@@ -1,8 +1,9 @@
 /**
  * Purpose: Daily prediction job.
- * It loads today's matches from Supabase, prompts all active LLMs through OpenRouter, and stores one prediction per model and match.
+ * It loads today's matches from SQLite, prompts all active LLMs through OpenRouter, and stores one prediction per model and match.
  */
-import { createSupabaseServiceClient, listTodayMatches, upsertModels, upsertPrediction } from "@llm-kicktipp/db";
+import "../load-env";
+import { createSqliteDb, getDefaultDbPath, listTodayMatches, upsertModels, upsertPrediction } from "@llm-kicktipp/db";
 import { buildPredictionPrompt, LLM_MODELS, OpenRouterClient } from "@llm-kicktipp/llm";
 
 async function main() {
@@ -11,7 +12,7 @@ async function main() {
     throw new Error("Missing OPENROUTER_API_KEY.");
   }
 
-  const db = createSupabaseServiceClient();
+  const db = createSqliteDb();
   await upsertModels(db, LLM_MODELS);
 
   const matches = await listTodayMatches(db);
@@ -23,6 +24,7 @@ async function main() {
   });
 
   console.log(`Found ${matches.length} matches and ${activeModels.length} active models.`);
+  console.log(`SQLite DB: ${getDefaultDbPath()}`);
 
   for (const match of matches) {
     const prompt = buildPredictionPrompt({
@@ -57,6 +59,8 @@ async function main() {
       }
     }
   }
+
+  db.close();
 }
 
 main().catch((error) => {

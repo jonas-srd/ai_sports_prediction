@@ -1,12 +1,12 @@
 /**
  * Purpose: Shared database row types for matches, models, predictions, and scores.
- * These types mirror supabase/schema.sql and keep app and cron code aligned.
+ * These types mirror the local SQLite schema and keep app and cron code aligned.
  */
 export type ModelRow = {
   id: string;
   name: string;
   provider: string;
-  active: boolean;
+  active: boolean | number;
 };
 
 export type MatchRow = {

@@ -6,3 +6,6 @@ dist
 .env.local
 *.log
 .DS_Store
+data/*.db
+data/*.db-*
+data/*.sqlite

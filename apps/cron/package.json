@@ -4,8 +4,9 @@
   "private": true,
   "type": "module",
   "scripts": {
+    "db:init": "tsx src/jobs/init-db.ts",
     "seed:fixtures": "tsx src/jobs/seed-sample-fixtures.ts",
-    "sync:football-data": "tsx src/jobs/sync-football-data.ts",
+    "sync:api-football": "tsx src/jobs/sync-api-football.ts",
     "predict": "tsx src/jobs/predict-today.ts",
     "score": "tsx src/jobs/score-results.ts",
     "typecheck": "tsc -p tsconfig.json --noEmit"
@@ -14,6 +15,7 @@
     "@llm-kicktipp/db": "0.1.0",
     "@llm-kicktipp/llm": "0.1.0",
     "@llm-kicktipp/scorer": "0.1.0",
+    "dotenv": "latest",
     "tsx": "latest"
   },
   "devDependencies": {

@@ -2,14 +2,16 @@
  * Purpose: Result scoring job.
  * It finds finished matches with predictions, applies Kicktipp-style scoring, and upserts points into the scores table.
  */
-import { createSupabaseServiceClient, listUnscoredFinishedPredictions, upsertScore } from "@llm-kicktipp/db";
+import "../load-env";
+import { createSqliteDb, getDefaultDbPath, listUnscoredFinishedPredictions, upsertScore } from "@llm-kicktipp/db";
 import { calculatePredictionScore } from "@llm-kicktipp/scorer";
 
 async function main() {
-  const db = createSupabaseServiceClient();
+  const db = createSqliteDb();
   const predictions = await listUnscoredFinishedPredictions(db);
 
   console.log(`Found ${predictions.length} predictions for finished matches.`);
+  console.log(`SQLite DB: ${getDefaultDbPath()}`);
 
   for (const prediction of predictions) {
     if (prediction.matches.home_score === null || prediction.matches.away_score === null) {
@@ -29,6 +31,8 @@ async function main() {
 
     console.log(`${prediction.model_id} -> ${result.points} points (${result.reason})`);
   }
+
+  db.close();
 }
 
 main().catch((error) => {

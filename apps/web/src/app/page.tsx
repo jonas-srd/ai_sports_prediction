@@ -1,12 +1,13 @@
 /**
  * Purpose: Main ranking dashboard.
- * Replace sample data with Supabase-backed API calls once cron jobs are writing predictions and scores.
+ * Reads local SQLite data when available and falls back to sample data.
  */
 import Link from "next/link";
-import { getLeaderboard, sampleMatches } from "@/lib/dashboard-data";
+import { getDashboardMatches, getLeaderboard } from "@/lib/dashboard-data";
 
 export default function HomePage() {
   const leaderboard = getLeaderboard();
+  const matches = getDashboardMatches();
   const leader = leaderboard[0];
 
   return (
@@ -49,13 +50,13 @@ export default function HomePage() {
         <div className="panel accentPanel">
           <h2>Scoring</h2>
           <div className="rules">
-            <span>5 pts exact result</span>
-            <span>2 pts correct goal difference</span>
-            <span>1 pts correct tendency</span>
+            <span>4 pts exact result</span>
+            <span>3 pts correct goal difference</span>
+            <span>2 pts correct tendency</span>
             <span>0 pts miss</span>
           </div>
           <p>
-            Sample data is shown now. The same scoring logic is used by the cron job in production.
+            Local SQLite data is shown when available. Otherwise the page falls back to sample data.
           </p>
         </div>
       </section>
@@ -63,11 +64,11 @@ export default function HomePage() {
       <section className="panel">
         <h2>Latest sample matches</h2>
         <div className="matchList">
-          {sampleMatches.map((match) => (
+          {matches.slice(0, 8).map((match) => (
             <div className="matchCard" key={match.id}>
               <span>{match.homeTeam}</span>
               <strong>
-                {match.actualHome} - {match.actualAway}
+                {formatScore(match.actualHome, match.actualAway)}
               </strong>
               <span>{match.awayTeam}</span>
             </div>
@@ -76,4 +77,12 @@ export default function HomePage() {
       </section>
     </main>
   );
+}
+
+function formatScore(home: number | null, away: number | null): string {
+  if (home === null || away === null) {
+    return "TBD";
+  }
+
+  return `${home} - ${away}`;
 }

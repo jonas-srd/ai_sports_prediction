@@ -1,7 +1,10 @@
 /**
- * Purpose: Provides sample dashboard data until the Supabase API routes are connected.
- * This keeps the frontend buildable and useful before real match data exists.
+ * Purpose: Provides dashboard data from local SQLite when available, with sample fallback data.
+ * The website only reads SQLite; fetch/predict/score writes happen through local cron scripts.
  */
+import Database from "better-sqlite3";
+import { existsSync } from "node:fs";
+import { resolve } from "node:path";
 import { calculatePredictionScore } from "@/lib/scorer";
 
 export type DashboardPrediction = {
@@ -15,8 +18,11 @@ export type DashboardMatch = {
   id: string;
   homeTeam: string;
   awayTeam: string;
-  actualHome: number;
-  actualAway: number;
+  actualHome: number | null;
+  actualAway: number | null;
+  status?: string;
+  utcDate?: string;
+  competition?: string;
   predictions: DashboardPrediction[];
 };
 
@@ -49,10 +55,56 @@ export const sampleMatches: DashboardMatch[] = [
   }
 ];
 
+export function getDashboardMatches(): DashboardMatch[] {
+  const dbPath = getSqliteDbPath();
+  if (!existsSync(dbPath)) {
+    return sampleMatches;
+  }
+
+  try {
+    const db = new Database(dbPath, { readonly: true, fileMustExist: true });
+    const rows = db.prepare(`
+      select
+        m.id,
+        m.utc_date,
+        m.competition,
+        m.home_team,
+        m.away_team,
+        m.status,
+        m.home_score,
+        m.away_score,
+        mo.name as model_name,
+        mo.provider as model_provider,
+        p.predicted_home,
+        p.predicted_away
+      from matches m
+      left join predictions p on p.match_id = m.id
+      left join models mo on mo.id = p.model_id
+      order by m.utc_date asc, mo.name asc
+    `).all() as DbMatchRow[];
+
+    db.close();
+
+    const matches = rowsToMatches(rows);
+    return matches.length > 0 ? matches : sampleMatches;
+  } catch {
+    return sampleMatches;
+  }
+}
+
 export function getLeaderboard() {
+  const dbLeaderboard = getSqliteLeaderboard();
+  if (dbLeaderboard.length > 0) {
+    return dbLeaderboard;
+  }
+
   const totals = new Map<string, { model: string; provider: string; points: number; exact: number }>();
 
   for (const match of sampleMatches) {
+    if (match.actualHome === null || match.actualAway === null) {
+      continue;
+    }
+
     for (const prediction of match.predictions) {
       const score = calculatePredictionScore(
         { home: prediction.predictedHome, away: prediction.predictedAway },
@@ -73,4 +125,102 @@ export function getLeaderboard() {
   }
 
   return [...totals.values()].sort((a, b) => b.points - a.points || b.exact - a.exact);
+}
+
+type DbMatchRow = {
+  id: string;
+  utc_date: string;
+  competition: string;
+  home_team: string;
+  away_team: string;
+  status: string;
+  home_score: number | null;
+  away_score: number | null;
+  model_name: string | null;
+  model_provider: string | null;
+  predicted_home: number | null;
+  predicted_away: number | null;
+};
+
+type DbLeaderboardRow = {
+  model: string;
+  provider: string;
+  points: number;
+  exact: number;
+};
+
+function getSqliteDbPath(): string {
+  if (process.env.SQLITE_DB_PATH) {
+    return resolve(process.env.SQLITE_DB_PATH);
+  }
+
+  const fromWebWorkspace = resolve(process.cwd(), "../../data/world-cup.db");
+  const fromRepoRoot = resolve(process.cwd(), "data/world-cup.db");
+
+  return existsSync(fromWebWorkspace) ? fromWebWorkspace : fromRepoRoot;
+}
+
+function rowsToMatches(rows: DbMatchRow[]): DashboardMatch[] {
+  const matches = new Map<string, DashboardMatch>();
+
+  for (const row of rows) {
+    const match = matches.get(row.id) ?? {
+      id: row.id,
+      homeTeam: row.home_team,
+      awayTeam: row.away_team,
+      actualHome: row.home_score,
+      actualAway: row.away_score,
+      status: row.status,
+      utcDate: row.utc_date,
+      competition: row.competition,
+      predictions: []
+    };
+
+    if (
+      row.model_name &&
+      row.model_provider &&
+      row.predicted_home !== null &&
+      row.predicted_away !== null
+    ) {
+      match.predictions.push({
+        model: row.model_name,
+        provider: row.model_provider,
+        predictedHome: row.predicted_home,
+        predictedAway: row.predicted_away
+      });
+    }
+
+    matches.set(row.id, match);
+  }
+
+  return [...matches.values()];
+}
+
+function getSqliteLeaderboard() {
+  const dbPath = getSqliteDbPath();
+  if (!existsSync(dbPath)) {
+    return [];
+  }
+
+  try {
+    const db = new Database(dbPath, { readonly: true, fileMustExist: true });
+    const rows = db.prepare(`
+      select
+        mo.name as model,
+        mo.provider as provider,
+        sum(s.points) as points,
+        sum(case when s.reason = 'exact' then 1 else 0 end) as exact
+      from scores s
+      inner join predictions p on p.id = s.prediction_id
+      inner join models mo on mo.id = p.model_id
+      group by mo.id, mo.name, mo.provider
+      order by points desc, exact desc
+    `).all() as DbLeaderboardRow[];
+
+    db.close();
+
+    return rows;
+  } catch {
+    return [];
+  }
 }

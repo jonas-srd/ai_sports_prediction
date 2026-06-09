@@ -1,11 +1,12 @@
 /**
- * Purpose: Seeds Supabase with local sample fixtures from data/fixtures.sample.json.
- * Use this before the real football-data.org integration is configured.
+ * Purpose: Seeds local SQLite with sample fixtures from data/fixtures.sample.json.
+ * Use this before the real API-Football integration is configured.
  */
+import "../load-env";
 import { readFile } from "node:fs/promises";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
-import { createSupabaseServiceClient, upsertMatches } from "@llm-kicktipp/db";
+import { createSqliteDb, getDefaultDbPath, upsertMatches } from "@llm-kicktipp/db";
 import type { MatchRow } from "@llm-kicktipp/db";
 
 type SampleFixture = {
@@ -35,10 +36,12 @@ async function main() {
     away_score: fixture.awayScore
   }));
 
-  const db = createSupabaseServiceClient();
+  const db = createSqliteDb();
   await upsertMatches(db, matches);
+  db.close();
 
   console.log(`Seeded ${matches.length} sample fixtures.`);
+  console.log(`SQLite DB: ${getDefaultDbPath()}`);
 }
 
 main().catch((error) => {
