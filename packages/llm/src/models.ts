@@ -10,9 +10,14 @@ export type LlmModel = {
 };
 
 export const LLM_MODELS: LlmModel[] = [
-  { id: "openrouter/owl-alpha", name: "Owl Alpha Free", provider: "OpenRouter", active: true },
-  { id: "nex-agi/nex-n2-pro:free", name: "Nex N2 Pro Free", provider: "Nex AGI", active: true },
-  { id: "moonshotai/kimi-k2.6:free", name: "Kimi K2.6 Free", provider: "Moonshot AI", active: true }
+  { id: "openai/gpt-4o", name: "GPT-4o", provider: "OpenAI", active: true },
+  { id: "anthropic/claude-sonnet-4.5", name: "Claude Sonnet 4.5", provider: "Anthropic", active: true },
+  { id: "google/gemini-3.5-flash", name: "Gemini 3.5 Flash", provider: "Google", active: true },
+  { id: "x-ai/grok-4.20", name: "Grok 4.20", provider: "xAI", active: true },
+  { id: "mistralai/mistral-large", name: "Mistral Large", provider: "Mistral", active: true },
+  { id: "deepseek/deepseek-r1", name: "DeepSeek R1", provider: "DeepSeek", active: true },
+  { id: "perplexity/sonar-pro", name: "Perplexity Sonar Pro", provider: "Perplexity", active: true },
+  { id: "meta-llama/llama-3.2-3b-instruct", name: "Llama 3.2 3B Instruct", provider: "Meta", active: true }
 ];
 
 export function getConfiguredLlmModels(): LlmModel[] {

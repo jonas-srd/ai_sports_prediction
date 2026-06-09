@@ -23,6 +23,7 @@ export type DashboardMatch = {
   status?: string;
   utcDate?: string;
   competition?: string;
+  venue?: string | null;
   predictions: DashboardPrediction[];
 };
 
@@ -33,6 +34,7 @@ export const sampleMatches: DashboardMatch[] = [
     awayTeam: "France",
     actualHome: 2,
     actualAway: 1,
+    venue: "Sample Stadium",
     predictions: [
       { model: "GPT-4o", provider: "OpenAI", predictedHome: 2, predictedAway: 1 },
       { model: "Claude 3.5 Sonnet", provider: "Anthropic", predictedHome: 1, predictedAway: 1 },
@@ -46,6 +48,7 @@ export const sampleMatches: DashboardMatch[] = [
     awayTeam: "Argentina",
     actualHome: 1,
     actualAway: 1,
+    venue: "Sample Stadium",
     predictions: [
       { model: "GPT-4o", provider: "OpenAI", predictedHome: 1, predictedAway: 1 },
       { model: "Claude 3.5 Sonnet", provider: "Anthropic", predictedHome: 2, predictedAway: 1 },
@@ -63,6 +66,7 @@ export function getDashboardMatches(): DashboardMatch[] {
 
   try {
     const db = new Database(dbPath, { readonly: true, fileMustExist: true });
+    const venueSelect = hasColumn(db, "matches", "venue") ? "m.venue" : "null";
     const rows = db.prepare(`
       select
         m.id,
@@ -70,6 +74,7 @@ export function getDashboardMatches(): DashboardMatch[] {
         m.competition,
         m.home_team,
         m.away_team,
+        ${venueSelect} as venue,
         m.status,
         m.home_score,
         m.away_score,
@@ -133,6 +138,7 @@ type DbMatchRow = {
   competition: string;
   home_team: string;
   away_team: string;
+  venue: string | null;
   status: string;
   home_score: number | null;
   away_score: number | null;
@@ -147,6 +153,15 @@ type DbLeaderboardRow = {
   provider: string;
   points: number;
   exact: number;
+};
+
+type DbLeaderboardPredictionRow = {
+  model: string;
+  provider: string;
+  predicted_home: number;
+  predicted_away: number;
+  home_score: number | null;
+  away_score: number | null;
 };
 
 function getSqliteDbPath(): string {
@@ -171,6 +186,7 @@ function rowsToMatches(rows: DbMatchRow[]): DashboardMatch[] {
       id: row.id,
       homeTeam: row.home_team,
       awayTeam: row.away_team,
+      venue: row.venue,
       actualHome: row.home_score,
       actualAway: row.away_score,
       status: row.status,
@@ -199,6 +215,11 @@ function rowsToMatches(rows: DbMatchRow[]): DashboardMatch[] {
   return [...matches.values()];
 }
 
+function hasColumn(db: Database.Database, table: string, column: string): boolean {
+  const columns = db.prepare(`pragma table_info(${table})`).all() as Array<{ name: string }>;
+  return columns.some((entry) => entry.name === column);
+}
+
 function getSqliteLeaderboard() {
   const dbPath = getSqliteDbPath();
   if (!existsSync(dbPath)) {
@@ -211,19 +232,47 @@ function getSqliteLeaderboard() {
       select
         mo.name as model,
         mo.provider as provider,
-        sum(s.points) as points,
-        sum(case when s.reason = 'exact' then 1 else 0 end) as exact
-      from scores s
-      inner join predictions p on p.id = s.prediction_id
+        p.predicted_home,
+        p.predicted_away,
+        m.home_score,
+        m.away_score
+      from predictions p
       inner join models mo on mo.id = p.model_id
-      group by mo.id, mo.name, mo.provider
-      order by points desc, exact desc
-    `).all() as DbLeaderboardRow[];
+      inner join matches m on m.id = p.match_id
+      order by mo.name asc
+    `).all() as DbLeaderboardPredictionRow[];
 
     db.close();
 
-    return rows;
+    return rowsToLeaderboard(rows);
   } catch {
     return [];
   }
+}
+
+function rowsToLeaderboard(rows: DbLeaderboardPredictionRow[]): DbLeaderboardRow[] {
+  const totals = new Map<string, DbLeaderboardRow>();
+
+  for (const row of rows) {
+    const current = totals.get(row.model) ?? {
+      model: row.model,
+      provider: row.provider,
+      points: 0,
+      exact: 0
+    };
+
+    if (row.home_score !== null && row.away_score !== null) {
+      const score = calculatePredictionScore(
+        { home: row.predicted_home, away: row.predicted_away },
+        { home: row.home_score, away: row.away_score }
+      );
+
+      current.points += score.points;
+      current.exact += score.reason === "exact" ? 1 : 0;
+    }
+
+    totals.set(row.model, current);
+  }
+
+  return [...totals.values()].sort((a, b) => b.points - a.points || b.exact - a.exact || a.model.localeCompare(b.model));
 }

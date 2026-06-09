@@ -47,6 +47,7 @@ function initializeSchema(db: SqliteDb): void {
       competition text not null,
       home_team text not null,
       away_team text not null,
+      venue text,
       status text not null default 'SCHEDULED',
       home_score integer,
       away_score integer,
@@ -76,4 +77,13 @@ function initializeSchema(db: SqliteDb): void {
       unique (prediction_id)
     );
   `);
+
+  ensureColumn(db, "matches", "venue", "text");
+}
+
+function ensureColumn(db: SqliteDb, table: string, column: string, definition: string): void {
+  const columns = db.prepare(`pragma table_info(${table})`).all() as Array<{ name: string }>;
+  if (!columns.some((entry) => entry.name === column)) {
+    db.exec(`alter table ${table} add column ${column} ${definition}`);
+  }
 }

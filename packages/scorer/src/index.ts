@@ -1,6 +1,6 @@
 /**
  * Purpose: Contains the Kicktipp-style scoring rules used to compare LLM predictions.
- * Exact score gets 4 points, exact goal difference gets 3 points, correct tendency gets 2 points, otherwise 0.
+ * Exact score gets 5 points, exact goal difference gets 2 points, correct tendency gets 1 point, otherwise 0.
  */
 export type ScoreReason = "exact" | "goal_difference" | "tendency" | "miss";
 

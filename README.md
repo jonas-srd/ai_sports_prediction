@@ -47,7 +47,7 @@ FOOTBALL_DATA_API_KEY=your_football_data_key
 FOOTBALL_DATA_COMPETITION=WC
 FOOTBALL_DATA_SEASON=2026
 OPENROUTER_API_KEY=your_openrouter_key
-OPENROUTER_TEST_MODEL=openrouter/owl-alpha
+OPENROUTER_TEST_MODEL=openai/gpt-4o
 OPENROUTER_MODEL_IDS=
 SQLITE_DB_PATH=
 ```
@@ -116,6 +116,12 @@ Score finished matches:
 npm run score
 ```
 
+Recalculate all existing finished-match scores after changing the scoring system:
+
+```bash
+npm run score -- --all
+```
+
 Start the local website:
 
 ```bash
@@ -131,9 +137,9 @@ http://localhost:3000
 ## Scoring
 
 ```text
-4 points: exact result
-3 points: correct goal difference
-2 points: correct tendency
+5 points: exact result
+2 points: correct goal difference
+1 point: correct tendency
 0 points: miss
 ```
 
@@ -166,10 +172,16 @@ To override the model list without editing code, set comma-separated OpenRouter 
 OPENROUTER_MODEL_IDS=openrouter/owl-alpha,nex-agi/nex-n2-pro:free,moonshotai/kimi-k2.6:free
 ```
 
-For a free first test, set only one model:
+For a cheap first test, set only one model:
 
 ```text
-OPENROUTER_MODEL_IDS=openrouter/owl-alpha
+OPENROUTER_MODEL_IDS=meta-llama/llama-3.2-3b-instruct
+```
+
+The mainstream 8-model setup uses paid OpenRouter models and requires credits:
+
+```text
+OPENROUTER_MODEL_IDS=openai/gpt-4o,anthropic/claude-sonnet-4.5,google/gemini-3.5-flash,x-ai/grok-4.20,mistralai/mistral-large,deepseek/deepseek-r1,perplexity/sonar-pro,meta-llama/llama-3.2-3b-instruct
 ```
 
 ## Public Deployment Later
