@@ -16,18 +16,18 @@ export type MatchScore = {
 
 export function calculatePredictionScore(predicted: MatchScore, actual: MatchScore): ScoreResult {
   if (predicted.home === actual.home && predicted.away === actual.away) {
-    return { points: 4, reason: "exact" };
+    return { points: 5, reason: "exact" };
   }
 
   const predictedDiff = predicted.home - predicted.away;
   const actualDiff = actual.home - actual.away;
 
   if (predictedDiff === actualDiff) {
-    return { points: 3, reason: "goal_difference" };
+    return { points: 2, reason: "goal_difference" };
   }
 
   if (Math.sign(predictedDiff) === Math.sign(actualDiff)) {
-    return { points: 2, reason: "tendency" };
+    return { points: 1, reason: "tendency" };
   }
 
   return { points: 0, reason: "miss" };

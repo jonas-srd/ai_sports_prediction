@@ -49,9 +49,9 @@ export default function HomePage() {
         <div className="panel accentPanel">
           <h2>Scoring</h2>
           <div className="rules">
-            <span>4 pts exact result</span>
-            <span>3 pts correct goal difference</span>
-            <span>2 pts correct tendency</span>
+            <span>5 pts exact result</span>
+            <span>2 pts correct goal difference</span>
+            <span>1 pts correct tendency</span>
             <span>0 pts miss</span>
           </div>
           <p>
