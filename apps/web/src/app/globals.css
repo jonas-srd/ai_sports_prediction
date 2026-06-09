@@ -589,7 +589,7 @@ h2 {
   font-weight: 800;
 }
 
-.fixtureTeam span {
+.fixtureTeam span:not(.seedFlag):not(.countryFlag) {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -628,19 +628,19 @@ h2 {
 .seedFlag {
   display: inline-grid;
   place-items: center;
-  border-radius: 999px;
-  background:
-    linear-gradient(135deg, rgba(240, 196, 91, 0.92), rgba(179, 58, 39, 0.82)),
-    var(--gold);
-  color: var(--cream);
+  flex-shrink: 0;
+  overflow: visible;
+  border: 1.5px solid rgba(24, 19, 13, 0.22);
+  border-radius: 6px;
+  background: rgba(24, 19, 13, 0.09);
+  color: var(--ink);
+  padding: 4px 7px;
   font-family: "Courier New", monospace;
-  font-size: 0.58rem;
+  font-size: 0.72rem;
   font-weight: 900;
-  letter-spacing: -0.03em;
+  letter-spacing: 0.02em;
   text-transform: uppercase;
-  box-shadow:
-    0 0 0 1px rgba(24, 19, 13, 0.14),
-    0 6px 14px rgba(179, 58, 39, 0.18);
+  white-space: nowrap;
 }
 
 .fixtureCenter {
@@ -813,20 +813,20 @@ h2 {
 .matchNumberBadge {
   position: absolute;
   top: -10px;
-  left: 16px;
+  left: 12px;
   z-index: 1;
-  border: 1px solid rgba(255, 248, 233, 0.82);
+  border: 1px solid var(--line);
   border-radius: 999px;
-  background: var(--ink);
-  color: var(--cream);
-  padding: 5px 9px;
+  background: var(--panel-strong);
+  color: var(--muted);
+  padding: 4px 9px;
   font-family: "Courier New", monospace;
-  font-size: 0.62rem;
+  font-size: 0.6rem;
   font-weight: 900;
   letter-spacing: 0.06em;
   line-height: 1;
   text-transform: uppercase;
-  box-shadow: 0 8px 16px rgba(43, 34, 20, 0.16);
+  box-shadow: 0 3px 8px rgba(43, 34, 20, 0.1);
 }
 
 .predictionMatchButton {
@@ -1015,8 +1015,8 @@ h2 {
 
 .bracketBoard {
   display: grid;
-  grid-template-columns: minmax(520px, 1fr) minmax(230px, 0.42fr) minmax(520px, 1fr);
-  gap: clamp(18px, 2vw, 30px);
+  grid-template-columns: minmax(600px, 1fr) minmax(240px, 0.4fr) minmax(600px, 1fr);
+  gap: clamp(18px, 2vw, 28px);
   align-items: stretch;
   overflow: hidden;
   border: 1px solid rgba(24, 19, 13, 0.11);
@@ -1032,17 +1032,17 @@ h2 {
 
 .bracketHalf {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 14px;
+  grid-template-columns: repeat(4, minmax(140px, 1fr));
+  gap: 12px;
   min-width: 0;
 }
 
 .bracketHalfLeft {
-  grid-template-columns: 1.28fr 1.08fr 0.92fr 0.82fr;
+  grid-template-columns: repeat(4, minmax(140px, 1fr));
 }
 
 .bracketHalfRight {
-  grid-template-columns: 0.82fr 0.92fr 1.08fr 1.28fr;
+  grid-template-columns: repeat(4, minmax(140px, 1fr));
 }
 
 .bracketColumn {
@@ -1050,7 +1050,7 @@ h2 {
   display: grid;
   grid-template-rows: auto 1fr;
   gap: 12px;
-  min-width: 0;
+  min-width: 140px;
 }
 
 .bracketColumn::after {
@@ -1094,20 +1094,21 @@ h2 {
 .bracketColumnMatches {
   display: grid;
   align-content: center;
-  gap: 10px;
+  gap: 20px;
   min-height: 100%;
+  padding-top: 8px;
 }
 
 .bracketColumn-8 .bracketColumnMatches {
-  gap: 8px;
+  gap: 20px;
 }
 
 .bracketColumn-4 .bracketColumnMatches {
-  gap: 38px;
+  gap: 48px;
 }
 
 .bracketColumn-2 .bracketColumnMatches {
-  gap: 120px;
+  gap: 130px;
 }
 
 .bracketColumn-1 .bracketColumnMatches {
@@ -1117,13 +1118,13 @@ h2 {
 .bracketGameCard {
   position: relative;
   z-index: 1;
-  min-height: 92px;
+  min-height: 100px;
   border: 1px solid rgba(70, 55, 35, 0.14);
   border-radius: 18px;
   background:
     linear-gradient(135deg, rgba(255, 255, 255, 0.92), rgba(255, 248, 233, 0.72)),
     rgba(255, 255, 255, 0.86);
-  padding: 16px 10px 10px;
+  padding: 22px 10px 10px;
   box-shadow:
     0 10px 24px rgba(43, 34, 20, 0.07),
     inset 0 1px 0 rgba(255, 255, 255, 0.75);
@@ -1144,17 +1145,48 @@ h2 {
 }
 
 .bracketGameCard .fixtureLine {
-  grid-template-columns: minmax(0, 1fr) minmax(56px, auto) minmax(0, 1fr);
-  gap: 7px;
+  grid-template-columns: 1fr auto 1fr;
+  gap: 8px;
 }
 
 .bracketGameCard .fixtureTeam {
-  font-size: clamp(0.74rem, 0.82vw, 0.86rem);
-  line-height: 1.12;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  font-size: 0.82rem;
+  line-height: 1.2;
+  min-width: 0;
+  gap: 5px;
+}
+
+.bracketGameCard .homeFixtureTeam {
+  justify-content: center;
+}
+
+.bracketGameCard .awayFixtureTeam {
+  justify-content: center;
 }
 
 .bracketGameCard .fixtureCenter {
-  font-size: clamp(0.72rem, 0.78vw, 0.84rem);
+  font-size: 0.95rem;
+  font-weight: 900;
+  text-align: center;
+  white-space: nowrap;
+}
+
+.bracketGameCard .fixtureTeam span:not(.seedFlag):not(.countryFlag) {
+  overflow: visible;
+  white-space: normal;
+  text-align: center;
+  word-break: break-word;
+  hyphens: auto;
+}
+
+.bracketGameCard .seedFlag {
+  font-size: 0.66rem;
+  padding: 4px 7px;
+  border-radius: 5px;
 }
 
 .bracketGameCard .countryFlag {
@@ -1166,20 +1198,24 @@ h2 {
   display: -webkit-box;
   overflow: hidden;
   -webkit-box-orient: vertical;
-  -webkit-line-clamp: 1;
-  font-size: 0.62rem;
+  -webkit-line-clamp: 2;
+  font-size: 0.68rem;
+  line-height: 1.3;
+  text-align: center;
+  color: var(--muted);
+  margin-top: 2px;
 }
 
 .bracketGameCard .matchDisclosure {
-  padding: 5px 8px;
-  font-size: 0.55rem;
+  padding: 5px 10px;
+  font-size: 0.58rem;
 }
 
 .bracketGameCard .matchNumberBadge {
   top: -9px;
-  left: 10px;
-  padding: 4px 7px;
-  font-size: 0.54rem;
+  left: 12px;
+  padding: 4px 8px;
+  font-size: 0.57rem;
 }
 
 .bracketGameCard .matchPredictionHeader {
@@ -1313,7 +1349,7 @@ h2 {
   animation: riseIn 420ms ease both;
 }
 
-@media (max-width: 1320px) {
+@media (max-width: 1560px) {
   .knockoutSection {
     overflow-x: auto;
     padding-bottom: 10px;
@@ -1321,7 +1357,7 @@ h2 {
   }
 
   .bracketBoard {
-    min-width: 1320px;
+    min-width: 1520px;
   }
 }
 
@@ -1462,7 +1498,7 @@ h2 {
   }
 
   .bracketBoard {
-    min-width: 1240px;
+    min-width: 1520px;
     padding: 16px;
   }
 

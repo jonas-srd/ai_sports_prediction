@@ -13,17 +13,20 @@ type TeamMatchupProps = {
 };
 
 export function TeamMatchup({ homeTeam, awayTeam, center, meta, compact = false }: TeamMatchupProps) {
+  const homeIsSeed = getSeedFlagLabel(homeTeam) !== null;
+  const awayIsSeed = getSeedFlagLabel(awayTeam) !== null;
+
   return (
     <div className={`fixtureMatchup${compact ? " compactFixture" : ""}`}>
       <div className="fixtureLine">
         <span className="fixtureTeam homeFixtureTeam">
-          <span>{homeTeam}</span>
+          {!homeIsSeed && <span>{homeTeam}</span>}
           <TeamFlag teamName={homeTeam} />
         </span>
         <strong className="fixtureCenter">{center}</strong>
         <span className="fixtureTeam awayFixtureTeam">
           <TeamFlag teamName={awayTeam} />
-          <span>{awayTeam}</span>
+          {!awayIsSeed && <span>{awayTeam}</span>}
         </span>
       </div>
       {meta ? <p className="fixtureMeta">{meta}</p> : null}
@@ -65,8 +68,13 @@ function getSeedFlagLabel(teamName: string): string | null {
   if (runnerUpGroup) return `2${runnerUpGroup[1]}`;
 
   if (teamName.startsWith("Bester Dritter ")) return "3x";
-  if (teamName.startsWith("Sieger Spiel ")) return "S";
-  if (teamName.startsWith("Verlierer Spiel ")) return "V";
+
+  const winnerMatch = teamName.match(/^Sieger Spiel (\d+)$/);
+  if (winnerMatch) return `W${winnerMatch[1]}`;
+
+  const loserMatch = teamName.match(/^Verlierer Spiel (\d+)$/);
+  if (loserMatch) return `V${loserMatch[1]}`;
+
   if (teamName === "Offen") return "?";
 
   return null;
