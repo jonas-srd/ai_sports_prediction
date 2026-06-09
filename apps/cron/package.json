@@ -13,6 +13,7 @@
     "openrouter:list-free": "tsx src/jobs/openrouter-list-free-models.ts",
     "predict": "tsx src/jobs/predict-today.ts",
     "predict:next": "tsx src/jobs/predict-next.ts",
+    "benchmark:predict": "tsx src/jobs/run-benchmark-predictions.ts",
     "score": "tsx src/jobs/score-results.ts",
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
