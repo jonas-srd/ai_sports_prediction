@@ -60,10 +60,10 @@ export const sampleMatches: DashboardMatch[] = [
     stage: "group_stage",
     isKnockout: false,
     predictions: [
-      createLegacySamplePrediction("sample-1", "GPT-4o", "OpenAI", 2, 1, 4, "exact score"),
-      createLegacySamplePrediction("sample-1", "Claude 3.5 Sonnet", "Anthropic", 1, 1, 0, "miss"),
-      createLegacySamplePrediction("sample-1", "Gemini Pro 1.5", "Google", 2, 0, 2, "tendency"),
-      createLegacySamplePrediction("sample-1", "Grok 2", "xAI", 0, 1, 0, "miss")
+      createLegacySamplePrediction("sample-1", "openai_gpt_5_5", "OpenAI", 2, 1, 4, "exact score"),
+      createLegacySamplePrediction("sample-1", "anthropic_claude_opus_4_8", "Anthropic", 1, 1, 0, "miss"),
+      createLegacySamplePrediction("sample-1", "google_gemini_3_1_pro", "Google", 2, 0, 2, "tendency"),
+      createLegacySamplePrediction("sample-1", "xai_grok_4_3", "xAI", 0, 1, 0, "miss")
     ]
   },
   {
@@ -76,10 +76,10 @@ export const sampleMatches: DashboardMatch[] = [
     stage: "group_stage",
     isKnockout: false,
     predictions: [
-      createLegacySamplePrediction("sample-2", "GPT-4o", "OpenAI", 1, 1, 4, "exact score"),
-      createLegacySamplePrediction("sample-2", "Claude 3.5 Sonnet", "Anthropic", 2, 1, 0, "miss"),
-      createLegacySamplePrediction("sample-2", "Gemini Pro 1.5", "Google", 0, 0, 3, "goal difference"),
-      createLegacySamplePrediction("sample-2", "Grok 2", "xAI", 1, 2, 0, "miss")
+      createLegacySamplePrediction("sample-2", "openai_gpt_5_5", "OpenAI", 1, 1, 4, "exact score"),
+      createLegacySamplePrediction("sample-2", "anthropic_claude_opus_4_8", "Anthropic", 2, 1, 0, "miss"),
+      createLegacySamplePrediction("sample-2", "google_gemini_3_1_pro", "Google", 0, 0, 3, "goal difference"),
+      createLegacySamplePrediction("sample-2", "xai_grok_4_3", "xAI", 1, 2, 0, "miss")
     ]
   }
 ];

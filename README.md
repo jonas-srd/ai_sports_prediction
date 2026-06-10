@@ -47,7 +47,7 @@ FOOTBALL_DATA_API_KEY=your_football_data_key
 FOOTBALL_DATA_COMPETITION=WC
 FOOTBALL_DATA_SEASON=2026
 OPENROUTER_API_KEY=your_openrouter_key
-OPENROUTER_TEST_MODEL=openai/gpt-4o
+OPENROUTER_TEST_MODEL=openai/gpt-5.5
 OPENROUTER_MODEL_IDS=
 SQLITE_DB_PATH=
 ```
@@ -182,24 +182,24 @@ POST https://openrouter.ai/api/v1/chat/completions
 Header: Authorization: Bearer OPENROUTER_API_KEY
 ```
 
-The default project setup uses eight models from `packages/llm/src/models.ts`.
+The MVP default uses the minimal flagship benchmark models from `packages/llm/src/models.ts`.
 
-To override the model list without editing code, set comma-separated OpenRouter model IDs:
+To override the active subset without editing code, set comma-separated OpenRouter model IDs from `FULL_BENCHMARK_MODELS`:
 
 ```text
-OPENROUTER_MODEL_IDS=openrouter/owl-alpha,nex-agi/nex-n2-pro:free,moonshotai/kimi-k2.6:free
+OPENROUTER_MODEL_IDS=openai/gpt-5.5,anthropic/claude-opus-4.8
 ```
 
-For a cheap first test, set only one model:
+For a single-model smoke test, set only one model:
 
 ```text
-OPENROUTER_MODEL_IDS=meta-llama/llama-3.2-3b-instruct
+OPENROUTER_MODEL_IDS=mistralai/mistral-large-2512
 ```
 
-The mainstream 8-model setup uses paid OpenRouter models and requires credits:
+The minimal flagship MVP setup uses paid OpenRouter models and requires credits:
 
 ```text
-OPENROUTER_MODEL_IDS=openai/gpt-4o,anthropic/claude-sonnet-4.5,google/gemini-3.5-flash,x-ai/grok-4.20,mistralai/mistral-large,deepseek/deepseek-r1,perplexity/sonar-pro,meta-llama/llama-3.2-3b-instruct
+OPENROUTER_MODEL_IDS=openai/gpt-5.5,anthropic/claude-opus-4.8,google/gemini-3.1-pro-preview,x-ai/grok-4.3,deepseek/deepseek-v4-pro,qwen/qwen3.7-max,mistralai/mistral-large-2512
 ```
 
 ## Public Deployment
