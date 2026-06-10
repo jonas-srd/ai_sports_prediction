@@ -118,7 +118,7 @@ function formatCompetition(value?: string): string | null {
   return value
     .replace("FIFA World Cup", "World Cup")
     .replace("GROUP_STAGE", "Group stage")
-    .replace(/GROUP_([A-Z])/g, "Group $1")
+    .replace(/GROUP_([A-L])/g, "Group $1")
     .replaceAll(" - ", " / ");
 }
 
