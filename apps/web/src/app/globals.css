@@ -1053,11 +1053,30 @@ h2 {
   min-width: 0;
 }
 
+.matchPredictionModelName {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: 7px;
+}
+
 .matchPredictionModel strong {
   display: block;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.matchPredictionModelName strong {
+  min-width: 0;
+}
+
+.matchPredictionModel .filterInfo {
+  display: inline-grid;
+  flex: 0 0 auto;
+  margin-top: 0;
+  color: var(--red);
+  font-size: 0.58rem;
 }
 
 .matchPredictionModel span,
