@@ -3,8 +3,7 @@
 /**
  * Purpose: Client-side filters, charts, and detailed table for benchmark analytics.
  */
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { createPortal } from "react-dom";
+import { useMemo, useState } from "react";
 import {
   buildAnalyticsLeaderboard,
   buildAnalyticsSeries,
@@ -25,6 +24,7 @@ import {
   type PromptStrategy,
   type TournamentStage
 } from "@/lib/benchmark-analytics";
+import { InfoTooltip, type TooltipLine } from "@/components/info-tooltip";
 
 type AnalyticsDashboardProps = {
   predictions: BenchmarkDisplayPrediction[];
@@ -243,7 +243,13 @@ function RankedBarChart({
             onClick={() => onSelect(row.key)}
           >
             <span className="barRank">#{row.rank}</span>
-            <span className="barLabel">{row.model}</span>
+            <span className="barLabel barModelLabel">
+              <span>{row.model}</span>
+              <InfoTooltip
+                label={`${row.model} configuration`}
+                lines={buildModelConfigurationHelp(row)}
+              />
+            </span>
             <span className="barTrack">
               <span className="barFill" style={{ width: `${width}%` }} />
             </span>
@@ -374,7 +380,10 @@ function AnalyticsTable({
               <td>
                 <span className="modelConfigCell">
                   <span>{row.model}</span>
-                  <InfoTooltip text={buildModelConfigurationHelp(row)} />
+                  <InfoTooltip
+                    label={`${row.model} configuration`}
+                    lines={buildModelConfigurationHelp(row)}
+                  />
                 </span>
               </td>
               <td>{row.provider}</td>
@@ -454,94 +463,37 @@ function FilterLabel({ label, help }: { label: string; help: string }) {
   );
 }
 
-function InfoTooltip({ label = "Info", text }: { label?: string; text: string }) {
-  const triggerRef = useRef<HTMLSpanElement>(null);
-  const [isOpen, setIsOpen] = useState(false);
-  const [position, setPosition] = useState({ left: 0, top: 0 });
-
-  const updatePosition = useCallback(() => {
-    const trigger = triggerRef.current;
-    if (!trigger) {
-      return;
-    }
-
-    const rect = trigger.getBoundingClientRect();
-    const tooltipHalfWidth = 180;
-    const left = Math.min(
-      window.innerWidth - tooltipHalfWidth - 22,
-      Math.max(tooltipHalfWidth + 22, rect.left + rect.width / 2)
-    );
-
-    setPosition({
-      left,
-      top: rect.top - 9
-    });
-  }, []);
-
-  const showTooltip = () => {
-    updatePosition();
-    setIsOpen(true);
-  };
-
-  useEffect(() => {
-    if (!isOpen) {
-      return;
-    }
-
-    updatePosition();
-    window.addEventListener("resize", updatePosition);
-    window.addEventListener("scroll", updatePosition, true);
-
-    return () => {
-      window.removeEventListener("resize", updatePosition);
-      window.removeEventListener("scroll", updatePosition, true);
-    };
-  }, [isOpen, updatePosition]);
-
-  return (
-    <>
-      <span
-        aria-label={`${label}: ${text}`}
-        className="filterInfo"
-        onBlur={() => setIsOpen(false)}
-        onClick={(event) => event.stopPropagation()}
-        onFocus={showTooltip}
-        onMouseEnter={showTooltip}
-        onMouseLeave={() => setIsOpen(false)}
-        ref={triggerRef}
-        tabIndex={0}
-        title={text}
-      >
-        i
-      </span>
-      {isOpen && typeof document !== "undefined"
-        ? createPortal(
-          <span
-            className="floatingTooltip"
-            role="tooltip"
-            style={{ left: `${position.left}px`, top: `${position.top}px` }}
-          >
-            {text}
-          </span>,
-          document.body
-        )
-        : null}
-    </>
-  );
-}
-
-function buildModelConfigurationHelp(row: AnalyticsLeaderboardRow): string {
-  const horizon = explainForecastHorizon(row.forecastHorizon);
-  const access = explainAccessCondition(row.accessCondition);
-  const prompt = explainPromptStrategy(row.promptStrategy);
+function buildModelConfigurationHelp(row: AnalyticsLeaderboardRow): TooltipLine[] {
   const stages = row.stages.length > 0
     ? row.stages.map(formatStage).join(", ")
     : "the currently selected stages";
-  const search = row.accessCondition === "open_book"
-    ? `Search observed means web/tool usage was detected in ${formatMetricValue("open_book_search_observed_rate", row.openBookSearchObservedRate)} of this configuration's open-book predictions.`
-    : "Search is not applicable because this is a closed-book configuration.";
 
-  return `${row.model} by ${row.provider}. ${horizon} ${access} ${prompt} Stage coverage: ${stages}. ${search} Aggregated over ${row.predictionsTotal} predictions; ${row.matchesScored} have evaluation scores so far.`;
+  return [
+    {
+      label: row.forecastHorizon,
+      text: explainForecastHorizon(row.forecastHorizon)
+    },
+    {
+      label: formatCondition(row.accessCondition),
+      text: explainAccessCondition(row.accessCondition)
+    },
+    {
+      label: formatCondition(row.promptStrategy),
+      text: explainPromptStrategy(row.promptStrategy)
+    },
+    {
+      label: "Stage coverage",
+      text: stages
+    },
+    {
+      label: "Predictions",
+      text: `${row.predictionsTotal} total predictions in this configuration.`
+    },
+    {
+      label: "Evaluation",
+      text: `${row.matchesScored} match(es) currently have evaluation scores.`
+    }
+  ];
 }
 
 function explainForecastHorizon(value: string): string {

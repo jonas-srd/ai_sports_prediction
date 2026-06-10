@@ -4,10 +4,10 @@
  * Purpose: Clickable match card for the schedule page.
  * It keeps the expansion state in the browser and shows all model predictions for one fixture.
  */
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { createPortal } from "react-dom";
+import { useEffect, useMemo, useRef, useState } from "react";
 import type { DashboardMatch, DashboardPrediction } from "@/lib/dashboard-data";
 import { formatCondition, formatStage } from "@/lib/benchmark-analytics";
+import { InfoTooltip, type TooltipLine } from "@/components/info-tooltip";
 import { TeamMatchup } from "@/components/team-matchup";
 
 type MatchPredictionCardProps = {
@@ -35,14 +35,35 @@ export function MatchPredictionCard({
   awayTeamLabel,
   badge
 }: MatchPredictionCardProps) {
+  const cardRef = useRef<HTMLElement>(null);
   const [isOpen, setIsOpen] = useState(false);
   const rows = useMemo(() => getPredictionRows(match), [match]);
   const hasResult = match.actualHome !== null && match.actualAway !== null;
   const displayHomeTeam = homeTeamLabel ?? match.homeTeam;
   const displayAwayTeam = awayTeamLabel ?? match.awayTeam;
+  const anchorId = getMatchAnchorId(match.id);
+
+  useEffect(() => {
+    const openIfTargeted = () => {
+      const activeHash = decodeURIComponent(window.location.hash.replace(/^#/, ""));
+      if (activeHash !== anchorId) {
+        return;
+      }
+
+      setIsOpen(true);
+      window.setTimeout(() => {
+        cardRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+      }, 80);
+    };
+
+    openIfTargeted();
+    window.addEventListener("hashchange", openIfTargeted);
+
+    return () => window.removeEventListener("hashchange", openIfTargeted);
+  }, [anchorId]);
 
   return (
-    <article className={`${className} predictionMatchCard${isOpen ? " isOpen" : ""}`}>
+    <article className={`${className} predictionMatchCard${isOpen ? " isOpen" : ""}`} id={anchorId} ref={cardRef}>
       {badge ? <span className="matchNumberBadge">{badge}</span> : null}
       <button
         aria-expanded={isOpen}
@@ -85,7 +106,7 @@ export function MatchPredictionCard({
                       <strong>{row.prediction.model}</strong>
                       <InfoTooltip
                         label={`${row.prediction.model} configuration`}
-                        text={buildPredictionConfigurationHelp(row.prediction)}
+                        lines={buildPredictionConfigurationHelp(row.prediction)}
                       />
                     </div>
                     <span>{row.prediction.provider}</span>
@@ -93,8 +114,7 @@ export function MatchPredictionCard({
                       <span>{row.prediction.forecastHorizon}</span>
                       <span>{formatCondition(row.prediction.accessCondition)}</span>
                       <span>{formatCondition(row.prediction.promptStrategy)}</span>
-                      {getValidationBadge(row.prediction)}
-                      {getOpenBookBadge(row.prediction)}
+                      <span>{formatStage(row.prediction.stage)}</span>
                     </div>
                   </div>
 
@@ -138,110 +158,58 @@ function getPredictionRows(match: DashboardMatch): PredictionRow[] {
   });
 }
 
-function InfoTooltip({ label = "Info", text }: { label?: string; text: string }) {
-  const triggerRef = useRef<HTMLSpanElement>(null);
-  const [isOpen, setIsOpen] = useState(false);
-  const [position, setPosition] = useState({ left: 0, top: 0 });
-
-  const updatePosition = useCallback(() => {
-    const trigger = triggerRef.current;
-    if (!trigger) {
-      return;
-    }
-
-    const rect = trigger.getBoundingClientRect();
-    const tooltipHalfWidth = 180;
-    const left = Math.min(
-      window.innerWidth - tooltipHalfWidth - 22,
-      Math.max(tooltipHalfWidth + 22, rect.left + rect.width / 2)
-    );
-
-    setPosition({
-      left,
-      top: rect.top - 9
-    });
-  }, []);
-
-  const showTooltip = () => {
-    updatePosition();
-    setIsOpen(true);
-  };
-
-  useEffect(() => {
-    if (!isOpen) {
-      return;
-    }
-
-    updatePosition();
-    window.addEventListener("resize", updatePosition);
-    window.addEventListener("scroll", updatePosition, true);
-
-    return () => {
-      window.removeEventListener("resize", updatePosition);
-      window.removeEventListener("scroll", updatePosition, true);
-    };
-  }, [isOpen, updatePosition]);
-
-  return (
-    <>
-      <span
-        aria-label={`${label}: ${text}`}
-        className="filterInfo"
-        onBlur={() => setIsOpen(false)}
-        onClick={(event) => event.stopPropagation()}
-        onFocus={showTooltip}
-        onMouseEnter={showTooltip}
-        onMouseLeave={() => setIsOpen(false)}
-        ref={triggerRef}
-        tabIndex={0}
-        title={text}
-      >
-        i
-      </span>
-      {isOpen && typeof document !== "undefined"
-        ? createPortal(
-          <span
-            className="floatingTooltip"
-            role="tooltip"
-            style={{ left: `${position.left}px`, top: `${position.top}px` }}
-          >
-            {text}
-          </span>,
-          document.body
-        )
-        : null}
-    </>
-  );
+function getMatchAnchorId(matchId: string): string {
+  return `match-${matchId}`;
 }
 
-function buildPredictionConfigurationHelp(prediction: DashboardPrediction): string {
-  const horizon = explainForecastHorizon(prediction.forecastHorizon);
-  const access = explainAccessCondition(prediction.accessCondition);
-  const prompt = explainPromptStrategy(prediction.promptStrategy);
-  const stage = `Stage ${formatStage(prediction.stage)} means this prediction belongs to that tournament phase.`;
-  const search = explainSearchStatus(prediction);
-  const score = `The displayed pick is ${formatPredictionScore(prediction)} for 90 minutes.`;
-  const validation = prediction.isValidForScoring
-    ? "The output is valid for scoring."
-    : `The output is not valid for scoring (${prediction.validationStatus ?? "invalid"}).`;
-  const scoring = prediction.scorePoints === null
-    ? "Evaluation is still pending for this match."
-    : `Current evaluation: ${prediction.scorePoints} Kicktipp point(s), reason: ${prediction.scoreReason ?? "scored"}.`;
-
-  return `${prediction.model} by ${prediction.provider}. ${horizon} ${access} ${prompt} ${stage} ${search} ${score} ${validation} ${scoring}`;
+function buildPredictionConfigurationHelp(prediction: DashboardPrediction): TooltipLine[] {
+  return [
+    {
+      label: prediction.forecastHorizon,
+      text: explainForecastHorizon(prediction.forecastHorizon)
+    },
+    {
+      label: formatCondition(prediction.accessCondition),
+      text: explainAccessCondition(prediction.accessCondition)
+    },
+    {
+      label: formatCondition(prediction.promptStrategy),
+      text: explainPromptStrategy(prediction.promptStrategy)
+    },
+    {
+      label: formatStage(prediction.stage),
+      text: "Tournament phase this prediction belongs to."
+    },
+    {
+      label: "Pick",
+      text: `${formatPredictionScore(prediction)} after 90 minutes.`
+    },
+    {
+      label: "Validation",
+      text: prediction.isValidForScoring
+        ? "Output is valid for scoring."
+        : `Output is not valid for scoring (${prediction.validationStatus ?? "invalid"}).`
+    },
+    {
+      label: "Evaluation",
+      text: prediction.scorePoints === null
+        ? "Still pending for this match."
+        : `${prediction.scorePoints} Kicktipp point(s), reason: ${prediction.scoreReason ?? "scored"}.`
+    }
+  ];
 }
 
 function explainForecastHorizon(value: string): string {
   if (value === "STAGE_OPENING") {
-    return "Stage opening means this prediction was generated once at the start of the tournament stage, before the relevant matches were played.";
+    return "Prediction generated once at the start of the tournament stage, before the relevant matches were played.";
   }
 
   if (value === "T_24H") {
-    return "T_24H means this prediction was scheduled approximately 24 hours before kickoff.";
+    return "Prediction scheduled approximately 24 hours before kickoff.";
   }
 
   if (value === "T_1H") {
-    return "T_1H means this prediction was scheduled approximately 1 hour before kickoff.";
+    return "Prediction scheduled approximately 1 hour before kickoff.";
   }
 
   return `${value} is the forecast horizon used for this prediction.`;
@@ -249,11 +217,11 @@ function explainForecastHorizon(value: string): string {
 
 function explainAccessCondition(value: string): string {
   if (value === "open_book") {
-    return "Open book means the model was allowed to use configured web-search/tool access before answering.";
+    return "Model was allowed to use configured web-search/tool access before answering.";
   }
 
   if (value === "closed_book") {
-    return "Closed book means the model had to answer from internal knowledge only, without search/tool access.";
+    return "Model had to answer from internal knowledge only, without search/tool access.";
   }
 
   return `${formatCondition(value)} is the access condition stored for this prediction.`;
@@ -261,27 +229,14 @@ function explainAccessCondition(value: string): string {
 
 function explainPromptStrategy(value: string): string {
   if (value === "direct_score") {
-    return "Direct score asks the model for the most likely scoreline plus required probabilities.";
+    return "Prompt asks for the most likely scoreline plus required probabilities.";
   }
 
   if (value === "probabilistic_forecast") {
-    return "Probabilistic forecast emphasizes calibrated outcome probabilities before the scoreline.";
+    return "Prompt emphasizes calibrated outcome probabilities before the scoreline.";
   }
 
   return `${formatCondition(value)} is the prompt strategy stored for this prediction.`;
-}
-
-function explainSearchStatus(prediction: DashboardPrediction): string {
-  if (prediction.accessCondition !== "open_book") {
-    return "Search observed is not applicable because this is not an open-book prediction.";
-  }
-
-  const observed = prediction.openBookCompliance === "observed_search" || prediction.toolCallsObserved === true;
-  const callCount = prediction.numToolCalls === null ? "no" : `${prediction.numToolCalls}`;
-
-  return observed
-    ? `Search observed means the run actually used web/tool access; ${callCount} tool call(s) were recorded.`
-    : "Search not observed means open-book access was allowed, but no web/tool call was detected in the stored run.";
 }
 
 function formatActualScore(match: DashboardMatch): string {
@@ -330,29 +285,4 @@ function formatPercent(value: number | null): string {
 
 function hasAdvancement(prediction: DashboardPrediction): boolean {
   return prediction.homeAdvancesProb !== null || prediction.awayAdvancesProb !== null;
-}
-
-function getValidationBadge(prediction: DashboardPrediction) {
-  if (
-    prediction.validationStatus === null
-    || prediction.validationStatus === "valid"
-    || prediction.validationStatus === "legacy_adapter"
-  ) {
-    return null;
-  }
-
-  return <span className="statusBadge warningBadge">{prediction.validationStatus}</span>;
-}
-
-function getOpenBookBadge(prediction: DashboardPrediction) {
-  if (prediction.accessCondition !== "open_book") {
-    return null;
-  }
-
-  const observed = prediction.openBookCompliance === "observed_search" || prediction.toolCallsObserved === true;
-  return (
-    <span className={`statusBadge ${observed ? "successBadge" : "warningBadge"}`}>
-      {observed ? "search observed" : "search not observed"}
-    </span>
-  );
 }

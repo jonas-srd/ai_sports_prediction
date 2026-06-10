@@ -75,7 +75,7 @@ export default function HomePage() {
         <div className="matchList matchPreviewGrid">
           {displayMatches.slice(0, 8).map((match) => {
             return (
-              <div className="matchCard" key={match.id}>
+              <Link className="matchCard" href={`/matches#${getMatchAnchorId(match.id)}`} key={match.id}>
                 <TeamMatchup
                   compact
                   homeTeam={match.homeTeam}
@@ -83,13 +83,17 @@ export default function HomePage() {
                   center={formatMatchCenter(match)}
                   meta={formatMatchMeta(match)}
                 />
-              </div>
+              </Link>
             );
           })}
         </div>
       </section>
     </main>
   );
+}
+
+function getMatchAnchorId(matchId: string): string {
+  return `match-${matchId}`;
 }
 
 function formatMatchCenter(match: DashboardMatch): string {

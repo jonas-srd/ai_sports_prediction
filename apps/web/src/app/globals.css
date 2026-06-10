@@ -70,16 +70,17 @@ a {
 }
 
 .siteNavInner {
-  display: flex;
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
   align-items: center;
-  justify-content: space-between;
   gap: 12px;
-  width: min(1060px, calc(100% - 40px));
+  width: min(1240px, calc(100% - 40px));
   margin: 0 auto;
   padding: 14px 0;
 }
 
 .siteNavLogo {
+  justify-self: start;
   color: var(--ink);
   font-family: Georgia, "Times New Roman", serif;
   font-size: 1.05rem;
@@ -88,10 +89,11 @@ a {
 }
 
 .siteNavLinks {
+  grid-column: 2;
   display: flex;
   flex-wrap: wrap;
   gap: 6px;
-  justify-content: flex-end;
+  justify-content: center;
 }
 
 .siteNavLinks a {
@@ -540,6 +542,21 @@ h2 {
   white-space: nowrap;
 }
 
+.leaderboardModelName {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: 7px;
+}
+
+.leaderboardModelName strong {
+  min-width: 0;
+}
+
+.leaderboardModelName .filterInfo {
+  flex: 0 0 auto;
+}
+
 .rankRow p,
 .predictionRow p,
 .matchMeta {
@@ -705,6 +722,22 @@ h2 {
   background: rgba(255, 255, 255, 0.48);
   padding: 14px 16px;
   min-height: 62px;
+  transition:
+    border-color 160ms ease,
+    background 160ms ease,
+    transform 160ms ease;
+}
+
+.matchCard:hover,
+.matchCard:focus-visible {
+  border-color: rgba(179, 58, 39, 0.32);
+  background: rgba(255, 248, 233, 0.82);
+  transform: translateY(-1px);
+}
+
+.matchCard:focus-visible {
+  outline: 2px solid rgba(179, 58, 39, 0.35);
+  outline-offset: 4px;
 }
 
 .teamName {
@@ -1085,6 +1118,13 @@ h2 {
   margin-top: 2px;
   color: var(--muted);
   font-size: 0.76rem;
+}
+
+.matchPredictionModel span.filterInfo {
+  display: inline-grid;
+  margin-top: 0;
+  color: var(--red);
+  font-size: 0.58rem;
 }
 
 .benchmarkBadges {
@@ -1779,18 +1819,18 @@ h2 {
 .floatingTooltip {
   position: fixed;
   z-index: 10000;
-  width: min(360px, calc(100vw - 44px));
+  width: min(520px, calc(100vw - 44px));
   border: 1px solid rgba(70, 55, 35, 0.18);
   border-radius: 14px;
   background: rgba(24, 19, 13, 0.96);
   box-shadow: 0 18px 42px rgba(24, 19, 13, 0.24);
   color: var(--cream);
-  padding: 10px 12px;
+  padding: 14px 16px;
   font-family: Georgia, "Times New Roman", serif;
-  font-size: 0.78rem;
+  font-size: 0.84rem;
   font-weight: 700;
   letter-spacing: 0;
-  line-height: 1.35;
+  line-height: 1.45;
   pointer-events: none;
   text-transform: none;
   transform: translate(-50%, -100%);
@@ -1805,6 +1845,28 @@ h2 {
   background: rgba(24, 19, 13, 0.96);
   content: "";
   transform: translate(-50%, -5px) rotate(45deg);
+}
+
+.floatingTooltipLine {
+  display: grid;
+  grid-template-columns: 150px minmax(0, 1fr);
+  column-gap: 14px;
+  align-items: start;
+  margin: 0 0 9px;
+  font-weight: 500;
+}
+
+.floatingTooltipLine:last-child {
+  margin-bottom: 0;
+}
+
+.floatingTooltipLine strong {
+  display: inline;
+  color: #f4cc73;
+  font-size: 0.82rem;
+  font-weight: 900;
+  line-height: 1.45;
+  white-space: nowrap;
 }
 
 .modelConfigCell {
@@ -1955,6 +2017,24 @@ h2 {
   font-weight: 900;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.barModelLabel {
+  display: inline-flex;
+  min-width: 0;
+  align-items: center;
+  gap: 7px;
+  overflow: visible;
+}
+
+.barModelLabel > span:first-child {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.barModelLabel .filterInfo {
+  flex: 0 0 auto;
 }
 
 .barTrack {
@@ -2122,6 +2202,74 @@ h2 {
   color: var(--ink);
 }
 
+.aboutShell {
+  max-width: 1120px;
+}
+
+.aboutIntroPanel {
+  max-width: 960px;
+  margin: 0 auto 18px;
+}
+
+.aboutIntroPanel p,
+.aboutPanel > p {
+  color: var(--muted);
+  line-height: 1.6;
+}
+
+.aboutGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 18px;
+  margin-bottom: 18px;
+}
+
+.aboutPanel {
+  align-content: start;
+  display: grid;
+  gap: 18px;
+}
+
+.aboutStepList,
+.aboutDefinitionList {
+  display: grid;
+  gap: 12px;
+}
+
+.aboutStep,
+.aboutDefinition {
+  border: 1px solid rgba(70, 55, 35, 0.12);
+  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.46);
+  padding: 14px 16px;
+}
+
+.aboutStep strong,
+.aboutDefinition strong {
+  display: block;
+  margin-bottom: 6px;
+  color: var(--red);
+  font-family: "Courier New", monospace;
+  font-size: 0.72rem;
+  font-weight: 900;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.aboutStep p,
+.aboutDefinition p,
+.aboutCautionPanel p {
+  margin: 0;
+  color: var(--muted);
+  line-height: 1.55;
+}
+
+.aboutCautionPanel {
+  background:
+    radial-gradient(circle at 100% 0%, rgba(240, 196, 91, 0.22), transparent 14rem),
+    var(--panel);
+}
+
 @keyframes riseIn {
   from {
     opacity: 0;
@@ -2156,6 +2304,10 @@ h2 {
   .leaderSpotlight {
     grid-template-columns: 1fr;
     max-width: 820px;
+  }
+
+  .aboutGrid {
+    grid-template-columns: 1fr;
   }
 
   .focusStats {

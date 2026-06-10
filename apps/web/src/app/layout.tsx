@@ -21,6 +21,7 @@ export default function RootLayout({ children }: Readonly<{ children: ReactNode 
             <Link className="siteNavLogo" href="/">LLM Kicktipp</Link>
             <nav className="siteNavLinks">
               <Link href="/">Home</Link>
+              <Link href="/about">About</Link>
               <Link href="/matches">Matches</Link>
               <Link href="/tournament-tree">Tournament Tree</Link>
               <Link href="/analytics">Analytics</Link>
