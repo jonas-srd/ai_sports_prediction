@@ -88,9 +88,9 @@ export function MatchPredictionCard({
       {isOpen ? (
         <div className="matchPredictionPanel">
           <div className={`matchPredictionHeader${predictionControls ? " hasControls" : ""}`}>
-            <div>
-              <strong>Model predictions</strong>
-              <span>{rows.length} picks for this match</span>
+            <div className="matchPredictionSummary">
+              <span>Predictions</span>
+              <strong>{rows.length} model picks</strong>
             </div>
             {predictionControls ? (
               <div className="matchPredictionControls">

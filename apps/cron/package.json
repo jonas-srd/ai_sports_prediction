@@ -14,6 +14,7 @@
     "predict": "tsx src/jobs/predict-today.ts",
     "predict:next": "tsx src/jobs/predict-next.ts",
     "benchmark:predict": "tsx src/jobs/run-benchmark-predictions.ts",
+    "special:predict": "tsx src/jobs/run-special-predictions.ts",
     "benchmark:evaluate": "tsx src/jobs/evaluate-benchmark-predictions.ts",
     "benchmark:export": "tsx src/jobs/export-worldcup2026-paper-data.ts",
     "score": "tsx src/jobs/score-results.ts",

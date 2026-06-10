@@ -232,6 +232,119 @@ function initializeSchema(db: SqliteDb): void {
       unique (prediction_id)
     );
 
+    create table if not exists special_prediction_runs (
+      id text primary key,
+      forecast_horizon text not null check (forecast_horizon in ('T_24H', 'T_1H', 'STAGE_OPENING')),
+      sample_id integer not null default 1,
+      started_at_utc text not null,
+      created_at text not null default current_timestamp
+    );
+
+    create table if not exists special_predictions (
+      id text primary key,
+      run_id text references special_prediction_runs(id) on delete set null,
+
+      question_id text not null,
+      question_label text not null,
+      prediction_type text not null check (prediction_type in ('single_choice', 'multi_choice_fixed_k')),
+      k integer,
+
+      predictor_type text not null check (predictor_type in ('llm', 'baseline')),
+      predictor_id text not null,
+      provider text not null,
+      model_id text references models(id) on delete set null,
+      model_version text,
+
+      access_condition text not null check (access_condition in ('closed_book', 'open_book', 'not_applicable')),
+      prompt_strategy text not null check (prompt_strategy in ('direct_score', 'probabilistic_forecast', 'not_applicable')),
+      forecast_horizon text not null check (forecast_horizon in ('T_24H', 'T_1H', 'STAGE_OPENING')),
+      sample_id integer not null default 1,
+
+      actual_prediction_time_utc text,
+      prompt_template_id text,
+      prompt_hash text,
+      raw_prompt text,
+      raw_response text not null,
+      parsed_response text,
+      response_id text,
+      temperature real,
+      top_p real,
+      max_tokens integer,
+      latency_ms integer,
+      input_tokens integer,
+      output_tokens integer,
+      cost_usd real,
+
+      final_pick text,
+      final_picks text not null default '[]',
+      confidence real,
+      reasoning_summary text,
+
+      validation_status text check (
+        validation_status is null or validation_status in (
+          'valid',
+          'normalized',
+          'repaired',
+          'repaired_and_normalized',
+          'invalid_json',
+          'invalid_schema',
+          'invalid_probability_range',
+          'invalid_probability_sum',
+          'invalid_candidate',
+          'invalid_pick_count',
+          'invalid_rank',
+          'invalid_after_repair',
+          'api_error',
+          'timeout'
+        )
+      ),
+      is_valid_for_scoring integer not null default 0,
+      repair_attempted integer not null default 0,
+      repair_raw_response text,
+      normalization_applied integer not null default 0,
+      normalized_fields text not null default '[]',
+      validation_errors text not null default '[]',
+      probability_sum_original real,
+      probability_sum_final real,
+
+      tools_enabled integer not null default 0,
+      tool_type text,
+      tool_calls_observed integer,
+      num_tool_calls integer,
+      tool_trace_available integer not null default 0,
+      tool_trace text,
+      open_book_compliance text not null default 'not_applicable' check (
+        open_book_compliance in ('observed_search', 'no_observed_search', 'unknown', 'not_applicable')
+      ),
+
+      created_at text not null default current_timestamp,
+      updated_at text not null default current_timestamp,
+
+      unique (
+        question_id,
+        predictor_type,
+        predictor_id,
+        forecast_horizon,
+        access_condition,
+        prompt_strategy,
+        sample_id
+      )
+    );
+
+    create table if not exists special_prediction_options (
+      id text primary key,
+      prediction_id text not null references special_predictions(id) on delete cascade,
+      question_id text not null,
+      candidate_id text not null,
+      candidate_label text not null,
+      candidate_type text not null,
+      probability real not null,
+      rank integer not null,
+      is_final_pick integer not null default 0,
+      created_at text not null default current_timestamp,
+      unique (prediction_id, candidate_id)
+    );
+
     create index if not exists idx_benchmark_predictions_match on benchmark_predictions(match_id);
     create index if not exists idx_benchmark_predictions_predictor on benchmark_predictions(predictor_type, predictor_id);
     create index if not exists idx_benchmark_predictions_conditions on benchmark_predictions(
@@ -239,6 +352,14 @@ function initializeSchema(db: SqliteDb): void {
       access_condition,
       prompt_strategy
     );
+    create index if not exists idx_special_predictions_question on special_predictions(question_id);
+    create index if not exists idx_special_predictions_predictor on special_predictions(predictor_type, predictor_id);
+    create index if not exists idx_special_predictions_conditions on special_predictions(
+      forecast_horizon,
+      access_condition,
+      prompt_strategy
+    );
+    create index if not exists idx_special_prediction_options_prediction on special_prediction_options(prediction_id);
   `);
 
   ensureColumn(db, "matches", "venue", "text");

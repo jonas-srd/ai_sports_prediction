@@ -546,6 +546,57 @@ h2 {
   box-shadow: 0 14px 34px rgba(179, 58, 39, 0.12);
 }
 
+.leaderboardButton.rankRowGold,
+.leaderboardButton.rankRowGold:hover,
+.leaderboardButton.rankRowGold.isSelected {
+  border-color: rgba(214, 150, 50, 0.72);
+  background:
+    linear-gradient(90deg, rgba(240, 196, 91, 0.24), rgba(255, 255, 255, 0.58) 42%),
+    rgba(255, 251, 241, 0.72);
+  box-shadow:
+    inset 0 0 0 1px rgba(240, 196, 91, 0.5),
+    0 14px 30px rgba(214, 150, 50, 0.15);
+}
+
+.leaderboardButton.rankRowSilver,
+.leaderboardButton.rankRowSilver:hover,
+.leaderboardButton.rankRowSilver.isSelected {
+  border-color: rgba(152, 153, 148, 0.72);
+  background:
+    linear-gradient(90deg, rgba(206, 208, 202, 0.26), rgba(255, 255, 255, 0.58) 42%),
+    rgba(255, 251, 241, 0.72);
+  box-shadow:
+    inset 0 0 0 1px rgba(188, 190, 184, 0.52),
+    0 14px 30px rgba(117, 118, 112, 0.12);
+}
+
+.leaderboardButton.rankRowBronze,
+.leaderboardButton.rankRowBronze:hover,
+.leaderboardButton.rankRowBronze.isSelected {
+  border-color: rgba(177, 106, 54, 0.72);
+  background:
+    linear-gradient(90deg, rgba(190, 111, 59, 0.2), rgba(255, 255, 255, 0.58) 42%),
+    rgba(255, 251, 241, 0.72);
+  box-shadow:
+    inset 0 0 0 1px rgba(190, 111, 59, 0.44),
+    0 14px 30px rgba(142, 80, 42, 0.12);
+}
+
+.rankRowGold .rank {
+  background: linear-gradient(145deg, #f6d37a, #b8781d);
+  color: #1f1608;
+}
+
+.rankRowSilver .rank {
+  background: linear-gradient(145deg, #f4f2e8, #9a9b96);
+  color: #171510;
+}
+
+.rankRowBronze .rank {
+  background: linear-gradient(145deg, #d08a52, #7a3d20);
+  color: #fff8ec;
+}
+
 .inlineInspector {
   max-width: none;
   margin: 0;
@@ -807,11 +858,14 @@ h2 {
 .scheduleList {
   display: grid;
   gap: 24px;
-  max-width: 920px;
+  width: min(1164px, 100%);
+  max-width: none;
   margin: 0 auto 38px;
 }
 
 .scheduleDay {
+  box-sizing: border-box;
+  min-width: 0;
   border: 1px solid var(--line);
   border-radius: 30px;
   background:
@@ -850,6 +904,7 @@ h2 {
 }
 
 .scheduleMatchCard {
+  min-width: 0;
   border: 1px solid rgba(70, 55, 35, 0.13);
   border-radius: 24px;
   background: rgba(255, 255, 255, 0.54);
@@ -1153,8 +1208,9 @@ h2 {
 
 .matchPredictionHeader.hasControls {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
-  align-items: start;
+  grid-template-columns: minmax(170px, 0.62fr) auto minmax(110px, 0.62fr);
+  align-items: center;
+  column-gap: 16px;
 }
 
 .matchPredictionControls {
@@ -1165,17 +1221,35 @@ h2 {
   justify-self: end;
 }
 
-.matchPredictionHeader strong {
-  display: block;
-  font-size: 1rem;
-  letter-spacing: -0.02em;
+.matchPredictionSummary {
+  display: inline-grid;
+  width: fit-content;
+  min-width: 150px;
+  gap: 3px;
+  border: 1px solid rgba(70, 55, 35, 0.12);
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.38);
+  padding: 10px 12px;
 }
 
-.matchPredictionHeader > div:first-child > span {
+.matchPredictionSummary span {
   display: block;
-  margin-top: 3px;
-  color: var(--muted);
-  font-size: 0.82rem;
+  color: var(--red);
+  font-family: "Courier New", monospace;
+  font-size: 0.62rem;
+  font-weight: 900;
+  letter-spacing: 0.09em;
+  line-height: 1;
+  text-transform: uppercase;
+}
+
+.matchPredictionSummary strong {
+  display: block;
+  color: var(--ink);
+  font-size: 0.98rem;
+  letter-spacing: -0.025em;
+  line-height: 1.05;
+  white-space: nowrap;
 }
 
 .finalScoreBadge {
@@ -1886,19 +1960,21 @@ h2 {
 .predictionViewEmbedded {
   position: relative;
   display: grid;
+  width: min(760px, 100%);
   justify-items: center;
   gap: 10px;
 }
 
 .predictionViewEmbeddedTop {
   display: flex;
+  width: 100%;
   align-items: center;
   justify-content: center;
   gap: 10px;
 }
 
 .predictionViewEmbedded .advancedPredictionControls {
-  width: min(760px, calc(100vw - 64px));
+  width: 100%;
   justify-items: stretch;
   border-top: 0;
   border-radius: 20px;

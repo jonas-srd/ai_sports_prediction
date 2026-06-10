@@ -43,7 +43,7 @@ export function InteractiveLeaderboard({ leaderboard, matches, controls }: Inter
             {leaderboard.map((entry, index) => (
               <div className="leaderboardItem" key={entry.key ?? entry.model}>
                 <button
-                  className={`rankRow leaderboardButton${selectedKey === getEntryKey(entry) ? " isSelected" : ""}`}
+                  className={`rankRow leaderboardButton ${getPodiumClass(index)}${selectedKey === getEntryKey(entry) ? " isSelected" : ""}`}
                   type="button"
                   onClick={() => setSelectedKey(selectedKey === getEntryKey(entry) ? null : getEntryKey(entry))}
                 >
@@ -196,4 +196,11 @@ function sortedUnique(values: string[]): string[] {
 
 function getEntryKey(entry: DashboardLeaderboardEntry): string {
   return entry.key ?? entry.model;
+}
+
+function getPodiumClass(index: number): string {
+  if (index === 0) return "rankRowGold";
+  if (index === 1) return "rankRowSilver";
+  if (index === 2) return "rankRowBronze";
+  return "";
 }

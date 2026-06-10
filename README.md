@@ -138,6 +138,30 @@ npm run benchmark:predict -- --group-stage --prompt-strategy=direct_score --skip
 
 `--skip-existing` skips already valid predictions and retries invalid/API-error rows. Use `--skip-any-existing` only when you want to preserve every existing row regardless of validity.
 
+Run the one-time pre-tournament Kicktipp special-question predictions:
+
+```bash
+npm run special:predict -- --concurrency=2
+```
+
+This generates the 15 tournament-level questions once for the same active model roster and the same 2x2 `closed_book`/`open_book` x `direct_score`/`probabilistic_forecast` strategy design. The special predictions use the existing initial horizon name `STAGE_OPENING`; no `T_24H` or `T_1H` special predictions are generated.
+
+Special prediction rerun behavior:
+
+```bash
+npm run special:predict -- --access=closed_book --concurrency=3
+npm run special:predict -- --question=world_champion,semifinalists --model=openai/gpt-5.5
+npm run special:predict -- --force
+```
+
+By default, valid existing special predictions are skipped and failed/invalid rows are retried. Use `--force` to overwrite valid rows, or `--skip-any-existing` to preserve every existing row. The special-question prompt context is built only from fixture and group data; it must not read match predictions, prior special predictions, evaluations, analytics, scores, or tournament-tree outputs.
+
+Validate special-question definitions, JSON validation, and storage:
+
+```bash
+npm run test:special
+```
+
 Export paper-analysis datasets for the World Cup 2026 benchmark:
 
 ```bash
