@@ -9,7 +9,7 @@ The project uses a local SQLite database by default to avoid cloud database over
 ```text
 .
 +-- apps/
-|   +-- web/              # Next.js dashboard for localhost and optional Vercel hosting
+|   +-- web/              # Next.js dashboard for localhost and Railway hosting
 |   +-- cron/             # Local scripts for fetching, predicting, and scoring
 +-- packages/
 |   +-- db/               # SQLite schema and repository helpers
@@ -122,6 +122,24 @@ Recalculate all existing finished-match scores after changing the scoring system
 npm run score -- --all
 ```
 
+Export paper-analysis datasets for the World Cup 2026 benchmark:
+
+```bash
+npm run benchmark:export
+```
+
+This writes:
+
+```text
+exports/worldcup2026_matches.csv
+exports/worldcup2026_predictions_raw.csv
+exports/worldcup2026_predictions_validated.csv
+exports/worldcup2026_evaluations.csv
+exports/worldcup2026_tool_logs.jsonl
+```
+
+The exports include invalid benchmark predictions and unevaluated rows. See `docs/worldcup2026_paper_exports.md`.
+
 Start the local website:
 
 ```bash
@@ -184,12 +202,12 @@ The mainstream 8-model setup uses paid OpenRouter models and requires credits:
 OPENROUTER_MODEL_IDS=openai/gpt-4o,anthropic/claude-sonnet-4.5,google/gemini-3.5-flash,x-ai/grok-4.20,mistralai/mistral-large,deepseek/deepseek-r1,perplexity/sonar-pro,meta-llama/llama-3.2-3b-instruct
 ```
 
-## Public Deployment Later
+## Public Deployment
 
-SQLite is good for the local MVP. For a public Vercel deployment, keep this limitation in mind:
+SQLite is good for the local MVP. For a public Railway deployment, keep this limitation in mind:
 
 ```text
-Vercel can read files deployed with the app, but it should not be used as a persistent writable SQLite host.
+Railway can run the app, but the local SQLite file should not be treated as durable production storage unless it is backed by a persistent volume.
 ```
 
 Pragmatic public options later:
@@ -209,6 +227,7 @@ Pragmatic public options later:
 - `apps/cron/src/jobs/predict-today.ts`: loads today's matches, calls OpenRouter, stores predictions.
 - `apps/cron/src/jobs/predict-next.ts`: predicts the next scheduled matches for local testing.
 - `apps/cron/src/jobs/score-results.ts`: scores finished matches using Kicktipp rules.
+- `apps/cron/src/jobs/export-worldcup2026-paper-data.ts`: exports paper-analysis CSV/JSONL datasets.
 - `packages/db`: SQLite connection, schema, and repository helpers.
 - `packages/llm`: model IDs, prompt construction, and OpenRouter calls.
 - `packages/scorer`: shared points logic.

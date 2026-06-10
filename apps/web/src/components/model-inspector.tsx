@@ -6,13 +6,15 @@
  */
 import { useMemo } from "react";
 import type { DashboardMatch } from "@/lib/dashboard-data";
+import type { DashboardPrediction } from "@/lib/dashboard-data";
+import { formatCondition } from "@/lib/benchmark-analytics";
 import { getMatchupLabels } from "@/lib/match-display";
-import { calculatePredictionScore, type ScoreResult } from "@/lib/scorer";
 import { TeamMatchup } from "@/components/team-matchup";
 
 type ModelInspectorProps = {
   matches: DashboardMatch[];
   selectedModel: string;
+  selectedKey?: string;
   inline?: boolean;
 };
 
@@ -24,10 +26,9 @@ type ModelOption = {
 type FocusRow = {
   match: DashboardMatch;
   prediction: DashboardMatch["predictions"][number] | undefined;
-  score: ScoreResult | null;
 };
 
-export function ModelInspector({ matches, selectedModel, inline = false }: ModelInspectorProps) {
+export function ModelInspector({ matches, selectedModel, selectedKey, inline = false }: ModelInspectorProps) {
   const models = useMemo(() => getModels(matches), [matches]);
   const inspectorClassName = `panel interactivePanel${inline ? " inlineInspector" : ""}`;
   const activeModel = models.some((entry) => entry.model === selectedModel)
@@ -35,14 +36,14 @@ export function ModelInspector({ matches, selectedModel, inline = false }: Model
     : models[0]?.model ?? "";
 
   const rows = useMemo(
-    () => getFocusRows(matches, activeModel),
-    [matches, activeModel]
+    () => getFocusRows(matches, activeModel, selectedKey),
+    [matches, activeModel, selectedKey]
   );
 
   const pickedRows = rows.filter((row) => row.prediction);
-  const scoredRows = rows.filter((row) => row.score);
-  const totalPoints = scoredRows.reduce((sum, row) => sum + (row.score?.points ?? 0), 0);
-  const exactHits = scoredRows.filter((row) => row.score?.reason === "exact").length;
+  const scoredRows = rows.filter((row) => row.prediction?.scorePoints !== null && row.prediction?.scorePoints !== undefined);
+  const totalPoints = scoredRows.reduce((sum, row) => sum + (row.prediction?.scorePoints ?? 0), 0);
+  const exactHits = scoredRows.filter((row) => row.prediction?.exactScore90Correct).length;
   const pendingPicks = pickedRows.length - scoredRows.length;
 
   if (models.length === 0) {
@@ -101,11 +102,12 @@ export function ModelInspector({ matches, selectedModel, inline = false }: Model
                 <div className="modelScoreLine">
                   <span>Pick {formatPrediction(row.prediction)}</span>
                   <span>Final {formatScore(row.match.actualHome, row.match.actualAway)}</span>
+                  {row.prediction ? <span>{formatPredictionContext(row.prediction)}</span> : null}
                 </div>
 
                 <div className="resultTag">
-                  <strong>{row.score ? `${row.score.points} pts` : row.prediction ? "pending" : "no pick"}</strong>
-                  <span>{row.score ? formatReason(row.score.reason) : "not scored"}</span>
+                  <strong>{formatPoints(row.prediction)}</strong>
+                  <span>{row.prediction?.scoreReason ?? getPendingLabel(row.prediction)}</span>
                 </div>
               </div>
             );
@@ -131,17 +133,12 @@ function getModels(matches: DashboardMatch[]): ModelOption[] {
   return [...models.values()].sort((a, b) => a.model.localeCompare(b.model));
 }
 
-function getFocusRows(matches: DashboardMatch[], selectedModel: string): FocusRow[] {
+function getFocusRows(matches: DashboardMatch[], selectedModel: string, selectedKey?: string): FocusRow[] {
   return matches.map((match) => {
-    const prediction = match.predictions.find((entry) => entry.model === selectedModel);
-    const score = prediction && match.actualHome !== null && match.actualAway !== null
-      ? calculatePredictionScore(
-          { home: prediction.predictedHome, away: prediction.predictedAway },
-          { home: match.actualHome, away: match.actualAway }
-        )
-      : null;
-
-    return { match, prediction, score };
+    const prediction = match.predictions.find((entry) =>
+      selectedKey ? getPredictionKey(entry) === selectedKey : entry.model === selectedModel
+    );
+    return { match, prediction };
   });
 }
 
@@ -198,7 +195,7 @@ function formatMatchDate(value?: string): string {
 }
 
 function formatPrediction(prediction: DashboardMatch["predictions"][number] | undefined): string {
-  if (!prediction) {
+  if (!prediction || prediction.predictedHome === null || prediction.predictedAway === null) {
     return "-";
   }
 
@@ -213,15 +210,36 @@ function formatScore(home: number | null, away: number | null): string {
   return `${home} - ${away}`;
 }
 
-function formatReason(reason: ScoreResult["reason"]): string {
-  switch (reason) {
-    case "exact":
-      return "exact score";
-    case "goal_difference":
-      return "goal difference";
-    case "tendency":
-      return "tendency";
-    case "miss":
-      return "miss";
+function formatPredictionContext(prediction: DashboardPrediction): string {
+  return `${prediction.forecastHorizon} / ${formatCondition(prediction.accessCondition)} / ${formatCondition(prediction.promptStrategy)}`;
+}
+
+function getPendingLabel(prediction: DashboardPrediction | undefined): string {
+  if (!prediction) {
+    return "not scored";
   }
+
+  if (!prediction.isValidForScoring) {
+    return prediction.validationStatus ?? "invalid";
+  }
+
+  return "awaiting evaluation";
+}
+
+function formatPoints(prediction: DashboardPrediction | undefined): string {
+  if (!prediction) {
+    return "no pick";
+  }
+
+  return prediction.scorePoints !== null ? `${prediction.scorePoints} pts` : "pending";
+}
+
+function getPredictionKey(prediction: DashboardPrediction): string {
+  return [
+    prediction.predictorId,
+    prediction.provider,
+    prediction.forecastHorizon,
+    prediction.accessCondition,
+    prediction.promptStrategy
+  ].join("::");
 }

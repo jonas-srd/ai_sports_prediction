@@ -10,6 +10,9 @@
   "scripts": {
     "dev": "npm run dev --workspace @llm-kicktipp/web",
     "build": "npm run build --workspaces --if-present",
+    "start": "npm run start:web",
+    "start:web": "npm run start --workspace @llm-kicktipp/web",
+    "test:analytics": "tsx apps/web/src/lib/benchmark-analytics.test.ts",
     "typecheck": "npm run typecheck --workspaces --if-present",
     "db:init": "npm run db:init --workspace @llm-kicktipp/cron",
     "db:status": "npm run db:status --workspace @llm-kicktipp/cron",
@@ -20,6 +23,9 @@
     "openrouter:list-free": "npm run openrouter:list-free --workspace @llm-kicktipp/cron",
     "predict": "npm run predict --workspace @llm-kicktipp/cron",
     "predict:next": "npm run predict:next --workspace @llm-kicktipp/cron",
+    "benchmark:predict": "npm run benchmark:predict --workspace @llm-kicktipp/cron",
+    "benchmark:evaluate": "npm run benchmark:evaluate --workspace @llm-kicktipp/cron",
+    "benchmark:export": "npm run benchmark:export --workspace @llm-kicktipp/cron",
     "score": "npm run score --workspace @llm-kicktipp/cron"
   },
   "engines": {

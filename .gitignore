@@ -1,14 +1,15 @@
 node_modules
 .next
-.vercel
 dist
 .env
 .env.local
-.venv
+.venv/
 __pycache__
 *.pyc
 *.log
+*.tsbuildinfo
 .DS_Store
 data/*.db
 data/*.db-*
 data/*.sqlite
+exports/

@@ -22,12 +22,16 @@ const matches = db.prepare("select count(*) as count from matches").get() as Cou
 const models = db.prepare("select count(*) as count from models").get() as CountRow;
 const predictions = db.prepare("select count(*) as count from predictions").get() as CountRow;
 const scores = db.prepare("select count(*) as count from scores").get() as CountRow;
+const benchmarkPredictions = db.prepare("select count(*) as count from benchmark_predictions").get() as CountRow;
+const predictionEvaluations = db.prepare("select count(*) as count from prediction_evaluations").get() as CountRow;
 
 console.log(`SQLite DB: ${getDefaultDbPath()}`);
 console.log(`matches: ${matches.count}`);
 console.log(`models: ${models.count}`);
 console.log(`predictions: ${predictions.count}`);
 console.log(`scores: ${scores.count}`);
+console.log(`benchmark_predictions: ${benchmarkPredictions.count}`);
+console.log(`prediction_evaluations: ${predictionEvaluations.count}`);
 
 const previews = db.prepare(`
   select

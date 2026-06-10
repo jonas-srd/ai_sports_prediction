@@ -4,3 +4,5 @@
 export * from "./models";
 export * from "./openrouter-client";
 export * from "./prompt";
+export * from "./repair-prompt";
+export * from "./validate-prediction";
