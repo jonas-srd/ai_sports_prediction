@@ -24,6 +24,7 @@ export default function RootLayout({ children }: Readonly<{ children: ReactNode 
               <Link href="/matches">Matches</Link>
               <Link href="/tournament-tree">Tournament Tree</Link>
               <Link href="/analytics">Analytics</Link>
+              <Link href="/impressum">Legal Notice</Link>
             </nav>
           </div>
         </header>

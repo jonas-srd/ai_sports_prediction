@@ -1898,6 +1898,42 @@ h2 {
   align-content: center;
 }
 
+.legalShell {
+  max-width: 900px;
+}
+
+.legalPanel {
+  display: grid;
+  gap: 22px;
+}
+
+.legalBlock {
+  border-bottom: 1px solid rgba(70, 55, 35, 0.12);
+  padding-bottom: 20px;
+}
+
+.legalBlock:last-child {
+  border-bottom: 0;
+  padding-bottom: 0;
+}
+
+.legalBlock h2 {
+  margin-bottom: 10px;
+}
+
+.legalBlock p {
+  max-width: 760px;
+  margin-bottom: 0;
+  color: var(--muted);
+  font-size: 1rem;
+  line-height: 1.62;
+}
+
+.legalBlock strong,
+.legalBlock a {
+  color: var(--ink);
+}
+
 @keyframes riseIn {
   from {
     opacity: 0;
