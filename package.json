@@ -10,6 +10,8 @@
   "scripts": {
     "dev": "npm run dev --workspace @llm-kicktipp/web",
     "build": "npm run build --workspaces --if-present",
+    "start": "npm run start:web",
+    "start:web": "npm run start --workspace @llm-kicktipp/web",
     "typecheck": "npm run typecheck --workspaces --if-present",
     "db:init": "npm run db:init --workspace @llm-kicktipp/cron",
     "db:status": "npm run db:status --workspace @llm-kicktipp/cron",

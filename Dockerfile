@@ -1,0 +1,27 @@
+FROM node:20-bookworm-slim
+
+WORKDIR /app
+
+RUN apt-get update \
+  && apt-get install -y --no-install-recommends python3 make g++ \
+  && rm -rf /var/lib/apt/lists/*
+
+COPY package.json package-lock.json ./
+COPY apps/web/package.json apps/web/package.json
+COPY apps/cron/package.json apps/cron/package.json
+COPY packages/db/package.json packages/db/package.json
+COPY packages/llm/package.json packages/llm/package.json
+COPY packages/scorer/package.json packages/scorer/package.json
+
+RUN npm ci
+
+COPY . .
+
+RUN npm run build
+
+ENV NODE_ENV=production
+ENV SQLITE_DB_PATH=/app/data/world-cup.db
+
+EXPOSE 3000
+
+CMD ["npm", "run", "start:web"]
