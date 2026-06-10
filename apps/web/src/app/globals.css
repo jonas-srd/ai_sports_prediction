@@ -1208,12 +1208,14 @@ h2 {
 
 .matchPredictionHeader.hasControls {
   display: grid;
-  grid-template-columns: minmax(170px, 0.62fr) auto minmax(110px, 0.62fr);
+  grid-template-columns: 210px minmax(0, 1fr) 150px;
   align-items: center;
   column-gap: 16px;
+  min-height: 50px;
 }
 
 .matchPredictionControls {
+  width: min(760px, 100%);
   justify-self: center;
 }
 
@@ -1223,7 +1225,7 @@ h2 {
 
 .matchPredictionSummary {
   display: inline-grid;
-  width: fit-content;
+  width: 150px;
   min-width: 150px;
   gap: 3px;
   border: 1px solid rgba(70, 55, 35, 0.12);
@@ -1897,6 +1899,24 @@ h2 {
   min-width: 0;
 }
 
+.fullDatasetExportBar {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.fullDatasetExportBox {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  border: 1px solid var(--line);
+  border-radius: 22px;
+  background:
+    linear-gradient(135deg, rgba(255, 251, 241, 0.82), rgba(255, 255, 255, 0.54)),
+    rgba(255, 251, 241, 0.76);
+  box-shadow: 0 16px 36px rgba(43, 34, 20, 0.1);
+  padding: 10px 12px;
+}
+
 .analyticsFiltersPanel,
 .analyticsTablePanel,
 .analyticsEmptyPanel {
@@ -1973,7 +1993,20 @@ h2 {
   gap: 10px;
 }
 
+.matchPredictionHeader.hasControls:has(.predictionViewEmbedded.hasAdvancedControls) {
+  margin-bottom: 114px;
+}
+
+.matchPredictionHeader.hasControls:has(.predictionViewEmbedded.hasAdvancedControls .predictionFilterGrid) {
+  margin-bottom: 300px;
+}
+
 .predictionViewEmbedded .advancedPredictionControls {
+  position: absolute;
+  z-index: 30;
+  top: calc(100% + 10px);
+  left: 50%;
+  transform: translateX(-50%);
   width: 100%;
   justify-items: stretch;
   border-top: 0;
@@ -2372,6 +2405,11 @@ h2 {
   letter-spacing: 0.05em;
   text-transform: uppercase;
   white-space: nowrap;
+}
+
+.exportCsvButton:disabled {
+  cursor: not-allowed;
+  opacity: 0.48;
 }
 
 .rankedBarChart {
@@ -2804,6 +2842,16 @@ h2 {
   .predictionViewHeader {
     align-items: flex-start;
     flex-direction: column;
+  }
+
+  .fullDatasetExportBar {
+    justify-content: stretch;
+  }
+
+  .fullDatasetExportBox {
+    width: 100%;
+    flex-wrap: wrap;
+    justify-content: space-between;
   }
 
   .predictionViewEmbedded,

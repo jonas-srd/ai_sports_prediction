@@ -136,14 +136,14 @@ export const SPECIAL_GROUP_NAMES = [
 export const SPECIAL_QUESTIONS: SpecialQuestionDefinition[] = [
   {
     id: "top_scorer_team",
-    label: "Welche Mannschaft stellt den Spieler mit den meisten Toren?",
+    label: "Which team will provide the tournament top scorer?",
     meaning: "Predict the national team that will have the tournament's top goalscorer.",
     predictionType: "single_choice",
     candidateScope: "all_teams"
   },
   {
     id: "semifinalists",
-    label: "Wer erreicht das Halbfinale?",
+    label: "Which teams will reach the semifinals?",
     meaning: "Predict the four teams that will reach the semifinals.",
     predictionType: "multi_choice_fixed_k",
     candidateScope: "all_teams",
@@ -151,7 +151,7 @@ export const SPECIAL_QUESTIONS: SpecialQuestionDefinition[] = [
   },
   ...SPECIAL_GROUP_NAMES.map((groupName) => ({
     id: `group_winner_${groupName}` as SpecialQuestionId,
-    label: `Wer gewinnt die Gruppe ${groupName}?`,
+    label: `Who will win Group ${groupName}?`,
     meaning: `Predict the winner of group ${groupName}.`,
     predictionType: "single_choice" as const,
     candidateScope: "group" as const,
@@ -159,7 +159,7 @@ export const SPECIAL_QUESTIONS: SpecialQuestionDefinition[] = [
   })),
   {
     id: "world_champion",
-    label: "Wer wird Weltmeister?",
+    label: "Who will win the FIFA World Cup 2026?",
     meaning: "Predict the FIFA World Cup 2026 champion.",
     predictionType: "single_choice",
     candidateScope: "all_teams"
@@ -302,11 +302,6 @@ export function validateSpecialPredictionContent(
     return invalidSpecialResult("invalid_probability_range", rangeErrors);
   }
 
-  const rankErrors = validateRanks(fields.choices);
-  if (rankErrors.length > 0) {
-    return invalidSpecialResult("invalid_rank", rankErrors);
-  }
-
   const pickErrors = validatePicks(fields, args.question, candidateSet);
   if (pickErrors.length > 0) {
     return invalidSpecialResult("invalid_pick_count", pickErrors);
@@ -330,6 +325,8 @@ export function validateSpecialPredictionContent(
       };
     }
   }
+
+  normalizeChoiceRanks(normalizedFields.choices, normalizedFieldNames);
 
   const normalizationApplied = normalizedFieldNames.length > 0;
 
@@ -366,9 +363,10 @@ function buildSpecialQuestionBlock(question: SpecialQuestionDefinition): string 
   const lines = [
     "Special question:",
     `question_id: ${question.id}`,
-    `German label: ${question.label}`,
+    `Question label: ${question.label}`,
     `Meaning: ${question.meaning}`,
-    `prediction_type: ${question.predictionType}`
+    `prediction_type: ${question.predictionType}`,
+    "Use team names exactly as listed in the valid candidates section. Do not translate, abbreviate, or rename teams."
   ];
 
   if (question.groupName) {
@@ -437,7 +435,8 @@ function buildSpecialJsonSchemaBlock(question: SpecialQuestionDefinition, stage:
       "  \"confidence\": number,",
       "  \"reasoning_summary\": \"brief explanation\"",
       "}",
-      "Include exactly one choices entry for every valid candidate. For single_choice, probabilities must sum to 1."
+      "Include exactly one choices entry for every valid candidate. For single_choice, probabilities must sum to 1.",
+      "Rank may be omitted or approximate; stored ranks are recalculated from probabilities during validation."
     ].join("\n");
   }
 
@@ -459,7 +458,8 @@ function buildSpecialJsonSchemaBlock(question: SpecialQuestionDefinition, stage:
     "  \"final_picks\": [\"exact candidate team name\", \"...\"],",
     "  \"reasoning_summary\": \"brief explanation\"",
     "}",
-    `Include exactly one choices entry for every valid candidate. final_picks must contain exactly ${question.k ?? 4} unique teams.`
+    `Include exactly one choices entry for every valid candidate. final_picks must contain exactly ${question.k ?? 4} unique teams.`,
+    "Rank may be omitted or approximate; stored ranks are recalculated from probabilities during validation."
   ].join("\n");
 }
 
@@ -542,7 +542,7 @@ function readChoice(value: unknown, index: number, errors: string[]): SpecialPre
   return {
     team: readString(value.team, `choices[${index}].team`, errors),
     probability: readNumber(value.probability, `choices[${index}].probability`, errors),
-    rank: readInteger(value.rank, `choices[${index}].rank`, errors),
+    rank: readOptionalRank(value.rank, index),
     is_final_pick: readBoolean(value.is_final_pick, `choices[${index}].is_final_pick`, errors)
   };
 }
@@ -576,30 +576,6 @@ function validateCandidates(
   for (const label of finalLabels) {
     if (!candidateSet.has(label)) {
       errors.push(`invalid_candidate: final pick ${label} is not a valid candidate`);
-    }
-  }
-
-  return errors;
-}
-
-function validateRanks(choices: SpecialPredictionChoice[]): string[] {
-  const errors: string[] = [];
-  const ranks = choices.map((choice) => choice.rank);
-  const expectedRanks = Array.from({ length: choices.length }, (_, index) => index + 1);
-  const sortedRanks = [...ranks].sort((a, b) => a - b);
-
-  for (let index = 0; index < expectedRanks.length; index += 1) {
-    if (sortedRanks[index] !== expectedRanks[index]) {
-      errors.push("invalid_rank: ranks must be unique consecutive integers starting at 1");
-      break;
-    }
-  }
-
-  const sortedChoices = [...choices].sort((a, b) => a.rank - b.rank);
-  for (let index = 1; index < sortedChoices.length; index += 1) {
-    if (sortedChoices[index].probability > sortedChoices[index - 1].probability + 1e-12) {
-      errors.push("invalid_rank: ranks must follow descending probability order");
-      break;
     }
   }
 
@@ -658,24 +634,39 @@ function normalizeSingleChoiceProbabilities(
     return { valid: true, original, final: original };
   }
 
-  if (original >= 0.98 && original <= 1.02) {
-    for (const choice of choices) {
-      choice.probability = choice.probability / original;
-      normalizedFieldNames.push(`choices.${choice.team}.probability`);
+  if (original <= 0) {
+    return {
+      valid: false,
+      original,
+      final: original,
+      error: `invalid_probability_sum: single-choice probabilities sum to ${original}`
+    };
+  }
+
+  for (const choice of choices) {
+    choice.probability = choice.probability / original;
+    normalizedFieldNames.push(`choices.${choice.team}.probability`);
+  }
+
+  return { valid: true, original, final: 1 };
+}
+
+function normalizeChoiceRanks(choices: SpecialPredictionChoice[], normalizedFieldNames: string[]): void {
+  const ranked = choices
+    .map((choice, index) => ({ choice, index }))
+    .sort((left, right) => (
+      right.choice.probability - left.choice.probability
+      || left.choice.team.localeCompare(right.choice.team)
+      || left.index - right.index
+    ));
+
+  ranked.forEach(({ choice }, index) => {
+    const normalizedRank = index + 1;
+    if (choice.rank !== normalizedRank) {
+      choice.rank = normalizedRank;
+      normalizedFieldNames.push(`choices.${choice.team}.rank`);
     }
-    return { valid: true, original, final: 1 };
-  }
-
-  if (Math.abs(original - 1) <= 0.01) {
-    return { valid: true, original, final: original };
-  }
-
-  return {
-    valid: false,
-    original,
-    final: original,
-    error: `invalid_probability_sum: single-choice probabilities sum to ${original}`
-  };
+  });
 }
 
 function invalidSpecialResult(
@@ -747,6 +738,14 @@ function readInteger(value: unknown, field: string, errors: string[]): number {
 
   errors.push(`invalid_schema: ${field} must be a positive integer`);
   return 0;
+}
+
+function readOptionalRank(value: unknown, index: number): number {
+  if (typeof value === "number" && Number.isInteger(value) && value >= 1) {
+    return value;
+  }
+
+  return index + 1;
 }
 
 function readBoolean(value: unknown, field: string, errors: string[]): boolean {

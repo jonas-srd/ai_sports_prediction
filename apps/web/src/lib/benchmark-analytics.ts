@@ -45,6 +45,13 @@ export type BenchmarkDisplayPrediction = {
   forecastHorizon: ForecastHorizon;
   stage: TournamentStage;
   matchDate: string | null;
+  homeTeam?: string;
+  awayTeam?: string;
+  actualHome90?: number | null;
+  actualAway90?: number | null;
+  actualHomeFull?: number | null;
+  actualAwayFull?: number | null;
+  actualAdvancer?: string | null;
   sampleId: number;
   predictedHome: number | null;
   predictedAway: number | null;

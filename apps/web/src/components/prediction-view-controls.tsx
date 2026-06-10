@@ -70,7 +70,11 @@ export function PredictionViewControls({
 
   if (variant === "embedded") {
     return (
-      <div className="predictionViewEmbedded" aria-label="Prediction display settings" ref={setWrapperRef}>
+      <div
+        className={`predictionViewEmbedded${showAdvancedControls ? " hasAdvancedControls" : ""}`}
+        aria-label="Prediction display settings"
+        ref={setWrapperRef}
+      >
         <div className="predictionViewEmbeddedTop">
           <ViewModeSegment state={state} onChange={handleChange} />
         </div>

@@ -210,6 +210,13 @@ type BenchmarkPredictionDbRow = {
   match_date: string | null;
   match_stage: string | null;
   match_competition: string | null;
+  match_home_team: string;
+  match_away_team: string;
+  match_home_score_90: number | null;
+  match_away_score_90: number | null;
+  match_home_score_full: number | null;
+  match_away_score_full: number | null;
+  match_actual_advancer: string | null;
   brier_90: number | null;
   log_loss_90: number | null;
   top_outcome_correct_90: number | null;
@@ -275,6 +282,12 @@ function getBenchmarkPredictionRows(db: Database.Database): PredictionRow[] {
     return [];
   }
 
+  const hasHomeScore90 = hasColumn(db, "matches", "home_score_90");
+  const hasAwayScore90 = hasColumn(db, "matches", "away_score_90");
+  const hasHomeScoreFull = hasColumn(db, "matches", "home_score_full");
+  const hasAwayScoreFull = hasColumn(db, "matches", "away_score_full");
+  const hasActualAdvancer = hasColumn(db, "matches", "actual_advancer");
+
   const rows = db.prepare(`
     select
       bp.id,
@@ -312,6 +325,13 @@ function getBenchmarkPredictionRows(db: Database.Database): PredictionRow[] {
       m.utc_date as match_date,
       m.stage as match_stage,
       m.competition as match_competition,
+      m.home_team as match_home_team,
+      m.away_team as match_away_team,
+      ${hasHomeScore90 ? "m.home_score_90" : "m.home_score"} as match_home_score_90,
+      ${hasAwayScore90 ? "m.away_score_90" : "m.away_score"} as match_away_score_90,
+      ${hasHomeScoreFull ? "m.home_score_full" : "null"} as match_home_score_full,
+      ${hasAwayScoreFull ? "m.away_score_full" : "null"} as match_away_score_full,
+      ${hasActualAdvancer ? "m.actual_advancer" : "null"} as match_actual_advancer,
       pe.brier_90,
       pe.log_loss_90,
       pe.top_outcome_correct_90,
@@ -348,6 +368,13 @@ function getBenchmarkPredictionRows(db: Database.Database): PredictionRow[] {
         forecastHorizon: toForecastHorizon(row.forecast_horizon),
         stage: normalizeStage(row.match_stage ?? row.match_competition),
         matchDate: row.match_date,
+        homeTeam: row.match_home_team,
+        awayTeam: row.match_away_team,
+        actualHome90: row.match_home_score_90,
+        actualAway90: row.match_away_score_90,
+        actualHomeFull: row.match_home_score_full,
+        actualAwayFull: row.match_away_score_full,
+        actualAdvancer: row.match_actual_advancer,
         sampleId: row.sample_id,
         predictedHome: row.most_likely_score_90_home,
         predictedAway: row.most_likely_score_90_away,
@@ -494,6 +521,13 @@ function createLegacyPrediction(args: {
     forecastHorizon: "STAGE_OPENING",
     stage: "unknown",
     matchDate: null,
+    homeTeam: "",
+    awayTeam: "",
+    actualHome90: null,
+    actualAway90: null,
+    actualHomeFull: null,
+    actualAwayFull: null,
+    actualAdvancer: null,
     sampleId: 1,
     predictedHome: args.predictedHome,
     predictedAway: args.predictedAway,

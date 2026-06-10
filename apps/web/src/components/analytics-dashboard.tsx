@@ -79,6 +79,18 @@ export function AnalyticsDashboard({ predictions }: AnalyticsDashboardProps) {
 
   return (
     <div className="analyticsStack">
+      <div className="fullDatasetExportBar">
+        <div className="fullDatasetExportBox">
+          <button
+            className="clearFilterButton exportCsvButton"
+            type="button"
+            onClick={() => exportFullDatasetCsv(predictions)}
+          >
+            Full dataset export to CSV
+          </button>
+        </div>
+      </div>
+
       <section className="panel analyticsFiltersPanel">
         <div className="panelHeader">
           <div>
@@ -566,4 +578,145 @@ function updateFilter<K extends keyof AnalyticsFilters>(
 
 function sortedUnique(values: string[]): string[] {
   return [...new Set(values.filter(Boolean))].sort((a, b) => a.localeCompare(b));
+}
+
+function exportFullDatasetCsv(predictions: BenchmarkDisplayPrediction[]): void {
+  const headers = [
+    "Prediction ID",
+    "Match ID",
+    "Match date",
+    "Stage",
+    "Home team",
+    "Away team",
+    "Actual home 90",
+    "Actual away 90",
+    "Actual home full",
+    "Actual away full",
+    "Actual advancer",
+    "Model",
+    "Provider",
+    "Predictor ID",
+    "Horizon",
+    "Access",
+    "Prompt",
+    "Sample ID",
+    "Predicted home 90",
+    "Predicted away 90",
+    "Predicted home full",
+    "Predicted away full",
+    "Home win 90 prob",
+    "Draw 90 prob",
+    "Away win 90 prob",
+    "Home win full prob",
+    "Draw full prob",
+    "Away win full prob",
+    "Home advances prob",
+    "Away advances prob",
+    "Confidence",
+    "Reason",
+    "Validation status",
+    "Valid for scoring",
+    "Repair attempted",
+    "Normalization applied",
+    "Open-book compliance",
+    "Tools enabled",
+    "Tool calls observed",
+    "Number of tool calls",
+    "Brier 90",
+    "Log loss 90",
+    "Top outcome correct 90",
+    "Exact score correct 90",
+    "Goal difference correct 90",
+    "Tendency correct from score",
+    "Home goal abs error 90",
+    "Away goal abs error 90",
+    "Total goals abs error 90",
+    "Goal difference abs error 90",
+    "Kicktipp points 90",
+    "Advancement accuracy",
+    "Score/prob argmax consistent 90"
+  ];
+  const rows = predictions.map((prediction) => [
+    prediction.id,
+    prediction.matchId,
+    prediction.matchDate,
+    formatStage(prediction.stage),
+    prediction.homeTeam ?? "",
+    prediction.awayTeam ?? "",
+    prediction.actualHome90 ?? null,
+    prediction.actualAway90 ?? null,
+    prediction.actualHomeFull ?? null,
+    prediction.actualAwayFull ?? null,
+    prediction.actualAdvancer ?? null,
+    prediction.model,
+    prediction.provider,
+    prediction.predictorId,
+    prediction.forecastHorizon,
+    formatCondition(prediction.accessCondition),
+    formatCondition(prediction.promptStrategy),
+    prediction.sampleId,
+    prediction.predictedHome,
+    prediction.predictedAway,
+    prediction.predictedFullHome,
+    prediction.predictedFullAway,
+    prediction.homeWin90Prob,
+    prediction.draw90Prob,
+    prediction.awayWin90Prob,
+    prediction.homeWinFullProb,
+    prediction.drawFullProb,
+    prediction.awayWinFullProb,
+    prediction.homeAdvancesProb,
+    prediction.awayAdvancesProb,
+    prediction.confidence,
+    prediction.reason,
+    prediction.validationStatus,
+    prediction.isValidForScoring,
+    prediction.repairAttempted,
+    prediction.normalizationApplied,
+    prediction.openBookCompliance,
+    prediction.toolsEnabled,
+    prediction.toolCallsObserved,
+    prediction.numToolCalls,
+    prediction.brier90,
+    prediction.logLoss90,
+    prediction.topOutcomeCorrect90,
+    prediction.exactScore90Correct,
+    prediction.goalDifference90Correct,
+    prediction.tendency90CorrectFromScore,
+    prediction.homeGoalAbsError90,
+    prediction.awayGoalAbsError90,
+    prediction.totalGoalsAbsError90,
+    prediction.goalDifferenceAbsError90,
+    prediction.kicktippPoints90,
+    prediction.advancementAccuracy,
+    prediction.scoreResultMatchesProbArgmax90
+  ]);
+
+  downloadCsv(
+    `worldcup2026-full-prediction-dataset-${new Date().toISOString().slice(0, 10)}.csv`,
+    headers,
+    rows
+  );
+}
+
+function downloadCsv(
+  filename: string,
+  headers: string[],
+  rows: Array<Array<string | number | boolean | null | undefined>>
+): void {
+  const csv = [headers, ...rows].map((row) => row.map(escapeCsvValue).join(",")).join("\r\n");
+  const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = filename;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  URL.revokeObjectURL(url);
+}
+
+function escapeCsvValue(value: string | number | boolean | null | undefined): string {
+  const text = String(value ?? "");
+  return /[",\r\n]/.test(text) ? `"${text.replaceAll("\"", "\"\"")}"` : text;
 }

@@ -38,7 +38,7 @@ test("stores special prediction parent row and candidate options", async () => {
     const predictionId = await upsertSpecialPrediction(db, {
       run_id: runId,
       question_id: "group_winner_A",
-      question_label: "Wer gewinnt die Gruppe A?",
+      question_label: "Who will win Group A?",
       prediction_type: "single_choice",
       predictor_type: "llm",
       predictor_id: "test/model",

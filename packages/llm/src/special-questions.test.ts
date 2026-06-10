@@ -92,7 +92,23 @@ test("group winners reject candidates outside the group", () => {
   assert.equal(result.status, "invalid_candidate");
 });
 
-test("single-choice probabilities must sum to one", () => {
+test("team names must exactly match the provided candidates", () => {
+  const question = mustQuestion("group_winner_A");
+  const candidates = teamCandidates(["United States", "Switzerland", "Hungary", "Scotland"]);
+  const prediction = singleChoice(question, candidates);
+  prediction.choices[0].team = "USA";
+  prediction.final_pick = "USA";
+
+  const result = validateSpecialPredictionContent(JSON.stringify(prediction), {
+    question,
+    candidates,
+    stage: SPECIAL_PREDICTION_STAGE
+  });
+
+  assert.equal(result.status, "invalid_candidate");
+});
+
+test("single-choice probabilities are normalized when all candidates are present", () => {
   const question = mustQuestion("world_champion");
   const candidates = teamCandidates(["Brazil", "France", "Argentina"]);
   const prediction = singleChoice(question, candidates);
@@ -104,7 +120,26 @@ test("single-choice probabilities must sum to one", () => {
     stage: SPECIAL_PREDICTION_STAGE
   });
 
+  assert.equal(result.status, "normalized");
+  assert.equal(result.isValidForScoring, true);
+  assert.ok(result.probabilitySumOriginal !== null && Math.abs(result.probabilitySumOriginal - 1.4) < 1e-12);
+  assert.equal(result.probabilitySumFinal, 1);
+});
+
+test("single-choice probabilities with zero total remain invalid", () => {
+  const question = mustQuestion("world_champion");
+  const candidates = teamCandidates(["Brazil", "France", "Argentina"]);
+  const prediction = singleChoice(question, candidates);
+  prediction.choices = prediction.choices.map((choice) => ({ ...choice, probability: 0 }));
+
+  const result = validateSpecialPredictionContent(JSON.stringify(prediction), {
+    question,
+    candidates,
+    stage: SPECIAL_PREDICTION_STAGE
+  });
+
   assert.equal(result.status, "invalid_probability_sum");
+  assert.equal(result.isValidForScoring, false);
 });
 
 test("semifinalists require exactly four unique final picks", () => {
@@ -127,6 +162,37 @@ test("semifinalists require exactly four unique final picks", () => {
   });
 
   assert.equal(result.status, "invalid_pick_count");
+});
+
+test("semifinalist probabilities do not need to sum to one and ranks are normalized", () => {
+  const question = mustQuestion("semifinalists");
+  const candidates = teamCandidates(["Brazil", "France", "Argentina", "England", "Spain"]);
+  const prediction = {
+    question_id: question.id,
+    prediction_type: "multi_choice_fixed_k",
+    k: 4,
+    stage: SPECIAL_PREDICTION_STAGE,
+    choices: [
+      { team: "Brazil", probability: 0.45, is_final_pick: true },
+      { team: "France", probability: 0.55, is_final_pick: true },
+      { team: "Argentina", probability: 0.35, is_final_pick: true },
+      { team: "England", probability: 0.3, is_final_pick: true },
+      { team: "Spain", probability: 0.25, is_final_pick: false }
+    ],
+    final_picks: ["Brazil", "France", "Argentina", "England"],
+    reasoning_summary: "Valid multi-choice probabilities are marginal chances."
+  };
+
+  const result = validateSpecialPredictionContent(JSON.stringify(prediction), {
+    question,
+    candidates,
+    stage: SPECIAL_PREDICTION_STAGE
+  });
+
+  assert.equal(result.status, "normalized");
+  assert.equal(result.isValidForScoring, true);
+  assert.equal(result.probabilitySumOriginal, null);
+  assert.equal(result.fields?.choices.find((choice) => choice.team === "France")?.rank, 1);
 });
 
 test("static context in special prompt contains no prior prediction table data", () => {
@@ -156,6 +222,27 @@ test("static context in special prompt contains no prior prediction table data",
   const staticContext = prompt.slice(prompt.indexOf("Allowed static context:"));
 
   assert.doesNotMatch(staticContext, /benchmark_predictions|prediction_evaluations|special_predictions|raw_response/i);
+});
+
+test("special prompts use English labels only", () => {
+  const question = mustQuestion("group_winner_A");
+  const candidates = teamCandidates(["Germany", "Switzerland", "Hungary", "Scotland"]);
+  const context: SpecialTournamentContext = {
+    tournamentEdition: "FIFA World Cup 2026",
+    groups: [{ groupName: "A", teams: candidates.map((candidate) => candidate.label) }],
+    fixtures: []
+  };
+  const prompt = buildSpecialPredictionPrompt({
+    question,
+    candidates,
+    context,
+    accessCondition: "closed_book",
+    promptStrategy: "probabilistic_forecast",
+    stage: SPECIAL_PREDICTION_STAGE
+  });
+
+  assert.doesNotMatch(prompt, /German label|Welche|Wer gewinnt|Gruppe|Weltmeister|Halbfinale|Mannschaft/i);
+  assert.match(prompt, /Question label: Who will win Group A\?/);
 });
 
 function mustQuestion(id: string): SpecialQuestionDefinition {
