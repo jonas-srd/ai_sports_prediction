@@ -1,6 +1,5 @@
 node_modules
 .next
-.vercel
 dist
 .env
 .env.local
@@ -8,6 +7,7 @@ dist
 __pycache__
 *.pyc
 *.log
+*.tsbuildinfo
 .DS_Store
 data/*.db
 data/*.db-*

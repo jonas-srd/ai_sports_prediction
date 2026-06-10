@@ -1,6 +1,6 @@
 /**
  * Purpose: Local scoring helper for the deployed web app.
- * Keeping this inside apps/web makes the Vercel deployment independent from workspace package resolution.
+ * Keeping this inside apps/web makes the deployment independent from workspace package resolution.
  */
 export type ScoreReason = "exact" | "goal_difference" | "tendency" | "miss";
 
