@@ -33,7 +33,7 @@ type AnalyticsDashboardProps = {
 const METRICS = Object.keys(METRIC_DEFINITIONS) as AnalyticsMetric[];
 const SERIES_COLORS = ["#b33a27", "#204f35", "#d69632", "#263b67", "#7d2b1f", "#0d6b5f", "#7f5b24", "#443a2f"];
 const FILTER_HELP = {
-  metric: "Choose the evaluation metric used for ranking models, for example Kicktipp points, Brier score, or log loss.",
+  metric: "Choose the evaluation metric used for ranking models, for example scores, Brier score, or log loss.",
   forecastHorizon: "Filter predictions by when they were made, such as stage-opening, 24 hours before kickoff, or 1 hour before kickoff.",
   access: "Filter whether the model predicted from its own knowledge only or was allowed to use web-search/tool access.",
   prompt: "Filter the prompt format used for the prediction, for example direct score prediction or probabilistic forecast.",
@@ -297,22 +297,42 @@ function LineChart({ series, metric }: { series: AnalyticsSeries[]; metric: Anal
     return <EmptyChart label="No scored values yet for this metric and filter set." />;
   }
 
-  const min = Math.min(...allValues);
-  const max = Math.max(...allValues);
+  const domain = getLineChartDomain(metricDefinition, allValues);
+  const min = domain.min;
+  const max = domain.max;
+  const mid = min + (max - min) / 2;
   const range = max - min || 1;
   const maxLength = Math.max(...series.map((entry) => entry.values.length), 1);
+  const xTicks = buildMatchOrderTicks(maxLength);
 
   return (
     <div className="lineChartWrap">
       <svg className="lineChart" role="img" viewBox="0 0 720 300" aria-label={`${metricDefinition.label} over matches`}>
-        <line className="chartAxis" x1="42" x2="690" y1="260" y2="260" />
-        <line className="chartAxis" x1="42" x2="42" y1="24" y2="260" />
+        <line className="chartAxis" x1="54" x2="690" y1="248" y2="248" />
+        <line className="chartAxis" x1="54" x2="54" y1="24" y2="248" />
+        <line className="chartGridLine" x1="54" x2="690" y1="136" y2="136" />
+        <text className="chartTickLabel" x="46" y="30" textAnchor="end">{metricDefinition.format(max)}</text>
+        <text className="chartTickLabel" x="46" y="140" textAnchor="end">{metricDefinition.format(mid)}</text>
+        <text className="chartTickLabel" x="46" y="252" textAnchor="end">{metricDefinition.format(min)}</text>
+        {xTicks.map((tick) => {
+          const x = getChartX(tick, maxLength);
+          return (
+            <g key={tick}>
+              <line className="chartTick" x1={x} x2={x} y1="248" y2="254" />
+              <text className="chartTickLabel" x={x} y="268" textAnchor="middle">{tick}</text>
+            </g>
+          );
+        })}
+        <text className="chartAxisLabel" x="372" y="292" textAnchor="middle">Match order</text>
+        <text className="chartAxisLabel" textAnchor="middle" transform="translate(14 136) rotate(-90)">
+          {metricDefinition.shortLabel}
+        </text>
         {series.map((entry, index) => {
           const points = entry.values
             .filter((point) => point.value !== null)
             .map((point) => {
-              const x = 42 + ((point.matchOrder - 1) / Math.max(maxLength - 1, 1)) * 648;
-              const y = 260 - (((point.value ?? min) - min) / range) * 226;
+              const x = getChartX(point.matchOrder, maxLength);
+              const y = 248 - (((point.value ?? min) - min) / range) * 224;
               return `${x},${y}`;
             });
 
@@ -368,7 +388,7 @@ function AnalyticsTable({
             <th>Access</th>
             <th>Prompt</th>
             <th>Scored</th>
-            <th>Points</th>
+            <th>Scores</th>
             <th>Brier</th>
             <th>Log loss</th>
             <th>Top acc.</th>
@@ -445,6 +465,95 @@ function SelectFilter({
       </select>
     </label>
   );
+}
+
+function getLineChartDomain(metricDefinition: ReturnType<typeof getMetricDefinition>, values: number[]): { min: number; max: number } {
+  const minValue = Math.min(...values);
+  const maxValue = Math.max(...values);
+
+  if (metricDefinition.kind === "rate") {
+    return getRateChartDomain(minValue, maxValue);
+  }
+
+  return getNumericChartDomain(minValue, maxValue);
+}
+
+function getRateChartDomain(minValue: number, maxValue: number): { min: number; max: number } {
+  if (minValue === maxValue) {
+    if (maxValue >= 1) {
+      return { min: 0.9, max: 1 };
+    }
+
+    if (minValue <= 0) {
+      return { min: 0, max: 0.1 };
+    }
+
+    const padding = Math.max(0.05, Math.abs(maxValue) * 0.1);
+    return {
+      min: Math.max(0, minValue - padding),
+      max: Math.min(1, maxValue + padding)
+    };
+  }
+
+  const range = maxValue - minValue;
+  const padding = Math.max(0.02, range * 0.14);
+
+  return {
+    min: Math.max(0, minValue - padding),
+    max: Math.min(1, maxValue + padding)
+  };
+}
+
+function getNumericChartDomain(minValue: number, maxValue: number): { min: number; max: number } {
+  if (minValue === maxValue) {
+    const padding = Math.max(0.01, Math.abs(maxValue) * 0.1, maxValue === 0 ? 1 : 0);
+    return roundChartDomain(minValue - padding, maxValue + padding);
+  }
+
+  const range = maxValue - minValue;
+  const padding = Math.max(range * 0.14, Math.abs(maxValue) * 0.02, 0.01);
+  return roundChartDomain(minValue - padding, maxValue + padding);
+}
+
+function roundChartDomain(rawMin: number, rawMax: number): { min: number; max: number } {
+  const range = rawMax - rawMin || 1;
+  const step = niceNumber(range / 2);
+  const min = Math.floor(rawMin / step) * step;
+  const max = Math.ceil(rawMax / step) * step;
+
+  return min === max ? { min: min - step, max: max + step } : { min, max };
+}
+
+function niceNumber(value: number): number {
+  const exponent = Math.floor(Math.log10(Math.max(value, Number.EPSILON)));
+  const fraction = value / 10 ** exponent;
+  const niceFraction = fraction <= 1 ? 1 : fraction <= 2 ? 2 : fraction <= 5 ? 5 : 10;
+
+  return niceFraction * 10 ** exponent;
+}
+
+function getChartX(matchOrder: number, maxLength: number): number {
+  return 54 + ((matchOrder - 1) / Math.max(maxLength - 1, 1)) * 636;
+}
+
+function buildMatchOrderTicks(maxLength: number): number[] {
+  if (maxLength <= 1) {
+    return [1];
+  }
+
+  const desiredTickCount = Math.min(6, maxLength);
+  const step = Math.max(1, Math.ceil((maxLength - 1) / (desiredTickCount - 1)));
+  const ticks: number[] = [];
+
+  for (let tick = 1; tick < maxLength; tick += step) {
+    ticks.push(tick);
+  }
+
+  if (ticks[ticks.length - 1] !== maxLength) {
+    ticks.push(maxLength);
+  }
+
+  return ticks;
 }
 
 function DateFilter({
@@ -632,7 +741,7 @@ function exportFullDatasetCsv(predictions: BenchmarkDisplayPrediction[]): void {
     "Away goal abs error 90",
     "Total goals abs error 90",
     "Goal difference abs error 90",
-    "Kicktipp points 90",
+    "Scores 90",
     "Advancement accuracy",
     "Score/prob argmax consistent 90"
   ];

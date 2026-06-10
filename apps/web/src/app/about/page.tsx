@@ -1,8 +1,8 @@
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "About | World Cup LLM Rank",
-  description: "Project overview, methodology, scoring, and limitations of World Cup LLM Rank."
+  title: "About | LLM SoccerArena",
+  description: "Project overview, methodology, scoring, and limitations of LLM SoccerArena."
 };
 
 const pipelineSteps = [
@@ -20,7 +20,7 @@ const pipelineSteps = [
   },
   {
     title: "4. Evaluation",
-    text: "After the match result is known, predictions are scored with Kicktipp-style points and additional benchmark metrics such as Brier score and log loss."
+    text: "After the match result is known, predictions receive scores and additional benchmark metrics such as Brier score and log loss."
   },
   {
     title: "5. Dashboard",
@@ -53,8 +53,8 @@ const methods = [
 
 const metrics = [
   {
-    label: "Kicktipp points",
-    text: "A human-readable football prediction score. Exact results receive the most points, correct tendencies receive fewer."
+    label: "Scores",
+    text: "A human-readable football prediction score. Exact results receive the highest scores, correct tendencies receive lower scores."
   },
   {
     label: "Brier score",
@@ -75,9 +75,9 @@ export default function AboutPage() {
     <main className="shell aboutShell">
       <section className="hero compactHero heroCentered">
         <p className="eyebrow">About the project</p>
-        <h1>What does World Cup LLM Rank do?</h1>
+        <h1>What does LLM SoccerArena do?</h1>
         <p className="heroText">
-          World Cup LLM Rank is an experimental benchmark for comparing how well large language models forecast football matches.
+          LLM SoccerArena is an experimental benchmark for comparing how well large language models forecast football matches.
           It asks different models to predict World Cup games, stores their forecasts, validates the outputs, and evaluates them once real results are available.
         </p>
       </section>

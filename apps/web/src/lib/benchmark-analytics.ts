@@ -154,8 +154,8 @@ export type AnalyticsSeries = {
 export const METRIC_DEFINITIONS: Record<AnalyticsMetric, MetricDefinition> = {
   kicktipp_points_90: {
     key: "kicktipp_points_90",
-    label: "Kicktipp points",
-    shortLabel: "Points",
+    label: "Scores",
+    shortLabel: "Scores",
     direction: "higher",
     kind: "sum",
     includeInvalid: false,
@@ -341,14 +341,25 @@ export function rankAnalyticsRows(
   rows: Array<Omit<AnalyticsLeaderboardRow, "rank"> & { rank?: number }>,
   metricDefinition: MetricDefinition
 ): AnalyticsLeaderboardRow[] {
-  return rows
+  const sortedRows = rows
     .slice()
     .sort((left, right) => compareMetricValues(left.metricValue, right.metricValue, metricDefinition.direction)
       || left.model.localeCompare(right.model)
       || left.accessCondition.localeCompare(right.accessCondition)
       || left.promptStrategy.localeCompare(right.promptStrategy)
-      || left.forecastHorizon.localeCompare(right.forecastHorizon))
-    .map((row, index) => ({ ...row, rank: index + 1 }));
+      || left.forecastHorizon.localeCompare(right.forecastHorizon));
+
+  let currentRank = 0;
+  let previousMetricValue: number | null | undefined;
+
+  return sortedRows.map((row, index) => {
+    if (index === 0 || !areMetricValuesTied(row.metricValue, previousMetricValue)) {
+      currentRank = index + 1;
+    }
+
+    previousMetricValue = row.metricValue;
+    return { ...row, rank: currentRank };
+  });
 }
 
 export function buildAnalyticsSeries(
@@ -584,6 +595,14 @@ function compareMetricValues(left: number | null | undefined, right: number | nu
   if (left === null || left === undefined) return right === null || right === undefined ? 0 : 1;
   if (right === null || right === undefined) return -1;
   return direction === "higher" ? right - left : left - right;
+}
+
+function areMetricValuesTied(left: number | null | undefined, right: number | null | undefined): boolean {
+  if (left === null || left === undefined || right === null || right === undefined) {
+    return left === right;
+  }
+
+  return Math.abs(left - right) <= 1e-12;
 }
 
 function meanNullable(values: Array<number | null>): number | null {

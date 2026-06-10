@@ -40,37 +40,40 @@ export function InteractiveLeaderboard({ leaderboard, matches, controls }: Inter
           </div>
         ) : (
           <div className="leaderboard">
-            {leaderboard.map((entry, index) => (
-              <div className="leaderboardItem" key={entry.key ?? entry.model}>
-                <button
-                  className={`rankRow leaderboardButton ${getPodiumClass(index)}${selectedKey === getEntryKey(entry) ? " isSelected" : ""}`}
-                  type="button"
-                  onClick={() => setSelectedKey(selectedKey === getEntryKey(entry) ? null : getEntryKey(entry))}
-                >
-                  <span className="rank">#{index + 1}</span>
-                  <div>
-                    <div className="leaderboardModelName">
-                      <strong>{entry.model}</strong>
-                      <InfoTooltip
-                        label={`${entry.model} configuration`}
-                        lines={buildLeaderboardConfigurationHelp(entry, matches)}
-                      />
+            {leaderboard.map((entry, index) => {
+              const rank = getLeaderboardRank(leaderboard, index);
+              return (
+                <div className="leaderboardItem" key={entry.key ?? entry.model}>
+                  <button
+                    className={`rankRow leaderboardButton ${getPodiumClass(rank)}${selectedKey === getEntryKey(entry) ? " isSelected" : ""}`}
+                    type="button"
+                    onClick={() => setSelectedKey(selectedKey === getEntryKey(entry) ? null : getEntryKey(entry))}
+                  >
+                    <span className="rank">#{rank}</span>
+                    <div>
+                      <div className="leaderboardModelName">
+                        <strong>{entry.model}</strong>
+                        <InfoTooltip
+                          label={`${entry.model} configuration`}
+                          lines={buildLeaderboardConfigurationHelp(entry, matches)}
+                        />
+                      </div>
+                      <p>{entry.provider}</p>
                     </div>
-                    <p>{entry.provider}</p>
-                  </div>
-                  <span className="points">{entry.points} pts</span>
-                </button>
+                    <span className="points">{entry.points} scores</span>
+                  </button>
 
-                {selectedKey === getEntryKey(entry) ? (
-                  <ModelInspector
-                    inline
-                    matches={matches}
-                    selectedKey={entry.key}
-                    selectedModel={entry.model}
-                  />
-                ) : null}
-              </div>
-            ))}
+                  {selectedKey === getEntryKey(entry) ? (
+                    <ModelInspector
+                      inline
+                      matches={matches}
+                      selectedKey={entry.key}
+                      selectedModel={entry.model}
+                    />
+                  ) : null}
+                </div>
+              );
+            })}
           </div>
         )}
       </div>
@@ -127,7 +130,7 @@ function buildLeaderboardConfigurationHelp(
     },
     {
       label: "Ranking",
-      text: `${entry.points} Kicktipp point(s), ${entry.exact} exact hit(s).`
+      text: `${entry.points} scores, ${entry.exact} exact hit(s).`
     }
   );
 
@@ -198,9 +201,19 @@ function getEntryKey(entry: DashboardLeaderboardEntry): string {
   return entry.key ?? entry.model;
 }
 
-function getPodiumClass(index: number): string {
-  if (index === 0) return "rankRowGold";
-  if (index === 1) return "rankRowSilver";
-  if (index === 2) return "rankRowBronze";
+function getLeaderboardRank(leaderboard: DashboardLeaderboardEntry[], index: number): number {
+  const entry = leaderboard[index];
+  if (!entry) {
+    return index + 1;
+  }
+
+  const firstSameScoreIndex = leaderboard.findIndex((candidate) => candidate.points === entry.points);
+  return firstSameScoreIndex >= 0 ? firstSameScoreIndex + 1 : index + 1;
+}
+
+function getPodiumClass(rank: number): string {
+  if (rank === 1) return "rankRowGold";
+  if (rank === 2) return "rankRowSilver";
+  if (rank === 3) return "rankRowBronze";
   return "";
 }

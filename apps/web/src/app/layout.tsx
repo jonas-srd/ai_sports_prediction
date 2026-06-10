@@ -8,7 +8,7 @@ import Link from "next/link";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "World Cup LLM Rank",
+  title: "LLM SoccerArena",
   description: "Compare football score predictions from multiple LLMs."
 };
 
@@ -18,7 +18,7 @@ export default function RootLayout({ children }: Readonly<{ children: ReactNode 
       <body>
         <header className="siteNav">
           <div className="siteNavInner">
-            <Link className="siteNavLogo" href="/">LLM Kicktipp</Link>
+            <Link className="siteNavLogo" href="/">LLM SoccerArena</Link>
             <nav className="siteNavLinks">
               <Link href="/">Home</Link>
               <Link href="/about">About</Link>

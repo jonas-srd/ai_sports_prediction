@@ -140,7 +140,7 @@ export function MatchPredictionCard({
                   </div>
 
                   <div className="predictionPoints">
-                    <strong>{row.prediction.scorePoints !== null ? `${row.prediction.scorePoints} pts` : "pending"}</strong>
+                    <strong>{row.prediction.scorePoints !== null ? `${row.prediction.scorePoints} scores` : "pending"}</strong>
                     <span>{row.prediction.scoreReason ?? getPendingLabel(hasResult, row.prediction)}</span>
                   </div>
 
@@ -202,7 +202,7 @@ function buildPredictionConfigurationHelp(prediction: DashboardPrediction): Tool
       label: "Evaluation",
       text: prediction.scorePoints === null
         ? "Still pending for this match."
-        : `${prediction.scorePoints} Kicktipp point(s), reason: ${prediction.scoreReason ?? "scored"}.`
+        : `${prediction.scorePoints} scores, reason: ${prediction.scoreReason ?? "scored"}.`
     }
   ];
 }

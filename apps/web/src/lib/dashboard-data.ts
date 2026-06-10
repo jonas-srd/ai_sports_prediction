@@ -49,6 +49,29 @@ export type DashboardLeaderboardEntry = {
   promptStrategy?: PromptStrategy;
 };
 
+export type DashboardSpecialPrediction = {
+  id: string;
+  questionId: string;
+  questionLabel: string;
+  predictionType: "single_choice" | "multi_choice_fixed_k";
+  k: number | null;
+  model: string;
+  provider: string;
+  predictorId: string;
+  accessCondition: AccessCondition;
+  promptStrategy: PromptStrategy;
+  forecastHorizon: ForecastHorizon;
+  sampleId: number;
+  finalPick: string | null;
+  finalPicks: string[];
+  confidence: number | null;
+  reasoningSummary: string | null;
+  validationStatus: string | null;
+  isValidForScoring: boolean;
+  isCorrect: boolean | null;
+  questionScorePoints: number;
+};
+
 export const sampleMatches: DashboardMatch[] = [
   {
     id: "sample-1",
@@ -137,6 +160,22 @@ export function getLeaderboard(): DashboardLeaderboardEntry[] {
   }
 
   return getLegacyLeaderboardFromPredictions(predictions);
+}
+
+export function getSpecialQuestionPredictions(): DashboardSpecialPrediction[] {
+  const dbPath = getSqliteDbPath();
+  if (!existsSync(dbPath)) {
+    return [];
+  }
+
+  try {
+    const db = new Database(dbPath, { readonly: true, fileMustExist: true });
+    const predictions = getSpecialQuestionPredictionRows(db);
+    db.close();
+    return predictions;
+  } catch {
+    return [];
+  }
 }
 
 type DbMatchRow = {
@@ -230,6 +269,28 @@ type BenchmarkPredictionDbRow = {
   kicktipp_points_90: number | null;
   advancement_accuracy: number | null;
   score_result_matches_prob_argmax_90: number | null;
+};
+
+type SpecialPredictionDbRow = {
+  id: string;
+  question_id: string;
+  question_label: string;
+  prediction_type: "single_choice" | "multi_choice_fixed_k";
+  k: number | null;
+  predictor_id: string;
+  provider: string;
+  model_name: string | null;
+  model_provider: string | null;
+  access_condition: string;
+  prompt_strategy: string;
+  forecast_horizon: string;
+  sample_id: number;
+  final_pick: string | null;
+  final_picks: string | null;
+  confidence: number | null;
+  reasoning_summary: string | null;
+  validation_status: string | null;
+  is_valid_for_scoring: number;
 };
 
 function getDbMatches(db: Database.Database): DashboardMatch[] {
@@ -457,6 +518,65 @@ function getLegacyPredictionRows(db: Database.Database): PredictionRow[] {
   }));
 }
 
+function getSpecialQuestionPredictionRows(db: Database.Database): DashboardSpecialPrediction[] {
+  if (!hasTable(db, "special_predictions")) {
+    return [];
+  }
+
+  const rows = db.prepare(`
+    select
+      sp.id,
+      sp.question_id,
+      sp.question_label,
+      sp.prediction_type,
+      sp.k,
+      sp.predictor_id,
+      sp.provider,
+      mo.name as model_name,
+      mo.provider as model_provider,
+      sp.access_condition,
+      sp.prompt_strategy,
+      sp.forecast_horizon,
+      sp.sample_id,
+      sp.final_pick,
+      sp.final_picks,
+      sp.confidence,
+      sp.reasoning_summary,
+      sp.validation_status,
+      sp.is_valid_for_scoring
+    from special_predictions sp
+    left join models mo on mo.id = sp.model_id
+    order by sp.question_id asc, sp.predictor_id asc, sp.forecast_horizon asc, sp.access_condition asc, sp.prompt_strategy asc
+  `).all() as SpecialPredictionDbRow[];
+
+  return rows.map((row) => {
+    const isCorrect = getSpecialPredictionCorrectness(row);
+
+    return {
+      id: row.id,
+      questionId: row.question_id,
+      questionLabel: row.question_label,
+      predictionType: row.prediction_type,
+      k: row.k,
+      model: formatModelName(row.model_name ?? row.predictor_id, row.predictor_id),
+      provider: row.model_provider ?? row.provider,
+      predictorId: row.predictor_id,
+      accessCondition: toAccessCondition(row.access_condition),
+      promptStrategy: toPromptStrategy(row.prompt_strategy),
+      forecastHorizon: toForecastHorizon(row.forecast_horizon),
+      sampleId: row.sample_id,
+      finalPick: row.final_pick,
+      finalPicks: parseStringArray(row.final_picks),
+      confidence: row.confidence,
+      reasoningSummary: row.reasoning_summary,
+      validationStatus: row.validation_status,
+      isValidForScoring: Boolean(row.is_valid_for_scoring),
+      isCorrect,
+      questionScorePoints: isCorrect === true ? 5 : 0
+    };
+  });
+}
+
 function attachPredictionsToMatches(matches: DashboardMatch[], rows: PredictionRow[]): DashboardMatch[] {
   const byMatch = new Map<string, DashboardPrediction[]>();
 
@@ -600,6 +720,10 @@ function getBenchmarkScoreReason(row: BenchmarkPredictionDbRow): string | null {
   return "miss";
 }
 
+function getSpecialPredictionCorrectness(_row: SpecialPredictionDbRow): boolean | null {
+  return null;
+}
+
 function getBenchmarkKicktippPoints(row: BenchmarkPredictionDbRow): number | null {
   if (row.kicktipp_points_90 === null) {
     return null;
@@ -738,6 +862,19 @@ function toPromptStrategy(value: string): PromptStrategy {
 
 function toForecastHorizon(value: string): ForecastHorizon {
   return value === "T_24H" || value === "T_1H" || value === "STAGE_OPENING" ? value : "STAGE_OPENING";
+}
+
+function parseStringArray(value: string | null): string[] {
+  if (!value) {
+    return [];
+  }
+
+  try {
+    const parsed = JSON.parse(value);
+    return Array.isArray(parsed) ? parsed.filter((entry): entry is string => typeof entry === "string") : [];
+  } catch {
+    return [];
+  }
 }
 
 function formatProviderWithConfig(

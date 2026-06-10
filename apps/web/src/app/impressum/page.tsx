@@ -1,8 +1,8 @@
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Legal Notice | World Cup LLM Rank",
-  description: "Legal notice and provider information for World Cup LLM Rank."
+  title: "Legal Notice | LLM SoccerArena",
+  description: "Legal notice and provider information for LLM SoccerArena."
 };
 
 export default function LegalNoticePage() {
@@ -79,7 +79,7 @@ export default function LegalNoticePage() {
         <div className="legalBlock">
           <h2>Project Notice</h2>
           <p>
-            World Cup LLM Rank is an experimental benchmark and analysis project.
+            LLM SoccerArena is an experimental benchmark and analysis project.
             The displayed predictions are automatically generated model forecasts
             and do not constitute betting, financial, or other professional advice.
           </p>

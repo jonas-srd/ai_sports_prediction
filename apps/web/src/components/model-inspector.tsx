@@ -42,7 +42,7 @@ export function ModelInspector({ matches, selectedModel, selectedKey, inline = f
 
   const pickedRows = rows.filter((row) => row.prediction);
   const scoredRows = rows.filter((row) => row.prediction?.scorePoints !== null && row.prediction?.scorePoints !== undefined);
-  const totalPoints = scoredRows.reduce((sum, row) => sum + (row.prediction?.scorePoints ?? 0), 0);
+  const totalScores = scoredRows.reduce((sum, row) => sum + (row.prediction?.scorePoints ?? 0), 0);
   const exactHits = scoredRows.filter((row) => row.prediction?.exactScore90Correct).length;
   const pendingPicks = pickedRows.length - scoredRows.length;
 
@@ -61,8 +61,8 @@ export function ModelInspector({ matches, selectedModel, selectedKey, inline = f
     <section className={inspectorClassName}>
       <div className="focusStats">
         <div className="focusStat">
-          <span>Points</span>
-          <strong>{totalPoints}</strong>
+          <span>Scores</span>
+          <strong>{totalScores}</strong>
         </div>
         <div className="focusStat">
           <span>Exact hits</span>
@@ -231,7 +231,7 @@ function formatPoints(prediction: DashboardPrediction | undefined): string {
     return "no pick";
   }
 
-  return prediction.scorePoints !== null ? `${prediction.scorePoints} pts` : "pending";
+  return prediction.scorePoints !== null ? `${prediction.scorePoints} scores` : "pending";
 }
 
 function getPredictionKey(prediction: DashboardPrediction): string {

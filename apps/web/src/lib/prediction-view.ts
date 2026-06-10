@@ -134,15 +134,25 @@ export function getPredictionConfigurationKey(prediction: DashboardPrediction): 
 
 function getBestConfigurationKeysByModel(predictions: DashboardPrediction[]): Set<string> {
   const leaderboard = buildPredictionViewLeaderboardFromPredictions(predictions);
+  const bestByModel = new Map<string, DashboardLeaderboardEntry>();
   const bestKeys = new Set<string>();
-  const seenModels = new Set<string>();
 
   for (const entry of leaderboard) {
-    if (!entry.key || seenModels.has(entry.model)) {
+    if (!entry.key) {
       continue;
     }
 
-    seenModels.add(entry.model);
+    const current = bestByModel.get(entry.model);
+    if (!current || compareBestConfigurationEntry(entry, current) < 0) {
+      bestByModel.set(entry.model, entry);
+    }
+  }
+
+  for (const entry of bestByModel.values()) {
+    if (!entry.key) {
+      continue;
+    }
+
     bestKeys.add(entry.key);
   }
 
@@ -205,6 +215,36 @@ function getLegacyLeaderboardFromPredictions(predictions: DashboardPrediction[])
     || b.scored - a.scored
     || a.model.localeCompare(b.model)
   );
+}
+
+function compareBestConfigurationEntry(left: DashboardLeaderboardEntry, right: DashboardLeaderboardEntry): number {
+  return right.points - left.points
+    || getPreferredAccessRank(left.accessCondition) - getPreferredAccessRank(right.accessCondition)
+    || getPreferredPromptRank(left.promptStrategy) - getPreferredPromptRank(right.promptStrategy)
+    || getPreferredHorizonRank(left.forecastHorizon) - getPreferredHorizonRank(right.forecastHorizon)
+    || right.exact - left.exact
+    || right.scored - left.scored
+    || left.provider.localeCompare(right.provider)
+    || (left.key ?? "").localeCompare(right.key ?? "");
+}
+
+function getPreferredAccessRank(value?: AccessCondition): number {
+  if (value === "open_book") return 0;
+  if (value === "closed_book") return 1;
+  return 2;
+}
+
+function getPreferredPromptRank(value?: PromptStrategy): number {
+  if (value === "probabilistic_forecast") return 0;
+  if (value === "direct_score") return 1;
+  return 2;
+}
+
+function getPreferredHorizonRank(value?: ForecastHorizon): number {
+  if (value === "STAGE_OPENING") return 0;
+  if (value === "T_24H") return 1;
+  if (value === "T_1H") return 2;
+  return 3;
 }
 
 function getAllPredictions(matches: DashboardMatch[]): DashboardPrediction[] {
