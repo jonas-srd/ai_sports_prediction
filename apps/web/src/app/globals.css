@@ -1459,12 +1459,12 @@ h2 {
   display: grid;
   min-height: 62px;
   place-items: center;
-  color: rgba(255, 248, 233, 0.64);
+  color: var(--muted);
   text-align: center;
 }
 
 .bracketPlaceholder strong {
-  color: #ffffff;
+  color: var(--ink);
 }
 
 .bracketPlaceholder span {
@@ -1616,13 +1616,12 @@ h2 {
   }
 
   .groupOverviewHeader {
-    align-items: flex-start;
-    flex-direction: column;
+    justify-items: center;
   }
 
   .groupOverviewHeader p:not(.sectionKicker) {
     max-width: 620px;
-    text-align: left;
+    text-align: center;
   }
 
   .groupOverviewGrid {
