@@ -7,6 +7,9 @@ import { getTeamFlag } from "@/lib/country-flags";
 import { getDisplayMatch, getOfficialMatchNumber } from "@/lib/match-display";
 import { MatchPredictionCard } from "@/components/match-prediction-card";
 
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
 type BracketColumn = {
   key: string;
   label: string;

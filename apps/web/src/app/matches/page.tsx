@@ -7,6 +7,9 @@ import { getDashboardMatches } from "@/lib/dashboard-data";
 import { getDisplayMatch } from "@/lib/match-display";
 import { MatchPredictionCard } from "@/components/match-prediction-card";
 
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
 type ScheduleDay = {
   key: string;
   label: string;

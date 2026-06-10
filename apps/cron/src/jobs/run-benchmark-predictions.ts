@@ -27,7 +27,11 @@ import {
   PREDICTION_PROMPT_TEMPLATE_ID,
   validatePredictionContent
 } from "@llm-kicktipp/llm";
-import type { PredictionValidationResult } from "@llm-kicktipp/llm";
+import type {
+  OpenRouterChatResult,
+  OpenRouterTool,
+  PredictionValidationResult
+} from "@llm-kicktipp/llm";
 
 type BenchmarkAccessCondition = "closed_book" | "open_book";
 
@@ -45,11 +49,29 @@ const CONDITIONS: BenchmarkCondition[] = [
   { accessCondition: "open_book", promptStrategy: "probabilistic_forecast" }
 ];
 
-const OPENROUTER_WEB_SEARCH_TOOLS = [{ type: "openrouter:web_search" }];
+const OPENROUTER_WEB_SEARCH_TOOLS: OpenRouterTool[] = [
+  {
+    type: "openrouter:web_search",
+    parameters: {
+      max_results: 3,
+      max_total_results: 6,
+      search_context_size: "low"
+    }
+  }
+];
+const JSON_RESPONSE_FORMAT = { type: "json_object" };
 const BENCHMARK_TEMPERATURE = 0;
 const BENCHMARK_TOP_P = 1;
 const BENCHMARK_N = 1;
-const BENCHMARK_MAX_TOKENS = 1000;
+const BENCHMARK_MAX_TOKENS = readPositiveIntEnv("OPENROUTER_BENCHMARK_MAX_COMPLETION_TOKENS", 2000);
+const BENCHMARK_RETRY_MAX_TOKENS = readPositiveIntEnv(
+  "OPENROUTER_BENCHMARK_RETRY_MAX_COMPLETION_TOKENS",
+  Math.max(BENCHMARK_MAX_TOKENS * 2, 4000)
+);
+const BENCHMARK_REPAIR_MAX_TOKENS = readPositiveIntEnv(
+  "OPENROUTER_BENCHMARK_REPAIR_MAX_COMPLETION_TOKENS",
+  BENCHMARK_RETRY_MAX_TOKENS
+);
 
 type CliArgs = {
   horizon: ForecastHorizon;
@@ -104,19 +126,36 @@ async function main() {
         const tools = condition.accessCondition === "open_book" ? OPENROUTER_WEB_SEARCH_TOOLS : undefined;
 
         try {
-          const completion = await openRouter.createChatCompletion(model.id, prompt, {
+          let completion = await openRouter.createChatCompletion(model.id, prompt, {
             temperature: BENCHMARK_TEMPERATURE,
             topP: BENCHMARK_TOP_P,
             n: BENCHMARK_N,
             maxTokens: BENCHMARK_MAX_TOKENS,
+            responseFormat: JSON_RESPONSE_FORMAT,
             tools
           });
-          const actualPredictionTimeUtc = new Date().toISOString();
-          const timing = getTimingMetadata(match, args.horizon, actualPredictionTimeUtc);
           const matchIsKnockout = isMatchKnockout(match);
-          const initialValidation = validatePredictionContent(completion.content, {
+          let initialValidation = validatePredictionContent(completion.content, {
             isKnockout: matchIsKnockout
           });
+
+          if (shouldRetryCompletionAfterValidation(initialValidation, completion)) {
+            console.warn(formatRetryLog(match, model.name, condition, initialValidation.status, completion));
+            completion = await openRouter.createChatCompletion(model.id, prompt, {
+              temperature: BENCHMARK_TEMPERATURE,
+              topP: BENCHMARK_TOP_P,
+              n: BENCHMARK_N,
+              maxTokens: BENCHMARK_RETRY_MAX_TOKENS,
+              responseFormat: JSON_RESPONSE_FORMAT,
+              tools
+            });
+            initialValidation = validatePredictionContent(completion.content, {
+              isKnockout: matchIsKnockout
+            });
+          }
+
+          const actualPredictionTimeUtc = new Date().toISOString();
+          const timing = getTimingMetadata(match, args.horizon, actualPredictionTimeUtc);
           const repair = initialValidation.isValidForScoring
             ? null
             : await attemptRepair(openRouter, model.id, completion.content, initialValidation, matchIsKnockout);
@@ -146,7 +185,7 @@ async function main() {
             response_id: completion.responseId,
             temperature: BENCHMARK_TEMPERATURE,
             top_p: BENCHMARK_TOP_P,
-            max_tokens: BENCHMARK_MAX_TOKENS,
+            max_tokens: completion.maxCompletionTokens,
             latency_ms: completion.latencyMs,
             input_tokens: completion.inputTokens,
             output_tokens: completion.outputTokens,
@@ -236,6 +275,20 @@ function parseCliArgs(args: string[]): CliArgs {
     modelIds: modelIds ? modelIds.split(",").map((entry) => entry.trim()).filter(Boolean) : null,
     sampleId
   };
+}
+
+function readPositiveIntEnv(name: string, fallback: number): number {
+  const value = process.env[name];
+  if (!value) {
+    return fallback;
+  }
+
+  const parsed = Number.parseInt(value, 10);
+  if (!Number.isInteger(parsed) || parsed < 1) {
+    throw new Error(`${name} must be a positive integer.`);
+  }
+
+  return parsed;
 }
 
 function readArg(args: string[], name: string): string | null {
@@ -374,9 +427,24 @@ async function attemptRepair(
       temperature: BENCHMARK_TEMPERATURE,
       topP: BENCHMARK_TOP_P,
       n: BENCHMARK_N,
-      maxTokens: BENCHMARK_MAX_TOKENS
+      maxTokens: BENCHMARK_REPAIR_MAX_TOKENS,
+      responseFormat: JSON_RESPONSE_FORMAT
     });
-    const repairedValidation = validatePredictionContent(completion.content, { isKnockout });
+    let repairedValidation = validatePredictionContent(completion.content, { isKnockout });
+    let repairRawResponse = completion.rawResponse;
+
+    if (shouldRetryCompletionAfterValidation(repairedValidation, completion)) {
+      const retryCompletion = await openRouter.createChatCompletion(modelId, repairPrompt, {
+        temperature: BENCHMARK_TEMPERATURE,
+        topP: BENCHMARK_TOP_P,
+        n: BENCHMARK_N,
+        maxTokens: BENCHMARK_RETRY_MAX_TOKENS,
+        responseFormat: JSON_RESPONSE_FORMAT
+      });
+      repairedValidation = validatePredictionContent(retryCompletion.content, { isKnockout });
+      repairRawResponse = retryCompletion.rawResponse;
+    }
+
     const validation = markRepairedValidation(repairedValidation.isValidForScoring
       ? repairedValidation
       : {
@@ -389,7 +457,7 @@ async function attemptRepair(
 
     return {
       validation,
-      rawResponse: completion.rawResponse
+      rawResponse: repairRawResponse
     };
   } catch (error) {
     const validation = markRepairedValidation({
@@ -405,6 +473,30 @@ async function attemptRepair(
       rawResponse: serializeError(error)
     };
   }
+}
+
+function shouldRetryCompletionAfterValidation(
+  validation: PredictionValidationResult,
+  completion: OpenRouterChatResult
+): boolean {
+  if (validation.isValidForScoring) {
+    return false;
+  }
+
+  if (validation.status !== "invalid_json" && validation.status !== "invalid_schema") {
+    return false;
+  }
+
+  return isLikelyTruncatedCompletion(completion);
+}
+
+function isLikelyTruncatedCompletion(completion: OpenRouterChatResult): boolean {
+  if (completion.finishReason === "length" || completion.finishReason === "max_tokens") {
+    return true;
+  }
+
+  return completion.outputTokens !== null
+    && completion.outputTokens >= completion.maxCompletionTokens * 0.9;
 }
 
 function toValidationStorageFields(
@@ -507,6 +599,24 @@ function formatFailureLog(
     modelName,
     `${condition.accessCondition}/${condition.promptStrategy}`,
     `failed=${message}`
+  ].join(" | ");
+}
+
+function formatRetryLog(
+  match: MatchRow,
+  modelName: string,
+  condition: BenchmarkCondition,
+  validationStatus: string,
+  completion: OpenRouterChatResult
+): string {
+  return [
+    `${match.home_team} vs ${match.away_team}`,
+    modelName,
+    `${condition.accessCondition}/${condition.promptStrategy}`,
+    `retrying=${validationStatus}`,
+    `finish_reason=${completion.finishReason ?? "unknown"}`,
+    `output_tokens=${completion.outputTokens ?? "unknown"}`,
+    `max_completion_tokens=${completion.maxCompletionTokens}`
   ].join(" | ");
 }
 

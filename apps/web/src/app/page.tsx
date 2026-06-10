@@ -9,6 +9,9 @@ import { getDisplayMatch } from "@/lib/match-display";
 import { InteractiveLeaderboard } from "@/components/interactive-leaderboard";
 import { TeamMatchup } from "@/components/team-matchup";
 
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
 export default function HomePage() {
   const leaderboard = getLeaderboard();
   const matches = getDashboardMatches();

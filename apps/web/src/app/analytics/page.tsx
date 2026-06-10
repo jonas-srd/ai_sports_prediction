@@ -4,6 +4,9 @@
 import { AnalyticsDashboard } from "@/components/analytics-dashboard";
 import { getBenchmarkPredictions } from "@/lib/dashboard-data";
 
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
 export default function AnalyticsPage() {
   const predictions = getBenchmarkPredictions().filter((prediction) => !prediction.id.startsWith("legacy:"));
 
