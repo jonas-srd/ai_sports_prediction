@@ -14,6 +14,7 @@ type LeaderboardEntry = {
   provider: string;
   points: number;
   exact: number;
+  key?: string;
 };
 
 type InteractiveLeaderboardProps = {
@@ -22,7 +23,7 @@ type InteractiveLeaderboardProps = {
 };
 
 export function InteractiveLeaderboard({ leaderboard, matches }: InteractiveLeaderboardProps) {
-  const [selectedModel, setSelectedModel] = useState<string | null>(null);
+  const [selectedKey, setSelectedKey] = useState<string | null>(null);
 
   return (
     <section className="contentStack">
@@ -43,11 +44,11 @@ export function InteractiveLeaderboard({ leaderboard, matches }: InteractiveLead
         ) : (
           <div className="leaderboard">
             {leaderboard.map((entry, index) => (
-              <div className="leaderboardItem" key={entry.model}>
+              <div className="leaderboardItem" key={entry.key ?? entry.model}>
                 <button
-                  className={`rankRow leaderboardButton${selectedModel === entry.model ? " isSelected" : ""}`}
+                  className={`rankRow leaderboardButton${selectedKey === getEntryKey(entry) ? " isSelected" : ""}`}
                   type="button"
-                  onClick={() => setSelectedModel(selectedModel === entry.model ? null : entry.model)}
+                  onClick={() => setSelectedKey(selectedKey === getEntryKey(entry) ? null : getEntryKey(entry))}
                 >
                   <span className="rank">#{index + 1}</span>
                   <div>
@@ -57,10 +58,11 @@ export function InteractiveLeaderboard({ leaderboard, matches }: InteractiveLead
                   <span className="points">{entry.points} pts</span>
                 </button>
 
-                {selectedModel === entry.model ? (
+                {selectedKey === getEntryKey(entry) ? (
                   <ModelInspector
                     inline
                     matches={matches}
+                    selectedKey={entry.key}
                     selectedModel={entry.model}
                   />
                 ) : null}
@@ -71,4 +73,8 @@ export function InteractiveLeaderboard({ leaderboard, matches }: InteractiveLead
       </div>
     </section>
   );
+}
+
+function getEntryKey(entry: LeaderboardEntry): string {
+  return entry.key ?? entry.model;
 }

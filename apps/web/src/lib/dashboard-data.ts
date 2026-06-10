@@ -1,17 +1,23 @@
 /**
- * Purpose: Provides dashboard data from local SQLite when available, with sample fallback data.
- * The website only reads SQLite; fetch/predict/score writes happen through local cron scripts.
+ * Purpose: Provides dashboard data from SQLite with benchmark records as source of truth.
+ * If no benchmark records exist yet, a small legacy adapter keeps old MVP data visible.
  */
 import Database from "better-sqlite3";
 import { existsSync } from "node:fs";
 import { resolve } from "node:path";
-import { calculatePredictionScore } from "@/lib/scorer";
+import {
+  buildAnalyticsLeaderboard,
+  normalizeStage,
+  type AccessCondition,
+  type BenchmarkDisplayPrediction,
+  type ForecastHorizon,
+  type PromptStrategy,
+  type TournamentStage
+} from "@/lib/benchmark-analytics";
 
-export type DashboardPrediction = {
-  model: string;
-  provider: string;
-  predictedHome: number;
-  predictedAway: number;
+export type DashboardPrediction = BenchmarkDisplayPrediction & {
+  scorePoints: number | null;
+  scoreReason: string | null;
 };
 
 export type DashboardMatch = {
@@ -24,7 +30,23 @@ export type DashboardMatch = {
   utcDate?: string;
   competition?: string;
   venue?: string | null;
+  stage?: TournamentStage;
+  groupName?: string | null;
+  isKnockout?: boolean;
   predictions: DashboardPrediction[];
+};
+
+export type DashboardLeaderboardEntry = {
+  model: string;
+  provider: string;
+  points: number;
+  exact: number;
+  scored: number;
+  pending: number;
+  key?: string;
+  forecastHorizon?: ForecastHorizon;
+  accessCondition?: AccessCondition;
+  promptStrategy?: PromptStrategy;
 };
 
 export const sampleMatches: DashboardMatch[] = [
@@ -35,11 +57,13 @@ export const sampleMatches: DashboardMatch[] = [
     actualHome: 2,
     actualAway: 1,
     venue: "Sample Stadium",
+    stage: "group_stage",
+    isKnockout: false,
     predictions: [
-      { model: "GPT-4o", provider: "OpenAI", predictedHome: 2, predictedAway: 1 },
-      { model: "Claude 3.5 Sonnet", provider: "Anthropic", predictedHome: 1, predictedAway: 1 },
-      { model: "Gemini Pro 1.5", provider: "Google", predictedHome: 2, predictedAway: 0 },
-      { model: "Grok 2", provider: "xAI", predictedHome: 0, predictedAway: 1 }
+      createLegacySamplePrediction("sample-1", "GPT-4o", "OpenAI", 2, 1, 4, "exact score"),
+      createLegacySamplePrediction("sample-1", "Claude 3.5 Sonnet", "Anthropic", 1, 1, 0, "miss"),
+      createLegacySamplePrediction("sample-1", "Gemini Pro 1.5", "Google", 2, 0, 2, "tendency"),
+      createLegacySamplePrediction("sample-1", "Grok 2", "xAI", 0, 1, 0, "miss")
     ]
   },
   {
@@ -49,11 +73,13 @@ export const sampleMatches: DashboardMatch[] = [
     actualHome: 1,
     actualAway: 1,
     venue: "Sample Stadium",
+    stage: "group_stage",
+    isKnockout: false,
     predictions: [
-      { model: "GPT-4o", provider: "OpenAI", predictedHome: 1, predictedAway: 1 },
-      { model: "Claude 3.5 Sonnet", provider: "Anthropic", predictedHome: 2, predictedAway: 1 },
-      { model: "Gemini Pro 1.5", provider: "Google", predictedHome: 0, predictedAway: 0 },
-      { model: "Grok 2", provider: "xAI", predictedHome: 1, predictedAway: 2 }
+      createLegacySamplePrediction("sample-2", "GPT-4o", "OpenAI", 1, 1, 4, "exact score"),
+      createLegacySamplePrediction("sample-2", "Claude 3.5 Sonnet", "Anthropic", 2, 1, 0, "miss"),
+      createLegacySamplePrediction("sample-2", "Gemini Pro 1.5", "Google", 0, 0, 3, "goal difference"),
+      createLegacySamplePrediction("sample-2", "Grok 2", "xAI", 1, 2, 0, "miss")
     ]
   }
 ];
@@ -66,70 +92,51 @@ export function getDashboardMatches(): DashboardMatch[] {
 
   try {
     const db = new Database(dbPath, { readonly: true, fileMustExist: true });
-    const venueSelect = hasColumn(db, "matches", "venue") ? "m.venue" : "null";
-    const rows = db.prepare(`
-      select
-        m.id,
-        m.utc_date,
-        m.competition,
-        m.home_team,
-        m.away_team,
-        ${venueSelect} as venue,
-        m.status,
-        m.home_score,
-        m.away_score,
-        mo.name as model_name,
-        mo.provider as model_provider,
-        p.predicted_home,
-        p.predicted_away
-      from matches m
-      left join predictions p on p.match_id = m.id
-      left join models mo on mo.id = p.model_id
-      order by m.utc_date asc, mo.name asc
-    `).all() as DbMatchRow[];
+    const matches = getDbMatches(db);
+
+    if (matches.length === 0) {
+      db.close();
+      return sampleMatches;
+    }
+
+    const benchmarkPredictions = getBenchmarkPredictionRows(db);
+    const dashboardMatches = attachPredictionsToMatches(
+      matches,
+      benchmarkPredictions.length > 0 ? benchmarkPredictions : getLegacyPredictionRows(db)
+    );
 
     db.close();
-
-    const matches = rowsToMatches(rows);
-    return matches.length > 0 ? matches : sampleMatches;
+    return dashboardMatches;
   } catch {
     return sampleMatches;
   }
 }
 
-export function getLeaderboard() {
-  const dbLeaderboard = getSqliteLeaderboard();
-  if (dbLeaderboard.length > 0) {
-    return dbLeaderboard;
+export function getBenchmarkPredictions(): DashboardPrediction[] {
+  return getDashboardMatches().flatMap((match) => match.predictions);
+}
+
+export function getLeaderboard(): DashboardLeaderboardEntry[] {
+  const predictions = getBenchmarkPredictions();
+  const hasBenchmarkPredictions = predictions.some((prediction) => !prediction.id.startsWith("legacy:"));
+
+  if (hasBenchmarkPredictions) {
+    return buildAnalyticsLeaderboard(predictions, "kicktipp_points_90")
+      .map((row) => ({
+        model: row.model,
+        provider: formatProviderWithConfig(row.provider, row.accessCondition, row.promptStrategy, row.forecastHorizon),
+        points: row.kicktippPoints90 ?? 0,
+        exact: Math.round((row.exactScoreAccuracy90 ?? 0) * row.matchesScored),
+        scored: row.matchesScored,
+        pending: Math.max(0, row.predictionsTotal - row.matchesScored),
+        key: row.key,
+        forecastHorizon: row.forecastHorizon,
+        accessCondition: row.accessCondition,
+        promptStrategy: row.promptStrategy
+      }));
   }
 
-  const totals = new Map<string, { model: string; provider: string; points: number; exact: number }>();
-
-  for (const match of sampleMatches) {
-    if (match.actualHome === null || match.actualAway === null) {
-      continue;
-    }
-
-    for (const prediction of match.predictions) {
-      const score = calculatePredictionScore(
-        { home: prediction.predictedHome, away: prediction.predictedAway },
-        { home: match.actualHome, away: match.actualAway }
-      );
-
-      const current = totals.get(prediction.model) ?? {
-        model: prediction.model,
-        provider: prediction.provider,
-        points: 0,
-        exact: 0
-      };
-
-      current.points += score.points;
-      current.exact += score.reason === "exact" ? 1 : 0;
-      totals.set(prediction.model, current);
-    }
-  }
-
-  return [...totals.values()].sort((a, b) => b.points - a.points || b.exact - a.exact);
+  return getLegacyLeaderboardFromPredictions(predictions);
 }
 
 type DbMatchRow = {
@@ -142,27 +149,426 @@ type DbMatchRow = {
   status: string;
   home_score: number | null;
   away_score: number | null;
+  home_score_90: number | null;
+  away_score_90: number | null;
+  stage: string | null;
+  group_name: string | null;
+  is_knockout: number | null;
+};
+
+type PredictionRow = {
+  match_id: string;
+  prediction: DashboardPrediction;
+};
+
+type LegacyPredictionDbRow = {
+  match_id: string;
+  model_id: string;
   model_name: string | null;
   model_provider: string | null;
-  predicted_home: number | null;
-  predicted_away: number | null;
-};
-
-type DbLeaderboardRow = {
-  model: string;
-  provider: string;
-  points: number;
-  exact: number;
-};
-
-type DbLeaderboardPredictionRow = {
-  model: string;
-  provider: string;
   predicted_home: number;
   predicted_away: number;
-  home_score: number | null;
-  away_score: number | null;
+  confidence: number | null;
+  reason: string | null;
+  points: number | null;
+  score_reason: string | null;
 };
+
+type BenchmarkPredictionDbRow = {
+  id: string;
+  match_id: string;
+  predictor_id: string;
+  provider: string;
+  model_name: string | null;
+  model_provider: string | null;
+  access_condition: string;
+  prompt_strategy: string;
+  forecast_horizon: string;
+  sample_id: number;
+  most_likely_score_90_home: number | null;
+  most_likely_score_90_away: number | null;
+  most_likely_score_full_home: number | null;
+  most_likely_score_full_away: number | null;
+  home_win_90_prob: number | null;
+  draw_90_prob: number | null;
+  away_win_90_prob: number | null;
+  home_win_full_prob: number | null;
+  draw_full_prob: number | null;
+  away_win_full_prob: number | null;
+  home_advances_prob: number | null;
+  away_advances_prob: number | null;
+  confidence: number | null;
+  reason: string | null;
+  validation_status: string | null;
+  is_valid_for_scoring: number;
+  repair_attempted: number;
+  normalization_applied: number;
+  open_book_compliance: string;
+  tools_enabled: number;
+  tool_calls_observed: number | null;
+  num_tool_calls: number | null;
+  match_date: string | null;
+  match_stage: string | null;
+  match_competition: string | null;
+  brier_90: number | null;
+  log_loss_90: number | null;
+  top_outcome_correct_90: number | null;
+  exact_score_90_correct: number | null;
+  goal_difference_90_correct: number | null;
+  tendency_90_correct_from_score: number | null;
+  home_goal_abs_error_90: number | null;
+  away_goal_abs_error_90: number | null;
+  total_goals_abs_error_90: number | null;
+  goal_difference_abs_error_90: number | null;
+  kicktipp_points_90: number | null;
+  advancement_accuracy: number | null;
+  score_result_matches_prob_argmax_90: number | null;
+};
+
+function getDbMatches(db: Database.Database): DashboardMatch[] {
+  const hasVenue = hasColumn(db, "matches", "venue");
+  const hasHomeScore90 = hasColumn(db, "matches", "home_score_90");
+  const hasAwayScore90 = hasColumn(db, "matches", "away_score_90");
+  const hasStage = hasColumn(db, "matches", "stage");
+  const hasGroup = hasColumn(db, "matches", "group_name");
+  const hasKnockout = hasColumn(db, "matches", "is_knockout");
+
+  const rows = db.prepare(`
+    select
+      id,
+      utc_date,
+      competition,
+      home_team,
+      away_team,
+      ${hasVenue ? "venue" : "null"} as venue,
+      status,
+      home_score,
+      away_score,
+      ${hasHomeScore90 ? "home_score_90" : "home_score"} as home_score_90,
+      ${hasAwayScore90 ? "away_score_90" : "away_score"} as away_score_90,
+      ${hasStage ? "stage" : "null"} as stage,
+      ${hasGroup ? "group_name" : "null"} as group_name,
+      ${hasKnockout ? "is_knockout" : "0"} as is_knockout
+    from matches
+    order by utc_date asc
+  `).all() as DbMatchRow[];
+
+  return rows.map((row) => ({
+    id: row.id,
+    homeTeam: row.home_team,
+    awayTeam: row.away_team,
+    actualHome: row.home_score_90 ?? row.home_score,
+    actualAway: row.away_score_90 ?? row.away_score,
+    status: row.status,
+    utcDate: row.utc_date,
+    competition: row.competition,
+    venue: row.venue,
+    stage: normalizeStage(row.stage ?? row.competition),
+    groupName: row.group_name,
+    isKnockout: Boolean(row.is_knockout),
+    predictions: []
+  }));
+}
+
+function getBenchmarkPredictionRows(db: Database.Database): PredictionRow[] {
+  if (!hasTable(db, "benchmark_predictions")) {
+    return [];
+  }
+
+  const rows = db.prepare(`
+    select
+      bp.id,
+      bp.match_id,
+      bp.predictor_id,
+      bp.provider,
+      mo.name as model_name,
+      mo.provider as model_provider,
+      bp.access_condition,
+      bp.prompt_strategy,
+      bp.forecast_horizon,
+      bp.sample_id,
+      bp.most_likely_score_90_home,
+      bp.most_likely_score_90_away,
+      bp.most_likely_score_full_home,
+      bp.most_likely_score_full_away,
+      bp.home_win_90_prob,
+      bp.draw_90_prob,
+      bp.away_win_90_prob,
+      bp.home_win_full_prob,
+      bp.draw_full_prob,
+      bp.away_win_full_prob,
+      bp.home_advances_prob,
+      bp.away_advances_prob,
+      bp.confidence,
+      bp.reason,
+      bp.validation_status,
+      bp.is_valid_for_scoring,
+      bp.repair_attempted,
+      bp.normalization_applied,
+      bp.open_book_compliance,
+      bp.tools_enabled,
+      bp.tool_calls_observed,
+      bp.num_tool_calls,
+      m.utc_date as match_date,
+      m.stage as match_stage,
+      m.competition as match_competition,
+      pe.brier_90,
+      pe.log_loss_90,
+      pe.top_outcome_correct_90,
+      pe.exact_score_90_correct,
+      pe.goal_difference_90_correct,
+      pe.tendency_90_correct_from_score,
+      pe.home_goal_abs_error_90,
+      pe.away_goal_abs_error_90,
+      pe.total_goals_abs_error_90,
+      pe.goal_difference_abs_error_90,
+      pe.kicktipp_points_90,
+      pe.advancement_accuracy,
+      pe.score_result_matches_prob_argmax_90
+    from benchmark_predictions bp
+    inner join matches m on m.id = bp.match_id
+    left join models mo on mo.id = bp.model_id
+    left join prediction_evaluations pe on pe.prediction_id = bp.id
+    order by m.utc_date asc, bp.predictor_id asc, bp.forecast_horizon asc, bp.access_condition asc, bp.prompt_strategy asc
+  `).all() as BenchmarkPredictionDbRow[];
+
+  return rows.map((row) => ({
+    match_id: row.match_id,
+    prediction: {
+      id: row.id,
+      matchId: row.match_id,
+      model: row.model_name ?? row.predictor_id,
+      provider: row.model_provider ?? row.provider,
+      predictorId: row.predictor_id,
+      accessCondition: toAccessCondition(row.access_condition),
+      promptStrategy: toPromptStrategy(row.prompt_strategy),
+      forecastHorizon: toForecastHorizon(row.forecast_horizon),
+      stage: normalizeStage(row.match_stage ?? row.match_competition),
+      matchDate: row.match_date,
+      sampleId: row.sample_id,
+      predictedHome: row.most_likely_score_90_home,
+      predictedAway: row.most_likely_score_90_away,
+      predictedFullHome: row.most_likely_score_full_home,
+      predictedFullAway: row.most_likely_score_full_away,
+      homeWin90Prob: row.home_win_90_prob,
+      draw90Prob: row.draw_90_prob,
+      awayWin90Prob: row.away_win_90_prob,
+      homeWinFullProb: row.home_win_full_prob,
+      drawFullProb: row.draw_full_prob,
+      awayWinFullProb: row.away_win_full_prob,
+      homeAdvancesProb: row.home_advances_prob,
+      awayAdvancesProb: row.away_advances_prob,
+      confidence: row.confidence,
+      reason: row.reason,
+      validationStatus: row.validation_status,
+      isValidForScoring: Boolean(row.is_valid_for_scoring),
+      repairAttempted: Boolean(row.repair_attempted),
+      normalizationApplied: Boolean(row.normalization_applied),
+      openBookCompliance: row.open_book_compliance,
+      toolsEnabled: Boolean(row.tools_enabled),
+      toolCallsObserved: toNullableBoolean(row.tool_calls_observed),
+      numToolCalls: row.num_tool_calls,
+      brier90: row.brier_90,
+      logLoss90: row.log_loss_90,
+      topOutcomeCorrect90: toNullableBoolean(row.top_outcome_correct_90),
+      exactScore90Correct: toNullableBoolean(row.exact_score_90_correct),
+      goalDifference90Correct: toNullableBoolean(row.goal_difference_90_correct),
+      tendency90CorrectFromScore: toNullableBoolean(row.tendency_90_correct_from_score),
+      homeGoalAbsError90: row.home_goal_abs_error_90,
+      awayGoalAbsError90: row.away_goal_abs_error_90,
+      totalGoalsAbsError90: row.total_goals_abs_error_90,
+      goalDifferenceAbsError90: row.goal_difference_abs_error_90,
+      kicktippPoints90: row.kicktipp_points_90,
+      advancementAccuracy: toNullableBoolean(row.advancement_accuracy),
+      scoreResultMatchesProbArgmax90: toNullableBoolean(row.score_result_matches_prob_argmax_90),
+      scorePoints: row.kicktipp_points_90,
+      scoreReason: getBenchmarkScoreReason(row)
+    }
+  }));
+}
+
+function getLegacyPredictionRows(db: Database.Database): PredictionRow[] {
+  if (!hasTable(db, "predictions")) {
+    return [];
+  }
+
+  const rows = db.prepare(`
+    select
+      p.match_id,
+      p.model_id,
+      mo.name as model_name,
+      mo.provider as model_provider,
+      p.predicted_home,
+      p.predicted_away,
+      p.confidence,
+      p.reason,
+      s.points,
+      s.reason as score_reason
+    from predictions p
+    left join models mo on mo.id = p.model_id
+    left join scores s on s.prediction_id = p.id
+    order by mo.name asc
+  `).all() as LegacyPredictionDbRow[];
+
+  return rows.map((row) => ({
+    match_id: row.match_id,
+    prediction: createLegacyPrediction({
+      matchId: row.match_id,
+      model: row.model_name ?? row.model_id,
+      provider: row.model_provider ?? "legacy",
+      predictedHome: row.predicted_home,
+      predictedAway: row.predicted_away,
+      confidence: row.confidence,
+      reason: row.reason,
+      points: row.points,
+      scoreReason: row.score_reason
+    })
+  }));
+}
+
+function attachPredictionsToMatches(matches: DashboardMatch[], rows: PredictionRow[]): DashboardMatch[] {
+  const byMatch = new Map<string, DashboardPrediction[]>();
+
+  for (const row of rows) {
+    const predictions = byMatch.get(row.match_id) ?? [];
+    predictions.push(row.prediction);
+    byMatch.set(row.match_id, predictions);
+  }
+
+  return matches.map((match) => ({
+    ...match,
+    predictions: (byMatch.get(match.id) ?? []).sort(comparePredictions)
+  }));
+}
+
+function getLegacyLeaderboardFromPredictions(predictions: DashboardPrediction[]): DashboardLeaderboardEntry[] {
+  const totals = new Map<string, DashboardLeaderboardEntry>();
+
+  for (const prediction of predictions) {
+    const current = totals.get(prediction.model) ?? {
+      model: prediction.model,
+      provider: prediction.provider,
+      points: 0,
+      exact: 0,
+      scored: 0,
+      pending: 0
+    };
+
+    if (prediction.scorePoints !== null) {
+      current.points += prediction.scorePoints;
+      current.exact += prediction.scoreReason === "exact score" || prediction.scoreReason === "exact" ? 1 : 0;
+      current.scored += 1;
+    } else {
+      current.pending += 1;
+    }
+
+    totals.set(prediction.model, current);
+  }
+
+  return [...totals.values()].sort((a, b) => b.points - a.points || b.exact - a.exact || a.model.localeCompare(b.model));
+}
+
+function createLegacyPrediction(args: {
+  matchId: string;
+  model: string;
+  provider: string;
+  predictedHome: number;
+  predictedAway: number;
+  confidence?: number | null;
+  reason?: string | null;
+  points?: number | null;
+  scoreReason?: string | null;
+}): DashboardPrediction {
+  return {
+    id: `legacy:${args.matchId}:${args.model}`,
+    matchId: args.matchId,
+    model: args.model,
+    provider: args.provider,
+    predictorId: args.model,
+    accessCondition: "not_applicable",
+    promptStrategy: "not_applicable",
+    forecastHorizon: "STAGE_OPENING",
+    stage: "unknown",
+    matchDate: null,
+    sampleId: 1,
+    predictedHome: args.predictedHome,
+    predictedAway: args.predictedAway,
+    predictedFullHome: args.predictedHome,
+    predictedFullAway: args.predictedAway,
+    homeWin90Prob: null,
+    draw90Prob: null,
+    awayWin90Prob: null,
+    homeWinFullProb: null,
+    drawFullProb: null,
+    awayWinFullProb: null,
+    homeAdvancesProb: null,
+    awayAdvancesProb: null,
+    confidence: args.confidence ?? null,
+    reason: args.reason ?? null,
+    validationStatus: "legacy_adapter",
+    isValidForScoring: true,
+    repairAttempted: false,
+    normalizationApplied: false,
+    openBookCompliance: "not_applicable",
+    toolsEnabled: false,
+    toolCallsObserved: null,
+    numToolCalls: null,
+    brier90: null,
+    logLoss90: null,
+    topOutcomeCorrect90: null,
+    exactScore90Correct: args.scoreReason === "exact" || args.scoreReason === "exact score",
+    goalDifference90Correct: args.scoreReason === "goal_difference" || args.scoreReason === "goal difference",
+    tendency90CorrectFromScore: args.scoreReason === "tendency",
+    homeGoalAbsError90: null,
+    awayGoalAbsError90: null,
+    totalGoalsAbsError90: null,
+    goalDifferenceAbsError90: null,
+    kicktippPoints90: args.points ?? null,
+    advancementAccuracy: null,
+    scoreResultMatchesProbArgmax90: null,
+    scorePoints: args.points ?? null,
+    scoreReason: args.scoreReason ?? null
+  };
+}
+
+function createLegacySamplePrediction(
+  matchId: string,
+  model: string,
+  provider: string,
+  predictedHome: number,
+  predictedAway: number,
+  points: number,
+  scoreReason: string
+): DashboardPrediction {
+  return createLegacyPrediction({
+    matchId,
+    model,
+    provider,
+    predictedHome,
+    predictedAway,
+    points,
+    scoreReason
+  });
+}
+
+function getBenchmarkScoreReason(row: BenchmarkPredictionDbRow): string | null {
+  if (row.kicktipp_points_90 === null) {
+    return null;
+  }
+
+  if (row.exact_score_90_correct) return "exact score";
+  if (row.goal_difference_90_correct) return "goal difference";
+  if (row.tendency_90_correct_from_score) return "tendency";
+  return "miss";
+}
+
+function comparePredictions(a: DashboardPrediction, b: DashboardPrediction): number {
+  return (b.scorePoints ?? -1) - (a.scorePoints ?? -1)
+    || a.model.localeCompare(b.model)
+    || a.forecastHorizon.localeCompare(b.forecastHorizon)
+    || a.accessCondition.localeCompare(b.accessCondition)
+    || a.promptStrategy.localeCompare(b.promptStrategy);
+}
 
 function getSqliteDbPath(): string {
   if (process.env.SQLITE_DB_PATH) {
@@ -178,41 +584,13 @@ function getSqliteDbPath(): string {
   return candidates.find((candidate) => existsSync(candidate)) ?? candidates[0];
 }
 
-function rowsToMatches(rows: DbMatchRow[]): DashboardMatch[] {
-  const matches = new Map<string, DashboardMatch>();
-
-  for (const row of rows) {
-    const match = matches.get(row.id) ?? {
-      id: row.id,
-      homeTeam: row.home_team,
-      awayTeam: row.away_team,
-      venue: row.venue,
-      actualHome: row.home_score,
-      actualAway: row.away_score,
-      status: row.status,
-      utcDate: row.utc_date,
-      competition: row.competition,
-      predictions: []
-    };
-
-    if (
-      row.model_name &&
-      row.model_provider &&
-      row.predicted_home !== null &&
-      row.predicted_away !== null
-    ) {
-      match.predictions.push({
-        model: row.model_name,
-        provider: row.model_provider,
-        predictedHome: row.predicted_home,
-        predictedAway: row.predicted_away
-      });
-    }
-
-    matches.set(row.id, match);
-  }
-
-  return [...matches.values()];
+function hasTable(db: Database.Database, table: string): boolean {
+  const row = db.prepare(`
+    select name
+    from sqlite_master
+    where type = 'table' and name = ?
+  `).get(table);
+  return Boolean(row);
 }
 
 function hasColumn(db: Database.Database, table: string, column: string): boolean {
@@ -220,59 +598,31 @@ function hasColumn(db: Database.Database, table: string, column: string): boolea
   return columns.some((entry) => entry.name === column);
 }
 
-function getSqliteLeaderboard() {
-  const dbPath = getSqliteDbPath();
-  if (!existsSync(dbPath)) {
-    return [];
+function toNullableBoolean(value: number | null): boolean | null {
+  if (value === null || value === undefined) {
+    return null;
   }
 
-  try {
-    const db = new Database(dbPath, { readonly: true, fileMustExist: true });
-    const rows = db.prepare(`
-      select
-        mo.name as model,
-        mo.provider as provider,
-        p.predicted_home,
-        p.predicted_away,
-        m.home_score,
-        m.away_score
-      from predictions p
-      inner join models mo on mo.id = p.model_id
-      inner join matches m on m.id = p.match_id
-      order by mo.name asc
-    `).all() as DbLeaderboardPredictionRow[];
-
-    db.close();
-
-    return rowsToLeaderboard(rows);
-  } catch {
-    return [];
-  }
+  return Boolean(value);
 }
 
-function rowsToLeaderboard(rows: DbLeaderboardPredictionRow[]): DbLeaderboardRow[] {
-  const totals = new Map<string, DbLeaderboardRow>();
+function toAccessCondition(value: string): AccessCondition {
+  return value === "closed_book" || value === "open_book" ? value : "not_applicable";
+}
 
-  for (const row of rows) {
-    const current = totals.get(row.model) ?? {
-      model: row.model,
-      provider: row.provider,
-      points: 0,
-      exact: 0
-    };
+function toPromptStrategy(value: string): PromptStrategy {
+  return value === "direct_score" || value === "probabilistic_forecast" ? value : "not_applicable";
+}
 
-    if (row.home_score !== null && row.away_score !== null) {
-      const score = calculatePredictionScore(
-        { home: row.predicted_home, away: row.predicted_away },
-        { home: row.home_score, away: row.away_score }
-      );
+function toForecastHorizon(value: string): ForecastHorizon {
+  return value === "T_24H" || value === "T_1H" || value === "STAGE_OPENING" ? value : "STAGE_OPENING";
+}
 
-      current.points += score.points;
-      current.exact += score.reason === "exact" ? 1 : 0;
-    }
-
-    totals.set(row.model, current);
-  }
-
-  return [...totals.values()].sort((a, b) => b.points - a.points || b.exact - a.exact || a.model.localeCompare(b.model));
+function formatProviderWithConfig(
+  provider: string,
+  accessCondition: AccessCondition,
+  promptStrategy: PromptStrategy,
+  forecastHorizon: ForecastHorizon
+): string {
+  return `${provider} / ${accessCondition.replaceAll("_", " ")} / ${promptStrategy.replaceAll("_", " ")} / ${forecastHorizon}`;
 }

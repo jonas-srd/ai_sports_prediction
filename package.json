@@ -12,6 +12,7 @@
     "build": "npm run build --workspaces --if-present",
     "start": "npm run start:web",
     "start:web": "npm run start --workspace @llm-kicktipp/web",
+    "test:analytics": "tsx apps/web/src/lib/benchmark-analytics.test.ts",
     "typecheck": "npm run typecheck --workspaces --if-present",
     "db:init": "npm run db:init --workspace @llm-kicktipp/cron",
     "db:status": "npm run db:status --workspace @llm-kicktipp/cron",

@@ -1044,6 +1044,10 @@ h2 {
   padding: 10px 12px;
 }
 
+.benchmarkPredictionRow {
+  grid-template-columns: minmax(180px, 1.1fr) auto minmax(220px, 0.9fr) minmax(112px, auto);
+}
+
 .matchPredictionModel {
   min-width: 0;
 }
@@ -1061,6 +1065,42 @@ h2 {
   margin-top: 2px;
   color: var(--muted);
   font-size: 0.76rem;
+}
+
+.benchmarkBadges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  margin-top: 8px;
+}
+
+.benchmarkBadges span,
+.statusBadge {
+  border: 1px solid rgba(70, 55, 35, 0.12);
+  border-radius: 999px;
+  background: rgba(24, 19, 13, 0.06);
+  color: var(--muted);
+  padding: 4px 7px;
+  font-family: "Courier New", monospace;
+  font-size: 0.58rem !important;
+  font-weight: 900;
+  letter-spacing: 0.04em;
+  line-height: 1;
+  text-transform: uppercase;
+}
+
+.benchmarkBadges .warningBadge,
+.warningBadge {
+  border-color: rgba(179, 58, 39, 0.26);
+  background: rgba(179, 58, 39, 0.08);
+  color: var(--red);
+}
+
+.benchmarkBadges .successBadge,
+.successBadge {
+  border-color: rgba(32, 79, 53, 0.26);
+  background: rgba(32, 79, 53, 0.08);
+  color: var(--green);
 }
 
 .predictedScorePill {
@@ -1337,6 +1377,24 @@ h2 {
   white-space: nowrap;
 }
 
+.probabilityStack {
+  display: grid;
+  gap: 5px;
+  color: var(--muted);
+  font-family: "Courier New", monospace;
+  font-size: 0.66rem;
+  font-weight: 900;
+  line-height: 1.25;
+}
+
+.predictionReason {
+  grid-column: 1 / -1;
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.78rem;
+  line-height: 1.35;
+}
+
 .bracketGameCard .predictionMatchButton:hover .fixtureCenter,
 .bracketGameCard .predictionMatchButton:focus-visible .fixtureCenter {
   border-color: rgba(179, 58, 39, 0.32);
@@ -1440,6 +1498,10 @@ h2 {
   border-color: rgba(70, 55, 35, 0.12);
   background: rgba(255, 255, 255, 0.52);
   grid-template-columns: minmax(0, 1fr);
+}
+
+.bracketGameCard .probabilityStack {
+  font-size: 0.58rem;
 }
 
 .bracketGameCard .matchPredictionModel span,
@@ -1555,6 +1617,287 @@ h2 {
   white-space: nowrap;
 }
 
+.analyticsShell {
+  width: min(1320px, calc(100% - 40px));
+}
+
+.analyticsStack {
+  display: grid;
+  gap: 18px;
+}
+
+.analyticsFiltersPanel,
+.analyticsTablePanel,
+.analyticsEmptyPanel {
+  max-width: none;
+}
+
+.analyticsEmptyPanel {
+  text-align: center;
+}
+
+.analyticsEmptyPanel p {
+  margin: 10px auto 0;
+  max-width: 640px;
+  color: var(--muted);
+  line-height: 1.45;
+}
+
+.analyticsFilterGrid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.filterField {
+  display: grid;
+  gap: 7px;
+}
+
+.filterField span {
+  color: var(--muted);
+  font-family: "Courier New", monospace;
+  font-size: 0.66rem;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.filterField select,
+.filterField input {
+  width: 100%;
+  border: 1px solid rgba(70, 55, 35, 0.16);
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.58);
+  color: var(--ink);
+  padding: 11px 12px;
+  font: inherit;
+  font-size: 0.9rem;
+  font-weight: 800;
+}
+
+.clearFilterButton {
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.5);
+  color: var(--red);
+  cursor: pointer;
+  padding: 10px 14px;
+  font-family: "Courier New", monospace;
+  font-size: 0.72rem;
+  font-weight: 900;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.analyticsChartGrid {
+  display: grid;
+  grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr);
+  gap: 18px;
+}
+
+.analyticsChartPanel {
+  display: grid;
+  align-content: start;
+  min-height: 430px;
+}
+
+.analyticsChartHeader {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 14px;
+  margin-bottom: 18px;
+}
+
+.metricDirectionBadge,
+.tableSummary {
+  border: 1px solid rgba(70, 55, 35, 0.13);
+  border-radius: 999px;
+  background: rgba(24, 19, 13, 0.07);
+  color: var(--muted);
+  padding: 8px 10px;
+  font-family: "Courier New", monospace;
+  font-size: 0.66rem;
+  font-weight: 900;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.rankedBarChart {
+  display: grid;
+  gap: 9px;
+}
+
+.barChartRow {
+  display: grid;
+  grid-template-columns: 44px minmax(110px, 0.8fr) minmax(120px, 1fr) 72px;
+  align-items: center;
+  gap: 10px;
+  border: 1px solid rgba(70, 55, 35, 0.12);
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.48);
+  color: inherit;
+  cursor: pointer;
+  padding: 10px;
+  text-align: left;
+}
+
+.barChartRow:hover,
+.barChartRow.isSelected,
+.analyticsTable tr.isSelected {
+  border-color: rgba(179, 58, 39, 0.3);
+  background: rgba(255, 248, 233, 0.82);
+}
+
+.barRank {
+  display: grid;
+  width: 34px;
+  height: 34px;
+  place-items: center;
+  border-radius: 999px;
+  background: var(--ink);
+  color: var(--cream);
+  font-family: "Courier New", monospace;
+  font-size: 0.68rem;
+  font-weight: 900;
+}
+
+.barLabel {
+  overflow: hidden;
+  font-weight: 900;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.barTrack {
+  overflow: hidden;
+  height: 15px;
+  border-radius: 999px;
+  background: rgba(24, 19, 13, 0.08);
+}
+
+.barFill {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, var(--red), var(--gold-2));
+}
+
+.barChartRow strong {
+  justify-self: end;
+  color: var(--red);
+  font-family: "Courier New", monospace;
+  font-size: 0.74rem;
+  font-weight: 900;
+}
+
+.lineChartWrap {
+  display: grid;
+  gap: 10px;
+}
+
+.lineChart {
+  width: 100%;
+  min-height: 260px;
+  border: 1px solid rgba(70, 55, 35, 0.12);
+  border-radius: 20px;
+  background:
+    linear-gradient(rgba(70, 55, 35, 0.045) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(70, 55, 35, 0.035) 1px, transparent 1px),
+    rgba(255, 255, 255, 0.42);
+  background-size: 42px 42px;
+}
+
+.chartAxis {
+  stroke: rgba(70, 55, 35, 0.26);
+  stroke-width: 2;
+}
+
+.lineChartLegend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.lineChartLegend span {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border: 1px solid rgba(70, 55, 35, 0.12);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.48);
+  color: var(--muted);
+  padding: 6px 9px;
+  font-family: "Courier New", monospace;
+  font-size: 0.62rem;
+  font-weight: 900;
+}
+
+.lineChartLegend i {
+  width: 10px;
+  height: 10px;
+  border-radius: 999px;
+}
+
+.analyticsTableScroll {
+  overflow-x: auto;
+}
+
+.analyticsTable {
+  width: 100%;
+  min-width: 1320px;
+  border-collapse: separate;
+  border-spacing: 0 8px;
+  font-size: 0.82rem;
+}
+
+.analyticsTable th {
+  color: var(--muted);
+  padding: 0 10px 4px;
+  font-family: "Courier New", monospace;
+  font-size: 0.62rem;
+  font-weight: 900;
+  letter-spacing: 0.06em;
+  text-align: left;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.analyticsTable td {
+  border-top: 1px solid rgba(70, 55, 35, 0.12);
+  border-bottom: 1px solid rgba(70, 55, 35, 0.12);
+  background: rgba(255, 255, 255, 0.5);
+  padding: 10px;
+  font-family: "Courier New", monospace;
+  font-weight: 900;
+  white-space: nowrap;
+}
+
+.analyticsTable td:first-child {
+  border-left: 1px solid rgba(70, 55, 35, 0.12);
+  border-top-left-radius: 14px;
+  border-bottom-left-radius: 14px;
+}
+
+.analyticsTable td:last-child {
+  border-right: 1px solid rgba(70, 55, 35, 0.12);
+  border-top-right-radius: 14px;
+  border-bottom-right-radius: 14px;
+  color: var(--red);
+}
+
+.analyticsTable tbody tr {
+  cursor: pointer;
+}
+
+.analyticsEmptyState {
+  min-height: 250px;
+  display: grid;
+  align-content: center;
+}
+
 @keyframes riseIn {
   from {
     opacity: 0;
@@ -1626,6 +1969,20 @@ h2 {
 
   .groupOverviewGrid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .analyticsChartGrid,
+  .analyticsFilterGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .benchmarkPredictionRow {
+    grid-template-columns: 1fr;
+  }
+
+  .probabilityStack,
+  .predictionPoints {
+    justify-items: start;
   }
 }
 
@@ -1723,6 +2080,19 @@ h2 {
   .matchPredictionRow {
     grid-template-columns: 1fr;
     justify-items: start;
+  }
+
+  .barChartRow {
+    grid-template-columns: 38px minmax(0, 1fr) 70px;
+  }
+
+  .barTrack {
+    grid-column: 2 / -1;
+    width: 100%;
+  }
+
+  .analyticsShell {
+    width: min(100% - 22px, 1320px);
   }
 
   .predictionPoints {

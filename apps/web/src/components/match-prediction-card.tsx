@@ -6,7 +6,7 @@
  */
 import { useMemo, useState } from "react";
 import type { DashboardMatch, DashboardPrediction } from "@/lib/dashboard-data";
-import { calculatePredictionScore, type ScoreResult } from "@/lib/scorer";
+import { formatCondition } from "@/lib/benchmark-analytics";
 import { TeamMatchup } from "@/components/team-matchup";
 
 type MatchPredictionCardProps = {
@@ -22,7 +22,6 @@ type MatchPredictionCardProps = {
 
 type PredictionRow = {
   prediction: DashboardPrediction;
-  score: ScoreResult | null;
 };
 
 export function MatchPredictionCard({
@@ -79,20 +78,40 @@ export function MatchPredictionCard({
           ) : (
             <div className="matchPredictionGrid">
               {rows.map((row) => (
-                <div className="matchPredictionRow" key={row.prediction.model}>
+                <div className="matchPredictionRow benchmarkPredictionRow" key={row.prediction.id}>
                   <div className="matchPredictionModel">
                     <strong>{row.prediction.model}</strong>
                     <span>{row.prediction.provider}</span>
+                    <div className="benchmarkBadges">
+                      <span>{row.prediction.forecastHorizon}</span>
+                      <span>{formatCondition(row.prediction.accessCondition)}</span>
+                      <span>{formatCondition(row.prediction.promptStrategy)}</span>
+                      {getValidationBadge(row.prediction)}
+                      {getOpenBookBadge(row.prediction)}
+                    </div>
                   </div>
 
                   <span className="predictedScorePill">
-                    {row.prediction.predictedHome} - {row.prediction.predictedAway}
+                    90' {formatPredictionScore(row.prediction)}
                   </span>
 
-                  <div className="predictionPoints">
-                    <strong>{row.score ? `${row.score.points} pts` : "pending"}</strong>
-                    <span>{row.score ? formatReason(row.score.reason) : getPendingLabel(hasResult)}</span>
+                  <div className="probabilityStack">
+                    <span>90' {formatProbabilities(row.prediction.homeWin90Prob, row.prediction.draw90Prob, row.prediction.awayWin90Prob)}</span>
+                    {hasAdvancement(row.prediction) ? (
+                      <span>Adv {formatAdvancement(row.prediction)}</span>
+                    ) : (
+                      <span>Full {formatProbabilities(row.prediction.homeWinFullProb, row.prediction.drawFullProb, row.prediction.awayWinFullProb)}</span>
+                    )}
                   </div>
+
+                  <div className="predictionPoints">
+                    <strong>{row.prediction.scorePoints !== null ? `${row.prediction.scorePoints} pts` : "pending"}</strong>
+                    <span>{row.prediction.scoreReason ?? getPendingLabel(hasResult, row.prediction)}</span>
+                  </div>
+
+                  {row.prediction.reason ? (
+                    <p className="predictionReason">{row.prediction.reason}</p>
+                  ) : null}
                 </div>
               ))}
             </div>
@@ -104,29 +123,12 @@ export function MatchPredictionCard({
 }
 
 function getPredictionRows(match: DashboardMatch): PredictionRow[] {
-  const rows = match.predictions.map((prediction) => ({
-    prediction,
-    score: getPredictionScore(match, prediction)
-  }));
+  const rows = match.predictions.map((prediction) => ({ prediction }));
 
   return rows.sort((a, b) => {
-    const pointsDiff = (b.score?.points ?? -1) - (a.score?.points ?? -1);
+    const pointsDiff = (b.prediction.scorePoints ?? -1) - (a.prediction.scorePoints ?? -1);
     return pointsDiff || a.prediction.model.localeCompare(b.prediction.model);
   });
-}
-
-function getPredictionScore(
-  match: DashboardMatch,
-  prediction: DashboardPrediction
-): ScoreResult | null {
-  if (match.actualHome === null || match.actualAway === null) {
-    return null;
-  }
-
-  return calculatePredictionScore(
-    { home: prediction.predictedHome, away: prediction.predictedAway },
-    { home: match.actualHome, away: match.actualAway }
-  );
 }
 
 function formatActualScore(match: DashboardMatch): string {
@@ -137,19 +139,67 @@ function formatActualScore(match: DashboardMatch): string {
   return `${match.actualHome} - ${match.actualAway}`;
 }
 
-function getPendingLabel(hasResult: boolean): string {
-  return hasResult ? "not scored" : "waiting for result";
+function getPendingLabel(hasResult: boolean, prediction: DashboardPrediction): string {
+  if (!prediction.isValidForScoring) {
+    return prediction.validationStatus ?? "invalid";
+  }
+
+  return hasResult ? "awaiting evaluation" : "waiting for result";
 }
 
-function formatReason(reason: ScoreResult["reason"]): string {
-  switch (reason) {
-    case "exact":
-      return "exact score";
-    case "goal_difference":
-      return "goal difference";
-    case "tendency":
-      return "tendency";
-    case "miss":
-      return "miss";
+function formatPredictionScore(prediction: DashboardPrediction): string {
+  if (prediction.predictedHome === null || prediction.predictedAway === null) {
+    return "-";
   }
+
+  return `${prediction.predictedHome} - ${prediction.predictedAway}`;
+}
+
+function formatProbabilities(home: number | null, draw: number | null, away: number | null): string {
+  if (home === null || draw === null || away === null) {
+    return "probabilities pending";
+  }
+
+  return `H ${formatPercent(home)} / D ${formatPercent(draw)} / A ${formatPercent(away)}`;
+}
+
+function formatAdvancement(prediction: DashboardPrediction): string {
+  return `H ${formatPercent(prediction.homeAdvancesProb)} / A ${formatPercent(prediction.awayAdvancesProb)}`;
+}
+
+function formatPercent(value: number | null): string {
+  if (value === null) {
+    return "-";
+  }
+
+  return `${Math.round(value * 100)}%`;
+}
+
+function hasAdvancement(prediction: DashboardPrediction): boolean {
+  return prediction.homeAdvancesProb !== null || prediction.awayAdvancesProb !== null;
+}
+
+function getValidationBadge(prediction: DashboardPrediction) {
+  if (
+    prediction.validationStatus === null
+    || prediction.validationStatus === "valid"
+    || prediction.validationStatus === "legacy_adapter"
+  ) {
+    return null;
+  }
+
+  return <span className="statusBadge warningBadge">{prediction.validationStatus}</span>;
+}
+
+function getOpenBookBadge(prediction: DashboardPrediction) {
+  if (prediction.accessCondition !== "open_book") {
+    return null;
+  }
+
+  const observed = prediction.openBookCompliance === "observed_search" || prediction.toolCallsObserved === true;
+  return (
+    <span className={`statusBadge ${observed ? "successBadge" : "warningBadge"}`}>
+      {observed ? "search observed" : "search not observed"}
+    </span>
+  );
 }

@@ -21,7 +21,7 @@ export default function HomePage() {
         <p className="eyebrow">LLM Kicktipp MVP</p>
         <h1>Which model predicts football best?</h1>
         <p className="heroText">
-          Daily football predictions from multiple LLMs, ranked with Kicktipp-style points.
+          World Cup 2026 forecasts from multiple LLMs, ranked with benchmark evaluation metrics.
         </p>
         <div className="heroActions">
           <Link className="primaryLink" href="/matches">View all matches</Link>
@@ -40,15 +40,15 @@ export default function HomePage() {
           <h2>Scoring</h2>
           <div className="ruleList">
             <div className="ruleItem">
-              <strong>5 pts</strong>
+              <strong>4 pts</strong>
               <span>Exact score</span>
             </div>
             <div className="ruleItem">
-              <strong>2 pts</strong>
+              <strong>3 pts</strong>
               <span>Correct goal difference</span>
             </div>
             <div className="ruleItem">
-              <strong>1 pt</strong>
+              <strong>2 pts</strong>
               <span>Correct tendency</span>
             </div>
             <div className="ruleItem">
