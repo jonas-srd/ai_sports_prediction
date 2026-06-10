@@ -28,9 +28,8 @@ type BracketHalf = {
 
 export default function MatchesPage() {
   const matches = getDashboardMatches();
-  const groupStageMatches = matches.filter((match) => !isKnockoutMatch(match));
   const knockoutMatches = matches.filter(isKnockoutMatch);
-  const scheduleDays = groupMatchesByDay(groupStageMatches);
+  const scheduleDays = groupMatchesByDay(matches);
   const knockoutByNumber = getMatchesByOfficialNumber(knockoutMatches);
 
   return (
@@ -39,7 +38,7 @@ export default function MatchesPage() {
         <p className="eyebrow">World Cup 2026</p>
         <h1>Schedule</h1>
         <p className="heroText">
-          Group-stage fixtures by day, then knockout matches as a bracket. Click any match to inspect model picks.
+          Fixtures by day, plus the knockout matches as a bracket. Click any match to inspect model picks.
         </p>
       </section>
 
@@ -85,7 +84,7 @@ export default function MatchesPage() {
           <section className="scheduleDay" key={day.key}>
             <div className="scheduleDayHeader">
               <h2>{day.label}</h2>
-              <span>View groups</span>
+              <span>{formatScheduleDayTag(day.matches)}</span>
             </div>
             <div className="scheduleDayMatches">
               {day.matches.map((match) => {
@@ -222,6 +221,18 @@ function isKnockoutMatch(match: DashboardMatch): boolean {
   return !competition.includes("GROUP_STAGE");
 }
 
+function formatScheduleDayTag(matches: DashboardMatch[]): string {
+  if (matches.length > 0 && matches.every(isKnockoutMatch)) {
+    return "Knockout";
+  }
+
+  if (matches.some(isKnockoutMatch)) {
+    return "Mixed day";
+  }
+
+  return "View groups";
+}
+
 function compareMatches(a: DashboardMatch, b: DashboardMatch): number {
   return getTimeValue(a.utcDate) - getTimeValue(b.utcDate);
 }
@@ -325,7 +336,7 @@ function formatCompetition(value?: string): string | null {
     details.push("Final");
   }
 
-  const group = value.match(/GROUP_([A-Z])/);
+  const group = value.match(/GROUP_([A-L])/);
   if (group) {
     details.push(`Group ${group[1]}`);
   }

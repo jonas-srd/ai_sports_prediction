@@ -797,6 +797,15 @@ h2 {
   padding: clamp(14px, 2.4vw, 20px);
 }
 
+.scheduleMatchCard .seedFlag {
+  min-width: 44px;
+  border-radius: 8px;
+  padding: 5px 6px;
+  font-size: 0.62rem;
+  letter-spacing: -0.055em;
+  line-height: 1;
+}
+
 .predictionMatchCard {
   position: relative;
   transition:
