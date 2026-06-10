@@ -12,3 +12,4 @@ __pycache__
 data/*.db
 data/*.db-*
 data/*.sqlite
+exports/

@@ -122,6 +122,24 @@ Recalculate all existing finished-match scores after changing the scoring system
 npm run score -- --all
 ```
 
+Export paper-analysis datasets for the World Cup 2026 benchmark:
+
+```bash
+npm run benchmark:export
+```
+
+This writes:
+
+```text
+exports/worldcup2026_matches.csv
+exports/worldcup2026_predictions_raw.csv
+exports/worldcup2026_predictions_validated.csv
+exports/worldcup2026_evaluations.csv
+exports/worldcup2026_tool_logs.jsonl
+```
+
+The exports include invalid benchmark predictions and unevaluated rows. See `docs/worldcup2026_paper_exports.md`.
+
 Start the local website:
 
 ```bash
@@ -209,6 +227,7 @@ Pragmatic public options later:
 - `apps/cron/src/jobs/predict-today.ts`: loads today's matches, calls OpenRouter, stores predictions.
 - `apps/cron/src/jobs/predict-next.ts`: predicts the next scheduled matches for local testing.
 - `apps/cron/src/jobs/score-results.ts`: scores finished matches using Kicktipp rules.
+- `apps/cron/src/jobs/export-worldcup2026-paper-data.ts`: exports paper-analysis CSV/JSONL datasets.
 - `packages/db`: SQLite connection, schema, and repository helpers.
 - `packages/llm`: model IDs, prompt construction, and OpenRouter calls.
 - `packages/scorer`: shared points logic.
