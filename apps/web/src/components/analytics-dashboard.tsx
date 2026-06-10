@@ -3,7 +3,8 @@
 /**
  * Purpose: Client-side filters, charts, and detailed table for benchmark analytics.
  */
-import { useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import {
   buildAnalyticsLeaderboard,
   buildAnalyticsSeries,
@@ -31,6 +32,17 @@ type AnalyticsDashboardProps = {
 
 const METRICS = Object.keys(METRIC_DEFINITIONS) as AnalyticsMetric[];
 const SERIES_COLORS = ["#b33a27", "#204f35", "#d69632", "#263b67", "#7d2b1f", "#0d6b5f", "#7f5b24", "#443a2f"];
+const FILTER_HELP = {
+  metric: "Choose the evaluation metric used for ranking models, for example Kicktipp points, Brier score, or log loss.",
+  forecastHorizon: "Filter predictions by when they were made, such as stage-opening, 24 hours before kickoff, or 1 hour before kickoff.",
+  access: "Filter whether the model predicted from its own knowledge only or was allowed to use web-search/tool access.",
+  prompt: "Filter the prompt format used for the prediction, for example direct score prediction or probabilistic forecast.",
+  stage: "Filter matches by tournament stage, such as group stage or knockout rounds.",
+  model: "Show predictions from one model configuration or compare all models.",
+  provider: "Filter by model provider or model family, such as OpenAI, Anthropic, Google, or Mistral.",
+  from: "Only include matches scheduled on or after this date.",
+  to: "Only include matches scheduled on or before this date."
+} as const;
 
 export function AnalyticsDashboard({ predictions }: AnalyticsDashboardProps) {
   const defaultFilters = useMemo(() => getDefaultAnalyticsFilters(predictions), [predictions]);
@@ -84,53 +96,62 @@ export function AnalyticsDashboard({ predictions }: AnalyticsDashboardProps) {
         <div className="analyticsFilterGrid">
           <SelectFilter
             label="Metric"
+            help={FILTER_HELP.metric}
             value={metric}
             options={METRICS.map((entry) => ({ value: entry, label: METRIC_DEFINITIONS[entry].label }))}
             onChange={(value) => setMetric(value as AnalyticsMetric)}
           />
           <SelectFilter
             label="Forecast horizon"
+            help={FILTER_HELP.forecastHorizon}
             value={filters.forecastHorizon}
             options={[{ value: "all", label: "All horizons" }, ...options.forecastHorizons.map((value) => ({ value, label: value }))]}
             onChange={(value) => updateFilter(setFilters, "forecastHorizon", value as AnalyticsFilters["forecastHorizon"])}
           />
           <SelectFilter
             label="Access"
+            help={FILTER_HELP.access}
             value={filters.accessCondition}
             options={[{ value: "all", label: "All access" }, ...options.accessConditions.map((value) => ({ value, label: formatCondition(value) }))]}
             onChange={(value) => updateFilter(setFilters, "accessCondition", value as AnalyticsFilters["accessCondition"])}
           />
           <SelectFilter
             label="Prompt"
+            help={FILTER_HELP.prompt}
             value={filters.promptStrategy}
             options={[{ value: "all", label: "All prompts" }, ...options.promptStrategies.map((value) => ({ value, label: formatCondition(value) }))]}
             onChange={(value) => updateFilter(setFilters, "promptStrategy", value as AnalyticsFilters["promptStrategy"])}
           />
           <SelectFilter
             label="Stage"
+            help={FILTER_HELP.stage}
             value={filters.stage}
             options={[{ value: "all", label: "All stages" }, ...options.stages.map((value) => ({ value, label: formatStage(value) }))]}
             onChange={(value) => updateFilter(setFilters, "stage", value as AnalyticsFilters["stage"])}
           />
           <SelectFilter
             label="Model"
+            help={FILTER_HELP.model}
             value={filters.model}
             options={[{ value: "all", label: "All models" }, ...options.models.map((value) => ({ value, label: value }))]}
             onChange={(value) => updateFilter(setFilters, "model", value)}
           />
           <SelectFilter
             label="Provider"
+            help={FILTER_HELP.provider}
             value={filters.provider}
             options={[{ value: "all", label: "All providers" }, ...options.providers.map((value) => ({ value, label: value }))]}
             onChange={(value) => updateFilter(setFilters, "provider", value)}
           />
           <DateFilter
             label="From"
+            help={FILTER_HELP.from}
             value={filters.dateFrom}
             onChange={(value) => updateFilter(setFilters, "dateFrom", value)}
           />
           <DateFilter
             label="To"
+            help={FILTER_HELP.to}
             value={filters.dateTo}
             onChange={(value) => updateFilter(setFilters, "dateTo", value)}
           />
@@ -350,7 +371,12 @@ function AnalyticsTable({
               onClick={() => onSelect(row.key)}
             >
               <td>#{row.rank}</td>
-              <td>{row.model}</td>
+              <td>
+                <span className="modelConfigCell">
+                  <span>{row.model}</span>
+                  <InfoTooltip text={buildModelConfigurationHelp(row)} />
+                </span>
+              </td>
               <td>{row.provider}</td>
               <td>{row.forecastHorizon}</td>
               <td>{formatCondition(row.accessCondition)}</td>
@@ -377,18 +403,20 @@ function AnalyticsTable({
 
 function SelectFilter({
   label,
+  help,
   value,
   options,
   onChange
 }: {
   label: string;
+  help: string;
   value: string;
   options: Array<{ value: string; label: string }>;
   onChange: (value: string) => void;
 }) {
   return (
     <label className="filterField">
-      <span>{label}</span>
+      <FilterLabel help={help} label={label} />
       <select value={value} onChange={(event) => onChange(event.target.value)}>
         {options.map((option) => (
           <option key={option.value} value={option.value}>{option.label}</option>
@@ -398,13 +426,162 @@ function SelectFilter({
   );
 }
 
-function DateFilter({ label, value, onChange }: { label: string; value: string; onChange: (value: string) => void }) {
+function DateFilter({
+  label,
+  help,
+  value,
+  onChange
+}: {
+  label: string;
+  help: string;
+  value: string;
+  onChange: (value: string) => void;
+}) {
   return (
     <label className="filterField">
-      <span>{label}</span>
+      <FilterLabel help={help} label={label} />
       <input type="date" value={value} onChange={(event) => onChange(event.target.value)} />
     </label>
   );
+}
+
+function FilterLabel({ label, help }: { label: string; help: string }) {
+  return (
+    <span className="filterLabel">
+      <span>{label}</span>
+      <InfoTooltip label={label} text={help} />
+    </span>
+  );
+}
+
+function InfoTooltip({ label = "Info", text }: { label?: string; text: string }) {
+  const triggerRef = useRef<HTMLSpanElement>(null);
+  const [isOpen, setIsOpen] = useState(false);
+  const [position, setPosition] = useState({ left: 0, top: 0 });
+
+  const updatePosition = useCallback(() => {
+    const trigger = triggerRef.current;
+    if (!trigger) {
+      return;
+    }
+
+    const rect = trigger.getBoundingClientRect();
+    const tooltipHalfWidth = 180;
+    const left = Math.min(
+      window.innerWidth - tooltipHalfWidth - 22,
+      Math.max(tooltipHalfWidth + 22, rect.left + rect.width / 2)
+    );
+
+    setPosition({
+      left,
+      top: rect.top - 9
+    });
+  }, []);
+
+  const showTooltip = () => {
+    updatePosition();
+    setIsOpen(true);
+  };
+
+  useEffect(() => {
+    if (!isOpen) {
+      return;
+    }
+
+    updatePosition();
+    window.addEventListener("resize", updatePosition);
+    window.addEventListener("scroll", updatePosition, true);
+
+    return () => {
+      window.removeEventListener("resize", updatePosition);
+      window.removeEventListener("scroll", updatePosition, true);
+    };
+  }, [isOpen, updatePosition]);
+
+  return (
+    <>
+      <span
+        aria-label={`${label}: ${text}`}
+        className="filterInfo"
+        onBlur={() => setIsOpen(false)}
+        onClick={(event) => event.stopPropagation()}
+        onFocus={showTooltip}
+        onMouseEnter={showTooltip}
+        onMouseLeave={() => setIsOpen(false)}
+        ref={triggerRef}
+        tabIndex={0}
+        title={text}
+      >
+        i
+      </span>
+      {isOpen && typeof document !== "undefined"
+        ? createPortal(
+          <span
+            className="floatingTooltip"
+            role="tooltip"
+            style={{ left: `${position.left}px`, top: `${position.top}px` }}
+          >
+            {text}
+          </span>,
+          document.body
+        )
+        : null}
+    </>
+  );
+}
+
+function buildModelConfigurationHelp(row: AnalyticsLeaderboardRow): string {
+  const horizon = explainForecastHorizon(row.forecastHorizon);
+  const access = explainAccessCondition(row.accessCondition);
+  const prompt = explainPromptStrategy(row.promptStrategy);
+  const stages = row.stages.length > 0
+    ? row.stages.map(formatStage).join(", ")
+    : "the currently selected stages";
+  const search = row.accessCondition === "open_book"
+    ? `Search observed means web/tool usage was detected in ${formatMetricValue("open_book_search_observed_rate", row.openBookSearchObservedRate)} of this configuration's open-book predictions.`
+    : "Search is not applicable because this is a closed-book configuration.";
+
+  return `${row.model} by ${row.provider}. ${horizon} ${access} ${prompt} Stage coverage: ${stages}. ${search} Aggregated over ${row.predictionsTotal} predictions; ${row.matchesScored} have evaluation scores so far.`;
+}
+
+function explainForecastHorizon(value: string): string {
+  if (value === "STAGE_OPENING") {
+    return "Stage opening means these predictions were generated once at the start of the stage, before the group-stage run.";
+  }
+
+  if (value === "T_24H") {
+    return "T_24H means the prediction was scheduled approximately 24 hours before kickoff.";
+  }
+
+  if (value === "T_1H") {
+    return "T_1H means the prediction was scheduled approximately 1 hour before kickoff.";
+  }
+
+  return `${value} is the forecast horizon used for this configuration.`;
+}
+
+function explainAccessCondition(value: string): string {
+  if (value === "open_book") {
+    return "Open book means the model was allowed to use configured web-search/tool access before answering.";
+  }
+
+  if (value === "closed_book") {
+    return "Closed book means the model had to answer from its internal knowledge only, without search/tool access.";
+  }
+
+  return `${formatCondition(value)} is the access condition for this configuration.`;
+}
+
+function explainPromptStrategy(value: string): string {
+  if (value === "direct_score") {
+    return "Direct score asks the model for the most likely scoreline plus required probabilities.";
+  }
+
+  if (value === "probabilistic_forecast") {
+    return "Probabilistic forecast emphasizes calibrated outcome probabilities before the scoreline.";
+  }
+
+  return `${formatCondition(value)} is the prompt strategy used for this configuration.`;
 }
 
 function EmptyChart({ label }: { label: string }) {

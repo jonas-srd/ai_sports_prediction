@@ -113,6 +113,7 @@ export type AnalyticsLeaderboardRow = {
   forecastHorizon: ForecastHorizon;
   accessCondition: AccessCondition;
   promptStrategy: PromptStrategy;
+  stages: TournamentStage[];
   matchesScored: number;
   predictionsTotal: number;
   metricValue: number | null;
@@ -417,6 +418,7 @@ function summarizeGroup(key: string, records: BenchmarkDisplayPrediction[]): Omi
     forecastHorizon: first.forecastHorizon,
     accessCondition: first.accessCondition,
     promptStrategy: first.promptStrategy,
+    stages: Array.from(new Set(records.map((record) => record.stage))) as TournamentStage[],
     matchesScored: countDistinct(scored.map((record) => record.matchId)),
     predictionsTotal: records.length,
     kicktippPoints90: sumNullable(scored.map((record) => record.kicktippPoints90)),

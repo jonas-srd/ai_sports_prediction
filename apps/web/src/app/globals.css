@@ -26,6 +26,7 @@ html {
 body {
   margin: 0;
   min-height: 100vh;
+  overflow-x: hidden;
   color: var(--ink);
   background:
     radial-gradient(circle at 50% -8%, rgba(240, 196, 91, 0.38), transparent 28rem),
@@ -1618,18 +1619,40 @@ h2 {
 }
 
 .analyticsShell {
-  width: min(1320px, calc(100% - 40px));
+  width: min(1720px, calc(100% - 32px));
+  margin-right: auto;
+  margin-left: auto;
 }
 
 .analyticsStack {
   display: grid;
   gap: 18px;
+  width: 100%;
+  min-width: 0;
+  margin-right: auto;
+  margin-left: auto;
+}
+
+.analyticsStack > * {
+  min-width: 0;
 }
 
 .analyticsFiltersPanel,
 .analyticsTablePanel,
 .analyticsEmptyPanel {
   max-width: none;
+  width: 100%;
+}
+
+.analyticsFiltersPanel {
+  position: relative;
+  z-index: 20;
+  overflow: visible;
+}
+
+.analyticsFilterGrid,
+.filterField {
+  overflow: visible;
 }
 
 .analyticsEmptyPanel {
@@ -1654,13 +1677,155 @@ h2 {
   gap: 7px;
 }
 
-.filterField span {
+.filterLabel {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
   color: var(--muted);
   font-family: "Courier New", monospace;
   font-size: 0.66rem;
   font-weight: 900;
   letter-spacing: 0.08em;
   text-transform: uppercase;
+}
+
+.filterInfo {
+  position: relative;
+  display: inline-grid;
+  width: 15px;
+  height: 15px;
+  place-items: center;
+  border: 1px solid rgba(179, 58, 39, 0.32);
+  border-radius: 999px;
+  background: rgba(179, 58, 39, 0.08);
+  color: var(--red);
+  cursor: help;
+  font-size: 0.58rem;
+  letter-spacing: 0;
+  line-height: 1;
+  text-transform: none;
+}
+
+.filterInfo:focus-visible {
+  outline: 2px solid rgba(179, 58, 39, 0.35);
+  outline-offset: 2px;
+}
+
+.filterTooltip {
+  position: absolute;
+  top: auto;
+  bottom: calc(100% + 9px);
+  left: 50%;
+  z-index: 30;
+  width: min(280px, calc(100vw - 44px));
+  border: 1px solid rgba(70, 55, 35, 0.18);
+  border-radius: 14px;
+  background: rgba(24, 19, 13, 0.95);
+  box-shadow: 0 14px 34px rgba(24, 19, 13, 0.18);
+  color: var(--cream);
+  padding: 10px 12px;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0;
+  line-height: 1.35;
+  opacity: 0;
+  pointer-events: none;
+  text-transform: none;
+  transform: translate(-50%, 4px);
+  transition:
+    opacity 140ms ease,
+    transform 140ms ease;
+}
+
+.filterTooltip::after {
+  position: absolute;
+  top: 100%;
+  bottom: auto;
+  left: 50%;
+  width: 10px;
+  height: 10px;
+  background: rgba(24, 19, 13, 0.95);
+  content: "";
+  transform: translate(-50%, -5px) rotate(45deg);
+}
+
+.filterInfo:hover .filterTooltip,
+.filterInfo:focus-visible .filterTooltip {
+  opacity: 1;
+  transform: translate(-50%, 0);
+}
+
+.floatingTooltip {
+  position: fixed;
+  z-index: 10000;
+  width: min(360px, calc(100vw - 44px));
+  border: 1px solid rgba(70, 55, 35, 0.18);
+  border-radius: 14px;
+  background: rgba(24, 19, 13, 0.96);
+  box-shadow: 0 18px 42px rgba(24, 19, 13, 0.24);
+  color: var(--cream);
+  padding: 10px 12px;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0;
+  line-height: 1.35;
+  pointer-events: none;
+  text-transform: none;
+  transform: translate(-50%, -100%);
+}
+
+.floatingTooltip::after {
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  width: 10px;
+  height: 10px;
+  background: rgba(24, 19, 13, 0.96);
+  content: "";
+  transform: translate(-50%, -5px) rotate(45deg);
+}
+
+.modelConfigCell {
+  display: inline-flex;
+  max-width: 240px;
+  align-items: center;
+  gap: 7px;
+  min-width: 0;
+}
+
+.modelConfigCell > span:first-child {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.analyticsTable .filterInfo {
+  flex: 0 0 auto;
+}
+
+.analyticsTable .filterTooltip {
+  top: auto;
+  bottom: calc(100% + 9px);
+  left: 50%;
+  width: min(360px, calc(100vw - 44px));
+  transform: translate(-50%, 4px);
+  white-space: normal;
+}
+
+.analyticsTable .filterTooltip::after {
+  top: 100%;
+  bottom: auto;
+  right: auto;
+  left: 50%;
+  transform: translate(-50%, -5px) rotate(45deg);
+}
+
+.analyticsTable .filterInfo:hover .filterTooltip,
+.analyticsTable .filterInfo:focus-visible .filterTooltip {
+  transform: translate(-50%, 0);
 }
 
 .filterField select,
@@ -1692,14 +1857,16 @@ h2 {
 
 .analyticsChartGrid {
   display: grid;
-  grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr);
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 18px;
+  min-width: 0;
 }
 
 .analyticsChartPanel {
   display: grid;
   align-content: start;
   min-height: 430px;
+  min-width: 0;
 }
 
 .analyticsChartHeader {
@@ -1842,20 +2009,22 @@ h2 {
 }
 
 .analyticsTableScroll {
+  max-width: 100%;
+  min-width: 0;
   overflow-x: auto;
 }
 
 .analyticsTable {
   width: 100%;
-  min-width: 1320px;
+  min-width: 1040px;
   border-collapse: separate;
   border-spacing: 0 8px;
-  font-size: 0.82rem;
+  font-size: 0.78rem;
 }
 
 .analyticsTable th {
   color: var(--muted);
-  padding: 0 10px 4px;
+  padding: 0 7px 4px;
   font-family: "Courier New", monospace;
   font-size: 0.62rem;
   font-weight: 900;
@@ -1869,7 +2038,7 @@ h2 {
   border-top: 1px solid rgba(70, 55, 35, 0.12);
   border-bottom: 1px solid rgba(70, 55, 35, 0.12);
   background: rgba(255, 255, 255, 0.5);
-  padding: 10px;
+  padding: 9px 7px;
   font-family: "Courier New", monospace;
   font-weight: 900;
   white-space: nowrap;
@@ -2128,7 +2297,7 @@ h2 {
   }
 
   .analyticsShell {
-    width: min(100% - 22px, 1320px);
+    width: min(100% - 18px, 1720px);
   }
 
   .predictionPoints {
