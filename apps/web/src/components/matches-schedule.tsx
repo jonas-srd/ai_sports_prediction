@@ -11,7 +11,6 @@ import {
   filterMatchesForPredictionView,
   getDefaultPredictionViewState,
   getPredictionViewOptions,
-  getPredictionViewSummary,
   type PredictionViewState
 } from "@/lib/prediction-view";
 import { MatchPredictionCard } from "@/components/match-prediction-card";
@@ -35,42 +34,41 @@ export function MatchesSchedule({ matches }: MatchesScheduleProps) {
     [matches, viewState]
   );
   const scheduleDays = useMemo(() => groupMatchesByDay(filteredMatches), [filteredMatches]);
-  const summary = useMemo(() => getPredictionViewSummary(viewState, matches), [viewState, matches]);
 
   return (
-    <>
-      <PredictionViewControls
-        options={options}
-        state={viewState}
-        summary={summary}
-        onChange={setViewState}
-      />
-
-      <section className="scheduleList">
-        {scheduleDays.map((day) => (
-          <section className="scheduleDay" key={day.key}>
-            <div className="scheduleDayHeader">
-              <h2>{day.label}</h2>
-              <span>{formatScheduleDayTag(day.matches)}</span>
-            </div>
-            <div className="scheduleDayMatches">
-              {day.matches.map((match) => {
-                const displayMatch = getDisplayMatch(match, filteredMatches);
-                return (
-                  <MatchPredictionCard
-                    className="scheduleMatchCard"
-                    key={match.id}
-                    match={displayMatch}
-                    center={formatMatchCenter(match)}
-                    meta={formatMatchMeta(match)}
-                  />
-                );
-              })}
-            </div>
-          </section>
-        ))}
-      </section>
-    </>
+    <section className="scheduleList">
+      {scheduleDays.map((day) => (
+        <section className="scheduleDay" key={day.key}>
+          <div className="scheduleDayHeader">
+            <h2>{day.label}</h2>
+            <span>{formatScheduleDayTag(day.matches)}</span>
+          </div>
+          <div className="scheduleDayMatches">
+            {day.matches.map((match) => {
+              const displayMatch = getDisplayMatch(match, filteredMatches);
+              return (
+                <MatchPredictionCard
+                  className="scheduleMatchCard"
+                  key={match.id}
+                  match={displayMatch}
+                  center={formatMatchCenter(match)}
+                  meta={formatMatchMeta(match)}
+                  predictionControls={
+                    <PredictionViewControls
+                      options={options}
+                      state={viewState}
+                      summary=""
+                      variant="embedded"
+                      onChange={setViewState}
+                    />
+                  }
+                />
+              );
+            })}
+          </div>
+        </section>
+      ))}
+    </section>
   );
 }
 

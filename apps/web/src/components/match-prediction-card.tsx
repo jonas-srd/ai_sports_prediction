@@ -5,6 +5,7 @@
  * It keeps the expansion state in the browser and shows all model predictions for one fixture.
  */
 import { useEffect, useMemo, useRef, useState } from "react";
+import type { ReactNode } from "react";
 import type { DashboardMatch, DashboardPrediction } from "@/lib/dashboard-data";
 import { formatCondition, formatStage } from "@/lib/benchmark-analytics";
 import { InfoTooltip, type TooltipLine } from "@/components/info-tooltip";
@@ -19,6 +20,7 @@ type MatchPredictionCardProps = {
   homeTeamLabel?: string;
   awayTeamLabel?: string;
   badge?: string;
+  predictionControls?: ReactNode;
 };
 
 type PredictionRow = {
@@ -33,7 +35,8 @@ export function MatchPredictionCard({
   className,
   homeTeamLabel,
   awayTeamLabel,
-  badge
+  badge,
+  predictionControls
 }: MatchPredictionCardProps) {
   const cardRef = useRef<HTMLElement>(null);
   const [isOpen, setIsOpen] = useState(false);
@@ -84,11 +87,16 @@ export function MatchPredictionCard({
 
       {isOpen ? (
         <div className="matchPredictionPanel">
-          <div className="matchPredictionHeader">
+          <div className={`matchPredictionHeader${predictionControls ? " hasControls" : ""}`}>
             <div>
               <strong>Model predictions</strong>
               <span>{rows.length} picks for this match</span>
             </div>
+            {predictionControls ? (
+              <div className="matchPredictionControls">
+                {predictionControls}
+              </div>
+            ) : null}
             <span className="finalScoreBadge">Result {formatActualScore(match)}</span>
           </div>
 

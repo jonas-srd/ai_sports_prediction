@@ -4,7 +4,12 @@
 import type { DashboardMatch } from "@/lib/dashboard-data";
 import { getDashboardMatches } from "@/lib/dashboard-data";
 import { getTeamFlag } from "@/lib/country-flags";
-import { getDisplayMatch, getOfficialMatchNumber } from "@/lib/match-display";
+import {
+  getDisplayMatch,
+  getGroupRankings,
+  getOfficialMatchNumber,
+  type GroupStanding
+} from "@/lib/match-display";
 import { MatchPredictionCard } from "@/components/match-prediction-card";
 
 export const dynamic = "force-dynamic";
@@ -24,7 +29,7 @@ type BracketHalf = {
 
 type GroupOverview = {
   letter: string;
-  teams: string[];
+  standings: GroupStanding[];
 };
 
 export default function TournamentTreePage() {
@@ -52,14 +57,7 @@ export default function TournamentTreePage() {
             {groups.map((group) => (
               <article className="groupOverviewCard" key={group.letter}>
                 <h3>Group {group.letter}</h3>
-                <div className="groupTeamList">
-                  {group.teams.map((team) => (
-                    <div className="groupTeamRow" key={team}>
-                      <GroupTeamFlag teamName={team} />
-                      <span>{team}</span>
-                    </div>
-                  ))}
-                </div>
+                <GroupTable standings={group.standings} />
               </article>
             ))}
           </div>
@@ -123,6 +121,46 @@ function GroupTeamFlag({ teamName }: { teamName: string }) {
       src={flag.src}
       srcSet={flag.srcSet}
     />
+  );
+}
+
+function GroupTable({ standings }: { standings: GroupStanding[] }) {
+  return (
+    <div className="groupTableWrap">
+      <table className="groupTable">
+        <thead>
+          <tr>
+            <th aria-label="Position"></th>
+            <th>Team</th>
+            <th>Pld</th>
+            <th>W</th>
+            <th>D</th>
+            <th>L</th>
+            <th>GF</th>
+            <th>Pts</th>
+          </tr>
+        </thead>
+        <tbody>
+          {standings.map((standing, index) => (
+            <tr key={standing.team}>
+              <td className="groupTableRank">{index + 1}</td>
+              <td className="groupTableTeam">
+                <span className="groupTableTeamInner">
+                  <GroupTeamFlag teamName={standing.team} />
+                  <span>{standing.team}</span>
+                </span>
+              </td>
+              <td>{standing.played}</td>
+              <td>{standing.won}</td>
+              <td>{standing.drawn}</td>
+              <td>{standing.lost}</td>
+              <td>{standing.goalsFor}</td>
+              <td className="groupTablePoints">{standing.points}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
   );
 }
 
@@ -218,34 +256,9 @@ function isKnockoutMatch(match: DashboardMatch): boolean {
 }
 
 function getGroupOverview(matches: DashboardMatch[]): GroupOverview[] {
-  const groups = new Map<string, string[]>();
-
-  for (const match of matches) {
-    const group = getGroupLetter(match.competition);
-    if (!group) {
-      continue;
-    }
-
-    const teams = groups.get(group) ?? [];
-    addUniqueTeam(teams, match.homeTeam);
-    addUniqueTeam(teams, match.awayTeam);
-    groups.set(group, teams);
-  }
-
-  return [...groups.entries()]
+  return [...getGroupRankings(matches).entries()]
     .sort(([left], [right]) => left.localeCompare(right))
-    .map(([letter, teams]) => ({ letter, teams }));
-}
-
-function addUniqueTeam(teams: string[], team: string): void {
-  if (team && !teams.includes(team)) {
-    teams.push(team);
-  }
-}
-
-function getGroupLetter(value?: string): string | null {
-  const group = value?.match(/GROUP_([A-L])/);
-  return group?.[1] ?? null;
+    .map(([letter, ranking]) => ({ letter, standings: ranking.standings }));
 }
 
 function formatMatchCenter(match: DashboardMatch): string {

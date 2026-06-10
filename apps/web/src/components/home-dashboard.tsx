@@ -75,14 +75,19 @@ export function HomeDashboard({ matches }: HomeDashboardProps) {
         </aside>
       </section>
 
-      <PredictionViewControls
-        options={options}
-        state={viewState}
-        summary={summary}
-        onChange={setViewState}
+      <InteractiveLeaderboard
+        controls={
+          <PredictionViewControls
+            options={options}
+            state={viewState}
+            summary={summary}
+            variant="embedded"
+            onChange={setViewState}
+          />
+        }
+        leaderboard={leaderboard}
+        matches={displayMatches}
       />
-
-      <InteractiveLeaderboard leaderboard={leaderboard} matches={displayMatches} />
 
       <section className="panel matchesPanel">
         <div className="panelHeader">

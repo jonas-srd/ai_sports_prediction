@@ -5,6 +5,7 @@
  * Model details appear inline after a model row is selected.
  */
 import { useState } from "react";
+import type { ReactNode } from "react";
 import Link from "next/link";
 import type { DashboardLeaderboardEntry, DashboardMatch, DashboardPrediction } from "@/lib/dashboard-data";
 import { formatCondition, formatStage } from "@/lib/benchmark-analytics";
@@ -14,20 +15,22 @@ import { ModelInspector } from "@/components/model-inspector";
 type InteractiveLeaderboardProps = {
   leaderboard: DashboardLeaderboardEntry[];
   matches: DashboardMatch[];
+  controls?: ReactNode;
 };
 
-export function InteractiveLeaderboard({ leaderboard, matches }: InteractiveLeaderboardProps) {
+export function InteractiveLeaderboard({ leaderboard, matches, controls }: InteractiveLeaderboardProps) {
   const [selectedKey, setSelectedKey] = useState<string | null>(null);
 
   return (
     <section className="contentStack">
       <div className="panel leaderboardPanel">
-        <div className="panelHeader">
-          <div>
+        <div className="panelHeader leaderboardPanelHeader">
+          <div className="leaderboardHeaderTitle">
             <p className="sectionKicker">Model ranking</p>
             <h2>Leaderboard</h2>
           </div>
-          <Link href="/matches">View matches</Link>
+          {controls ? <div className="leaderboardHeaderControls">{controls}</div> : <span />}
+          <Link className="leaderboardHeaderLink" href="/matches">View matches</Link>
         </div>
 
         {leaderboard.length === 0 ? (

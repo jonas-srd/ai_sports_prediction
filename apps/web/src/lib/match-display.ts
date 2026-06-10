@@ -15,16 +15,20 @@ export type MatchupLabels = {
   awayTeamLabel: string;
 };
 
-type GroupStanding = {
+export type GroupStanding = {
   team: string;
   played: number;
+  won: number;
+  drawn: number;
+  lost: number;
   points: number;
   goalsFor: number;
   goalsAgainst: number;
   goalDifference: number;
+  sortOrder: number;
 };
 
-type GroupRanking = {
+export type GroupRanking = {
   complete: boolean;
   standings: GroupStanding[];
 };
@@ -32,163 +36,163 @@ type GroupRanking = {
 const KNOCKOUT_SLOTS_BY_UTC: Record<string, KnockoutSlot> = {
   "2026-06-28T19:00:00Z": {
     matchNumber: 73,
-    homeLabel: "Zweiter Gruppe A",
-    awayLabel: "Zweiter Gruppe B"
+    homeLabel: "Runner-up Group A",
+    awayLabel: "Runner-up Group B"
   },
   "2026-06-29T17:00:00Z": {
     matchNumber: 76,
-    homeLabel: "Sieger Gruppe C",
-    awayLabel: "Zweiter Gruppe F"
+    homeLabel: "Winner Group C",
+    awayLabel: "Runner-up Group F"
   },
   "2026-06-29T20:30:00Z": {
     matchNumber: 74,
-    homeLabel: "Sieger Gruppe E",
-    awayLabel: "Bester Dritter A/B/C/D/F"
+    homeLabel: "Winner Group E",
+    awayLabel: "Best Third A/B/C/D/F"
   },
   "2026-06-30T01:00:00Z": {
     matchNumber: 75,
-    homeLabel: "Sieger Gruppe F",
-    awayLabel: "Zweiter Gruppe C"
+    homeLabel: "Winner Group F",
+    awayLabel: "Runner-up Group C"
   },
   "2026-06-30T17:00:00Z": {
     matchNumber: 78,
-    homeLabel: "Zweiter Gruppe E",
-    awayLabel: "Zweiter Gruppe I"
+    homeLabel: "Runner-up Group E",
+    awayLabel: "Runner-up Group I"
   },
   "2026-06-30T21:00:00Z": {
     matchNumber: 77,
-    homeLabel: "Sieger Gruppe I",
-    awayLabel: "Bester Dritter C/D/F/G/H"
+    homeLabel: "Winner Group I",
+    awayLabel: "Best Third C/D/F/G/H"
   },
   "2026-07-01T01:00:00Z": {
     matchNumber: 79,
-    homeLabel: "Sieger Gruppe A",
-    awayLabel: "Bester Dritter C/E/F/H/I"
+    homeLabel: "Winner Group A",
+    awayLabel: "Best Third C/E/F/H/I"
   },
   "2026-07-01T16:00:00Z": {
     matchNumber: 80,
-    homeLabel: "Sieger Gruppe L",
-    awayLabel: "Bester Dritter E/H/I/J/K"
+    homeLabel: "Winner Group L",
+    awayLabel: "Best Third E/H/I/J/K"
   },
   "2026-07-01T20:00:00Z": {
     matchNumber: 82,
-    homeLabel: "Sieger Gruppe G",
-    awayLabel: "Bester Dritter A/E/H/I/J"
+    homeLabel: "Winner Group G",
+    awayLabel: "Best Third A/E/H/I/J"
   },
   "2026-07-02T00:00:00Z": {
     matchNumber: 81,
-    homeLabel: "Sieger Gruppe D",
-    awayLabel: "Bester Dritter B/E/F/I/J"
+    homeLabel: "Winner Group D",
+    awayLabel: "Best Third B/E/F/I/J"
   },
   "2026-07-02T19:00:00Z": {
     matchNumber: 84,
-    homeLabel: "Sieger Gruppe H",
-    awayLabel: "Zweiter Gruppe J"
+    homeLabel: "Winner Group H",
+    awayLabel: "Runner-up Group J"
   },
   "2026-07-02T23:00:00Z": {
     matchNumber: 83,
-    homeLabel: "Zweiter Gruppe K",
-    awayLabel: "Zweiter Gruppe L"
+    homeLabel: "Runner-up Group K",
+    awayLabel: "Runner-up Group L"
   },
   "2026-07-03T03:00:00Z": {
     matchNumber: 85,
-    homeLabel: "Sieger Gruppe B",
-    awayLabel: "Bester Dritter E/F/G/I/J"
+    homeLabel: "Winner Group B",
+    awayLabel: "Best Third E/F/G/I/J"
   },
   "2026-07-03T18:00:00Z": {
     matchNumber: 88,
-    homeLabel: "Zweiter Gruppe D",
-    awayLabel: "Zweiter Gruppe G"
+    homeLabel: "Runner-up Group D",
+    awayLabel: "Runner-up Group G"
   },
   "2026-07-03T22:00:00Z": {
     matchNumber: 86,
-    homeLabel: "Sieger Gruppe J",
-    awayLabel: "Zweiter Gruppe H"
+    homeLabel: "Winner Group J",
+    awayLabel: "Runner-up Group H"
   },
   "2026-07-04T01:30:00Z": {
     matchNumber: 87,
-    homeLabel: "Sieger Gruppe K",
-    awayLabel: "Bester Dritter D/E/I/J/L"
+    homeLabel: "Winner Group K",
+    awayLabel: "Best Third D/E/I/J/L"
   },
   "2026-07-04T17:00:00Z": {
     matchNumber: 90,
-    homeLabel: "Sieger Spiel 73",
-    awayLabel: "Sieger Spiel 75"
+    homeLabel: "Winner Match 73",
+    awayLabel: "Winner Match 75"
   },
   "2026-07-04T21:00:00Z": {
     matchNumber: 89,
-    homeLabel: "Sieger Spiel 74",
-    awayLabel: "Sieger Spiel 77"
+    homeLabel: "Winner Match 74",
+    awayLabel: "Winner Match 77"
   },
   "2026-07-05T20:00:00Z": {
     matchNumber: 91,
-    homeLabel: "Sieger Spiel 76",
-    awayLabel: "Sieger Spiel 78"
+    homeLabel: "Winner Match 76",
+    awayLabel: "Winner Match 78"
   },
   "2026-07-06T00:00:00Z": {
     matchNumber: 92,
-    homeLabel: "Sieger Spiel 79",
-    awayLabel: "Sieger Spiel 80"
+    homeLabel: "Winner Match 79",
+    awayLabel: "Winner Match 80"
   },
   "2026-07-06T19:00:00Z": {
     matchNumber: 93,
-    homeLabel: "Sieger Spiel 83",
-    awayLabel: "Sieger Spiel 84"
+    homeLabel: "Winner Match 83",
+    awayLabel: "Winner Match 84"
   },
   "2026-07-07T00:00:00Z": {
     matchNumber: 94,
-    homeLabel: "Sieger Spiel 81",
-    awayLabel: "Sieger Spiel 82"
+    homeLabel: "Winner Match 81",
+    awayLabel: "Winner Match 82"
   },
   "2026-07-07T16:00:00Z": {
     matchNumber: 95,
-    homeLabel: "Sieger Spiel 86",
-    awayLabel: "Sieger Spiel 88"
+    homeLabel: "Winner Match 86",
+    awayLabel: "Winner Match 88"
   },
   "2026-07-07T20:00:00Z": {
     matchNumber: 96,
-    homeLabel: "Sieger Spiel 85",
-    awayLabel: "Sieger Spiel 87"
+    homeLabel: "Winner Match 85",
+    awayLabel: "Winner Match 87"
   },
   "2026-07-09T20:00:00Z": {
     matchNumber: 97,
-    homeLabel: "Sieger Spiel 89",
-    awayLabel: "Sieger Spiel 90"
+    homeLabel: "Winner Match 89",
+    awayLabel: "Winner Match 90"
   },
   "2026-07-10T19:00:00Z": {
     matchNumber: 98,
-    homeLabel: "Sieger Spiel 93",
-    awayLabel: "Sieger Spiel 94"
+    homeLabel: "Winner Match 93",
+    awayLabel: "Winner Match 94"
   },
   "2026-07-11T21:00:00Z": {
     matchNumber: 99,
-    homeLabel: "Sieger Spiel 91",
-    awayLabel: "Sieger Spiel 92"
+    homeLabel: "Winner Match 91",
+    awayLabel: "Winner Match 92"
   },
   "2026-07-12T01:00:00Z": {
     matchNumber: 100,
-    homeLabel: "Sieger Spiel 95",
-    awayLabel: "Sieger Spiel 96"
+    homeLabel: "Winner Match 95",
+    awayLabel: "Winner Match 96"
   },
   "2026-07-14T19:00:00Z": {
     matchNumber: 101,
-    homeLabel: "Sieger Spiel 97",
-    awayLabel: "Sieger Spiel 98"
+    homeLabel: "Winner Match 97",
+    awayLabel: "Winner Match 98"
   },
   "2026-07-15T19:00:00Z": {
     matchNumber: 102,
-    homeLabel: "Sieger Spiel 99",
-    awayLabel: "Sieger Spiel 100"
+    homeLabel: "Winner Match 99",
+    awayLabel: "Winner Match 100"
   },
   "2026-07-18T21:00:00Z": {
     matchNumber: 103,
-    homeLabel: "Verlierer Spiel 101",
-    awayLabel: "Verlierer Spiel 102"
+    homeLabel: "Loser Match 101",
+    awayLabel: "Loser Match 102"
   },
   "2026-07-19T19:00:00Z": {
     matchNumber: 104,
-    homeLabel: "Sieger Spiel 101",
-    awayLabel: "Sieger Spiel 102"
+    homeLabel: "Winner Match 101",
+    awayLabel: "Winner Match 102"
   }
 };
 
@@ -268,7 +272,7 @@ function resolveTeamLabel(
     return resolveKnownGroupSlot(label, rankings) ?? label;
   }
 
-  return "Offen";
+  return "TBD";
 }
 
 function formatCompactSeed(value: string): string | null {
@@ -282,9 +286,9 @@ function formatCompactSeed(value: string): string | null {
   const [, position, groups] = match;
   const groupLabel = groups.split("").join("/");
 
-  if (position === "1") return `Sieger Gruppe ${groupLabel}`;
-  if (position === "2") return `Zweiter Gruppe ${groupLabel}`;
-  return `Bester Dritter ${groupLabel}`;
+  if (position === "1") return `Winner Group ${groupLabel}`;
+  if (position === "2") return `Runner-up Group ${groupLabel}`;
+  return `Best Third ${groupLabel}`;
 }
 
 function isPlaceholderTeam(value: string): boolean {
@@ -300,7 +304,7 @@ function resolveKnownGroupSlot(
     return null;
   }
 
-  const match = label.match(/^(Sieger|Zweiter) Gruppe ([A-L])$/);
+  const match = label.match(/^(Winner|Runner-up) Group ([A-L])$/);
   if (!match) {
     return null;
   }
@@ -310,7 +314,7 @@ function resolveKnownGroupSlot(
     return null;
   }
 
-  const position = match[1] === "Sieger" ? 0 : 1;
+  const position = match[1] === "Winner" ? 0 : 1;
   const standing = group.standings[position];
   if (!standing || hasUnresolvedTie(group.standings, position)) {
     return null;
@@ -336,7 +340,7 @@ function hasSameBasicTiebreakers(a: GroupStanding, b: GroupStanding): boolean {
     a.goalsFor === b.goalsFor;
 }
 
-function getGroupRankings(matches: readonly DashboardMatch[]): Map<string, GroupRanking> {
+export function getGroupRankings(matches: readonly DashboardMatch[]): Map<string, GroupRanking> {
   const cached = groupRankingCache.get(matches);
   if (cached) {
     return cached;
@@ -382,12 +386,18 @@ function buildGroupRanking(matches: DashboardMatch[]): GroupRanking {
     const awayPoints = match.actualAway > match.actualHome ? 3 : match.actualHome === match.actualAway ? 1 : 0;
 
     home.played += 1;
+    home.won += homePoints === 3 ? 1 : 0;
+    home.drawn += homePoints === 1 ? 1 : 0;
+    home.lost += homePoints === 0 ? 1 : 0;
     home.points += homePoints;
     home.goalsFor += match.actualHome;
     home.goalsAgainst += match.actualAway;
     home.goalDifference = home.goalsFor - home.goalsAgainst;
 
     away.played += 1;
+    away.won += awayPoints === 3 ? 1 : 0;
+    away.drawn += awayPoints === 1 ? 1 : 0;
+    away.lost += awayPoints === 0 ? 1 : 0;
     away.points += awayPoints;
     away.goalsFor += match.actualAway;
     away.goalsAgainst += match.actualHome;
@@ -409,10 +419,14 @@ function ensureStanding(standings: Map<string, GroupStanding>, team: string): Gr
   const next = {
     team,
     played: 0,
+    won: 0,
+    drawn: 0,
+    lost: 0,
     points: 0,
     goalsFor: 0,
     goalsAgainst: 0,
-    goalDifference: 0
+    goalDifference: 0,
+    sortOrder: standings.size
   };
 
   standings.set(team, next);
@@ -423,10 +437,16 @@ function compareStandings(a: GroupStanding, b: GroupStanding): number {
   return b.points - a.points ||
     b.goalDifference - a.goalDifference ||
     b.goalsFor - a.goalsFor ||
+    a.sortOrder - b.sortOrder ||
     a.team.localeCompare(b.team);
 }
 
 function getGroupLetter(match: DashboardMatch): string | null {
+  const groupName = match.groupName?.match(/GROUP_([A-L])/);
+  if (groupName) {
+    return groupName[1];
+  }
+
   const group = (match.competition ?? "").match(/GROUP_STAGE.*GROUP_([A-L])/);
   return group?.[1] ?? null;
 }

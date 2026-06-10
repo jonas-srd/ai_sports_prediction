@@ -493,6 +493,28 @@ h2 {
   padding-bottom: 18px;
 }
 
+.leaderboardPanelHeader {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  align-items: start;
+  column-gap: 18px;
+}
+
+.leaderboardHeaderTitle {
+  justify-self: start;
+}
+
+.leaderboardHeaderControls {
+  position: relative;
+  z-index: 25;
+  justify-self: center;
+}
+
+.leaderboardHeaderLink {
+  justify-self: end;
+  margin-top: 2px;
+}
+
 .rankRow {
   display: grid;
   grid-template-columns: 52px minmax(0, 1fr) auto;
@@ -889,11 +911,12 @@ h2 {
 
 .groupOverviewCard {
   display: grid;
-  gap: 9px;
+  align-content: start;
+  gap: 12px;
   border: 1px solid rgba(70, 55, 35, 0.13);
   border-radius: 18px;
   background: rgba(255, 255, 255, 0.58);
-  padding: 12px;
+  padding: 14px;
   box-shadow: 0 14px 34px rgba(24, 19, 13, 0.06);
 }
 
@@ -901,7 +924,7 @@ h2 {
   margin: 0;
   color: var(--red);
   font-family: "Courier New", monospace;
-  font-size: 0.78rem;
+  font-size: 0.82rem;
   font-weight: 900;
   letter-spacing: 0.08em;
   text-transform: uppercase;
@@ -951,6 +974,96 @@ h2 {
   font-family: "Courier New", monospace;
   font-size: 0.66rem;
   font-weight: 900;
+}
+
+.groupTableWrap {
+  overflow-x: auto;
+  scrollbar-color: rgba(24, 19, 13, 0.34) rgba(255, 255, 255, 0.42);
+}
+
+.groupTable {
+  width: 100%;
+  min-width: 320px;
+  border-collapse: collapse;
+  color: #111820;
+  font-family: "Courier New", monospace;
+  font-size: 0.74rem;
+  font-weight: 900;
+  table-layout: fixed;
+}
+
+.groupTable th {
+  padding: 0 5px 8px;
+  color: var(--muted);
+  font-size: 0.62rem;
+  line-height: 1;
+  text-align: center;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.groupTable th:nth-child(2) {
+  text-align: left;
+}
+
+.groupTable td {
+  border-top: 1px solid rgba(70, 55, 35, 0.1);
+  padding: 8px 5px;
+  text-align: center;
+  white-space: nowrap;
+}
+
+.groupTable tbody tr:first-child td {
+  border-top-color: rgba(70, 55, 35, 0.16);
+}
+
+.groupTableRank {
+  width: 7%;
+  color: var(--muted);
+}
+
+.groupTable th:nth-child(2),
+.groupTable td:nth-child(2) {
+  width: 49%;
+}
+
+.groupTable th:nth-child(n + 3),
+.groupTable td:nth-child(n + 3) {
+  width: 7.33%;
+}
+
+.groupTableTeam {
+  min-width: 0;
+  text-align: left;
+}
+
+.groupTableTeamInner {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: 9px;
+}
+
+.groupTableTeamInner span:last-child {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.groupTableTeam .groupTeamFlag {
+  width: 34px;
+  height: 24px;
+  border-radius: 4px;
+  flex: 0 0 auto;
+}
+
+.groupTableTeam .groupTeamFlagFallback {
+  font-size: 0.48rem;
+}
+
+.groupTablePoints {
+  color: var(--red);
 }
 
 .predictionMatchCard {
@@ -1038,13 +1151,27 @@ h2 {
   gap: 12px;
 }
 
+.matchPredictionHeader.hasControls {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  align-items: start;
+}
+
+.matchPredictionControls {
+  justify-self: center;
+}
+
+.matchPredictionHeader.hasControls .finalScoreBadge {
+  justify-self: end;
+}
+
 .matchPredictionHeader strong {
   display: block;
   font-size: 1rem;
   letter-spacing: -0.02em;
 }
 
-.matchPredictionHeader span {
+.matchPredictionHeader > div:first-child > span {
   display: block;
   margin-top: 3px;
   color: var(--muted);
@@ -1754,6 +1881,35 @@ h2 {
   margin: 8px 0 0;
   color: var(--muted);
   line-height: 1.45;
+}
+
+.predictionViewEmbedded {
+  position: relative;
+  display: grid;
+  justify-items: center;
+  gap: 10px;
+}
+
+.predictionViewEmbeddedTop {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+}
+
+.predictionViewEmbedded .advancedPredictionControls {
+  width: min(760px, calc(100vw - 64px));
+  justify-items: stretch;
+  border-top: 0;
+  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.36);
+  box-shadow: 0 18px 42px rgba(43, 34, 20, 0.14);
+  margin-top: 2px;
+  padding: 12px;
+}
+
+.predictionViewEmbedded .predictionFilterGrid {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
 }
 
 .segmentedControl {
@@ -2525,6 +2681,10 @@ h2 {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
+  .predictionViewEmbedded .predictionFilterGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
   .benchmarkPredictionRow {
     grid-template-columns: 1fr;
   }
@@ -2570,6 +2730,36 @@ h2 {
     flex-direction: column;
   }
 
+  .predictionViewEmbedded,
+  .predictionViewEmbeddedTop {
+    width: 100%;
+    justify-items: stretch;
+  }
+
+  .leaderboardPanelHeader {
+    grid-template-columns: 1fr;
+    row-gap: 12px;
+  }
+
+  .leaderboardHeaderTitle,
+  .leaderboardHeaderControls,
+  .leaderboardHeaderLink {
+    justify-self: stretch;
+  }
+
+  .leaderboardHeaderLink {
+    text-align: center;
+  }
+
+  .predictionViewEmbeddedTop {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .predictionViewEmbedded .advancedPredictionControls {
+    width: 100%;
+  }
+
   .predictionViewPanel {
     border-radius: 24px;
   }
@@ -2583,6 +2773,10 @@ h2 {
   }
 
   .predictionFilterGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .predictionViewEmbedded .predictionFilterGrid {
     grid-template-columns: 1fr;
   }
 
@@ -2641,6 +2835,20 @@ h2 {
   .matchPredictionHeader {
     align-items: flex-start;
     flex-direction: column;
+  }
+
+  .matchPredictionHeader.hasControls {
+    grid-template-columns: 1fr;
+    row-gap: 12px;
+  }
+
+  .matchPredictionControls,
+  .matchPredictionHeader.hasControls .finalScoreBadge {
+    justify-self: stretch;
+  }
+
+  .matchPredictionHeader.hasControls .finalScoreBadge {
+    text-align: center;
   }
 
   .matchPredictionRow {
