@@ -43,15 +43,15 @@ export default function HomePage() {
           <h2>Scoring</h2>
           <div className="ruleList">
             <div className="ruleItem">
-              <strong>4 pts</strong>
+              <strong>5 pts</strong>
               <span>Exact score</span>
             </div>
             <div className="ruleItem">
-              <strong>3 pts</strong>
+              <strong>2 pts</strong>
               <span>Correct goal difference</span>
             </div>
             <div className="ruleItem">
-              <strong>2 pts</strong>
+              <strong>1 pt</strong>
               <span>Correct tendency</span>
             </div>
             <div className="ruleItem">

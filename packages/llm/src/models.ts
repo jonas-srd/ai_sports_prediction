@@ -3,6 +3,7 @@
  */
 export type BenchmarkModelConfig = {
   slot: string;
+  displayName: string;
   modelId: string;
   canonicalVersion: string;
   family: string;
@@ -22,6 +23,7 @@ export type LlmModel = {
 export const MINIMAL_FLAGSHIP_MODELS: BenchmarkModelConfig[] = [
   {
     slot: "openai_gpt_5_5",
+    displayName: "GPT-5.5",
     modelId: "openai/gpt-5.5",
     canonicalVersion: "openai/gpt-5.5-20260423",
     family: "OpenAI",
@@ -30,6 +32,7 @@ export const MINIMAL_FLAGSHIP_MODELS: BenchmarkModelConfig[] = [
   },
   {
     slot: "anthropic_claude_opus_4_8",
+    displayName: "Claude Opus 4.8",
     modelId: "anthropic/claude-opus-4.8",
     canonicalVersion: "anthropic/claude-4.8-opus-20260528",
     family: "Anthropic",
@@ -38,6 +41,7 @@ export const MINIMAL_FLAGSHIP_MODELS: BenchmarkModelConfig[] = [
   },
   {
     slot: "google_gemini_3_1_pro",
+    displayName: "Gemini 3.1 Pro",
     modelId: "google/gemini-3.1-pro-preview",
     canonicalVersion: "google/gemini-3.1-pro-preview-20260219",
     family: "Google",
@@ -46,6 +50,7 @@ export const MINIMAL_FLAGSHIP_MODELS: BenchmarkModelConfig[] = [
   },
   {
     slot: "xai_grok_4_3",
+    displayName: "Grok 4.3",
     modelId: "x-ai/grok-4.3",
     canonicalVersion: "x-ai/grok-4.3-20260430",
     family: "xAI",
@@ -54,6 +59,7 @@ export const MINIMAL_FLAGSHIP_MODELS: BenchmarkModelConfig[] = [
   },
   {
     slot: "deepseek_v4_pro",
+    displayName: "DeepSeek V4 Pro",
     modelId: "deepseek/deepseek-v4-pro",
     canonicalVersion: "deepseek/deepseek-v4-pro-20260423",
     family: "DeepSeek",
@@ -62,6 +68,7 @@ export const MINIMAL_FLAGSHIP_MODELS: BenchmarkModelConfig[] = [
   },
   {
     slot: "qwen_3_7_max",
+    displayName: "Qwen 3.7 Max",
     modelId: "qwen/qwen3.7-max",
     canonicalVersion: "qwen/qwen3.7-max-20260520",
     family: "Qwen",
@@ -70,6 +77,7 @@ export const MINIMAL_FLAGSHIP_MODELS: BenchmarkModelConfig[] = [
   },
   {
     slot: "mistral_large_2512",
+    displayName: "Mistral Large 2512",
     modelId: "mistralai/mistral-large-2512",
     canonicalVersion: "mistralai/mistral-large-2512",
     family: "Mistral",
@@ -83,6 +91,7 @@ export const FULL_BENCHMARK_MODELS: BenchmarkModelConfig[] = [
 
   {
     slot: "anthropic_claude_fable_5",
+    displayName: "Claude Fable 5",
     modelId: "anthropic/claude-fable-5",
     canonicalVersion: "anthropic/claude-5-fable-20260609",
     family: "Anthropic",
@@ -91,6 +100,7 @@ export const FULL_BENCHMARK_MODELS: BenchmarkModelConfig[] = [
   },
   {
     slot: "anthropic_claude_sonnet_4_6",
+    displayName: "Claude Sonnet 4.6",
     modelId: "anthropic/claude-sonnet-4.6",
     canonicalVersion: "anthropic/claude-4.6-sonnet-20260217",
     family: "Anthropic",
@@ -99,6 +109,7 @@ export const FULL_BENCHMARK_MODELS: BenchmarkModelConfig[] = [
   },
   {
     slot: "google_gemini_3_5_flash",
+    displayName: "Gemini 3.5 Flash",
     modelId: "google/gemini-3.5-flash",
     canonicalVersion: "google/gemini-3.5-flash-20260519",
     family: "Google",
@@ -107,6 +118,7 @@ export const FULL_BENCHMARK_MODELS: BenchmarkModelConfig[] = [
   },
   {
     slot: "deepseek_v4_flash",
+    displayName: "DeepSeek V4 Flash",
     modelId: "deepseek/deepseek-v4-flash",
     canonicalVersion: "deepseek/deepseek-v4-flash-20260423",
     family: "DeepSeek",
@@ -115,6 +127,7 @@ export const FULL_BENCHMARK_MODELS: BenchmarkModelConfig[] = [
   },
   {
     slot: "qwen_3_7_plus",
+    displayName: "Qwen 3.7 Plus",
     modelId: "qwen/qwen3.7-plus",
     canonicalVersion: "qwen/qwen3.7-plus-20260602",
     family: "Qwen",
@@ -123,6 +136,7 @@ export const FULL_BENCHMARK_MODELS: BenchmarkModelConfig[] = [
   },
   {
     slot: "mistral_medium_3_5",
+    displayName: "Mistral Medium 3.5",
     modelId: "mistralai/mistral-medium-3-5",
     canonicalVersion: "mistralai/mistral-medium-3.5-20260430",
     family: "Mistral",
@@ -131,6 +145,7 @@ export const FULL_BENCHMARK_MODELS: BenchmarkModelConfig[] = [
   },
   {
     slot: "llama_4_maverick",
+    displayName: "Llama 4 Maverick",
     modelId: "meta-llama/llama-4-maverick",
     canonicalVersion: "meta-llama/llama-4-maverick-17b-128e-instruct",
     family: "Meta Llama",
@@ -139,6 +154,7 @@ export const FULL_BENCHMARK_MODELS: BenchmarkModelConfig[] = [
   },
   {
     slot: "nvidia_nemotron_3_ultra",
+    displayName: "Nemotron 3 Ultra",
     modelId: "nvidia/nemotron-3-ultra-550b-a55b",
     canonicalVersion: "nvidia/nemotron-3-ultra-550b-a55b-20260604",
     family: "NVIDIA",
@@ -147,6 +163,7 @@ export const FULL_BENCHMARK_MODELS: BenchmarkModelConfig[] = [
   },
   {
     slot: "minimax_m3",
+    displayName: "MiniMax M3",
     modelId: "minimax/minimax-m3",
     canonicalVersion: "minimax/minimax-m3-20260531",
     family: "MiniMax",
@@ -155,6 +172,7 @@ export const FULL_BENCHMARK_MODELS: BenchmarkModelConfig[] = [
   },
   {
     slot: "moonshot_kimi_latest_frozen_alias_not_primary",
+    displayName: "Kimi Latest",
     modelId: "~moonshotai/kimi-latest",
     canonicalVersion: "~moonshotai/kimi-latest",
     family: "MoonshotAI",
@@ -191,7 +209,7 @@ export function getConfiguredLlmModels(): LlmModel[] {
 function toLlmModel(model: BenchmarkModelConfig): LlmModel {
   return {
     id: model.modelId,
-    name: model.slot,
+    name: model.displayName,
     provider: model.family,
     active: true,
     model_version: model.canonicalVersion,

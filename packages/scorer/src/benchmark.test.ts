@@ -53,7 +53,7 @@ test("computes categorical, scoreline, and Kicktipp metrics", () => {
   assert.equal(result.awayGoalAbsError90, 1);
   assert.equal(result.totalGoalsAbsError90, 2);
   assert.equal(result.goalDifferenceAbsError90, 0);
-  assert.equal(result.kicktippPoints90, 3);
+  assert.equal(result.kicktippPoints90, 2);
   assert.equal(result.scoreResultMatchesProbArgmax90, true);
   assert.ok(Math.abs(result.expectedGoalsScoreDistance - 1.1) < 1e-12);
 });
@@ -63,17 +63,17 @@ test("uses protocol Kicktipp point scheme", () => {
     exactScore90Correct: true,
     goalDifference90Correct: true,
     tendency90CorrectFromScore: true
-  }), 4);
+  }), 5);
   assert.equal(calculateBenchmarkKicktippPoints({
     exactScore90Correct: false,
     goalDifference90Correct: true,
     tendency90CorrectFromScore: true
-  }), 3);
+  }), 2);
   assert.equal(calculateBenchmarkKicktippPoints({
     exactScore90Correct: false,
     goalDifference90Correct: false,
     tendency90CorrectFromScore: true
-  }), 2);
+  }), 1);
   assert.equal(calculateBenchmarkKicktippPoints({
     exactScore90Correct: false,
     goalDifference90Correct: false,

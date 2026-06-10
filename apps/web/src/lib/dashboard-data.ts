@@ -60,10 +60,10 @@ export const sampleMatches: DashboardMatch[] = [
     stage: "group_stage",
     isKnockout: false,
     predictions: [
-      createLegacySamplePrediction("sample-1", "openai_gpt_5_5", "OpenAI", 2, 1, 4, "exact score"),
-      createLegacySamplePrediction("sample-1", "anthropic_claude_opus_4_8", "Anthropic", 1, 1, 0, "miss"),
-      createLegacySamplePrediction("sample-1", "google_gemini_3_1_pro", "Google", 2, 0, 2, "tendency"),
-      createLegacySamplePrediction("sample-1", "xai_grok_4_3", "xAI", 0, 1, 0, "miss")
+      createLegacySamplePrediction("sample-1", "GPT-5.5", "OpenAI", 2, 1, 5, "exact score"),
+      createLegacySamplePrediction("sample-1", "Claude Opus 4.8", "Anthropic", 1, 1, 0, "miss"),
+      createLegacySamplePrediction("sample-1", "Gemini 3.1 Pro", "Google", 2, 0, 1, "tendency"),
+      createLegacySamplePrediction("sample-1", "Grok 4.3", "xAI", 0, 1, 0, "miss")
     ]
   },
   {
@@ -76,10 +76,10 @@ export const sampleMatches: DashboardMatch[] = [
     stage: "group_stage",
     isKnockout: false,
     predictions: [
-      createLegacySamplePrediction("sample-2", "openai_gpt_5_5", "OpenAI", 1, 1, 4, "exact score"),
-      createLegacySamplePrediction("sample-2", "anthropic_claude_opus_4_8", "Anthropic", 2, 1, 0, "miss"),
-      createLegacySamplePrediction("sample-2", "google_gemini_3_1_pro", "Google", 0, 0, 3, "goal difference"),
-      createLegacySamplePrediction("sample-2", "xai_grok_4_3", "xAI", 1, 2, 0, "miss")
+      createLegacySamplePrediction("sample-2", "GPT-5.5", "OpenAI", 1, 1, 5, "exact score"),
+      createLegacySamplePrediction("sample-2", "Claude Opus 4.8", "Anthropic", 2, 1, 0, "miss"),
+      createLegacySamplePrediction("sample-2", "Gemini 3.1 Pro", "Google", 0, 0, 2, "goal difference"),
+      createLegacySamplePrediction("sample-2", "Grok 4.3", "xAI", 1, 2, 0, "miss")
     ]
   }
 ];
@@ -332,59 +332,63 @@ function getBenchmarkPredictionRows(db: Database.Database): PredictionRow[] {
     order by m.utc_date asc, bp.predictor_id asc, bp.forecast_horizon asc, bp.access_condition asc, bp.prompt_strategy asc
   `).all() as BenchmarkPredictionDbRow[];
 
-  return rows.map((row) => ({
-    match_id: row.match_id,
-    prediction: {
-      id: row.id,
-      matchId: row.match_id,
-      model: row.model_name ?? row.predictor_id,
-      provider: row.model_provider ?? row.provider,
-      predictorId: row.predictor_id,
-      accessCondition: toAccessCondition(row.access_condition),
-      promptStrategy: toPromptStrategy(row.prompt_strategy),
-      forecastHorizon: toForecastHorizon(row.forecast_horizon),
-      stage: normalizeStage(row.match_stage ?? row.match_competition),
-      matchDate: row.match_date,
-      sampleId: row.sample_id,
-      predictedHome: row.most_likely_score_90_home,
-      predictedAway: row.most_likely_score_90_away,
-      predictedFullHome: row.most_likely_score_full_home,
-      predictedFullAway: row.most_likely_score_full_away,
-      homeWin90Prob: row.home_win_90_prob,
-      draw90Prob: row.draw_90_prob,
-      awayWin90Prob: row.away_win_90_prob,
-      homeWinFullProb: row.home_win_full_prob,
-      drawFullProb: row.draw_full_prob,
-      awayWinFullProb: row.away_win_full_prob,
-      homeAdvancesProb: row.home_advances_prob,
-      awayAdvancesProb: row.away_advances_prob,
-      confidence: row.confidence,
-      reason: row.reason,
-      validationStatus: row.validation_status,
-      isValidForScoring: Boolean(row.is_valid_for_scoring),
-      repairAttempted: Boolean(row.repair_attempted),
-      normalizationApplied: Boolean(row.normalization_applied),
-      openBookCompliance: row.open_book_compliance,
-      toolsEnabled: Boolean(row.tools_enabled),
-      toolCallsObserved: toNullableBoolean(row.tool_calls_observed),
-      numToolCalls: row.num_tool_calls,
-      brier90: row.brier_90,
-      logLoss90: row.log_loss_90,
-      topOutcomeCorrect90: toNullableBoolean(row.top_outcome_correct_90),
-      exactScore90Correct: toNullableBoolean(row.exact_score_90_correct),
-      goalDifference90Correct: toNullableBoolean(row.goal_difference_90_correct),
-      tendency90CorrectFromScore: toNullableBoolean(row.tendency_90_correct_from_score),
-      homeGoalAbsError90: row.home_goal_abs_error_90,
-      awayGoalAbsError90: row.away_goal_abs_error_90,
-      totalGoalsAbsError90: row.total_goals_abs_error_90,
-      goalDifferenceAbsError90: row.goal_difference_abs_error_90,
-      kicktippPoints90: row.kicktipp_points_90,
-      advancementAccuracy: toNullableBoolean(row.advancement_accuracy),
-      scoreResultMatchesProbArgmax90: toNullableBoolean(row.score_result_matches_prob_argmax_90),
-      scorePoints: row.kicktipp_points_90,
-      scoreReason: getBenchmarkScoreReason(row)
-    }
-  }));
+  return rows.map((row) => {
+    const scorePoints = getBenchmarkKicktippPoints(row);
+
+    return {
+      match_id: row.match_id,
+      prediction: {
+        id: row.id,
+        matchId: row.match_id,
+        model: formatModelName(row.model_name ?? row.predictor_id, row.predictor_id),
+        provider: row.model_provider ?? row.provider,
+        predictorId: row.predictor_id,
+        accessCondition: toAccessCondition(row.access_condition),
+        promptStrategy: toPromptStrategy(row.prompt_strategy),
+        forecastHorizon: toForecastHorizon(row.forecast_horizon),
+        stage: normalizeStage(row.match_stage ?? row.match_competition),
+        matchDate: row.match_date,
+        sampleId: row.sample_id,
+        predictedHome: row.most_likely_score_90_home,
+        predictedAway: row.most_likely_score_90_away,
+        predictedFullHome: row.most_likely_score_full_home,
+        predictedFullAway: row.most_likely_score_full_away,
+        homeWin90Prob: row.home_win_90_prob,
+        draw90Prob: row.draw_90_prob,
+        awayWin90Prob: row.away_win_90_prob,
+        homeWinFullProb: row.home_win_full_prob,
+        drawFullProb: row.draw_full_prob,
+        awayWinFullProb: row.away_win_full_prob,
+        homeAdvancesProb: row.home_advances_prob,
+        awayAdvancesProb: row.away_advances_prob,
+        confidence: row.confidence,
+        reason: row.reason,
+        validationStatus: row.validation_status,
+        isValidForScoring: Boolean(row.is_valid_for_scoring),
+        repairAttempted: Boolean(row.repair_attempted),
+        normalizationApplied: Boolean(row.normalization_applied),
+        openBookCompliance: row.open_book_compliance,
+        toolsEnabled: Boolean(row.tools_enabled),
+        toolCallsObserved: toNullableBoolean(row.tool_calls_observed),
+        numToolCalls: row.num_tool_calls,
+        brier90: row.brier_90,
+        logLoss90: row.log_loss_90,
+        topOutcomeCorrect90: toNullableBoolean(row.top_outcome_correct_90),
+        exactScore90Correct: toNullableBoolean(row.exact_score_90_correct),
+        goalDifference90Correct: toNullableBoolean(row.goal_difference_90_correct),
+        tendency90CorrectFromScore: toNullableBoolean(row.tendency_90_correct_from_score),
+        homeGoalAbsError90: row.home_goal_abs_error_90,
+        awayGoalAbsError90: row.away_goal_abs_error_90,
+        totalGoalsAbsError90: row.total_goals_abs_error_90,
+        goalDifferenceAbsError90: row.goal_difference_abs_error_90,
+        kicktippPoints90: scorePoints,
+        advancementAccuracy: toNullableBoolean(row.advancement_accuracy),
+        scoreResultMatchesProbArgmax90: toNullableBoolean(row.score_result_matches_prob_argmax_90),
+        scorePoints,
+        scoreReason: getBenchmarkScoreReason(row)
+      }
+    };
+  });
 }
 
 function getLegacyPredictionRows(db: Database.Database): PredictionRow[] {
@@ -414,7 +418,7 @@ function getLegacyPredictionRows(db: Database.Database): PredictionRow[] {
     match_id: row.match_id,
     prediction: createLegacyPrediction({
       matchId: row.match_id,
-      model: row.model_name ?? row.model_id,
+      model: formatModelName(row.model_name ?? row.model_id, row.model_id),
       provider: row.model_provider ?? "legacy",
       predictedHome: row.predicted_home,
       predictedAway: row.predicted_away,
@@ -561,6 +565,90 @@ function getBenchmarkScoreReason(row: BenchmarkPredictionDbRow): string | null {
   if (row.tendency_90_correct_from_score) return "tendency";
   return "miss";
 }
+
+function getBenchmarkKicktippPoints(row: BenchmarkPredictionDbRow): number | null {
+  if (row.kicktipp_points_90 === null) {
+    return null;
+  }
+
+  if (row.exact_score_90_correct) return 5;
+  if (row.goal_difference_90_correct) return 2;
+  if (row.tendency_90_correct_from_score) return 1;
+  return 0;
+}
+
+function formatModelName(rawName: string, modelId?: string | null): string {
+  const knownName = MODEL_DISPLAY_NAMES[modelId ?? ""] ?? MODEL_DISPLAY_NAMES[rawName];
+  if (knownName) {
+    return knownName;
+  }
+
+  const source = rawName.includes("/") ? rawName.split("/").pop() ?? rawName : rawName;
+
+  return source
+    .replace(/^~/, "")
+    .replaceAll("_", " ")
+    .replaceAll("-", " ")
+    .replace(/\bgpt\b/gi, "GPT")
+    .replace(/\bai\b/gi, "AI")
+    .replace(/\bllama\b/gi, "Llama")
+    .replace(/\bclaude\b/gi, "Claude")
+    .replace(/\bgemini\b/gi, "Gemini")
+    .replace(/\bgrok\b/gi, "Grok")
+    .replace(/\bdeepseek\b/gi, "DeepSeek")
+    .replace(/\bqwen\b/gi, "Qwen")
+    .replace(/\bmistral\b/gi, "Mistral")
+    .replace(/\bopus\b/gi, "Opus")
+    .replace(/\bsonnet\b/gi, "Sonnet")
+    .replace(/\bflash\b/gi, "Flash")
+    .replace(/\bpro\b/gi, "Pro")
+    .replace(/\bmax\b/gi, "Max")
+    .replace(/\bplus\b/gi, "Plus")
+    .replace(/\blarge\b/gi, "Large")
+    .replace(/\bmedium\b/gi, "Medium")
+    .replace(/\bv(\d+)\b/gi, "V$1")
+    .replace(/\b(\d+) (\d+)\b/g, "$1.$2")
+    .replace(/\s+/g, " ")
+    .trim()
+    .replace(/\b\w/g, (letter) => letter.toUpperCase());
+}
+
+const MODEL_DISPLAY_NAMES: Record<string, string> = {
+  "openai/gpt-5.5": "GPT-5.5",
+  "openai_gpt_5_5": "GPT-5.5",
+  "anthropic/claude-opus-4.8": "Claude Opus 4.8",
+  "anthropic_claude_opus_4_8": "Claude Opus 4.8",
+  "google/gemini-3.1-pro-preview": "Gemini 3.1 Pro",
+  "google_gemini_3_1_pro": "Gemini 3.1 Pro",
+  "x-ai/grok-4.3": "Grok 4.3",
+  "xai_grok_4_3": "Grok 4.3",
+  "deepseek/deepseek-v4-pro": "DeepSeek V4 Pro",
+  "deepseek_v4_pro": "DeepSeek V4 Pro",
+  "qwen/qwen3.7-max": "Qwen 3.7 Max",
+  "qwen_3_7_max": "Qwen 3.7 Max",
+  "mistralai/mistral-large-2512": "Mistral Large 2512",
+  "mistral_large_2512": "Mistral Large 2512",
+  "anthropic/claude-fable-5": "Claude Fable 5",
+  "anthropic_claude_fable_5": "Claude Fable 5",
+  "anthropic/claude-sonnet-4.6": "Claude Sonnet 4.6",
+  "anthropic_claude_sonnet_4_6": "Claude Sonnet 4.6",
+  "google/gemini-3.5-flash": "Gemini 3.5 Flash",
+  "google_gemini_3_5_flash": "Gemini 3.5 Flash",
+  "deepseek/deepseek-v4-flash": "DeepSeek V4 Flash",
+  "deepseek_v4_flash": "DeepSeek V4 Flash",
+  "qwen/qwen3.7-plus": "Qwen 3.7 Plus",
+  "qwen_3_7_plus": "Qwen 3.7 Plus",
+  "mistralai/mistral-medium-3-5": "Mistral Medium 3.5",
+  "mistral_medium_3_5": "Mistral Medium 3.5",
+  "meta-llama/llama-4-maverick": "Llama 4 Maverick",
+  "llama_4_maverick": "Llama 4 Maverick",
+  "nvidia/nemotron-3-ultra-550b-a55b": "Nemotron 3 Ultra",
+  "nvidia_nemotron_3_ultra": "Nemotron 3 Ultra",
+  "minimax/minimax-m3": "MiniMax M3",
+  "minimax_m3": "MiniMax M3",
+  "~moonshotai/kimi-latest": "Kimi Latest",
+  "moonshot_kimi_latest_frozen_alias_not_primary": "Kimi Latest"
+};
 
 function comparePredictions(a: DashboardPrediction, b: DashboardPrediction): number {
   return (b.scorePoints ?? -1) - (a.scorePoints ?? -1)

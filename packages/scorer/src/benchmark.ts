@@ -157,9 +157,9 @@ export function calculateBenchmarkKicktippPoints(args: {
   goalDifference90Correct: boolean;
   tendency90CorrectFromScore: boolean;
 }): number {
-  if (args.exactScore90Correct) return 4;
-  if (args.goalDifference90Correct) return 3;
-  if (args.tendency90CorrectFromScore) return 2;
+  if (args.exactScore90Correct) return 5;
+  if (args.goalDifference90Correct) return 2;
+  if (args.tendency90CorrectFromScore) return 1;
   return 0;
 }
 

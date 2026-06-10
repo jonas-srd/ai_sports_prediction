@@ -50,7 +50,7 @@ const basePrediction: BenchmarkDisplayPrediction = {
   awayGoalAbsError90: 0,
   totalGoalsAbsError90: 0,
   goalDifferenceAbsError90: 0,
-  kicktippPoints90: 4,
+  kicktippPoints90: 5,
   advancementAccuracy: null,
   scoreResultMatchesProbArgmax90: true
 };
@@ -58,11 +58,11 @@ const basePrediction: BenchmarkDisplayPrediction = {
 test("ranks higher-is-better metrics descending", () => {
   const rows = buildAnalyticsLeaderboard([
     basePrediction,
-    { ...basePrediction, id: "p2", predictorId: "model-b", model: "Model B", kicktippPoints90: 2 }
+    { ...basePrediction, id: "p2", predictorId: "model-b", model: "Model B", kicktippPoints90: 1 }
   ], "kicktipp_points_90");
 
   assert.equal(rows[0].model, "Model A");
-  assert.equal(rows[0].metricValue, 4);
+  assert.equal(rows[0].metricValue, 5);
   assert.equal(rows[1].model, "Model B");
 });
 
