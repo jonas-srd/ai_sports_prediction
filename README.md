@@ -122,6 +122,22 @@ Recalculate all existing finished-match scores after changing the scoring system
 npm run score -- --all
 ```
 
+Run benchmark predictions for all known group-stage matches with resumable skipping:
+
+```bash
+npm run benchmark:predict -- --group-stage --skip-existing --concurrency=3
+```
+
+Useful benchmark prediction filters:
+
+```bash
+npm run benchmark:predict -- --group-stage --access=closed_book --skip-existing --concurrency=5
+npm run benchmark:predict -- --group-stage --access=open_book --skip-existing --concurrency=2
+npm run benchmark:predict -- --group-stage --prompt-strategy=direct_score --skip-existing --concurrency=3
+```
+
+`--skip-existing` skips already valid predictions and retries invalid/API-error rows. Use `--skip-any-existing` only when you want to preserve every existing row regardless of validity.
+
 Export paper-analysis datasets for the World Cup 2026 benchmark:
 
 ```bash
@@ -195,6 +211,16 @@ For a single-model smoke test, set only one model:
 ```text
 OPENROUTER_MODEL_IDS=mistralai/mistral-large-2512
 ```
+
+Benchmark prediction calls default to the same completion ceiling for first attempts, validation retries, and JSON repair calls:
+
+```text
+OPENROUTER_BENCHMARK_MAX_COMPLETION_TOKENS=5000
+OPENROUTER_BENCHMARK_RETRY_MAX_COMPLETION_TOKENS=5000
+OPENROUTER_BENCHMARK_REPAIR_MAX_COMPLETION_TOKENS=5000
+```
+
+Leave these unset to use the same 5000-token defaults. Increase them only if a model still returns truncated JSON.
 
 The minimal flagship MVP setup uses paid OpenRouter models and requires credits:
 
