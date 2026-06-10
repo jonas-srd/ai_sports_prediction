@@ -1731,6 +1731,175 @@ h2 {
   gap: 12px;
 }
 
+.predictionViewPanel {
+  display: grid;
+  max-width: 960px;
+  margin: 0 auto 18px;
+  gap: 16px;
+}
+
+.scheduleShell .predictionViewPanel {
+  max-width: none;
+}
+
+.predictionViewHeader {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 18px;
+}
+
+.predictionViewHeader p:not(.sectionKicker) {
+  max-width: 680px;
+  margin: 8px 0 0;
+  color: var(--muted);
+  line-height: 1.45;
+}
+
+.segmentedControl {
+  display: inline-flex;
+  width: fit-content;
+  flex-wrap: wrap;
+  gap: 6px;
+  border: 1px solid rgba(70, 55, 35, 0.14);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.46);
+  padding: 5px;
+}
+
+.segmentedControl button {
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+  padding: 9px 13px;
+  font-family: "Courier New", monospace;
+  font-size: 0.68rem;
+  font-weight: 900;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  transition:
+    background 160ms ease,
+    color 160ms ease,
+    box-shadow 160ms ease;
+}
+
+.segmentedControl button:hover,
+.segmentedControl button:focus-visible {
+  color: var(--ink);
+}
+
+.segmentedControl button:focus-visible {
+  outline: 2px solid rgba(179, 58, 39, 0.32);
+  outline-offset: 2px;
+}
+
+.segmentedControl button.isActive {
+  background: var(--ink);
+  box-shadow: 0 10px 24px rgba(24, 19, 13, 0.14);
+  color: var(--cream);
+}
+
+.secondarySegmentedControl {
+  background: rgba(24, 19, 13, 0.05);
+}
+
+.advancedPredictionControls {
+  display: grid;
+  gap: 14px;
+  border-top: 1px solid rgba(70, 55, 35, 0.1);
+  padding-top: 14px;
+}
+
+.advancedPredictionHint {
+  max-width: 620px;
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.9rem;
+  line-height: 1.45;
+}
+
+.predictionFilterGrid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.predictionFilterGroup {
+  min-width: 0;
+  border: 1px solid rgba(70, 55, 35, 0.12);
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.36);
+  padding: 12px;
+}
+
+.predictionFilterGroup legend {
+  color: var(--muted);
+  font-family: "Courier New", monospace;
+  font-size: 0.62rem;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.filterSelectAllButton {
+  border: 0;
+  background: transparent;
+  color: var(--red);
+  cursor: pointer;
+  padding: 2px 0 8px;
+  font-family: "Courier New", monospace;
+  font-size: 0.62rem;
+  font-weight: 900;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.filterChipGrid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+  max-height: 146px;
+  overflow: auto;
+  padding-right: 2px;
+}
+
+.filterChip {
+  display: inline-flex;
+  min-width: 0;
+  align-items: center;
+  gap: 6px;
+  border: 1px solid rgba(70, 55, 35, 0.14);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.54);
+  color: var(--muted);
+  cursor: pointer;
+  padding: 6px 9px;
+  font-family: "Courier New", monospace;
+  font-size: 0.62rem;
+  font-weight: 900;
+}
+
+.filterChip.isChecked {
+  border-color: rgba(32, 79, 53, 0.28);
+  background: rgba(32, 79, 53, 0.09);
+  color: var(--green);
+}
+
+.filterChip input {
+  width: 12px;
+  height: 12px;
+  accent-color: var(--green);
+}
+
+.filterChip span {
+  overflow: hidden;
+  max-width: 190px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .filterField {
   display: grid;
   gap: 7px;
@@ -2352,6 +2521,10 @@ h2 {
     grid-template-columns: 1fr;
   }
 
+  .predictionFilterGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
   .benchmarkPredictionRow {
     grid-template-columns: 1fr;
   }
@@ -2391,9 +2564,26 @@ h2 {
   }
 
   .panelHeader,
-  .matchHeader {
+  .matchHeader,
+  .predictionViewHeader {
     align-items: flex-start;
     flex-direction: column;
+  }
+
+  .predictionViewPanel {
+    border-radius: 24px;
+  }
+
+  .segmentedControl {
+    width: 100%;
+  }
+
+  .segmentedControl button {
+    flex: 1 1 140px;
+  }
+
+  .predictionFilterGrid {
+    grid-template-columns: 1fr;
   }
 
   .rankRow {
