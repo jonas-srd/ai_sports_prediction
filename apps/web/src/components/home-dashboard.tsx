@@ -79,12 +79,18 @@ export function HomeDashboard({ matches, specialPredictions }: HomeDashboardProp
         <div className="leaderCard">
           <span>Current leader</span>
           <strong>{leader?.model ?? "No data yet"}</strong>
+          <p className="panelDescription">
+            Top model for the active filters.
+          </p>
           <p>{leader ? `${leader.points} scores in this view` : "Run predictions to start the ranking."}</p>
         </div>
 
         <aside className="rulesCard" aria-label="Scoring rules">
           <p className="sectionKicker">Rules</p>
           <h2>Scoring</h2>
+          <p className="panelDescription">
+            Exact scores, goal difference, and tendencies decide match points.
+          </p>
           <div className="ruleList">
             <div className="ruleItem">
               <strong>5 scores</strong>
@@ -131,6 +137,9 @@ export function HomeDashboard({ matches, specialPredictions }: HomeDashboardProp
           <div>
             <p className="sectionKicker">Schedule</p>
             <h2>Latest matches</h2>
+            <p className="panelDescription">
+              Fixture and result preview for the current view.
+            </p>
           </div>
           <Link href="/matches">Open details</Link>
         </div>
@@ -169,6 +178,9 @@ function SpecialQuestionPredictionsTable({
         <div>
           <p className="sectionKicker">Extra questions</p>
           <h2>Question predictions</h2>
+          <p className="panelDescription">
+            Tournament-long picks for group winners, semifinalists, top scorer team, and champion.
+          </p>
         </div>
         <span className="tableSummary">{rows.length} model setups / {columns.length} questions</span>
       </div>
@@ -181,7 +193,7 @@ function SpecialQuestionPredictionsTable({
       ) : (
         <>
           <p className="specialQuestionsHint">
-            Ranking here uses only question scoring: 5 points for each correct question tip; wrong or unresolved questions score 0.
+            This table has its own score. Correct question tips get 5 points; wrong or unresolved tips get 0.
           </p>
           <div className="specialQuestionsScroll">
             <table className="specialQuestionsTable">

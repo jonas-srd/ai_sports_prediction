@@ -464,6 +464,25 @@ h2 {
   flex: 1;
 }
 
+.panelDescription {
+  max-width: none;
+  margin: 8px 0 0;
+  color: var(--muted);
+  font-size: 0.9rem;
+  line-height: 1.42;
+  white-space: nowrap;
+}
+
+.leaderCard .panelDescription {
+  max-width: 520px;
+  margin: 0 0 10px;
+  color: rgba(255, 249, 232, 0.74);
+}
+
+.rulesCard .panelDescription {
+  margin-bottom: 16px;
+}
+
 .panelHeader a,
 .topNav a {
   border: 1px solid var(--line);
@@ -495,16 +514,20 @@ h2 {
 
 .leaderboardPanelHeader {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(520px, 760px) minmax(0, 1fr);
+  grid-template-areas: "title controls link";
+  grid-template-columns: minmax(220px, 1fr) minmax(260px, auto) minmax(120px, 1fr);
   align-items: start;
   column-gap: 18px;
+  row-gap: 18px;
 }
 
 .leaderboardHeaderTitle {
+  grid-area: title;
   justify-self: start;
 }
 
 .leaderboardHeaderControls {
+  grid-area: controls;
   position: relative;
   z-index: 25;
   width: 100%;
@@ -516,8 +539,35 @@ h2 {
 }
 
 .leaderboardHeaderLink {
+  grid-area: link;
   justify-self: end;
   margin-top: 2px;
+}
+
+.leaderboardPanelHeader:has(.predictionViewEmbedded.hasAdvancedControls) {
+  grid-template-areas:
+    "title controls link"
+    "filters filters filters";
+}
+
+.leaderboardPanelHeader:has(.predictionViewEmbedded.hasAdvancedControls) .leaderboardHeaderControls {
+  display: contents;
+}
+
+.leaderboardPanelHeader:has(.predictionViewEmbedded.hasAdvancedControls) .predictionViewEmbedded {
+  display: contents;
+}
+
+.leaderboardPanelHeader:has(.predictionViewEmbedded.hasAdvancedControls) .predictionViewEmbeddedTop {
+  grid-area: controls;
+  width: auto;
+  justify-self: center;
+}
+
+.leaderboardPanelHeader:has(.predictionViewEmbedded.hasAdvancedControls) .advancedPredictionControls {
+  grid-area: filters;
+  width: min(760px, 100%);
+  justify-self: center;
 }
 
 .rankRow {
@@ -3056,6 +3106,10 @@ h2 {
     border-radius: 24px;
   }
 
+  .panelDescription {
+    white-space: normal;
+  }
+
   .focusStats {
     grid-template-columns: 1fr;
   }
@@ -3090,8 +3144,20 @@ h2 {
   }
 
   .leaderboardPanelHeader {
+    grid-template-areas:
+      "title"
+      "controls"
+      "link";
     grid-template-columns: 1fr;
     row-gap: 12px;
+  }
+
+  .leaderboardPanelHeader:has(.predictionViewEmbedded.hasAdvancedControls) {
+    grid-template-areas:
+      "title"
+      "controls"
+      "filters"
+      "link";
   }
 
   .leaderboardHeaderTitle,

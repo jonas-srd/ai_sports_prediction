@@ -28,8 +28,11 @@ export function InteractiveLeaderboard({ leaderboard, matches, controls }: Inter
           <div className="leaderboardHeaderTitle">
             <p className="sectionKicker">Model ranking</p>
             <h2>Leaderboard</h2>
+            <p className="panelDescription">
+              Match-prediction ranking after applying the active filters.
+            </p>
           </div>
-          {controls ? <div className="leaderboardHeaderControls">{controls}</div> : <span />}
+          {controls ? <div className="leaderboardHeaderControls">{controls}</div> : <span className="leaderboardHeaderControls" />}
           <Link className="leaderboardHeaderLink" href="/matches">View matches</Link>
         </div>
 
