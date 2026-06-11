@@ -22,6 +22,8 @@ import { PredictionViewControls } from "@/components/prediction-view-controls";
 import { TeamMatchup } from "@/components/team-matchup";
 import { InfoTooltip, type TooltipLine } from "@/components/info-tooltip";
 import { getTeamFlag } from "@/lib/country-flags";
+import { formatMatchTime, formatShortDate } from "@/lib/timezone";
+import { useTimeZone } from "@/components/time-zone-provider";
 
 type HomeDashboardProps = {
   matches: DashboardMatch[];
@@ -44,6 +46,7 @@ type SpecialQuestionColumn = {
 };
 
 export function HomeDashboard({ matches, specialPredictions }: HomeDashboardProps) {
+  const { timeZone } = useTimeZone();
   const options = useMemo(() => getPredictionViewOptions(matches), [matches]);
   const [viewState, setViewState] = useState<PredictionViewState>(() => getDefaultPredictionViewState(options));
   const filteredMatches = useMemo(
@@ -150,8 +153,8 @@ export function HomeDashboard({ matches, specialPredictions }: HomeDashboardProp
                 compact
                 homeTeam={match.homeTeam}
                 awayTeam={match.awayTeam}
-                center={formatMatchCenter(match)}
-                meta={formatMatchMeta(match)}
+                center={formatMatchCenter(match, timeZone)}
+                meta={formatMatchMeta(match, timeZone)}
               />
             </Link>
           ))}
@@ -558,24 +561,16 @@ function getMatchAnchorId(matchId: string): string {
   return `match-${matchId}`;
 }
 
-function formatMatchCenter(match: DashboardMatch): string {
+function formatMatchCenter(match: DashboardMatch, timeZone: string): string {
   if (match.actualHome !== null && match.actualAway !== null) {
     return `${match.actualHome} - ${match.actualAway}`;
   }
 
-  if (!match.utcDate) {
-    return "Open";
-  }
-
-  return new Intl.DateTimeFormat("en-GB", {
-    hour: "2-digit",
-    minute: "2-digit",
-    timeZone: "Europe/Berlin"
-  }).format(new Date(match.utcDate));
+  return formatMatchTime(match.utcDate, timeZone);
 }
 
-function formatMatchMeta(match: DashboardMatch): string | null {
-  const details = [formatCompetition(match.competition), match.venue, formatDate(match.utcDate)].filter(Boolean);
+function formatMatchMeta(match: DashboardMatch, timeZone: string): string | null {
+  const details = [formatCompetition(match.competition), match.venue, formatShortDate(match.utcDate, timeZone)].filter(Boolean);
   return details.length > 0 ? details.join(" / ") : null;
 }
 
@@ -589,16 +584,4 @@ function formatCompetition(value?: string): string | null {
     .replace("GROUP_STAGE", "Group stage")
     .replace(/GROUP_([A-L])/g, "Group $1")
     .replaceAll(" - ", " / ");
-}
-
-function formatDate(value?: string): string | null {
-  if (!value) {
-    return null;
-  }
-
-  return new Intl.DateTimeFormat("en-GB", {
-    month: "short",
-    day: "numeric",
-    timeZone: "Europe/Berlin"
-  }).format(new Date(value));
 }

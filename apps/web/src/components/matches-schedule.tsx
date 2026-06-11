@@ -15,6 +15,8 @@ import {
 } from "@/lib/prediction-view";
 import { MatchPredictionCard } from "@/components/match-prediction-card";
 import { PredictionViewControls } from "@/components/prediction-view-controls";
+import { formatFullDay, formatMatchTime, getLocalDateKey } from "@/lib/timezone";
+import { useTimeZone } from "@/components/time-zone-provider";
 
 type MatchesScheduleProps = {
   matches: DashboardMatch[];
@@ -27,13 +29,14 @@ type ScheduleDay = {
 };
 
 export function MatchesSchedule({ matches }: MatchesScheduleProps) {
+  const { timeZone } = useTimeZone();
   const options = useMemo(() => getPredictionViewOptions(matches), [matches]);
   const [viewState, setViewState] = useState<PredictionViewState>(() => getDefaultPredictionViewState(options));
   const filteredMatches = useMemo(
     () => filterMatchesForPredictionView(matches, viewState),
     [matches, viewState]
   );
-  const scheduleDays = useMemo(() => groupMatchesByDay(filteredMatches), [filteredMatches]);
+  const scheduleDays = useMemo(() => groupMatchesByDay(filteredMatches, timeZone), [filteredMatches, timeZone]);
 
   return (
     <section className="scheduleList">
@@ -51,7 +54,7 @@ export function MatchesSchedule({ matches }: MatchesScheduleProps) {
                   className="scheduleMatchCard"
                   key={match.id}
                   match={displayMatch}
-                  center={formatMatchCenter(match)}
+                  center={formatMatchCenter(match, timeZone)}
                   meta={formatMatchMeta(match)}
                   predictionControls={
                     <PredictionViewControls
@@ -72,14 +75,14 @@ export function MatchesSchedule({ matches }: MatchesScheduleProps) {
   );
 }
 
-function groupMatchesByDay(matches: DashboardMatch[]): ScheduleDay[] {
+function groupMatchesByDay(matches: DashboardMatch[], timeZone: string): ScheduleDay[] {
   const days = new Map<string, ScheduleDay>();
 
   for (const match of matches) {
-    const key = getDayKey(match);
+    const key = getDayKey(match, timeZone);
     const day = days.get(key) ?? {
       key,
-      label: formatDayLabel(match.utcDate),
+      label: formatDayLabel(match.utcDate, timeZone),
       matches: []
     };
 
@@ -120,25 +123,8 @@ function compareDateKeys(a: string, b: string): number {
   return a.localeCompare(b);
 }
 
-function getDayKey(match: DashboardMatch): string {
-  if (!match.utcDate) {
-    return "9999-unknown";
-  }
-
-  const date = new Date(match.utcDate);
-  if (Number.isNaN(date.getTime())) {
-    return "9999-unknown";
-  }
-
-  const parts = new Intl.DateTimeFormat("en-US", {
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-    timeZone: "Europe/Berlin"
-  }).formatToParts(date);
-  const partMap = Object.fromEntries(parts.map((part) => [part.type, part.value]));
-
-  return `${partMap.year}-${partMap.month}-${partMap.day}`;
+function getDayKey(match: DashboardMatch, timeZone: string): string {
+  return getLocalDateKey(match.utcDate, timeZone);
 }
 
 function getTimeValue(value?: string): number {
@@ -150,41 +136,16 @@ function getTimeValue(value?: string): number {
   return Number.isNaN(time) ? Number.MAX_SAFE_INTEGER : time;
 }
 
-function formatDayLabel(value?: string): string {
-  if (!value) {
-    return "Date open";
-  }
-
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) {
-    return "Date open";
-  }
-
-  return new Intl.DateTimeFormat("en-GB", {
-    weekday: "long",
-    day: "numeric",
-    month: "long",
-    year: "numeric",
-    timeZone: "Europe/Berlin"
-  })
-    .format(date)
-    .replace(",", "");
+function formatDayLabel(value: string | undefined, timeZone: string): string {
+  return formatFullDay(value, timeZone);
 }
 
-function formatMatchCenter(match: DashboardMatch): string {
+function formatMatchCenter(match: DashboardMatch, timeZone: string): string {
   if (match.actualHome !== null && match.actualAway !== null) {
     return `${match.actualHome} - ${match.actualAway}`;
   }
 
-  if (!match.utcDate) {
-    return "Open";
-  }
-
-  return new Intl.DateTimeFormat("en-GB", {
-    hour: "2-digit",
-    minute: "2-digit",
-    timeZone: "Europe/Berlin"
-  }).format(new Date(match.utcDate));
+  return formatMatchTime(match.utcDate, timeZone);
 }
 
 function formatMatchMeta(match: DashboardMatch): string | null {

@@ -10,6 +10,8 @@ import type { DashboardPrediction } from "@/lib/dashboard-data";
 import { formatCondition } from "@/lib/benchmark-analytics";
 import { getMatchupLabels } from "@/lib/match-display";
 import { TeamMatchup } from "@/components/team-matchup";
+import { formatMatchTime, formatShortDateTime } from "@/lib/timezone";
+import { useTimeZone } from "@/components/time-zone-provider";
 
 type ModelInspectorProps = {
   matches: DashboardMatch[];
@@ -29,6 +31,7 @@ type FocusRow = {
 };
 
 export function ModelInspector({ matches, selectedModel, selectedKey, inline = false }: ModelInspectorProps) {
+  const { timeZone } = useTimeZone();
   const models = useMemo(() => getModels(matches), [matches]);
   const inspectorClassName = `panel interactivePanel${inline ? " inlineInspector" : ""}`;
   const activeModel = models.some((entry) => entry.model === selectedModel)
@@ -94,8 +97,8 @@ export function ModelInspector({ matches, selectedModel, selectedKey, inline = f
                     compact
                     homeTeam={labels.homeTeamLabel}
                     awayTeam={labels.awayTeamLabel}
-                    center={formatMatchCenter(row.match)}
-                    meta={formatMatchMeta(row.match)}
+                    center={formatMatchCenter(row.match, timeZone)}
+                    meta={formatMatchMeta(row.match, timeZone)}
                   />
                 </div>
 
@@ -142,24 +145,16 @@ function getFocusRows(matches: DashboardMatch[], selectedModel: string, selected
   });
 }
 
-function formatMatchCenter(match: DashboardMatch): string {
+function formatMatchCenter(match: DashboardMatch, timeZone: string): string {
   if (match.actualHome !== null && match.actualAway !== null) {
     return `${match.actualHome} - ${match.actualAway}`;
   }
 
-  if (!match.utcDate) {
-    return "Open";
-  }
-
-  return new Intl.DateTimeFormat("en-GB", {
-    hour: "2-digit",
-    minute: "2-digit",
-    timeZone: "Europe/Berlin"
-  }).format(new Date(match.utcDate));
+  return formatMatchTime(match.utcDate, timeZone);
 }
 
-function formatMatchMeta(match: DashboardMatch): string | null {
-  const details = [formatCompetition(match.competition), match.venue, formatMatchDate(match.utcDate)].filter(Boolean);
+function formatMatchMeta(match: DashboardMatch, timeZone: string): string | null {
+  const details = [formatCompetition(match.competition), match.venue, formatShortDateTime(match.utcDate, timeZone)].filter(Boolean);
   return details.length > 0 ? details.join(" / ") : null;
 }
 
@@ -173,25 +168,6 @@ function formatCompetition(value?: string): string | null {
     .replace("GROUP_STAGE", "Group stage")
     .replace(/GROUP_([A-Z])/g, "Group $1")
     .replaceAll(" - ", " / ");
-}
-
-function formatMatchDate(value?: string): string {
-  if (!value) {
-    return "Date open";
-  }
-
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) {
-    return "Date open";
-  }
-
-  return new Intl.DateTimeFormat("en-GB", {
-    month: "short",
-    day: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-    timeZone: "Europe/Berlin"
-  }).format(date);
 }
 
 function formatPrediction(prediction: DashboardMatch["predictions"][number] | undefined): string {
