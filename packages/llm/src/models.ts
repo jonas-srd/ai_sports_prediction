@@ -40,6 +40,15 @@ export const MINIMAL_FLAGSHIP_MODELS: BenchmarkModelConfig[] = [
     includeInPrimary2x2: true
   },
   {
+    slot: "anthropic_claude_fable_5",
+    displayName: "Claude Fable 5",
+    modelId: "anthropic/claude-fable-5",
+    canonicalVersion: "anthropic/claude-5-fable-20260609",
+    family: "Anthropic",
+    tier: "latest_flagship_experimental",
+    includeInPrimary2x2: true
+  },
+  {
     slot: "google_gemini_3_1_pro",
     displayName: "Gemini 3.1 Pro",
     modelId: "google/gemini-3.1-pro-preview",
@@ -89,15 +98,6 @@ export const MINIMAL_FLAGSHIP_MODELS: BenchmarkModelConfig[] = [
 export const FULL_BENCHMARK_MODELS: BenchmarkModelConfig[] = [
   ...MINIMAL_FLAGSHIP_MODELS,
 
-  {
-    slot: "anthropic_claude_fable_5",
-    displayName: "Claude Fable 5",
-    modelId: "anthropic/claude-fable-5",
-    canonicalVersion: "anthropic/claude-5-fable-20260609",
-    family: "Anthropic",
-    tier: "latest_flagship_experimental",
-    includeInPrimary2x2: false
-  },
   {
     slot: "anthropic_claude_sonnet_4_6",
     displayName: "Claude Sonnet 4.6",

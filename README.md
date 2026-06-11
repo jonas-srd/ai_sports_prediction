@@ -284,7 +284,7 @@ Leave these unset to use the same 5000-token defaults. Increase them only if a m
 The minimal flagship MVP setup uses paid OpenRouter models and requires credits:
 
 ```text
-OPENROUTER_MODEL_IDS=openai/gpt-5.5,anthropic/claude-opus-4.8,google/gemini-3.1-pro-preview,x-ai/grok-4.3,deepseek/deepseek-v4-pro,qwen/qwen3.7-max,mistralai/mistral-large-2512
+OPENROUTER_MODEL_IDS=openai/gpt-5.5,anthropic/claude-opus-4.8,anthropic/claude-fable-5,google/gemini-3.1-pro-preview,x-ai/grok-4.3,deepseek/deepseek-v4-pro,qwen/qwen3.7-max,mistralai/mistral-large-2512
 ```
 
 ## Railway Deployment
