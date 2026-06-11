@@ -26,6 +26,7 @@ OPENROUTER_TEST_MODEL=openai/gpt-5.5
 API_FOOTBALL_KEY=
 API_FOOTBALL_LEAGUE_ID=1
 API_FOOTBALL_SEASON=2026
+SQLITE_SEED_OVERWRITE=0
 ```
 
 ## Volume
@@ -44,12 +45,42 @@ The SQLite database will live at:
 
 Do not store the database inside the container filesystem. It must be on the mounted volume to survive redeploys.
 
+## Initial Database Seed
+
+The Docker image can include a compressed seed database at:
+
+```text
+/app/deploy/seed/world-cup.db.gz
+```
+
+On container start, `scripts/start-web-with-db-seed.sh` restores that seed into:
+
+```text
+$SQLITE_DB_PATH
+```
+
+By default, this only happens when the target database file does not exist or is empty.
+
+If the current Railway volume database should be replaced once, set this Railway variable for one deploy:
+
+```env
+SQLITE_SEED_OVERWRITE=1
+```
+
+After the seeded deploy is running, remove `SQLITE_SEED_OVERWRITE` or set it back to `0`. Otherwise every restart or redeploy will reset the volume database back to the packaged seed.
+
+To refresh the packaged seed from the current local database:
+
+```bash
+python -c "import gzip, shutil; from pathlib import Path; Path('deploy/seed').mkdir(parents=True, exist_ok=True); shutil.copyfileobj(open('data/world-cup.db','rb'), gzip.open('deploy/seed/world-cup.db.gz','wb'))"
+```
+
 ## Commands
 
 The web service starts with:
 
 ```bash
-npm run start:web
+sh scripts/start-web-with-db-seed.sh
 ```
 
 Useful one-off commands to run from the Railway shell:

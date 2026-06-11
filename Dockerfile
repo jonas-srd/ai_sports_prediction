@@ -24,4 +24,4 @@ ENV SQLITE_DB_PATH=/app/data/world-cup.db
 
 EXPOSE 3000
 
-CMD ["npm", "run", "start:web"]
+CMD ["sh", "scripts/start-web-with-db-seed.sh"]
