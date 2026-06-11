@@ -59,7 +59,7 @@ export default function GermanLegalNoticePage() {
             <br />
             E-Mail: <ObfuscatedEmail reversedDomain="ed.nehcneum-inu.gnutlawrev" reversedLocalPart="elletstsop" />
             <br />
-            Projektkontakt: <ObfuscatedEmail reversedDomain="ed.uml" reversedLocalPart="legeirreuef.nafets" />
+            Projektkontakt: <ObfuscatedEmail reversedDomain="ed.uml" reversedLocalPart="legeirreuef" />
           </p>
           <p>
             Für verschlüsselte Nachrichten stellt die LMU Informationen zur S/MIME-verschlüsselten Kommunikation und

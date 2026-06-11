@@ -267,7 +267,7 @@ export default function GermanAboutPage() {
           <div className="aboutTeamMember">
             <strong>Stefan Feuerriegel</strong>
             <p>Projektleitung. Professor in AI for Management an der LMU Munich School of Management & Munich Center for Machine Learning (MCML).</p>
-            <ObfuscatedEmail reversedDomain="ed.uml" reversedLocalPart="legeirreuef.nafets" />
+            <ObfuscatedEmail reversedDomain="ed.uml" reversedLocalPart="legeirreuef" />
           </div>
         </div>
       </section>

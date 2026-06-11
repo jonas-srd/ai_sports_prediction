@@ -59,7 +59,7 @@ export default function LegalNoticePage() {
             <br />
             Email: <ObfuscatedEmail reversedDomain="ed.nehcneum-inu.gnutlawrev" reversedLocalPart="elletstsop" />
             <br />
-            Project contact: <ObfuscatedEmail reversedDomain="ed.uml" reversedLocalPart="legeirreuef.nafets" />
+            Project contact: <ObfuscatedEmail reversedDomain="ed.uml" reversedLocalPart="legeirreuef" />
           </p>
           <p>
             For encrypted communication, LMU provides information on S/MIME-encrypted communication and the special

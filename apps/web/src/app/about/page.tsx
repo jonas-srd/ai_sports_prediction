@@ -282,7 +282,7 @@ export default function AboutPage() {
             <p>
               Project lead. Professor in AI for Management at LMU Munich School of Management & Munich Center for Machine Learning (MCML).
             </p>
-            <ObfuscatedEmail reversedDomain="ed.uml" reversedLocalPart="legeirreuef.nafets" />
+            <ObfuscatedEmail reversedDomain="ed.uml" reversedLocalPart="legeirreuef" />
           </div>
         </div>
       </section>
