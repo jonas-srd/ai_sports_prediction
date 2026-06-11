@@ -441,6 +441,13 @@ h2 {
   gap: 8px;
 }
 
+.modelPredictionDetails {
+  display: grid;
+  justify-items: end;
+  gap: 8px;
+  min-width: 0;
+}
+
 .modelScoreLine span {
   border-radius: 999px;
   background: rgba(24, 19, 13, 0.08);
@@ -449,6 +456,19 @@ h2 {
   font-size: 0.72rem;
   font-weight: 900;
   white-space: nowrap;
+}
+
+.modelPredictionReason {
+  max-width: 560px;
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.82rem;
+  line-height: 1.38;
+  text-align: right;
+}
+
+.modelPredictionReason strong {
+  color: var(--ink);
 }
 
 .resultTag {
@@ -636,6 +656,7 @@ h2 {
 }
 
 .leaderboardButton {
+  grid-template-columns: 52px minmax(180px, 0.9fr) minmax(180px, 1fr) auto;
   width: 100%;
   color: inherit;
   font: inherit;
@@ -736,6 +757,22 @@ h2 {
 
 .leaderboardModelName .filterInfo {
   flex: 0 0 auto;
+}
+
+.leaderboardDisclosureText {
+  justify-self: center;
+  color: rgba(24, 19, 13, 0.58);
+  font-family: "Courier New", monospace;
+  font-size: 0.72rem;
+  font-weight: 900;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.leaderboardButton:hover .leaderboardDisclosureText,
+.leaderboardButton.isSelected .leaderboardDisclosureText {
+  color: var(--red);
 }
 
 .rankRow p,
@@ -3152,6 +3189,14 @@ h2 {
     justify-content: flex-start;
   }
 
+  .modelPredictionDetails {
+    justify-items: start;
+  }
+
+  .modelPredictionReason {
+    text-align: left;
+  }
+
   .resultTag {
     justify-items: start;
   }
@@ -3345,6 +3390,11 @@ h2 {
 
   .rankRow {
     grid-template-columns: 42px minmax(0, 1fr);
+  }
+
+  .leaderboardDisclosureText {
+    grid-column: 2;
+    justify-self: start;
   }
 
   .rankRow .points {

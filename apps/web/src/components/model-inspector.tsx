@@ -102,10 +102,18 @@ export function ModelInspector({ matches, selectedModel, selectedKey, inline = f
                   />
                 </div>
 
-                <div className="modelScoreLine">
-                  <span>Pick {formatPrediction(row.prediction)}</span>
-                  <span>Final {formatScore(row.match.actualHome, row.match.actualAway)}</span>
-                  {row.prediction ? <span>{formatPredictionContext(row.prediction)}</span> : null}
+                <div className="modelPredictionDetails">
+                  <div className="modelScoreLine">
+                    <span>Pick {formatPrediction(row.prediction)}</span>
+                    <span>Final {formatScore(row.match.actualHome, row.match.actualAway)}</span>
+                    {row.prediction ? <span>{formatPredictionContext(row.prediction)}</span> : null}
+                  </div>
+
+                  {row.prediction?.reason ? (
+                    <p className="modelPredictionReason">
+                      <strong>Reasoning:</strong> {row.prediction.reason}
+                    </p>
+                  ) : null}
                 </div>
 
                 <div className="resultTag">

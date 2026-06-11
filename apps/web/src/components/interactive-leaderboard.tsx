@@ -49,6 +49,7 @@ export function InteractiveLeaderboard({ leaderboard, matches, controls }: Inter
                 <div className="leaderboardItem" key={entry.key ?? entry.model}>
                   <button
                     className={`rankRow leaderboardButton ${getPodiumClass(rank)}${selectedKey === getEntryKey(entry) ? " isSelected" : ""}`}
+                    aria-expanded={selectedKey === getEntryKey(entry)}
                     type="button"
                     onClick={() => setSelectedKey(selectedKey === getEntryKey(entry) ? null : getEntryKey(entry))}
                   >
@@ -63,6 +64,9 @@ export function InteractiveLeaderboard({ leaderboard, matches, controls }: Inter
                       </div>
                       <p>{entry.provider}</p>
                     </div>
+                    <span className="leaderboardDisclosureText">
+                      {selectedKey === getEntryKey(entry) ? "Hide model predictions" : "Show model predictions"}
+                    </span>
                     <span className="points">{entry.points} scores</span>
                   </button>
 
