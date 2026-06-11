@@ -1,5 +1,6 @@
 import { createReadStream } from "node:fs";
 import { readdir, stat } from "node:fs/promises";
+import { timingSafeEqual } from "node:crypto";
 import { dirname, resolve } from "node:path";
 
 export type BackupFile = {
@@ -18,7 +19,7 @@ export function isBackupDownloadAuthorized(request: Request): boolean {
   }
 
   const authorization = request.headers.get("authorization") ?? "";
-  return authorization === `Bearer ${token}`;
+  return safeEqual(authorization, `Bearer ${token}`);
 }
 
 export function getBackupDirectory(): string {
@@ -81,4 +82,11 @@ export async function getBackupDownload(filename: string): Promise<{
 
 function isSafeBackupFilename(filename: string): boolean {
   return BACKUP_FILE_PATTERN.test(filename);
+}
+
+function safeEqual(left: string, right: string): boolean {
+  const leftBuffer = Buffer.from(left);
+  const rightBuffer = Buffer.from(right);
+
+  return leftBuffer.length === rightBuffer.length && timingSafeEqual(leftBuffer, rightBuffer);
 }

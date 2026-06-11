@@ -141,20 +141,20 @@ npm run benchmark:predict -- --group-stage --prompt-strategy=direct_score --skip
 Run production benchmark prediction schedulers:
 
 ```bash
-npm run benchmark:predict:due -- --horizon=T_24H --window-before-min=15 --window-after-min=60 --concurrency=3
-npm run benchmark:predict:due -- --horizon=T_2H --window-before-min=10 --window-after-min=60 --concurrency=3
+npm run benchmark:predict:due -- --horizon=T_2H --window-before-min=15 --window-after-min=180 --concurrency=3
+npm run benchmark:predict:due -- --horizon=T_24H --window-before-min=30 --window-after-min=720 --concurrency=3
 npm run benchmark:predict:stage-opening -- --stage=group_stage --concurrency=3
 npm run benchmark:predict:stage-opening -- --stage=round_of_16 --concurrency=3
 ```
 
-The due runner selects matches whose target prediction time is inside the polling window. The horizon remains kickoff minus 24 hours for `T_24H` and kickoff minus 2 hours for `T_2H`; the polling interval is only how often the job is invoked. `T_2H` timing is considered on-time within +/- 60 minutes because the full API batch can take close to an hour. The stage-opening runner refuses partial stages and runs only after the full group stage or knockout round is known. Both jobs skip valid existing predictions by default, fill missing/invalid rows, and use a DB-backed scheduler lock.
+The due runner selects matches whose target prediction time is inside the polling window. The horizon remains kickoff minus 24 hours for `T_24H` and kickoff minus 2 hours for `T_2H`; the polling interval is only how often the job is invoked. Wider after-windows are used in production to fill late predictions instead of leaving empty cells after deploy delays or long model runs. Timing metadata still records whether a prediction was on time or late. The stage-opening runner refuses partial stages and runs only after the full group stage or knockout round is known. Both jobs skip valid existing predictions by default, fill missing/invalid rows, and use a DB-backed scheduler lock.
 
 Recommended production cadence:
 
 ```text
 fixture sync: every 15-60 minutes, depending on provider limits
-T_24H due runner: every 15-30 minutes
-T_2H due runner: every 5-10 or 10-15 minutes
+T_2H due runner: every 15 minutes, before longer jobs
+T_24H due runner: every 15 minutes
 stage-opening runner: manually, or scheduled shortly after official stage/round completion
 scoring/evaluation: after result sync
 ```
@@ -328,9 +328,10 @@ SQLITE_BACKUP_DIR=/app/data/backups
 
 ```text
 fixture/result sync
-T_24H due predictions
 T_2H due predictions
+T_24H due predictions
 stage-opening prediction checks
+second T_2H/T_24H due pass after stage-opening checks
 benchmark evaluation
 daily SQLite backup
 ```

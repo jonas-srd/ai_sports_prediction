@@ -20,8 +20,8 @@ echo "Starting internal production cron loop with interval ${INTERVAL_SECONDS}s.
 while true; do
   run_job npm run sync:football-data
 
-  run_job npm run benchmark:predict:due -- --horizon=T_24H --window-before-min=15 --window-after-min=60 --concurrency=3
-  run_job npm run benchmark:predict:due -- --horizon=T_2H --window-before-min=10 --window-after-min=60 --concurrency=3
+  run_job npm run benchmark:predict:due -- --horizon=T_2H --window-before-min=15 --window-after-min=180 --concurrency=3
+  run_job npm run benchmark:predict:due -- --horizon=T_24H --window-before-min=30 --window-after-min=720 --concurrency=3
 
   run_job npm run benchmark:predict:stage-opening -- --stage=group_stage --concurrency=3
   run_job npm run benchmark:predict:stage-opening -- --stage=round_of_32 --concurrency=3
@@ -30,6 +30,9 @@ while true; do
   run_job npm run benchmark:predict:stage-opening -- --stage=semifinal --concurrency=3
   run_job npm run benchmark:predict:stage-opening -- --stage=third_place --concurrency=3
   run_job npm run benchmark:predict:stage-opening -- --stage=final --concurrency=3
+
+  run_job npm run benchmark:predict:due -- --horizon=T_2H --window-before-min=15 --window-after-min=180 --concurrency=3
+  run_job npm run benchmark:predict:due -- --horizon=T_24H --window-before-min=30 --window-after-min=720 --concurrency=3
 
   run_job npm run benchmark:evaluate
 
