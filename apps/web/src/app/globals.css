@@ -1758,6 +1758,25 @@ h2 {
   backdrop-filter: blur(10px);
 }
 
+.bracketBoardTitle {
+  display: grid;
+  grid-column: 1 / -1;
+  justify-items: center;
+  gap: 8px;
+  padding: 4px 0 2px;
+  text-align: center;
+}
+
+.bracketBoardTitle h1 {
+  margin: 0;
+  font-size: clamp(2rem, 3.4vw, 4rem);
+  line-height: 0.9;
+}
+
+.bracketBoardTitle .sectionKicker {
+  margin: 0;
+}
+
 .bracketHalf {
   display: grid;
   grid-template-columns: repeat(4, minmax(140px, 1fr));

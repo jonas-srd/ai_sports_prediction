@@ -17,7 +17,7 @@ export default function HomePage() {
     <main className="shell">
       <section className="hero heroCentered">
         <p className="eyebrow">LLM SoccerArena</p>
-        <h1>Which model predicts football best?</h1>
+        <h1>Which model predicts the FIFA World Cup 2026 best?</h1>
         <p className="heroText">
           World Cup 2026 forecasts from multiple LLMs, ranked with benchmark evaluation metrics.
         </p>

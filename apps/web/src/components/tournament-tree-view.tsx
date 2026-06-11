@@ -40,11 +40,6 @@ export function TournamentTreeView({ matches }: { matches: DashboardMatch[] }) {
 
   return (
     <main className="shell scheduleShell">
-      <section className="hero heroCentered compactHero">
-        <p className="eyebrow">World Cup 2026</p>
-        <h1>Tournament Tree</h1>
-      </section>
-
       {groups.length > 0 ? (
         <section className="groupOverviewSection" aria-label="World Cup groups">
           <div className="groupOverviewHeader">
@@ -67,6 +62,11 @@ export function TournamentTreeView({ matches }: { matches: DashboardMatch[] }) {
       {knockoutMatches.length > 0 ? (
         <section className="knockoutSection tournamentTreeSection">
           <section className="bracketBoard" aria-label="Interactive knockout bracket">
+            <div className="bracketBoardTitle">
+              <p className="sectionKicker">World Cup 2026</p>
+              <h1>Tournament Tree</h1>
+            </div>
+
             <div className="bracketHalf bracketHalfLeft">
               {LEFT_BRACKET.columns.map((column) =>
                 renderBracketColumn(column, knockoutByNumber, matches, timeZone)
