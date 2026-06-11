@@ -22,5 +22,9 @@ else
   echo "Using existing SQLite database at $DB_PATH."
 fi
 
+if [ "${ENABLE_INTERNAL_CRON:-0}" = "1" ]; then
+  sh scripts/run-production-cron-loop.sh &
+fi
+
 cd apps/web
 exec ../../node_modules/.bin/next start -H 0.0.0.0
