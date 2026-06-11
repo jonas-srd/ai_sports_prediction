@@ -316,23 +316,23 @@ const PREDICTION_VIEW_TEXT = {
     allStrategiesHint: "Showing every access, prompt, and horizon variant, matching the full benchmark view."
   },
   de: {
-    settingsLabel: "Anzeigeeinstellungen fur Vorhersagen",
+    settingsLabel: "Anzeigeeinstellungen für Vorhersagen",
     kicker: "Vorhersageansicht",
-    title: "Standardmassig einfach",
-    description: "Bestes Setup pro Modell halt die Seite lesbar. Passe die Ansicht nur an, wenn du Benchmark-Strategien untersuchen willst.",
+    title: "Standardmäßig einfach",
+    description: "Bestes Setup pro Modell hält die Seite lesbar. Passe die Ansicht nur an, wenn du Benchmark-Strategien untersuchen willst.",
     modeLabel: "Modus der Vorhersageansicht",
     bestPerModel: "Bestes pro Modell",
     customize: "Anpassen",
     customModeLabel: "Benutzerdefinierter Strategiemodus",
     allStrategies: "Alle Strategien",
-    chooseFilters: "Filter wahlen",
+    chooseFilters: "Filter wählen",
     models: "Modelle",
     access: "Zugriff",
     prompt: "Prompt",
     horizon: "Horizont",
     clear: "Leeren",
-    selectAll: "Alle wahlen",
-    allStrategiesHint: "Zeigt alle Zugriffs-, Prompt- und Horizontvarianten wie in der vollstandigen Benchmark-Ansicht."
+    selectAll: "Alle wählen",
+    allStrategiesHint: "Zeigt alle Zugriffs-, Prompt- und Horizontvarianten wie in der vollständigen Benchmark-Ansicht."
   }
 } as const;
 

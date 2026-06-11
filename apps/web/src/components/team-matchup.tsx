@@ -1,5 +1,5 @@
 /**
- * Purpose: Displays a football fixture in one compact line with team flags.
+ * Purpose: Displays a soccer fixture in one compact line with team flags.
  * The layout mirrors common match-center rows: home team, center time/score, away team, then metadata.
  */
 import { formatTeamName, getTeamFlag } from "@/lib/country-flags";
@@ -9,12 +9,13 @@ type TeamMatchupProps = {
   homeTeam: string;
   awayTeam: string;
   center: string;
+  dateLabel?: string | null;
   meta?: string | null;
   compact?: boolean;
   locale?: Locale;
 };
 
-export function TeamMatchup({ homeTeam, awayTeam, center, meta, compact = false, locale = "en" }: TeamMatchupProps) {
+export function TeamMatchup({ homeTeam, awayTeam, center, dateLabel, meta, compact = false, locale = "en" }: TeamMatchupProps) {
   const homeIsSeed = getSeedFlagLabel(homeTeam) !== null;
   const awayIsSeed = getSeedFlagLabel(awayTeam) !== null;
   const displayHomeTeam = formatTeamName(homeTeam, locale);
@@ -33,6 +34,7 @@ export function TeamMatchup({ homeTeam, awayTeam, center, meta, compact = false,
           {!awayIsSeed && <span>{displayAwayTeam}</span>}
         </span>
       </div>
+      {dateLabel ? <p className="fixtureDate">{dateLabel}</p> : null}
       {meta ? <p className="fixtureMeta">{meta}</p> : null}
     </div>
   );

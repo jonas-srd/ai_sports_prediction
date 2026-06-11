@@ -94,7 +94,7 @@ const DASHBOARD_TEXT = {
   },
   de: {
     currentLeader: "Aktueller Spitzenreiter",
-    topModel: "Bestes Modell fur die aktiven Filter.",
+    topModel: "Bestes Modell für die aktiven Filter.",
     scoresInView: "Punkte in dieser Ansicht",
     startRanking: "Starte Vorhersagen, um das Ranking zu erstellen.",
     rulesLabel: "Punkteregeln",
@@ -107,11 +107,11 @@ const DASHBOARD_TEXT = {
     miss: "Fehltipp",
     schedule: "Spielplan",
     latestMatches: "Neueste Spiele",
-    latestDescription: "Spiel- und Ergebnisvorschau fur die aktuelle Ansicht.",
-    openDetails: "Details offnen",
+    latestDescription: "Spiel- und Ergebnisvorschau für die aktuelle Ansicht.",
+    openDetails: "Details öffnen",
     extraQuestions: "Zusatzfragen",
     questionPredictions: "Fragen-Prognosen",
-    questionDescription: "Turnierweite Tipps fur Gruppensieger, Halbfinalisten, Top-Torschutzen-Team und Weltmeister.",
+    questionDescription: "Turnierweite Tipps für Gruppensieger, Halbfinalisten, Top-Torschützen-Team und Weltmeister.",
     modelSetups: "Modell-Setups",
     questions: "Fragen",
     noQuestions: "Noch keine Fragen-Prognosen",
@@ -124,16 +124,16 @@ const DASHBOARD_TEXT = {
     officialResults: "Offizielle Ergebnisse",
     updatedWhenKnown: "Aktualisiert, sobald bekannt",
     reference: "Referenz",
-    noReasoning: "Fur diese Prognose ist keine Begrundungszusammenfassung gespeichert.",
+    noReasoning: "Für diese Prognose ist keine Begründungszusammenfassung gespeichert.",
     groupWinner: "Gruppensieger",
     worldCup: "Weltmeisterschaft",
     finalFour: "Final Four",
     scoringKicker: "Tore",
     winner: "Sieger",
-    topScorerTeam: "Top-Torschutzen-Team",
+    topScorerTeam: "Top-Torschützen-Team",
     semifinalists: "Halbfinalisten",
     group: "Gruppe",
-    reasonFor: "Begrundung fur",
+    reasonFor: "Begründung für",
     groupStage: "Gruppenphase"
   }
 } as const;
@@ -252,8 +252,9 @@ export function HomeDashboard({ locale, matches, specialPredictions }: HomeDashb
                 homeTeam={match.homeTeam}
                 awayTeam={match.awayTeam}
                 center={formatMatchCenter(match, timeZone)}
+                dateLabel={formatMatchDate(match, timeZone, locale)}
                 locale={locale}
-                meta={formatMatchMeta(match, timeZone, locale)}
+                meta={formatMatchMeta(match, locale)}
               />
             </Link>
           ))}
@@ -727,8 +728,12 @@ function formatMatchCenter(match: DashboardMatch, timeZone: string): string {
   return formatMatchTime(match.utcDate, timeZone);
 }
 
-function formatMatchMeta(match: DashboardMatch, timeZone: string, locale: Locale): string | null {
-  const details = [formatCompetition(match.competition, locale), match.venue, formatShortDate(match.utcDate, timeZone, getIntlLocale(locale))].filter(Boolean);
+function formatMatchDate(match: DashboardMatch, timeZone: string, locale: Locale): string | null {
+  return formatShortDate(match.utcDate, timeZone, getIntlLocale(locale));
+}
+
+function formatMatchMeta(match: DashboardMatch, locale: Locale): string | null {
+  const details = [formatCompetition(match.competition, locale), match.venue].filter(Boolean);
   return details.length > 0 ? details.join(" / ") : null;
 }
 

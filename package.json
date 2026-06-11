@@ -32,6 +32,7 @@
     "benchmark:evaluate": "npm run benchmark:evaluate --workspace @llm-kicktipp/cron --",
     "benchmark:export": "npm run benchmark:export --workspace @llm-kicktipp/cron --",
     "backup:db": "npm run backup:db --workspace @llm-kicktipp/cron --",
+    "db:download-host": "powershell -ExecutionPolicy Bypass -File scripts/download-host-db.ps1",
     "score": "npm run score --workspace @llm-kicktipp/cron"
   },
   "engines": {

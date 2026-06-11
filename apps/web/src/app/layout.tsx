@@ -6,13 +6,14 @@ import type { Metadata } from "next";
 import type { ReactNode } from "react";
 import { HtmlLangSync } from "@/components/html-lang-sync";
 import { LocaleProvider } from "@/components/locale-provider";
+import { SiteFooter } from "@/components/site-footer";
 import { SiteNav } from "@/components/site-nav";
 import { TimeZoneProvider } from "@/components/time-zone-provider";
 import "./globals.css";
 
 export const metadata: Metadata = {
   title: "LLM SoccerArena",
-  description: "Compare football score predictions from multiple LLMs."
+  description: "Compare soccer score predictions from multiple LLMs."
 };
 
 export default function RootLayout({ children }: Readonly<{ children: ReactNode }>) {
@@ -24,6 +25,7 @@ export default function RootLayout({ children }: Readonly<{ children: ReactNode 
             <HtmlLangSync />
             <SiteNav />
             {children}
+            <SiteFooter />
           </TimeZoneProvider>
         </LocaleProvider>
       </body>

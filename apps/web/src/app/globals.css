@@ -169,6 +169,40 @@ a {
   outline-offset: 2px;
 }
 
+.siteFooter {
+  border-top: 1px solid var(--line);
+  background: rgba(255, 248, 233, 0.76);
+}
+
+.siteFooterInner {
+  display: flex;
+  width: min(100% - 40px, 1240px);
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin: 0 auto;
+  padding: 18px 0;
+  color: var(--muted);
+  font-family: "Courier New", monospace;
+  font-size: 0.72rem;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.siteFooter a {
+  border: 1px solid rgba(70, 55, 35, 0.14);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.58);
+  color: var(--red);
+  padding: 8px 12px;
+}
+
+.siteFooter a:hover,
+.siteFooter a:focus-visible {
+  border-color: rgba(179, 58, 39, 0.32);
+  background: rgba(255, 239, 216, 0.96);
+}
+
 .shell {
   width: min(1060px, calc(100% - 40px));
   margin: 0 auto;
@@ -440,6 +474,45 @@ h2 {
   margin: 4px 0 0;
   color: var(--muted);
   font-size: 0.86rem;
+}
+
+.modelMatchTeams .fixtureMatchup {
+  justify-items: center;
+  gap: 6px;
+}
+
+.modelMatchTeams .fixtureLine {
+  width: min(100%, 250px);
+  grid-template-columns: minmax(42px, 1fr) 58px minmax(42px, 1fr);
+  gap: 8px;
+}
+
+.modelMatchTeams .fixtureTeam {
+  min-width: 0;
+  justify-content: center;
+}
+
+.modelMatchTeams .seedFlag {
+  width: 38px;
+  min-width: 38px;
+  height: 22px;
+  padding: 0 5px;
+  border-radius: 8px;
+  font-size: 0.66rem;
+  letter-spacing: -0.02em;
+  line-height: 1;
+  text-align: center;
+}
+
+.modelMatchTeams .fixtureCenter {
+  width: 58px;
+  text-align: center;
+}
+
+.modelMatchTeams .fixtureMeta {
+  max-width: 100%;
+  font-size: 0.74rem;
+  line-height: 1.25;
 }
 
 .modelScoreLine {
@@ -789,6 +862,15 @@ h2 {
   margin: 4px 0 0;
   color: var(--muted);
   font-size: 0.88rem;
+}
+
+.fixtureDate {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.78rem;
+  font-weight: 800;
+  line-height: 1.15;
+  text-align: center;
 }
 
 .rank {
@@ -1225,6 +1307,26 @@ h2 {
 .matchCard:focus-visible {
   outline: 2px solid rgba(179, 58, 39, 0.35);
   outline-offset: 4px;
+}
+
+.matchCard .fixtureMatchup {
+  gap: 6px;
+}
+
+.matchCard .fixtureDate {
+  justify-self: center;
+  border: 1px solid rgba(38, 59, 103, 0.14);
+  border-radius: 999px;
+  background: rgba(255, 248, 235, 0.82);
+  color: #263b67;
+  font-family: "Courier New", monospace;
+  font-size: 0.68rem;
+  font-weight: 900;
+  letter-spacing: 0.02em;
+  line-height: 1;
+  padding: 4px 9px;
+  text-transform: uppercase;
+  white-space: nowrap;
 }
 
 .teamName {
@@ -2141,6 +2243,23 @@ h2 {
   text-align: center;
   color: var(--muted);
   margin-top: 3px;
+}
+
+.bracketGameCard .fixtureDate {
+  justify-self: center;
+  max-width: 100%;
+  border: 1px solid rgba(179, 58, 39, 0.14);
+  border-radius: 999px;
+  background: rgba(255, 248, 235, 0.86);
+  color: var(--red);
+  font-family: "Courier New", monospace;
+  font-size: 0.52rem;
+  font-weight: 900;
+  letter-spacing: 0.02em;
+  line-height: 1;
+  padding: 4px 7px;
+  text-transform: uppercase;
+  white-space: nowrap;
 }
 
 .bracketGameCard .matchDisclosure {
@@ -3096,10 +3215,14 @@ h2 {
 
 .legalBlock p {
   max-width: 760px;
-  margin-bottom: 0;
+  margin-bottom: 10px;
   color: var(--muted);
   font-size: 1rem;
   line-height: 1.62;
+}
+
+.legalBlock p:last-child {
+  margin-bottom: 0;
 }
 
 .legalBlock strong,
@@ -3109,6 +3232,12 @@ h2 {
 
 .aboutShell {
   max-width: 1120px;
+}
+
+.aboutShell .compactHero h1 {
+  max-width: 720px;
+  font-size: clamp(2.5rem, 5.4vw, 4.7rem);
+  line-height: 0.98;
 }
 
 .aboutIntroPanel {
@@ -3147,6 +3276,39 @@ h2 {
   gap: 12px;
 }
 
+.aboutMethodGroupList {
+  display: grid;
+  gap: 14px;
+}
+
+.aboutMethodGroup {
+  display: grid;
+  gap: 12px;
+  border-left: 4px solid rgba(179, 58, 39, 0.34);
+  padding: 2px 0 2px 14px;
+}
+
+.aboutMethodGroup > div:first-child strong {
+  display: block;
+  margin-bottom: 5px;
+  color: var(--ink);
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 1.02rem;
+  font-weight: 900;
+  line-height: 1.1;
+}
+
+.aboutMethodGroup > div:first-child p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.95rem;
+  line-height: 1.45;
+}
+
+.aboutMethodGroup .aboutDefinitionList {
+  gap: 9px;
+}
+
 .aboutStep,
 .aboutDefinition,
 .aboutTeamMember {
@@ -3178,10 +3340,87 @@ h2 {
   line-height: 1.55;
 }
 
+.obfuscatedEmail {
+  justify-self: start;
+  border: 1px solid rgba(179, 58, 39, 0.16);
+  border-radius: 999px;
+  background: rgba(255, 248, 235, 0.78);
+  color: var(--red);
+  font-family: "Courier New", monospace;
+  font-size: 0.72rem;
+  font-weight: 900;
+  line-height: 1;
+}
+
+.obfuscatedEmail {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 2px;
+  padding: 8px 10px;
+}
+
 .aboutCautionPanel {
   background:
     radial-gradient(circle at 100% 0%, rgba(240, 196, 91, 0.22), transparent 14rem),
     var(--panel);
+}
+
+.aboutResearchPanel {
+  width: 100%;
+  margin-bottom: 18px;
+}
+
+.aboutPdfBox {
+  display: grid;
+  grid-template-columns: 58px minmax(0, 1fr);
+  align-items: center;
+  column-gap: 14px;
+  row-gap: 5px;
+  border: 1px solid rgba(179, 58, 39, 0.22);
+  border-radius: 22px;
+  background:
+    linear-gradient(135deg, rgba(255, 255, 255, 0.58), rgba(255, 248, 233, 0.88)),
+    var(--cream);
+  padding: 16px;
+  box-shadow: var(--soft-shadow);
+}
+
+.aboutPdfBox:hover,
+.aboutPdfBox:focus-visible {
+  border-color: rgba(179, 58, 39, 0.42);
+  background:
+    linear-gradient(135deg, rgba(255, 255, 255, 0.72), rgba(255, 239, 216, 0.96)),
+    var(--cream);
+  outline: none;
+}
+
+.aboutPdfBox span {
+  grid-row: 1 / 3;
+  display: grid;
+  width: 58px;
+  height: 58px;
+  place-items: center;
+  border-radius: 16px;
+  background: var(--red);
+  color: var(--cream);
+  font-family: "Courier New", monospace;
+  font-size: 0.76rem;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+}
+
+.aboutPdfBox strong {
+  display: block;
+  color: var(--ink);
+  font-size: 1.08rem;
+  line-height: 1.15;
+}
+
+.aboutPdfBox p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.95rem;
+  line-height: 1.4;
 }
 
 @keyframes riseIn {

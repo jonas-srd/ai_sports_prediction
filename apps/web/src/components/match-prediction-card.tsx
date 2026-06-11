@@ -19,6 +19,7 @@ type MatchPredictionCardProps = {
   meta?: string | null;
   compact?: boolean;
   className: string;
+  dateLabel?: string | null;
   homeTeamLabel?: string;
   awayTeamLabel?: string;
   badge?: string;
@@ -36,6 +37,7 @@ export function MatchPredictionCard({
   meta,
   compact = false,
   className,
+  dateLabel,
   homeTeamLabel,
   awayTeamLabel,
   badge,
@@ -85,6 +87,7 @@ export function MatchPredictionCard({
           homeTeam={displayHomeTeam}
           awayTeam={displayAwayTeam}
           center={center}
+          dateLabel={dateLabel}
           locale={locale}
           meta={meta}
         />
@@ -327,29 +330,29 @@ const MATCH_CARD_TEXT = {
   de: {
     show: "Zeige",
     hide: "Verberge",
-    predictionsFor: "Vorhersagen fur",
+    predictionsFor: "Vorhersagen für",
     hidePredictions: "Vorhersagen ausblenden",
     showPredictions: "Vorhersagen anzeigen",
     modelPicks: "Modelltipps",
     noPredictions: "Noch keine Vorhersagen",
-    noPredictionsDescription: "Starte das Vorhersage-Skript fur dieses Spiel, um Modelltipps anzuzeigen.",
+    noPredictionsDescription: "Starte das Vorhersage-Skript für dieses Spiel, um Modelltipps anzuzeigen.",
     configuration: "Konfiguration",
     advancementShort: "Weiter",
     fullShort: "Vollzeit",
-    stageHelp: "Turnierphase, zu der diese Prognose gehort.",
-    validOutput: "Ausgabe ist fur die Wertung gultig.",
-    invalidOutput: "Ausgabe ist nicht fur die Wertung gultig",
-    invalid: "ungultig",
-    stillPending: "Fur dieses Spiel noch offen.",
+    stageHelp: "Turnierphase, zu der diese Prognose gehört.",
+    validOutput: "Ausgabe ist für die Wertung gültig.",
+    invalidOutput: "Ausgabe ist nicht für die Wertung gültig",
+    invalid: "ungültig",
+    stillPending: "Für dieses Spiel noch offen.",
     scored: "gewertet",
     stageOpening: "Prognose wurde einmal zu Beginn der Turnierphase erstellt, bevor die relevanten Spiele gespielt wurden.",
-    t24h: "Prognose wurde ungefahr 24 Stunden vor Anpfiff geplant.",
-    t2h: "Prognose wurde ungefahr 2 Stunden vor Anpfiff geplant.",
+    t24h: "Prognose wurde ungefähr 24 Stunden vor Anpfiff geplant.",
+    t2h: "Prognose wurde ungefähr 2 Stunden vor Anpfiff geplant.",
     forecastFallback: "ist der Prognosehorizont dieser Prognose.",
     openBook: "Das Modell durfte vor der Antwort konfigurierte Websuche/Tools verwenden.",
     closedBook: "Das Modell musste ohne Suche/Tools aus internem Wissen antworten.",
     accessFallback: "ist die gespeicherte Zugriffsbedingung dieser Prognose.",
-    directScore: "Der Prompt fragt nach dem wahrscheinlichsten Ergebnis plus den benotigten Wahrscheinlichkeiten.",
+    directScore: "Der Prompt fragt nach dem wahrscheinlichsten Ergebnis plus den benötigten Wahrscheinlichkeiten.",
     probabilistic: "Der Prompt betont kalibrierte Ergebniswahrscheinlichkeiten vor dem Ergebnis-Tipp.",
     promptFallback: "ist die gespeicherte Prompt-Strategie dieser Prognose.",
     awaitingEvaluation: "wartet auf Auswertung",
@@ -384,6 +387,6 @@ function formatScoreReason(value: string | null, locale: Locale): string | null 
   if (normalized.includes("goal difference")) return "richtige Tordifferenz";
   if (normalized.includes("tendency")) return "richtige Tendenz";
   if (normalized.includes("miss")) return "Fehltipp";
-  if (normalized.includes("invalid")) return "ungultig";
+  if (normalized.includes("invalid")) return "ungültig";
   return value;
 }

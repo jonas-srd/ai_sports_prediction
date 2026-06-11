@@ -51,17 +51,17 @@ const INSPECTOR_TEXT = {
   },
   de: {
     noPredictions: "Noch keine Modellprognosen",
-    noPredictionsDescription: "Fuhre nach dem Synchronisieren der Spiele `npm run predict:next` aus, um Modelldetails zu sehen.",
+    noPredictionsDescription: "Führe nach dem Synchronisieren der Spiele `npm run predict:next` aus, um Modelldetails zu sehen.",
     scores: "Punkte",
     exactHits: "Exakte Treffer",
     scoredPicks: "Gewertete Tipps",
     pending: "Offen",
-    noMatches: "Keine Spiele fur dieses Modell",
-    noMatchesDescription: "Synchronisiere weitere Spiele oder starte Prognosen fur dieses Modell.",
+    noMatches: "Keine Spiele für dieses Modell",
+    noMatchesDescription: "Synchronisiere weitere Spiele oder starte Prognosen für dieses Modell.",
     final: "Endstand",
-    reasoning: "Begrundung:",
+    reasoning: "Begründung:",
     notScored: "nicht gewertet",
-    invalid: "ungultig",
+    invalid: "ungültig",
     awaitingEvaluation: "wartet auf Auswertung",
     groupStage: "Gruppenphase"
   }
@@ -286,6 +286,6 @@ function formatScoreReason(value: string | null, locale: Locale): string | null 
   if (normalized.includes("goal difference")) return "richtige Tordifferenz";
   if (normalized.includes("tendency")) return "richtige Tendenz";
   if (normalized.includes("miss")) return "Fehltipp";
-  if (normalized.includes("invalid")) return "ungultig";
+  if (normalized.includes("invalid")) return "ungültig";
   return value;
 }

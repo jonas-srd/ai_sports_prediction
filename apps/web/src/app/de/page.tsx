@@ -6,7 +6,7 @@ export const revalidate = 0;
 
 export const metadata: Metadata = {
   title: "LLM SoccerArena",
-  description: "Vergleiche Fussball-Prognosen mehrerer LLMs."
+  description: "Vergleiche Fußball-Prognosen mehrerer LLMs."
 };
 
 export default function GermanHomePage() {

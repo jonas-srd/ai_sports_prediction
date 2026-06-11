@@ -24,12 +24,14 @@ import {
   type PromptStrategy,
   type TournamentStage
 } from "@/lib/benchmark-analytics";
+import type { DashboardSpecialPrediction } from "@/lib/dashboard-data";
 import { InfoTooltip, type TooltipLine } from "@/components/info-tooltip";
 import { type Locale } from "@/lib/i18n";
 
 type AnalyticsDashboardProps = {
   locale: Locale;
   predictions: BenchmarkDisplayPrediction[];
+  specialPredictions: DashboardSpecialPrediction[];
 };
 
 const METRICS = Object.keys(METRIC_DEFINITIONS) as AnalyticsMetric[];
@@ -47,15 +49,15 @@ const FILTER_HELP = {
     to: "Only include matches scheduled on or before this date."
   },
   de: {
-    metric: "Wahlt die Bewertungsmetrik fur das Modellranking, zum Beispiel Punkte, Brier Score oder Log Loss.",
+    metric: "Wählt die Bewertungsmetrik für das Modellranking, zum Beispiel Punkte, Brier Score oder Log Loss.",
     forecastHorizon: "Filtert Prognosen danach, wann sie erstellt wurden, etwa zum Phasenstart, 24 Stunden vor Anpfiff oder 2 Stunden vor Anpfiff.",
     access: "Filtert, ob das Modell nur aus eigenem Wissen prognostiziert hat oder Websuche/Tools nutzen durfte.",
     prompt: "Filtert das Prompt-Format der Prognose, zum Beispiel Direct Score oder Probabilistic Forecast.",
     stage: "Filtert Spiele nach Turnierphase, etwa Gruppenphase oder K.-o.-Runden.",
     model: "Zeigt Prognosen einer Modellkonfiguration oder vergleicht alle Modelle.",
     provider: "Filtert nach Modellanbieter oder Modellfamilie.",
-    from: "Berucksichtigt nur Spiele ab diesem Datum.",
-    to: "Berucksichtigt nur Spiele bis zu diesem Datum."
+    from: "Berücksichtigt nur Spiele ab diesem Datum.",
+    to: "Berücksichtigt nur Spiele bis zu diesem Datum."
   }
 } as const;
 
@@ -131,10 +133,10 @@ const ANALYTICS_TEXT = {
     noBenchmark: "Keine Benchmark-Prognosen",
     noBenchmarkTitle: "Die Analyse erscheint nach dem Erzeugen von Benchmark-Prognosen",
     noBenchmarkDescription: "Starte zuerst die Benchmark-Pipeline. Alte MVP-Prognosen werden auf dieser Seite bewusst ausgeschlossen.",
-    exportCsv: "Vollstandigen Datensatz als CSV exportieren",
+    exportCsv: "Vollständigen Datensatz als CSV exportieren",
     filters: "Filter",
     benchmarkSlice: "Benchmark-Ausschnitt",
-    reset: "Zurucksetzen",
+    reset: "Zurücksetzen",
     metric: "Metrik",
     forecastHorizon: "Prognosehorizont",
     access: "Zugriff",
@@ -151,20 +153,20 @@ const ANALYTICS_TEXT = {
     allModels: "Alle Modelle",
     allProviders: "Alle Anbieter",
     rankedLeaderboard: "Rangliste",
-    higherBetter: "Hoher ist besser",
+    higherBetter: "Höher ist besser",
     lowerBetter: "Niedriger ist besser",
     matchOrder: "Spielreihenfolge",
     performanceOverTime: "Leistung im Zeitverlauf",
-    clearHighlight: "Hervorhebung loschen",
+    clearHighlight: "Hervorhebung löschen",
     detailedLeaderboard: "Detaillierte Rangliste",
     modelConfigurations: "Modellkonfigurationen",
     rows: "Zeilen",
     predictions: "Prognosen",
-    noRowsFilters: "Keine Zeilen passen zu den ausgewahlten Filtern.",
-    noScoredValues: "Noch keine gewerteten Werte fur diese Metrik und Filterauswahl.",
-    noTableRows: "Keine Tabellenzeilen passen zu den ausgewahlten Filtern.",
+    noRowsFilters: "Keine Zeilen passen zu den ausgewählten Filtern.",
+    noScoredValues: "Noch keine gewerteten Werte für diese Metrik und Filterauswahl.",
+    noTableRows: "Keine Tabellenzeilen passen zu den ausgewählten Filtern.",
     noData: "Keine Daten",
-    selectedMetric: "Ausgewahlte Metrik",
+    selectedMetric: "Ausgewählte Metrik",
     rank: "Rang",
     horizon: "Horizont",
     scored: "Gewertet",
@@ -175,28 +177,28 @@ const ANALYTICS_TEXT = {
     exact: "Exakt",
     gdAcc: "TD-Gen.",
     totalGoalsErr: "Torfehler",
-    invalid: "Ungultig",
+    invalid: "Ungültig",
     repair: "Reparatur",
     search: "Suche",
     config: "Konfiguration",
     stageCoverage: "Phasenabdeckung",
     predictionsTotal: "Prognosen insgesamt in dieser Konfiguration.",
     evaluationScores: "Spiel(e) haben aktuell Auswertungen.",
-    currentStages: "die aktuell ausgewahlten Phasen",
+    currentStages: "die aktuell ausgewählten Phasen",
     stageOpening: "Stage Opening bedeutet, dass diese Prognosen einmal zu Beginn der Phase erzeugt wurden.",
-    t24h: "T_24H bedeutet, dass die Prognose ungefahr 24 Stunden vor Anpfiff geplant wurde.",
-    t2h: "T_2H bedeutet, dass die Prognose ungefahr 2 Stunden vor Anpfiff geplant wurde.",
+    t24h: "T_24H bedeutet, dass die Prognose ungefähr 24 Stunden vor Anpfiff geplant wurde.",
+    t2h: "T_2H bedeutet, dass die Prognose ungefähr 2 Stunden vor Anpfiff geplant wurde.",
     forecastFallback: "ist der Prognosehorizont dieser Konfiguration.",
     openBook: "Open Book bedeutet, dass das Modell konfigurierte Websuche/Tools verwenden durfte.",
     closedBook: "Closed Book bedeutet, dass das Modell ohne Suche/Tools aus internem Wissen antworten musste.",
     accessFallback: "ist die Zugriffsbedingung dieser Konfiguration.",
-    directScore: "Direct Score fragt nach dem wahrscheinlichsten Ergebnis plus benotigten Wahrscheinlichkeiten.",
+    directScore: "Direct Score fragt nach dem wahrscheinlichsten Ergebnis plus benötigten Wahrscheinlichkeiten.",
     probabilistic: "Probabilistic Forecast betont kalibrierte Ergebniswahrscheinlichkeiten vor dem Ergebnis-Tipp.",
     promptFallback: "ist die Prompt-Strategie dieser Konfiguration."
   }
 } as const;
 
-export function AnalyticsDashboard({ locale, predictions }: AnalyticsDashboardProps) {
+export function AnalyticsDashboard({ locale, predictions, specialPredictions }: AnalyticsDashboardProps) {
   const text = ANALYTICS_TEXT[locale];
   const defaultFilters = useMemo(() => getDefaultAnalyticsFilters(predictions), [predictions]);
   const [filters, setFilters] = useState<AnalyticsFilters>(defaultFilters);
@@ -237,7 +239,7 @@ export function AnalyticsDashboard({ locale, predictions }: AnalyticsDashboardPr
           <button
             className="clearFilterButton exportCsvButton"
             type="button"
-            onClick={() => exportFullDatasetCsv(predictions)}
+            onClick={() => exportFullDatasetCsv(predictions, specialPredictions)}
           >
             {text.exportCsv}
           </button>
@@ -857,7 +859,7 @@ function formatMetricLabel(metric: AnalyticsMetric, locale: Locale): string {
     case "advancement_accuracy":
       return "Weiterkommens-Genauigkeit";
     case "invalid_output_rate":
-      return "Rate ungultiger Ausgaben";
+      return "Rate ungültiger Ausgaben";
     case "repair_rate":
       return "Reparaturrate";
     case "normalization_rate":
@@ -894,7 +896,7 @@ function formatMetricShortLabel(metric: AnalyticsMetric, locale: Locale): string
     case "advancement_accuracy":
       return "Weiter";
     case "invalid_output_rate":
-      return "Ungultig";
+      return "Ungültig";
     case "repair_rate":
       return "Reparatur";
     case "normalization_rate":
@@ -929,8 +931,12 @@ function sortedUnique(values: string[]): string[] {
   return [...new Set(values.filter(Boolean))].sort((a, b) => a.localeCompare(b));
 }
 
-function exportFullDatasetCsv(predictions: BenchmarkDisplayPrediction[]): void {
+function exportFullDatasetCsv(
+  predictions: BenchmarkDisplayPrediction[],
+  specialPredictions: DashboardSpecialPrediction[]
+): void {
   const headers = [
+    "Record type",
     "Prediction ID",
     "Match ID",
     "Match date",
@@ -983,9 +989,19 @@ function exportFullDatasetCsv(predictions: BenchmarkDisplayPrediction[]): void {
     "Goal difference abs error 90",
     "Scores 90",
     "Advancement accuracy",
-    "Score/prob argmax consistent 90"
+    "Score/prob argmax consistent 90",
+    "Special question ID",
+    "Special question label",
+    "Special prediction type",
+    "Special k",
+    "Special final pick",
+    "Special final picks",
+    "Special is correct",
+    "Special question points",
+    "Special reasoning summary"
   ];
   const rows = predictions.map((prediction) => [
+    "match_prediction",
     prediction.id,
     prediction.matchId,
     prediction.matchDate,
@@ -1038,13 +1054,86 @@ function exportFullDatasetCsv(predictions: BenchmarkDisplayPrediction[]): void {
     prediction.goalDifferenceAbsError90,
     prediction.kicktippPoints90,
     prediction.advancementAccuracy,
-    prediction.scoreResultMatchesProbArgmax90
+    prediction.scoreResultMatchesProbArgmax90,
+    "",
+    "",
+    "",
+    null,
+    "",
+    "",
+    null,
+    null,
+    ""
+  ]);
+  const specialRows = specialPredictions.map((prediction) => [
+    "special_question_prediction",
+    prediction.id,
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    prediction.model,
+    prediction.provider,
+    prediction.predictorId,
+    prediction.forecastHorizon,
+    formatCondition(prediction.accessCondition),
+    formatCondition(prediction.promptStrategy),
+    prediction.sampleId,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    prediction.confidence,
+    prediction.reasoningSummary,
+    prediction.validationStatus,
+    prediction.isValidForScoring,
+    null,
+    null,
+    "",
+    "",
+    "",
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    prediction.questionId,
+    prediction.questionLabel,
+    prediction.predictionType,
+    prediction.k,
+    prediction.finalPick ?? "",
+    prediction.finalPicks.join(" | "),
+    prediction.isCorrect,
+    prediction.questionScorePoints,
+    prediction.reasoningSummary
   ]);
 
   downloadCsv(
     `worldcup2026-full-prediction-dataset-${new Date().toISOString().slice(0, 10)}.csv`,
     headers,
-    rows
+    [...rows, ...specialRows]
   );
 }
 

@@ -116,8 +116,8 @@ export const commonText = {
     modelPicks: "Modelltipps",
     setup: "Setup",
     question: "Frage",
-    reason: "Begrundung",
-    reasoning: "Begrundung",
+    reason: "Begründung",
+    reasoning: "Begründung",
     confidence: "Konfidenz",
     validation: "Validierung",
     evaluation: "Auswertung",
@@ -159,7 +159,7 @@ export const routeText = {
     analytics: {
       eyebrow: "WorldCupForecastBench 2026",
       title: "Analyse",
-      description: "Vergleiche Modellleistung nach Horizont, Zugriff, Prompt-Strategie, Turnierphase und Zuverlassigkeitsmetriken."
+      description: "Vergleiche Modellleistung nach Horizont, Zugriff, Prompt-Strategie, Turnierphase und Zuverlässigkeitsmetriken."
     }
   }
 } as const;

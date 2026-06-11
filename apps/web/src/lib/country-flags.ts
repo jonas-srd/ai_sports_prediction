@@ -1,5 +1,5 @@
 /**
- * Purpose: Maps football team names to small flag image URLs.
+ * Purpose: Maps soccer team names to small flag image URLs.
  * The UI receives team names from football-data.org, so this keeps display logic out of pages.
  */
 import type { Locale } from "@/lib/i18n";

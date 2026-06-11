@@ -12,7 +12,7 @@ import {
   type GroupStanding
 } from "@/lib/match-display";
 import { MatchPredictionCard } from "@/components/match-prediction-card";
-import { formatMatchTime } from "@/lib/timezone";
+import { formatMatchTime, formatShortDate } from "@/lib/timezone";
 import { useTimeZone } from "@/components/time-zone-provider";
 import type { Locale } from "@/lib/i18n";
 
@@ -82,7 +82,7 @@ const TOURNAMENT_TEXT = {
     thirdPlace: "Spiel um Platz 3",
     knockout: "K.-o.-Phase",
     noFixtures: "Noch keine K.-o.-Spiele geladen",
-    noFixturesDescription: "Synchronisiere die Spiele, sobald der Turnierbaum verfugbar ist, um ihn hier anzuzeigen.",
+    noFixturesDescription: "Synchronisiere die Spiele, sobald der Turnierbaum verfügbar ist, um ihn hier anzuzeigen.",
     match: "Spiel",
     fixtureNotLoaded: "Spiel nicht geladen",
     roundOf32: "Runde der 32",
@@ -313,6 +313,7 @@ function renderBracketMatch(
       badge={`${text.match} ${matchNumber}`}
       center={formatMatchCenter(displayMatch, timeZone)}
       className={`bracketGameCard bracketGameCard-${variant}`}
+      dateLabel={formatMatchDate(displayMatch, timeZone, locale)}
       key={matchNumber}
       locale={locale}
       match={displayMatch}
@@ -338,6 +339,10 @@ function formatMatchCenter(match: DashboardMatch, timeZone: string): string {
   }
 
   return formatMatchTime(match.utcDate, timeZone);
+}
+
+function formatMatchDate(match: DashboardMatch, timeZone: string, locale: Locale): string | null {
+  return formatShortDate(match.utcDate, timeZone, locale === "de" ? "de-DE" : "en-GB");
 }
 
 function formatMatchMeta(match: DashboardMatch, locale: Locale): string | null {

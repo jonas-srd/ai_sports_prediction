@@ -50,6 +50,7 @@ export function MatchesPageContent({ locale }: { locale: Locale }) {
 
 export function AnalyticsPageContent({ locale }: { locale: Locale }) {
   const predictions = getBenchmarkPredictions().filter((prediction) => !prediction.id.startsWith("legacy:"));
+  const specialPredictions = getSpecialQuestionPredictions();
   const text = routeText[locale].analytics;
 
   return (
@@ -62,7 +63,7 @@ export function AnalyticsPageContent({ locale }: { locale: Locale }) {
         </p>
       </section>
 
-      <AnalyticsDashboard locale={locale} predictions={predictions} />
+      <AnalyticsDashboard locale={locale} predictions={predictions} specialPredictions={specialPredictions} />
     </main>
   );
 }
@@ -72,4 +73,3 @@ export function TournamentTreePageContent({ locale }: { locale: Locale }) {
 
   return <TournamentTreeView locale={locale} matches={matches} />;
 }
-
