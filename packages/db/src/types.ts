@@ -89,6 +89,24 @@ export type ValidationStatus =
   | "api_error"
   | "timeout";
 
+export type SpecialPredictionType = "single_choice" | "multi_choice_fixed_k";
+
+export type SpecialPredictionValidationStatus =
+  | "valid"
+  | "normalized"
+  | "repaired"
+  | "repaired_and_normalized"
+  | "invalid_json"
+  | "invalid_schema"
+  | "invalid_probability_range"
+  | "invalid_probability_sum"
+  | "invalid_candidate"
+  | "invalid_pick_count"
+  | "invalid_rank"
+  | "invalid_after_repair"
+  | "api_error"
+  | "timeout";
+
 export type MatchResultClass = "home" | "draw" | "away";
 
 export type AdvancerClass = "home" | "away";
@@ -257,4 +275,125 @@ export type NewPredictionEvaluationRow = Partial<Omit<PredictionEvaluationRow, "
   id?: string;
   prediction_id: string;
   evaluated_at_utc?: string;
+};
+
+export type SpecialPredictionIdentity = {
+  question_id: string;
+  predictor_type: PredictorType;
+  predictor_id: string;
+  provider: string;
+  model_id: string | null;
+  model_version: string | null;
+  access_condition: AccessCondition;
+  prompt_strategy: PromptStrategy;
+  forecast_horizon: ForecastHorizon;
+  sample_id: number;
+};
+
+export type SpecialPredictionOptionRow = {
+  id: string;
+  prediction_id: string;
+  question_id: string;
+  candidate_id: string;
+  candidate_label: string;
+  candidate_type: string;
+  probability: number;
+  rank: number;
+  is_final_pick: boolean | number;
+  created_at: string;
+};
+
+export type NewSpecialPredictionOptionRow = Omit<
+  SpecialPredictionOptionRow,
+  "id" | "prediction_id" | "created_at"
+> & {
+  id?: string;
+};
+
+export type SpecialPredictionRow = SpecialPredictionIdentity & {
+  id: string;
+  run_id: string | null;
+  question_label: string;
+  prediction_type: SpecialPredictionType;
+  k: number | null;
+  actual_prediction_time_utc: string | null;
+  prompt_template_id: string | null;
+  prompt_hash: string | null;
+  raw_prompt: string | null;
+  raw_response: unknown;
+  parsed_response: unknown;
+  response_id: string | null;
+  temperature: number | null;
+  top_p: number | null;
+  max_tokens: number | null;
+  latency_ms: number | null;
+  input_tokens: number | null;
+  output_tokens: number | null;
+  cost_usd: number | null;
+  final_pick: string | null;
+  final_picks: unknown;
+  confidence: number | null;
+  reasoning_summary: string | null;
+  validation_status: SpecialPredictionValidationStatus | null;
+  is_valid_for_scoring: boolean | number;
+  repair_attempted: boolean | number;
+  repair_raw_response: unknown;
+  normalization_applied: boolean | number;
+  normalized_fields: unknown;
+  validation_errors: unknown;
+  probability_sum_original: number | null;
+  probability_sum_final: number | null;
+  tools_enabled: boolean | number;
+  tool_type: string | null;
+  tool_calls_observed: boolean | number | null;
+  num_tool_calls: number | null;
+  tool_trace_available: boolean | number;
+  tool_trace: unknown;
+  open_book_compliance: OpenBookCompliance;
+  created_at: string;
+  updated_at: string;
+  options?: SpecialPredictionOptionRow[];
+};
+
+export type NewSpecialPredictionRow = SpecialPredictionIdentity & {
+  id?: string;
+  run_id?: string | null;
+  question_label: string;
+  prediction_type: SpecialPredictionType;
+  k?: number | null;
+  actual_prediction_time_utc?: string | null;
+  prompt_template_id?: string | null;
+  prompt_hash?: string | null;
+  raw_prompt?: string | null;
+  raw_response: unknown;
+  parsed_response?: unknown;
+  response_id?: string | null;
+  temperature?: number | null;
+  top_p?: number | null;
+  max_tokens?: number | null;
+  latency_ms?: number | null;
+  input_tokens?: number | null;
+  output_tokens?: number | null;
+  cost_usd?: number | null;
+  final_pick?: string | null;
+  final_picks?: unknown;
+  confidence?: number | null;
+  reasoning_summary?: string | null;
+  validation_status?: SpecialPredictionValidationStatus | null;
+  is_valid_for_scoring?: boolean | number;
+  repair_attempted?: boolean | number;
+  repair_raw_response?: unknown;
+  normalization_applied?: boolean | number;
+  normalized_fields?: unknown;
+  validation_errors?: unknown;
+  probability_sum_original?: number | null;
+  probability_sum_final?: number | null;
+  tools_enabled?: boolean | number;
+  tool_type?: string | null;
+  tool_calls_observed?: boolean | number | null;
+  num_tool_calls?: number | null;
+  tool_trace_available?: boolean | number;
+  tool_trace?: unknown;
+  open_book_compliance?: OpenBookCompliance;
+  options?: NewSpecialPredictionOptionRow[];
 };

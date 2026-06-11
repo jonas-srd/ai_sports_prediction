@@ -61,21 +61,21 @@ function TeamFlag({ teamName }: { teamName: string }) {
 }
 
 function getSeedFlagLabel(teamName: string): string | null {
-  const winnerGroup = teamName.match(/^Sieger Gruppe ([A-L])$/);
+  const winnerGroup = teamName.match(/^Winner Group ([A-L])$/);
   if (winnerGroup) return `1${winnerGroup[1]}`;
 
-  const runnerUpGroup = teamName.match(/^Zweiter Gruppe ([A-L])$/);
+  const runnerUpGroup = teamName.match(/^Runner-up Group ([A-L])$/);
   if (runnerUpGroup) return `2${runnerUpGroup[1]}`;
 
-  if (teamName.startsWith("Bester Dritter ")) return "3x";
+  if (teamName.startsWith("Best Third ")) return "3x";
 
-  const winnerMatch = teamName.match(/^Sieger Spiel (\d+)$/);
+  const winnerMatch = teamName.match(/^Winner Match (\d+)$/);
   if (winnerMatch) return `W${winnerMatch[1]}`;
 
-  const loserMatch = teamName.match(/^Verlierer Spiel (\d+)$/);
+  const loserMatch = teamName.match(/^Loser Match (\d+)$/);
   if (loserMatch) return `V${loserMatch[1]}`;
 
-  if (teamName === "Offen") return "?";
+  if (teamName === "TBD") return "?";
 
   return null;
 }

@@ -76,6 +76,16 @@ test("ranks lower-is-better metrics ascending", () => {
   assert.equal(rows[0].metricValue, 0.1);
 });
 
+test("keeps the same rank for tied metric values", () => {
+  const rows = buildAnalyticsLeaderboard([
+    basePrediction,
+    { ...basePrediction, id: "p2", predictorId: "model-b", model: "Model B" },
+    { ...basePrediction, id: "p3", predictorId: "model-c", model: "Model C" }
+  ], "top_outcome_accuracy_90");
+
+  assert.deepEqual(rows.map((row) => row.rank), [1, 1, 1]);
+});
+
 test("filters by benchmark condition", () => {
   const records = [
     basePrediction,

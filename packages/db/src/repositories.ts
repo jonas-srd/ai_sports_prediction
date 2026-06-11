@@ -9,8 +9,13 @@ import type {
   ModelRow,
   NewBenchmarkPredictionRow,
   NewPredictionEvaluationRow,
+  NewSpecialPredictionOptionRow,
+  NewSpecialPredictionRow,
   PredictionEvaluationRow,
-  PredictionRow
+  PredictionRow,
+  SpecialPredictionIdentity,
+  SpecialPredictionOptionRow,
+  SpecialPredictionRow
 } from "./types";
 import type { SqliteDb } from "./sqlite";
 import { randomUUID } from "node:crypto";
@@ -564,6 +569,330 @@ export async function getBenchmarkPredictionById(
   return row ? parseBenchmarkPredictionRow(row) : null;
 }
 
+export function createSpecialPredictionRun(
+  db: SqliteDb,
+  run: { id?: string; forecast_horizon: string; sample_id: number; started_at_utc?: string }
+): string {
+  const id = run.id ?? randomUUID();
+
+  db.prepare(`
+    insert into special_prediction_runs (
+      id,
+      forecast_horizon,
+      sample_id,
+      started_at_utc
+    )
+    values (
+      @id,
+      @forecast_horizon,
+      @sample_id,
+      @started_at_utc
+    )
+    on conflict(id) do update set
+      forecast_horizon = excluded.forecast_horizon,
+      sample_id = excluded.sample_id,
+      started_at_utc = excluded.started_at_utc
+  `).run({
+    id,
+    forecast_horizon: run.forecast_horizon,
+    sample_id: run.sample_id,
+    started_at_utc: run.started_at_utc ?? new Date().toISOString()
+  });
+
+  return id;
+}
+
+export function getExistingSpecialPredictionStatus(
+  db: SqliteDb,
+  identity: Pick<
+    SpecialPredictionIdentity,
+    "question_id" | "predictor_type" | "predictor_id" | "forecast_horizon" | "access_condition" | "prompt_strategy" | "sample_id"
+  >
+): { validation_status: string | null; is_valid_for_scoring: number } | null {
+  const row = db.prepare(`
+    select validation_status, is_valid_for_scoring
+    from special_predictions
+    where question_id = @question_id
+      and predictor_type = @predictor_type
+      and predictor_id = @predictor_id
+      and forecast_horizon = @forecast_horizon
+      and access_condition = @access_condition
+      and prompt_strategy = @prompt_strategy
+      and sample_id = @sample_id
+  `).get(identity) as { validation_status: string | null; is_valid_for_scoring: number } | undefined;
+
+  return row ?? null;
+}
+
+export async function upsertSpecialPrediction(
+  db: SqliteDb,
+  prediction: NewSpecialPredictionRow
+): Promise<string> {
+  const id = prediction.id ?? randomUUID();
+  const transaction = db.transaction((row: NewSpecialPredictionRow & { id: string }) => {
+    db.prepare(`
+      insert into special_predictions (
+        id,
+        run_id,
+        question_id,
+        question_label,
+        prediction_type,
+        k,
+        predictor_type,
+        predictor_id,
+        provider,
+        model_id,
+        model_version,
+        access_condition,
+        prompt_strategy,
+        forecast_horizon,
+        sample_id,
+        actual_prediction_time_utc,
+        prompt_template_id,
+        prompt_hash,
+        raw_prompt,
+        raw_response,
+        parsed_response,
+        response_id,
+        temperature,
+        top_p,
+        max_tokens,
+        latency_ms,
+        input_tokens,
+        output_tokens,
+        cost_usd,
+        final_pick,
+        final_picks,
+        confidence,
+        reasoning_summary,
+        validation_status,
+        is_valid_for_scoring,
+        repair_attempted,
+        repair_raw_response,
+        normalization_applied,
+        normalized_fields,
+        validation_errors,
+        probability_sum_original,
+        probability_sum_final,
+        tools_enabled,
+        tool_type,
+        tool_calls_observed,
+        num_tool_calls,
+        tool_trace_available,
+        tool_trace,
+        open_book_compliance,
+        updated_at
+      )
+      values (
+        @id,
+        @run_id,
+        @question_id,
+        @question_label,
+        @prediction_type,
+        @k,
+        @predictor_type,
+        @predictor_id,
+        @provider,
+        @model_id,
+        @model_version,
+        @access_condition,
+        @prompt_strategy,
+        @forecast_horizon,
+        @sample_id,
+        @actual_prediction_time_utc,
+        @prompt_template_id,
+        @prompt_hash,
+        @raw_prompt,
+        @raw_response,
+        @parsed_response,
+        @response_id,
+        @temperature,
+        @top_p,
+        @max_tokens,
+        @latency_ms,
+        @input_tokens,
+        @output_tokens,
+        @cost_usd,
+        @final_pick,
+        @final_picks,
+        @confidence,
+        @reasoning_summary,
+        @validation_status,
+        @is_valid_for_scoring,
+        @repair_attempted,
+        @repair_raw_response,
+        @normalization_applied,
+        @normalized_fields,
+        @validation_errors,
+        @probability_sum_original,
+        @probability_sum_final,
+        @tools_enabled,
+        @tool_type,
+        @tool_calls_observed,
+        @num_tool_calls,
+        @tool_trace_available,
+        @tool_trace,
+        @open_book_compliance,
+        current_timestamp
+      )
+      on conflict(
+        question_id,
+        predictor_type,
+        predictor_id,
+        forecast_horizon,
+        access_condition,
+        prompt_strategy,
+        sample_id
+      ) do update set
+        run_id = excluded.run_id,
+        question_label = excluded.question_label,
+        prediction_type = excluded.prediction_type,
+        k = excluded.k,
+        provider = excluded.provider,
+        model_id = excluded.model_id,
+        model_version = excluded.model_version,
+        actual_prediction_time_utc = excluded.actual_prediction_time_utc,
+        prompt_template_id = excluded.prompt_template_id,
+        prompt_hash = excluded.prompt_hash,
+        raw_prompt = excluded.raw_prompt,
+        raw_response = excluded.raw_response,
+        parsed_response = excluded.parsed_response,
+        response_id = excluded.response_id,
+        temperature = excluded.temperature,
+        top_p = excluded.top_p,
+        max_tokens = excluded.max_tokens,
+        latency_ms = excluded.latency_ms,
+        input_tokens = excluded.input_tokens,
+        output_tokens = excluded.output_tokens,
+        cost_usd = excluded.cost_usd,
+        final_pick = excluded.final_pick,
+        final_picks = excluded.final_picks,
+        confidence = excluded.confidence,
+        reasoning_summary = excluded.reasoning_summary,
+        validation_status = excluded.validation_status,
+        is_valid_for_scoring = excluded.is_valid_for_scoring,
+        repair_attempted = excluded.repair_attempted,
+        repair_raw_response = excluded.repair_raw_response,
+        normalization_applied = excluded.normalization_applied,
+        normalized_fields = excluded.normalized_fields,
+        validation_errors = excluded.validation_errors,
+        probability_sum_original = excluded.probability_sum_original,
+        probability_sum_final = excluded.probability_sum_final,
+        tools_enabled = excluded.tools_enabled,
+        tool_type = excluded.tool_type,
+        tool_calls_observed = excluded.tool_calls_observed,
+        num_tool_calls = excluded.num_tool_calls,
+        tool_trace_available = excluded.tool_trace_available,
+        tool_trace = excluded.tool_trace,
+        open_book_compliance = excluded.open_book_compliance,
+        updated_at = current_timestamp
+    `).run(toSpecialPredictionParams(row));
+
+    const stored = db.prepare(`
+      select id
+      from special_predictions
+      where question_id = @question_id
+        and predictor_type = @predictor_type
+        and predictor_id = @predictor_id
+        and forecast_horizon = @forecast_horizon
+        and access_condition = @access_condition
+        and prompt_strategy = @prompt_strategy
+        and sample_id = @sample_id
+    `).get({
+      question_id: row.question_id,
+      predictor_type: row.predictor_type,
+      predictor_id: row.predictor_id,
+      forecast_horizon: row.forecast_horizon,
+      access_condition: row.access_condition,
+      prompt_strategy: row.prompt_strategy,
+      sample_id: row.sample_id
+    }) as { id: string } | undefined;
+
+    const predictionId = stored?.id ?? row.id;
+    db.prepare("delete from special_prediction_options where prediction_id = ?").run(predictionId);
+
+    const insertOption = db.prepare(`
+      insert into special_prediction_options (
+        id,
+        prediction_id,
+        question_id,
+        candidate_id,
+        candidate_label,
+        candidate_type,
+        probability,
+        rank,
+        is_final_pick
+      )
+      values (
+        @id,
+        @prediction_id,
+        @question_id,
+        @candidate_id,
+        @candidate_label,
+        @candidate_type,
+        @probability,
+        @rank,
+        @is_final_pick
+      )
+    `);
+
+    for (const option of row.options ?? []) {
+      insertOption.run(toSpecialPredictionOptionParams(predictionId, option));
+    }
+  });
+
+  transaction({ ...prediction, id });
+
+  const row = db.prepare(`
+    select id
+    from special_predictions
+    where question_id = @question_id
+      and predictor_type = @predictor_type
+      and predictor_id = @predictor_id
+      and forecast_horizon = @forecast_horizon
+      and access_condition = @access_condition
+      and prompt_strategy = @prompt_strategy
+      and sample_id = @sample_id
+  `).get({
+    question_id: prediction.question_id,
+    predictor_type: prediction.predictor_type,
+    predictor_id: prediction.predictor_id,
+    forecast_horizon: prediction.forecast_horizon,
+    access_condition: prediction.access_condition,
+    prompt_strategy: prediction.prompt_strategy,
+    sample_id: prediction.sample_id
+  }) as { id: string } | undefined;
+
+  return row?.id ?? id;
+}
+
+export async function getSpecialPredictionById(
+  db: SqliteDb,
+  predictionId: string
+): Promise<SpecialPredictionRow | null> {
+  const row = db.prepare(`
+    select *
+    from special_predictions
+    where id = ?
+  `).get(predictionId) as SpecialPredictionDbRow | undefined;
+
+  if (!row) {
+    return null;
+  }
+
+  const options = db.prepare(`
+    select *
+    from special_prediction_options
+    where prediction_id = ?
+    order by rank asc
+  `).all(predictionId) as SpecialPredictionOptionRow[];
+
+  return {
+    ...parseSpecialPredictionRow(row),
+    options
+  };
+}
+
 export async function upsertPredictionEvaluation(
   db: SqliteDb,
   evaluation: NewPredictionEvaluationRow
@@ -926,6 +1255,19 @@ type BenchmarkPredictionWithMatchDbRow = BenchmarkPredictionDbRow & {
   match_is_knockout: number;
 };
 
+type SpecialPredictionDbRow = Omit<
+  SpecialPredictionRow,
+  "raw_response" | "parsed_response" | "final_picks" | "repair_raw_response" | "normalized_fields" | "validation_errors" | "tool_trace" | "options"
+> & {
+  raw_response: string;
+  parsed_response: string | null;
+  final_picks: string;
+  repair_raw_response: string | null;
+  normalized_fields: string;
+  validation_errors: string;
+  tool_trace: string | null;
+};
+
 type BenchmarkPredictionParams = Required<Pick<NewBenchmarkPredictionRow, "id">> & BenchmarkPredictionIdentity & {
   run_id: string | null;
   scheduled_prediction_time_utc: string | null;
@@ -974,6 +1316,47 @@ type BenchmarkPredictionParams = Required<Pick<NewBenchmarkPredictionRow, "id">>
   prob_sum_full_final: number | null;
   prob_sum_advancement_original: number | null;
   prob_sum_advancement_final: number | null;
+  tools_enabled: number;
+  tool_type: string | null;
+  tool_calls_observed: number | null;
+  num_tool_calls: number | null;
+  tool_trace_available: number;
+  tool_trace: string | null;
+  open_book_compliance: string;
+};
+
+type SpecialPredictionParams = Required<Pick<NewSpecialPredictionRow, "id">> & SpecialPredictionIdentity & {
+  run_id: string | null;
+  question_label: string;
+  prediction_type: string;
+  k: number | null;
+  actual_prediction_time_utc: string | null;
+  prompt_template_id: string | null;
+  prompt_hash: string | null;
+  raw_prompt: string | null;
+  raw_response: string;
+  parsed_response: string | null;
+  response_id: string | null;
+  temperature: number | null;
+  top_p: number | null;
+  max_tokens: number | null;
+  latency_ms: number | null;
+  input_tokens: number | null;
+  output_tokens: number | null;
+  cost_usd: number | null;
+  final_pick: string | null;
+  final_picks: string;
+  confidence: number | null;
+  reasoning_summary: string | null;
+  validation_status: string | null;
+  is_valid_for_scoring: number;
+  repair_attempted: number;
+  repair_raw_response: string | null;
+  normalization_applied: number;
+  normalized_fields: string;
+  validation_errors: string;
+  probability_sum_original: number | null;
+  probability_sum_final: number | null;
   tools_enabled: number;
   tool_type: string | null;
   tool_calls_observed: number | null;
@@ -1079,6 +1462,79 @@ function toBenchmarkPredictionParams(
   };
 }
 
+function toSpecialPredictionParams(
+  prediction: NewSpecialPredictionRow & { id: string }
+): SpecialPredictionParams {
+  return {
+    id: prediction.id,
+    run_id: prediction.run_id ?? null,
+    question_id: prediction.question_id,
+    question_label: prediction.question_label,
+    prediction_type: prediction.prediction_type,
+    k: prediction.k ?? null,
+    predictor_type: prediction.predictor_type,
+    predictor_id: prediction.predictor_id,
+    provider: prediction.provider,
+    model_id: prediction.model_id ?? null,
+    model_version: prediction.model_version ?? null,
+    access_condition: prediction.access_condition,
+    prompt_strategy: prediction.prompt_strategy,
+    forecast_horizon: prediction.forecast_horizon,
+    sample_id: prediction.sample_id,
+    actual_prediction_time_utc: prediction.actual_prediction_time_utc ?? null,
+    prompt_template_id: prediction.prompt_template_id ?? null,
+    prompt_hash: prediction.prompt_hash ?? null,
+    raw_prompt: prediction.raw_prompt ?? null,
+    raw_response: serializeJson(prediction.raw_response),
+    parsed_response: serializeNullableJson(prediction.parsed_response),
+    response_id: prediction.response_id ?? null,
+    temperature: prediction.temperature ?? null,
+    top_p: prediction.top_p ?? null,
+    max_tokens: prediction.max_tokens ?? null,
+    latency_ms: prediction.latency_ms ?? null,
+    input_tokens: prediction.input_tokens ?? null,
+    output_tokens: prediction.output_tokens ?? null,
+    cost_usd: prediction.cost_usd ?? null,
+    final_pick: prediction.final_pick ?? null,
+    final_picks: serializeJson(prediction.final_picks ?? []),
+    confidence: prediction.confidence ?? null,
+    reasoning_summary: prediction.reasoning_summary ?? null,
+    validation_status: prediction.validation_status ?? null,
+    is_valid_for_scoring: toInteger(prediction.is_valid_for_scoring),
+    repair_attempted: toInteger(prediction.repair_attempted),
+    repair_raw_response: serializeNullableJson(prediction.repair_raw_response),
+    normalization_applied: toInteger(prediction.normalization_applied),
+    normalized_fields: serializeJson(prediction.normalized_fields ?? []),
+    validation_errors: serializeJson(prediction.validation_errors ?? []),
+    probability_sum_original: prediction.probability_sum_original ?? null,
+    probability_sum_final: prediction.probability_sum_final ?? null,
+    tools_enabled: toInteger(prediction.tools_enabled),
+    tool_type: prediction.tool_type ?? null,
+    tool_calls_observed: toNullableInteger(prediction.tool_calls_observed),
+    num_tool_calls: prediction.num_tool_calls ?? null,
+    tool_trace_available: toInteger(prediction.tool_trace_available),
+    tool_trace: serializeNullableJson(prediction.tool_trace),
+    open_book_compliance: prediction.open_book_compliance ?? "not_applicable"
+  };
+}
+
+function toSpecialPredictionOptionParams(
+  predictionId: string,
+  option: NewSpecialPredictionOptionRow
+): Record<string, string | number> {
+  return {
+    id: option.id ?? randomUUID(),
+    prediction_id: predictionId,
+    question_id: option.question_id,
+    candidate_id: option.candidate_id,
+    candidate_label: option.candidate_label,
+    candidate_type: option.candidate_type,
+    probability: option.probability,
+    rank: option.rank,
+    is_final_pick: toInteger(option.is_final_pick)
+  };
+}
+
 function toPredictionEvaluationParams(
   evaluation: NewPredictionEvaluationRow & { id: string }
 ): Record<string, string | number | null> {
@@ -1116,6 +1572,19 @@ function parseBenchmarkPredictionRow(row: BenchmarkPredictionDbRow): BenchmarkPr
   return {
     ...row,
     raw_response: parseJson(row.raw_response),
+    repair_raw_response: row.repair_raw_response ? parseJson(row.repair_raw_response) : null,
+    normalized_fields: parseJson(row.normalized_fields),
+    validation_errors: parseJson(row.validation_errors),
+    tool_trace: row.tool_trace ? parseJson(row.tool_trace) : null
+  };
+}
+
+function parseSpecialPredictionRow(row: SpecialPredictionDbRow): SpecialPredictionRow {
+  return {
+    ...row,
+    raw_response: parseJson(row.raw_response),
+    parsed_response: row.parsed_response ? parseJson(row.parsed_response) : null,
+    final_picks: parseJson(row.final_picks),
     repair_raw_response: row.repair_raw_response ? parseJson(row.repair_raw_response) : null,
     normalized_fields: parseJson(row.normalized_fields),
     validation_errors: parseJson(row.validation_errors),

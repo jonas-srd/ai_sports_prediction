@@ -122,6 +122,46 @@ Recalculate all existing finished-match scores after changing the scoring system
 npm run score -- --all
 ```
 
+Run benchmark predictions for all known group-stage matches with resumable skipping:
+
+```bash
+npm run benchmark:predict -- --group-stage --skip-existing --concurrency=3
+```
+
+Useful benchmark prediction filters:
+
+```bash
+npm run benchmark:predict -- --group-stage --access=closed_book --skip-existing --concurrency=5
+npm run benchmark:predict -- --group-stage --access=open_book --skip-existing --concurrency=2
+npm run benchmark:predict -- --group-stage --prompt-strategy=direct_score --skip-existing --concurrency=3
+```
+
+`--skip-existing` skips already valid predictions and retries invalid/API-error rows. Use `--skip-any-existing` only when you want to preserve every existing row regardless of validity.
+
+Run the one-time pre-tournament Kicktipp special-question predictions:
+
+```bash
+npm run special:predict -- --concurrency=2
+```
+
+This generates the 15 tournament-level questions once for the same active model roster and the same 2x2 `closed_book`/`open_book` x `direct_score`/`probabilistic_forecast` strategy design. The special predictions use the existing initial horizon name `STAGE_OPENING`; no `T_24H` or `T_1H` special predictions are generated.
+
+Special prediction rerun behavior:
+
+```bash
+npm run special:predict -- --access=closed_book --concurrency=3
+npm run special:predict -- --question=world_champion,semifinalists --model=openai/gpt-5.5
+npm run special:predict -- --force
+```
+
+By default, valid existing special predictions are skipped and failed/invalid rows are retried. Use `--force` to overwrite valid rows, or `--skip-any-existing` to preserve every existing row. The special-question prompt context is built only from fixture and group data; it must not read match predictions, prior special predictions, evaluations, analytics, scores, or tournament-tree outputs.
+
+Validate special-question definitions, JSON validation, and storage:
+
+```bash
+npm run test:special
+```
+
 Export paper-analysis datasets for the World Cup 2026 benchmark:
 
 ```bash
@@ -195,6 +235,16 @@ For a single-model smoke test, set only one model:
 ```text
 OPENROUTER_MODEL_IDS=mistralai/mistral-large-2512
 ```
+
+Benchmark prediction calls default to the same completion ceiling for first attempts, validation retries, and JSON repair calls:
+
+```text
+OPENROUTER_BENCHMARK_MAX_COMPLETION_TOKENS=5000
+OPENROUTER_BENCHMARK_RETRY_MAX_COMPLETION_TOKENS=5000
+OPENROUTER_BENCHMARK_REPAIR_MAX_COMPLETION_TOKENS=5000
+```
+
+Leave these unset to use the same 5000-token defaults. Increase them only if a model still returns truncated JSON.
 
 The minimal flagship MVP setup uses paid OpenRouter models and requires credits:
 

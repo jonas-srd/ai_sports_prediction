@@ -16,6 +16,7 @@ import type {
   ForecastHorizon,
   MatchRow,
   NewBenchmarkPredictionRow,
+  SqliteDb,
   TimingStatus
 } from "@llm-kicktipp/db";
 import {
@@ -24,10 +25,13 @@ import {
   getConfiguredLlmModels,
   markRepairedValidation,
   OpenRouterClient,
+  OpenRouterResponseError,
   PREDICTION_PROMPT_TEMPLATE_ID,
   validatePredictionContent
 } from "@llm-kicktipp/llm";
 import type {
+  LlmModel,
+  OpenRouterChatOptions,
   OpenRouterChatResult,
   OpenRouterTool,
   PredictionValidationResult
@@ -63,15 +67,23 @@ const JSON_RESPONSE_FORMAT = { type: "json_object" };
 const BENCHMARK_TEMPERATURE = 0;
 const BENCHMARK_TOP_P = 1;
 const BENCHMARK_N = 1;
-const BENCHMARK_MAX_TOKENS = readPositiveIntEnv("OPENROUTER_BENCHMARK_MAX_COMPLETION_TOKENS", 2000);
+const BENCHMARK_DEFAULT_MAX_COMPLETION_TOKENS = 5000;
+const BENCHMARK_MAX_TOKENS = readPositiveIntEnv(
+  "OPENROUTER_BENCHMARK_MAX_COMPLETION_TOKENS",
+  BENCHMARK_DEFAULT_MAX_COMPLETION_TOKENS
+);
 const BENCHMARK_RETRY_MAX_TOKENS = readPositiveIntEnv(
   "OPENROUTER_BENCHMARK_RETRY_MAX_COMPLETION_TOKENS",
-  Math.max(BENCHMARK_MAX_TOKENS * 2, 4000)
+  BENCHMARK_MAX_TOKENS
 );
 const BENCHMARK_REPAIR_MAX_TOKENS = readPositiveIntEnv(
   "OPENROUTER_BENCHMARK_REPAIR_MAX_COMPLETION_TOKENS",
-  BENCHMARK_RETRY_MAX_TOKENS
+  BENCHMARK_MAX_TOKENS
 );
+const DEFAULT_CONCURRENCY = 3;
+const MAX_CONCURRENCY = 20;
+const API_RETRY_ATTEMPTS = 3;
+const API_RETRY_BASE_DELAY_MS = 2_000;
 
 type CliArgs = {
   horizon: ForecastHorizon;
@@ -79,7 +91,24 @@ type CliArgs = {
   matchId: string | null;
   modelIds: string[] | null;
   sampleId: number;
+  groupStageOnly: boolean;
+  concurrency: number;
+  skipExisting: boolean;
+  skipAnyExisting: boolean;
+  accessConditions: BenchmarkAccessCondition[] | null;
+  promptStrategies: BenchmarkPromptStrategy[] | null;
 };
+
+type BenchmarkTask = {
+  match: MatchRow;
+  model: LlmModel;
+  condition: BenchmarkCondition;
+};
+
+type ExistingPredictionStatus = {
+  validation_status: string | null;
+  is_valid_for_scoring: number;
+} | null;
 
 async function main() {
   const apiKey = process.env.OPENROUTER_API_KEY;
@@ -101,6 +130,11 @@ async function main() {
   await upsertModels(db, allModels);
 
   const matches = selectMatches(await listMatches(db), args);
+  const conditions = selectConditions(args);
+  if (conditions.length === 0) {
+    throw new Error("No benchmark conditions selected. Check --access and --prompt-strategy.");
+  }
+  const tasks = createBenchmarkTasks(matches, activeModels, conditions);
   const openRouter = new OpenRouterClient({
     apiKey,
     siteUrl: process.env.OPENROUTER_SITE_URL,
@@ -111,169 +145,211 @@ async function main() {
   console.log(`Benchmark run: ${runId}`);
   console.log(`Horizon: ${args.horizon}`);
   console.log(`Found ${matches.length} matches and ${activeModels.length} active models.`);
+  console.log(`Conditions: ${conditions.map((condition) => `${condition.accessCondition}/${condition.promptStrategy}`).join(", ")}`);
+  console.log(`Tasks: ${tasks.length}; concurrency: ${args.concurrency}`);
+  console.log(`Skip existing: ${args.skipAnyExisting ? "any predictions" : args.skipExisting ? "valid predictions" : "off"}`);
   console.log(`SQLite DB: ${getDefaultDbPath()}`);
 
-  for (const match of matches) {
-    for (const model of activeModels) {
-      for (const condition of CONDITIONS) {
-        const prompt = buildPredictionPrompt({
-          match: toPromptMatch(match),
-          accessCondition: condition.accessCondition,
-          promptStrategy: condition.promptStrategy
-        });
-        const promptHash = hashPrompt(prompt);
-        const scheduledPredictionTimeUtc = getScheduledPredictionTimeUtc(match, args.horizon);
-        const tools = condition.accessCondition === "open_book" ? OPENROUTER_WEB_SEARCH_TOOLS : undefined;
-
-        try {
-          let completion = await openRouter.createChatCompletion(model.id, prompt, {
-            temperature: BENCHMARK_TEMPERATURE,
-            topP: BENCHMARK_TOP_P,
-            n: BENCHMARK_N,
-            maxTokens: BENCHMARK_MAX_TOKENS,
-            responseFormat: JSON_RESPONSE_FORMAT,
-            tools
-          });
-          const matchIsKnockout = isMatchKnockout(match);
-          let initialValidation = validatePredictionContent(completion.content, {
-            isKnockout: matchIsKnockout
-          });
-
-          if (shouldRetryCompletionAfterValidation(initialValidation, completion)) {
-            console.warn(formatRetryLog(match, model.name, condition, initialValidation.status, completion));
-            completion = await openRouter.createChatCompletion(model.id, prompt, {
-              temperature: BENCHMARK_TEMPERATURE,
-              topP: BENCHMARK_TOP_P,
-              n: BENCHMARK_N,
-              maxTokens: BENCHMARK_RETRY_MAX_TOKENS,
-              responseFormat: JSON_RESPONSE_FORMAT,
-              tools
-            });
-            initialValidation = validatePredictionContent(completion.content, {
-              isKnockout: matchIsKnockout
-            });
-          }
-
-          const actualPredictionTimeUtc = new Date().toISOString();
-          const timing = getTimingMetadata(match, args.horizon, actualPredictionTimeUtc);
-          const repair = initialValidation.isValidForScoring
-            ? null
-            : await attemptRepair(openRouter, model.id, completion.content, initialValidation, matchIsKnockout);
-          const finalValidation = repair?.validation ?? initialValidation;
-
-          await upsertBenchmarkPrediction(db, {
-            run_id: runId,
-            match_id: match.id,
-            predictor_type: "llm",
-            predictor_id: model.id,
-            provider: "openrouter",
-            model_id: model.id,
-            model_version: model.model_version,
-            access_condition: condition.accessCondition,
-            prompt_strategy: condition.promptStrategy,
-            forecast_horizon: args.horizon,
-            sample_id: args.sampleId,
-            scheduled_prediction_time_utc: scheduledPredictionTimeUtc,
-            actual_prediction_time_utc: actualPredictionTimeUtc,
-            kickoff_time_utc: match.utc_date,
-            minutes_before_kickoff: timing.minutesBeforeKickoff,
-            timing_status: timing.timingStatus,
-            prompt_template_id: PREDICTION_PROMPT_TEMPLATE_ID,
-            prompt_hash: promptHash,
-            raw_prompt: prompt,
-            raw_response: completion.rawResponse,
-            response_id: completion.responseId,
-            temperature: BENCHMARK_TEMPERATURE,
-            top_p: BENCHMARK_TOP_P,
-            max_tokens: completion.maxCompletionTokens,
-            latency_ms: completion.latencyMs,
-            input_tokens: completion.inputTokens,
-            output_tokens: completion.outputTokens,
-            cost_usd: completion.costUsd,
-            ...toValidationStorageFields(
-              finalValidation,
-              repair !== null,
-              repair?.rawResponse ?? null
-            ),
-            tools_enabled: completion.toolMetadata.toolsEnabled,
-            tool_type: completion.toolMetadata.toolType,
-            tool_calls_observed: completion.toolMetadata.toolCallsObserved,
-            num_tool_calls: completion.toolMetadata.numToolCalls,
-            tool_trace_available: completion.toolMetadata.toolTraceAvailable,
-            tool_trace: completion.toolMetadata.toolTrace,
-            open_book_compliance: completion.toolMetadata.openBookCompliance
-          });
-
-          console.log(formatSuccessLog(
-            match,
-            model.name,
-            condition,
-            completion.toolMetadata.openBookCompliance,
-            finalValidation.status
-          ));
-        } catch (error) {
-          const failedAt = new Date().toISOString();
-          await upsertBenchmarkPrediction(db, {
-            run_id: runId,
-            match_id: match.id,
-            predictor_type: "llm",
-            predictor_id: model.id,
-            provider: "openrouter",
-            model_id: model.id,
-            model_version: model.model_version,
-            access_condition: condition.accessCondition,
-            prompt_strategy: condition.promptStrategy,
-            forecast_horizon: args.horizon,
-            sample_id: args.sampleId,
-            scheduled_prediction_time_utc: scheduledPredictionTimeUtc,
-            actual_prediction_time_utc: failedAt,
-            kickoff_time_utc: match.utc_date,
-            minutes_before_kickoff: getMinutesBeforeKickoff(match, failedAt),
-            timing_status: getTimingMetadata(match, args.horizon, failedAt).timingStatus,
-            prompt_template_id: PREDICTION_PROMPT_TEMPLATE_ID,
-            prompt_hash: promptHash,
-            raw_prompt: prompt,
-            raw_response: serializeError(error),
-            temperature: BENCHMARK_TEMPERATURE,
-            top_p: BENCHMARK_TOP_P,
-            max_tokens: BENCHMARK_MAX_TOKENS,
-            validation_status: getApiFailureStatus(error),
-            is_valid_for_scoring: false,
-            tools_enabled: condition.accessCondition === "open_book",
-            tool_type: condition.accessCondition === "open_book" ? "openrouter:web_search" : null,
-            tool_calls_observed: condition.accessCondition === "open_book" ? false : null,
-            num_tool_calls: condition.accessCondition === "open_book" ? 0 : null,
-            tool_trace_available: false,
-            tool_trace: null,
-            open_book_compliance: condition.accessCondition === "open_book" ? "unknown" : "not_applicable"
-          });
-
-          console.error(formatFailureLog(match, model.name, condition, error));
-        }
-      }
-    }
-  }
+  await runWithConcurrency(tasks, args.concurrency, (task) => runBenchmarkTask({
+    db,
+    openRouter,
+    runId,
+    args,
+    task
+  }));
 
   db.close();
+}
+
+async function runBenchmarkTask(options: {
+  db: SqliteDb;
+  openRouter: OpenRouterClient;
+  runId: string;
+  args: CliArgs;
+  task: BenchmarkTask;
+}): Promise<void> {
+  const { db, openRouter, runId, args, task } = options;
+  const { match, model, condition } = task;
+  const existing = getExistingBenchmarkPredictionStatus(db, task, args);
+
+  if (args.skipAnyExisting && existing) {
+    console.log(formatSkippedLog(match, model.name, condition, "existing"));
+    return;
+  }
+
+  if (args.skipExisting && existing?.is_valid_for_scoring === 1) {
+    console.log(formatSkippedLog(match, model.name, condition, existing.validation_status ?? "valid"));
+    return;
+  }
+
+  const prompt = buildPredictionPrompt({
+    match: toPromptMatch(match),
+    accessCondition: condition.accessCondition,
+    promptStrategy: condition.promptStrategy
+  });
+  const promptHash = hashPrompt(prompt);
+  const scheduledPredictionTimeUtc = getScheduledPredictionTimeUtc(match, args.horizon);
+  const tools = condition.accessCondition === "open_book" ? OPENROUTER_WEB_SEARCH_TOOLS : undefined;
+
+  try {
+    let completion = await createChatCompletionWithBackoff(openRouter, model.id, prompt, {
+      temperature: BENCHMARK_TEMPERATURE,
+      topP: BENCHMARK_TOP_P,
+      n: BENCHMARK_N,
+      maxTokens: BENCHMARK_MAX_TOKENS,
+      responseFormat: JSON_RESPONSE_FORMAT,
+      retryContentFailures: false,
+      tools
+    }, formatTaskPrefix(match, model.name, condition));
+    const matchIsKnockout = isMatchKnockout(match);
+    let initialValidation = validatePredictionContent(completion.content, {
+      isKnockout: matchIsKnockout
+    });
+
+    if (shouldRetryCompletionAfterValidation(initialValidation, completion)) {
+      console.warn(formatRetryLog(match, model.name, condition, initialValidation.status, completion));
+      completion = await createChatCompletionWithBackoff(openRouter, model.id, prompt, {
+        temperature: BENCHMARK_TEMPERATURE,
+        topP: BENCHMARK_TOP_P,
+        n: BENCHMARK_N,
+        maxTokens: BENCHMARK_RETRY_MAX_TOKENS,
+        responseFormat: JSON_RESPONSE_FORMAT,
+        retryContentFailures: false,
+        tools
+      }, formatTaskPrefix(match, model.name, condition));
+      initialValidation = validatePredictionContent(completion.content, {
+        isKnockout: matchIsKnockout
+      });
+    }
+
+    const actualPredictionTimeUtc = new Date().toISOString();
+    const timing = getTimingMetadata(match, args.horizon, actualPredictionTimeUtc);
+    const repair = initialValidation.isValidForScoring
+      ? null
+      : await attemptRepair(openRouter, model.id, completion.content, initialValidation, matchIsKnockout);
+    const finalValidation = repair?.validation ?? initialValidation;
+
+    await upsertBenchmarkPrediction(db, {
+      run_id: runId,
+      match_id: match.id,
+      predictor_type: "llm",
+      predictor_id: model.id,
+      provider: "openrouter",
+      model_id: model.id,
+      model_version: model.model_version,
+      access_condition: condition.accessCondition,
+      prompt_strategy: condition.promptStrategy,
+      forecast_horizon: args.horizon,
+      sample_id: args.sampleId,
+      scheduled_prediction_time_utc: scheduledPredictionTimeUtc,
+      actual_prediction_time_utc: actualPredictionTimeUtc,
+      kickoff_time_utc: match.utc_date,
+      minutes_before_kickoff: timing.minutesBeforeKickoff,
+      timing_status: timing.timingStatus,
+      prompt_template_id: PREDICTION_PROMPT_TEMPLATE_ID,
+      prompt_hash: promptHash,
+      raw_prompt: prompt,
+      raw_response: completion.rawResponse,
+      response_id: completion.responseId,
+      temperature: BENCHMARK_TEMPERATURE,
+      top_p: BENCHMARK_TOP_P,
+      max_tokens: completion.maxCompletionTokens,
+      latency_ms: completion.latencyMs,
+      input_tokens: completion.inputTokens,
+      output_tokens: completion.outputTokens,
+      cost_usd: completion.costUsd,
+      ...toValidationStorageFields(
+        finalValidation,
+        repair !== null,
+        repair?.rawResponse ?? null
+      ),
+      tools_enabled: completion.toolMetadata.toolsEnabled,
+      tool_type: completion.toolMetadata.toolType,
+      tool_calls_observed: completion.toolMetadata.toolCallsObserved,
+      num_tool_calls: completion.toolMetadata.numToolCalls,
+      tool_trace_available: completion.toolMetadata.toolTraceAvailable,
+      tool_trace: completion.toolMetadata.toolTrace,
+      open_book_compliance: completion.toolMetadata.openBookCompliance
+    });
+
+    console.log(formatSuccessLog(
+      match,
+      model.name,
+      condition,
+      completion.toolMetadata.openBookCompliance,
+      finalValidation.status
+    ));
+  } catch (error) {
+    const failedAt = new Date().toISOString();
+    await upsertBenchmarkPrediction(db, {
+      run_id: runId,
+      match_id: match.id,
+      predictor_type: "llm",
+      predictor_id: model.id,
+      provider: "openrouter",
+      model_id: model.id,
+      model_version: model.model_version,
+      access_condition: condition.accessCondition,
+      prompt_strategy: condition.promptStrategy,
+      forecast_horizon: args.horizon,
+      sample_id: args.sampleId,
+      scheduled_prediction_time_utc: scheduledPredictionTimeUtc,
+      actual_prediction_time_utc: failedAt,
+      kickoff_time_utc: match.utc_date,
+      minutes_before_kickoff: getMinutesBeforeKickoff(match, failedAt),
+      timing_status: getTimingMetadata(match, args.horizon, failedAt).timingStatus,
+      prompt_template_id: PREDICTION_PROMPT_TEMPLATE_ID,
+      prompt_hash: promptHash,
+      raw_prompt: prompt,
+      raw_response: serializeError(error),
+      temperature: BENCHMARK_TEMPERATURE,
+      top_p: BENCHMARK_TOP_P,
+      max_tokens: BENCHMARK_MAX_TOKENS,
+      validation_status: getApiFailureStatus(error),
+      is_valid_for_scoring: false,
+      tools_enabled: condition.accessCondition === "open_book",
+      tool_type: condition.accessCondition === "open_book" ? "openrouter:web_search" : null,
+      tool_calls_observed: condition.accessCondition === "open_book" ? false : null,
+      num_tool_calls: condition.accessCondition === "open_book" ? 0 : null,
+      tool_trace_available: false,
+      tool_trace: null,
+      open_book_compliance: condition.accessCondition === "open_book" ? "unknown" : "not_applicable"
+    });
+
+    console.error(formatFailureLog(match, model.name, condition, error));
+  }
 }
 
 function parseCliArgs(args: string[]): CliArgs {
   const horizon = parseHorizon(readArg(args, "horizon") ?? "STAGE_OPENING");
   const rawLimit = readArg(args, "limit");
   const all = args.includes("--all");
+  const groupStageOnly = args.includes("--group-stage");
   const modelIds = readArg(args, "model") ?? readArg(args, "models");
   const sampleId = Number.parseInt(readArg(args, "sample-id") ?? "1", 10);
+  const skipExisting = args.includes("--skip-existing");
+  const skipAnyExisting = args.includes("--skip-any-existing");
 
   if (!Number.isInteger(sampleId) || sampleId < 1) {
     throw new Error("Invalid --sample-id. Use a positive integer.");
   }
 
+  if (skipExisting && skipAnyExisting) {
+    throw new Error("Use either --skip-existing or --skip-any-existing, not both.");
+  }
+
   return {
     horizon,
-    limit: all ? null : parseLimit(rawLimit),
+    limit: all || (groupStageOnly && rawLimit === null) ? null : parseLimit(rawLimit),
     matchId: readArg(args, "match-id"),
     modelIds: modelIds ? modelIds.split(",").map((entry) => entry.trim()).filter(Boolean) : null,
-    sampleId
+    sampleId,
+    groupStageOnly,
+    concurrency: parseConcurrency(readArg(args, "concurrency")),
+    skipExisting,
+    skipAnyExisting,
+    accessConditions: parseAccessConditions(readArg(args, "access")),
+    promptStrategies: parsePromptStrategies(readArg(args, "prompt-strategy") ?? readArg(args, "strategy"))
   };
 }
 
@@ -317,13 +393,94 @@ function parseLimit(value: string | null): number {
   return parsed;
 }
 
+function parseConcurrency(value: string | null): number {
+  if (!value) {
+    return DEFAULT_CONCURRENCY;
+  }
+
+  const parsed = Number.parseInt(value, 10);
+  if (!Number.isInteger(parsed) || parsed < 1 || parsed > MAX_CONCURRENCY) {
+    throw new Error(`Invalid --concurrency. Use a number from 1 to ${MAX_CONCURRENCY}.`);
+  }
+
+  return parsed;
+}
+
+function parseAccessConditions(value: string | null): BenchmarkAccessCondition[] | null {
+  if (!value) {
+    return null;
+  }
+
+  const entries = parseCommaSeparated(value);
+  for (const entry of entries) {
+    if (entry !== "closed_book" && entry !== "open_book") {
+      throw new Error("Invalid --access. Use closed_book, open_book, or a comma-separated combination.");
+    }
+  }
+
+  return entries as BenchmarkAccessCondition[];
+}
+
+function parsePromptStrategies(value: string | null): BenchmarkPromptStrategy[] | null {
+  if (!value) {
+    return null;
+  }
+
+  const entries = parseCommaSeparated(value);
+  for (const entry of entries) {
+    if (entry !== "direct_score" && entry !== "probabilistic_forecast") {
+      throw new Error(
+        "Invalid --prompt-strategy. Use direct_score, probabilistic_forecast, or a comma-separated combination."
+      );
+    }
+  }
+
+  return entries as BenchmarkPromptStrategy[];
+}
+
+function parseCommaSeparated(value: string): string[] {
+  const entries = value.split(",").map((entry) => entry.trim()).filter(Boolean);
+  if (entries.length === 0) {
+    throw new Error("Comma-separated CLI options must include at least one value.");
+  }
+
+  return Array.from(new Set(entries));
+}
+
 function selectMatches(matches: MatchRow[], args: CliArgs): MatchRow[] {
   const selected = matches
     .filter((match) => !args.matchId || match.id === args.matchId)
     .filter((match) => args.matchId || ["SCHEDULED", "TIMED"].includes(match.status))
+    .filter((match) => !args.groupStageOnly || isGroupStageMatch(match))
     .sort((a, b) => new Date(a.utc_date).getTime() - new Date(b.utc_date).getTime());
 
   return args.limit === null ? selected : selected.slice(0, args.limit);
+}
+
+function selectConditions(args: CliArgs): BenchmarkCondition[] {
+  return CONDITIONS.filter((condition) => {
+    const accessMatches = !args.accessConditions || args.accessConditions.includes(condition.accessCondition);
+    const strategyMatches = !args.promptStrategies || args.promptStrategies.includes(condition.promptStrategy);
+    return accessMatches && strategyMatches;
+  });
+}
+
+function createBenchmarkTasks(
+  matches: MatchRow[],
+  models: LlmModel[],
+  conditions: BenchmarkCondition[]
+): BenchmarkTask[] {
+  const tasks: BenchmarkTask[] = [];
+
+  for (const match of matches) {
+    for (const model of models) {
+      for (const condition of conditions) {
+        tasks.push({ match, model, condition });
+      }
+    }
+  }
+
+  return tasks;
 }
 
 function toPromptMatch(match: MatchRow) {
@@ -341,6 +498,10 @@ function toPromptMatch(match: MatchRow) {
 
 function isMatchKnockout(match: MatchRow): boolean {
   return Boolean(match.is_knockout ?? inferIsKnockout(match.competition) ?? false);
+}
+
+function isGroupStageMatch(match: MatchRow): boolean {
+  return (match.stage ?? inferStage(match.competition)) === "group_stage";
 }
 
 function inferStage(competition: string): string | null {
@@ -361,6 +522,109 @@ function inferIsKnockout(competition: string): boolean | null {
 
 function hashPrompt(prompt: string): string {
   return createHash("sha256").update(prompt).digest("hex");
+}
+
+async function runWithConcurrency<T>(
+  items: T[],
+  concurrency: number,
+  worker: (item: T) => Promise<void>
+): Promise<void> {
+  let nextIndex = 0;
+  const workerCount = Math.min(concurrency, items.length);
+  const workers = Array.from({ length: workerCount }, async () => {
+    for (;;) {
+      const currentIndex = nextIndex;
+      nextIndex += 1;
+
+      if (currentIndex >= items.length) {
+        return;
+      }
+
+      await worker(items[currentIndex]);
+    }
+  });
+
+  await Promise.all(workers);
+}
+
+function getExistingBenchmarkPredictionStatus(
+  db: SqliteDb,
+  task: BenchmarkTask,
+  args: CliArgs
+): ExistingPredictionStatus {
+  const row = db.prepare(`
+    select validation_status, is_valid_for_scoring
+    from benchmark_predictions
+    where match_id = @match_id
+      and predictor_type = 'llm'
+      and predictor_id = @predictor_id
+      and forecast_horizon = @forecast_horizon
+      and access_condition = @access_condition
+      and prompt_strategy = @prompt_strategy
+      and sample_id = @sample_id
+  `).get({
+    match_id: task.match.id,
+    predictor_id: task.model.id,
+    forecast_horizon: args.horizon,
+    access_condition: task.condition.accessCondition,
+    prompt_strategy: task.condition.promptStrategy,
+    sample_id: args.sampleId
+  }) as ExistingPredictionStatus | undefined;
+
+  return row ?? null;
+}
+
+async function createChatCompletionWithBackoff(
+  openRouter: OpenRouterClient,
+  modelId: string,
+  prompt: string,
+  options: OpenRouterChatOptions,
+  context: string
+): Promise<OpenRouterChatResult> {
+  for (let attempt = 1; attempt <= API_RETRY_ATTEMPTS; attempt += 1) {
+    try {
+      return await openRouter.createChatCompletion(modelId, prompt, options);
+    } catch (error) {
+      if (attempt >= API_RETRY_ATTEMPTS || !isRetryableApiError(error)) {
+        throw error;
+      }
+
+      const delayMs = API_RETRY_BASE_DELAY_MS * 2 ** (attempt - 1);
+      console.warn(`${context} | api_retry=${attempt} | wait_ms=${delayMs} | error=${errorMessage(error)}`);
+      await sleep(delayMs);
+    }
+  }
+
+  throw new Error("Unexpected API retry loop exit.");
+}
+
+function isRetryableApiError(error: unknown): boolean {
+  if (error instanceof OpenRouterResponseError) {
+    if (
+      (error.code === "missing_content" || error.code === "empty_content")
+      && (
+        error.finishReason === "length"
+        || error.finishReason === "max_tokens"
+        || error.finishReason === "tool_calls"
+      )
+    ) {
+      return true;
+    }
+
+    return error.status === 429 || error.status === null || error.status >= 500;
+  }
+
+  const message = errorMessage(error).toLowerCase();
+  return message.includes("timeout")
+    || message.includes("timed out")
+    || message.includes("fetch failed")
+    || message.includes("econnreset")
+    || message.includes("rate limit")
+    || message.includes("429");
+}
+
+function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
 function getScheduledPredictionTimeUtc(match: MatchRow, horizon: ForecastHorizon): string {
@@ -423,24 +687,26 @@ async function attemptRepair(
   });
 
   try {
-    const completion = await openRouter.createChatCompletion(modelId, repairPrompt, {
+    const completion = await createChatCompletionWithBackoff(openRouter, modelId, repairPrompt, {
       temperature: BENCHMARK_TEMPERATURE,
       topP: BENCHMARK_TOP_P,
       n: BENCHMARK_N,
       maxTokens: BENCHMARK_REPAIR_MAX_TOKENS,
-      responseFormat: JSON_RESPONSE_FORMAT
-    });
+      responseFormat: JSON_RESPONSE_FORMAT,
+      retryContentFailures: false
+    }, `repair | ${modelId}`);
     let repairedValidation = validatePredictionContent(completion.content, { isKnockout });
     let repairRawResponse = completion.rawResponse;
 
     if (shouldRetryCompletionAfterValidation(repairedValidation, completion)) {
-      const retryCompletion = await openRouter.createChatCompletion(modelId, repairPrompt, {
+      const retryCompletion = await createChatCompletionWithBackoff(openRouter, modelId, repairPrompt, {
         temperature: BENCHMARK_TEMPERATURE,
         topP: BENCHMARK_TOP_P,
         n: BENCHMARK_N,
         maxTokens: BENCHMARK_RETRY_MAX_TOKENS,
-        responseFormat: JSON_RESPONSE_FORMAT
-      });
+        responseFormat: JSON_RESPONSE_FORMAT,
+        retryContentFailures: false
+      }, `repair | ${modelId}`);
       repairedValidation = validatePredictionContent(retryCompletion.content, { isKnockout });
       repairRawResponse = retryCompletion.rawResponse;
     }
@@ -587,6 +853,18 @@ function formatSuccessLog(
   ].join(" | ");
 }
 
+function formatSkippedLog(
+  match: MatchRow,
+  modelName: string,
+  condition: BenchmarkCondition,
+  reason: string
+): string {
+  return [
+    formatTaskPrefix(match, modelName, condition),
+    `skipped=${reason}`
+  ].join(" | ");
+}
+
 function formatFailureLog(
   match: MatchRow,
   modelName: string,
@@ -599,6 +877,18 @@ function formatFailureLog(
     modelName,
     `${condition.accessCondition}/${condition.promptStrategy}`,
     `failed=${message}`
+  ].join(" | ");
+}
+
+function formatTaskPrefix(
+  match: MatchRow,
+  modelName: string,
+  condition: BenchmarkCondition
+): string {
+  return [
+    `${match.home_team} vs ${match.away_team}`,
+    modelName,
+    `${condition.accessCondition}/${condition.promptStrategy}`
   ].join(" | ");
 }
 
