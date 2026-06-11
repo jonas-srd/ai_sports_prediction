@@ -85,7 +85,7 @@ const PROBABILITY_SUM_TOLERANCE = 0.01;
 const NORMALIZATION_MIN_SUM = 0.98;
 const NORMALIZATION_MAX_SUM = 1.02;
 const EXACT_ONE_EPSILON = 1e-12;
-const DEFAULT_MAX_REASON_LENGTH = 500;
+const DEFAULT_MAX_REASON_LENGTH = 2000;
 
 export function validatePredictionContent(
   content: string,
@@ -334,7 +334,27 @@ function readReason(value: unknown, maxLength: number, errors: string[]): string
     return "";
   }
 
-  return value.length > maxLength ? value.slice(0, maxLength) : value;
+  return value.length > maxLength ? truncateAtSentenceBoundary(value, maxLength) : value;
+}
+
+function truncateAtSentenceBoundary(value: string, maxLength: number): string {
+  const clipped = value.slice(0, maxLength).trimEnd();
+  const sentenceEnd = Math.max(
+    clipped.lastIndexOf("."),
+    clipped.lastIndexOf("!"),
+    clipped.lastIndexOf("?")
+  );
+
+  if (sentenceEnd >= Math.floor(maxLength * 0.6)) {
+    return clipped.slice(0, sentenceEnd + 1);
+  }
+
+  const wordEnd = clipped.lastIndexOf(" ");
+  if (wordEnd >= Math.floor(maxLength * 0.6)) {
+    return `${clipped.slice(0, wordEnd).trimEnd()}...`;
+  }
+
+  return `${clipped}...`;
 }
 
 function validateRange(value: number, field: string, errors: string[]): void {

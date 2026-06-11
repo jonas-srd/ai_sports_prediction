@@ -454,13 +454,22 @@ h2 {
 
 .modelMatchRow {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) auto auto;
-  align-items: center;
-  gap: 14px;
+  grid-template-columns: minmax(240px, 0.72fr) minmax(360px, 1fr) minmax(104px, auto);
+  grid-template-areas:
+    "match details result"
+    "reason reason reason";
+  align-items: start;
+  column-gap: 18px;
+  row-gap: 10px;
   border: 1px solid rgba(70, 55, 35, 0.13);
   border-radius: 22px;
   background: rgba(255, 255, 255, 0.5);
   padding: 13px 14px;
+}
+
+.modelMatchTeams {
+  grid-area: match;
+  min-width: 0;
 }
 
 .modelMatchTeams > strong {
@@ -518,13 +527,14 @@ h2 {
 .modelScoreLine {
   display: flex;
   flex-wrap: wrap;
-  justify-content: flex-end;
+  justify-content: center;
   gap: 8px;
 }
 
 .modelPredictionDetails {
+  grid-area: details;
   display: grid;
-  justify-items: end;
+  justify-items: center;
   gap: 8px;
   min-width: 0;
 }
@@ -540,19 +550,25 @@ h2 {
 }
 
 .modelPredictionReason {
-  max-width: 560px;
+  grid-area: reason;
+  grid-column: 1 / -1;
+  justify-self: stretch;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
   margin: 0;
   color: var(--muted);
-  font-size: 0.82rem;
-  line-height: 1.38;
-  text-align: right;
-}
-
-.modelPredictionReason strong {
-  color: var(--ink);
+  font-size: 0.78rem;
+  line-height: 1.35;
+  text-align: left;
+  overflow: visible;
+  overflow-wrap: anywhere;
+  white-space: normal;
+  word-break: normal;
 }
 
 .resultTag {
+  grid-area: result;
   display: grid;
   justify-items: end;
   min-width: 88px;
@@ -1797,8 +1813,32 @@ h2 {
   padding: 10px 12px;
 }
 
+.matchPredictionRow > * {
+  min-width: 0;
+}
+
 .benchmarkPredictionRow {
-  grid-template-columns: minmax(180px, 1.1fr) auto minmax(220px, 0.9fr) minmax(112px, auto);
+  grid-template-columns: minmax(150px, 1.1fr) auto minmax(150px, 0.9fr) minmax(96px, auto);
+  grid-template-areas:
+    "model score probability points"
+    "reason reason reason reason";
+  align-items: start;
+}
+
+.benchmarkPredictionRow .matchPredictionModel {
+  grid-area: model;
+}
+
+.benchmarkPredictionRow .predictedScorePill {
+  grid-area: score;
+}
+
+.benchmarkPredictionRow .probabilityStack {
+  grid-area: probability;
+}
+
+.benchmarkPredictionRow .predictionPoints {
+  grid-area: points;
 }
 
 .matchPredictionModel {
@@ -2178,19 +2218,28 @@ h2 {
 .probabilityStack {
   display: grid;
   gap: 5px;
+  min-width: 0;
   color: var(--muted);
   font-family: "Courier New", monospace;
   font-size: 0.66rem;
   font-weight: 900;
   line-height: 1.25;
+  overflow-wrap: anywhere;
 }
 
 .predictionReason {
+  grid-area: reason;
   grid-column: 1 / -1;
+  max-width: 100%;
+  min-width: 0;
   margin: 0;
   color: var(--muted);
   font-size: 0.78rem;
   line-height: 1.35;
+  overflow: visible;
+  overflow-wrap: anywhere;
+  white-space: normal;
+  word-break: normal;
 }
 
 .bracketGameCard .predictionMatchButton:hover .fixtureCenter,
@@ -2313,6 +2362,12 @@ h2 {
   border-color: rgba(70, 55, 35, 0.12);
   background: rgba(255, 255, 255, 0.52);
   grid-template-columns: minmax(0, 1fr);
+  grid-template-areas:
+    "model"
+    "score"
+    "probability"
+    "points"
+    "reason";
 }
 
 .bracketGameCard .probabilityStack {
@@ -3501,6 +3556,11 @@ h2 {
 
   .modelMatchRow {
     grid-template-columns: minmax(0, 1fr);
+    grid-template-areas:
+      "match"
+      "details"
+      "reason"
+      "result";
   }
 
   .modelScoreLine {
@@ -3512,6 +3572,8 @@ h2 {
   }
 
   .modelPredictionReason {
+    justify-self: stretch;
+    width: 100%;
     text-align: left;
   }
 
@@ -3555,6 +3617,12 @@ h2 {
 
   .benchmarkPredictionRow {
     grid-template-columns: 1fr;
+    grid-template-areas:
+      "model"
+      "score"
+      "probability"
+      "points"
+      "reason";
   }
 
   .probabilityStack,

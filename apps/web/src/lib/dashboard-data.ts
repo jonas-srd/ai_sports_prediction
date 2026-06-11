@@ -238,6 +238,7 @@ type BenchmarkPredictionDbRow = {
   away_advances_prob: number | null;
   confidence: number | null;
   reason: string | null;
+  raw_response: string | null;
   validation_status: string | null;
   is_valid_for_scoring: number;
   repair_attempted: number;
@@ -348,6 +349,7 @@ function getBenchmarkPredictionRows(db: Database.Database): PredictionRow[] {
   const hasHomeScoreFull = hasColumn(db, "matches", "home_score_full");
   const hasAwayScoreFull = hasColumn(db, "matches", "away_score_full");
   const hasActualAdvancer = hasColumn(db, "matches", "actual_advancer");
+  const hasRawResponse = hasColumn(db, "benchmark_predictions", "raw_response");
 
   const rows = db.prepare(`
     select
@@ -375,6 +377,7 @@ function getBenchmarkPredictionRows(db: Database.Database): PredictionRow[] {
       bp.away_advances_prob,
       bp.confidence,
       bp.reason,
+      ${hasRawResponse ? "bp.raw_response" : "null"} as raw_response,
       bp.validation_status,
       bp.is_valid_for_scoring,
       bp.repair_attempted,
@@ -450,7 +453,7 @@ function getBenchmarkPredictionRows(db: Database.Database): PredictionRow[] {
         homeAdvancesProb: row.home_advances_prob,
         awayAdvancesProb: row.away_advances_prob,
         confidence: row.confidence,
-        reason: row.reason,
+        reason: recoverBenchmarkReason(row.reason, row.raw_response),
         validationStatus: row.validation_status,
         isValidForScoring: Boolean(row.is_valid_for_scoring),
         repairAttempted: Boolean(row.repair_attempted),
@@ -862,6 +865,68 @@ function toPromptStrategy(value: string): PromptStrategy {
 
 function toForecastHorizon(value: string): ForecastHorizon {
   return value === "T_24H" || value === "T_2H" || value === "STAGE_OPENING" ? value : "STAGE_OPENING";
+}
+
+function recoverBenchmarkReason(storedReason: string | null, rawResponse: string | null): string | null {
+  if (!rawResponse || (storedReason && storedReason.length < 490)) {
+    return storedReason;
+  }
+
+  const recovered = extractReasonFromOpenRouterResponse(rawResponse);
+  if (!recovered || recovered.length <= (storedReason?.length ?? 0)) {
+    return storedReason;
+  }
+
+  return recovered;
+}
+
+function extractReasonFromOpenRouterResponse(rawResponse: string): string | null {
+  try {
+    const response = JSON.parse(rawResponse) as unknown;
+    const content = readOpenRouterContent(response);
+    if (!content) {
+      return null;
+    }
+
+    const prediction = JSON.parse(extractFirstJsonObject(content)) as unknown;
+    if (isPlainRecord(prediction) && typeof prediction.reason === "string") {
+      return prediction.reason;
+    }
+  } catch {
+    return null;
+  }
+
+  return null;
+}
+
+function readOpenRouterContent(value: unknown): string | null {
+  if (!isPlainRecord(value) || !Array.isArray(value.choices)) {
+    return null;
+  }
+
+  const [choice] = value.choices;
+  if (!isPlainRecord(choice) || !isPlainRecord(choice.message)) {
+    return null;
+  }
+
+  return typeof choice.message.content === "string" ? choice.message.content : null;
+}
+
+function extractFirstJsonObject(content: string): string {
+  const fenced = content.match(/```(?:json)?\s*([\s\S]*?)```/i);
+  const candidate = fenced?.[1] ?? content;
+  const start = candidate.indexOf("{");
+  const end = candidate.lastIndexOf("}");
+
+  if (start === -1 || end === -1 || end <= start) {
+    throw new Error("No JSON object found in response content");
+  }
+
+  return candidate.slice(start, end + 1);
+}
+
+function isPlainRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
 }
 
 function parseStringArray(value: string | null): string[] {

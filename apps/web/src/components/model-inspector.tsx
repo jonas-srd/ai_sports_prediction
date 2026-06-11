@@ -148,13 +148,11 @@ export function ModelInspector({ locale, matches, selectedModel, selectedKey, in
                     <span>{text.final} {formatScore(row.match.actualHome, row.match.actualAway, locale)}</span>
                     {row.prediction ? <span>{formatPredictionContext(row.prediction)}</span> : null}
                   </div>
-
-                  {row.prediction?.reason ? (
-                    <p className="modelPredictionReason">
-                      <strong>{text.reasoning}</strong> {row.prediction.reason}
-                    </p>
-                  ) : null}
                 </div>
+
+                {row.prediction?.reason ? (
+                  <p className="modelPredictionReason">{row.prediction.reason}</p>
+                ) : null}
 
                 <div className="resultTag">
                   <strong>{formatPoints(row.prediction, locale)}</strong>
