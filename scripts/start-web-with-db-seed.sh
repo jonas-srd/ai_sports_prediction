@@ -22,4 +22,5 @@ else
   echo "Using existing SQLite database at $DB_PATH."
 fi
 
-exec npm run start:web
+cd apps/web
+exec ../../node_modules/.bin/next start -H 0.0.0.0
