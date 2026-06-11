@@ -24,8 +24,10 @@ import { InfoTooltip, type TooltipLine } from "@/components/info-tooltip";
 import { getTeamFlag } from "@/lib/country-flags";
 import { formatMatchTime, formatShortDate } from "@/lib/timezone";
 import { useTimeZone } from "@/components/time-zone-provider";
+import { commonText, localizePath, type Locale } from "@/lib/i18n";
 
 type HomeDashboardProps = {
+  locale: Locale;
   matches: DashboardMatch[];
   specialPredictions: DashboardSpecialPrediction[];
 };
@@ -45,8 +47,101 @@ type SpecialQuestionColumn = {
   label: string;
 };
 
-export function HomeDashboard({ matches, specialPredictions }: HomeDashboardProps) {
+const DASHBOARD_TEXT = {
+  en: {
+    currentLeader: "Current leader",
+    topModel: "Top model for the active filters.",
+    scoresInView: "points in this view",
+    startRanking: "Run predictions to start the ranking.",
+    rulesLabel: "Scoring rules",
+    rules: "Rules",
+    scoring: "Scoring",
+    scoringDescription: "Exact scores, goal difference, and tendencies decide match points.",
+    exactScore: "Exact score",
+    correctGoalDifference: "Correct goal difference",
+    correctTendency: "Correct tendency",
+    miss: "Miss",
+    schedule: "Schedule",
+    latestMatches: "Latest matches",
+    latestDescription: "Fixture and result preview for the current view.",
+    openDetails: "Open details",
+    extraQuestions: "Extra questions",
+    questionPredictions: "Question predictions",
+    questionDescription: "Tournament-long picks for group winners, semifinalists, top scorer team, and champion.",
+    modelSetups: "model setups",
+    questions: "questions",
+    noQuestions: "No question predictions yet",
+    noQuestionsDescription: "Run special predictions first, then this table will show all 15 question picks.",
+    questionHint: "This table has its own score. Correct question tips get 5 points; wrong or unresolved tips get 0.",
+    rank: "Rank",
+    model: "Model",
+    score: "Score",
+    actual: "Actual",
+    officialResults: "Official results",
+    updatedWhenKnown: "Updated when known",
+    reference: "reference",
+    noReasoning: "No reasoning summary stored for this prediction.",
+    groupWinner: "Group winner",
+    worldCup: "World Cup",
+    finalFour: "Final four",
+    scoringKicker: "Scoring",
+    winner: "Winner",
+    topScorerTeam: "Top scorer team",
+    semifinalists: "Semi-finalists",
+    group: "Group",
+    reasonFor: "reason for",
+    groupStage: "Group stage"
+  },
+  de: {
+    currentLeader: "Aktueller Spitzenreiter",
+    topModel: "Bestes Modell fur die aktiven Filter.",
+    scoresInView: "Punkte in dieser Ansicht",
+    startRanking: "Starte Vorhersagen, um das Ranking zu erstellen.",
+    rulesLabel: "Punkteregeln",
+    rules: "Regeln",
+    scoring: "Punktevergabe",
+    scoringDescription: "Exakte Ergebnisse, Tordifferenz und Tendenz bestimmen die Match-Punkte.",
+    exactScore: "Exaktes Ergebnis",
+    correctGoalDifference: "Richtige Tordifferenz",
+    correctTendency: "Richtige Tendenz",
+    miss: "Fehltipp",
+    schedule: "Spielplan",
+    latestMatches: "Neueste Spiele",
+    latestDescription: "Spiel- und Ergebnisvorschau fur die aktuelle Ansicht.",
+    openDetails: "Details offnen",
+    extraQuestions: "Zusatzfragen",
+    questionPredictions: "Fragen-Prognosen",
+    questionDescription: "Turnierweite Tipps fur Gruppensieger, Halbfinalisten, Top-Torschutzen-Team und Weltmeister.",
+    modelSetups: "Modell-Setups",
+    questions: "Fragen",
+    noQuestions: "Noch keine Fragen-Prognosen",
+    noQuestionsDescription: "Starte zuerst die Zusatzprognosen, dann zeigt diese Tabelle alle 15 Tipps.",
+    questionHint: "Diese Tabelle hat eine eigene Wertung. Richtige Tipps erhalten 5 Punkte; falsche oder offene Tipps erhalten 0.",
+    rank: "Rang",
+    model: "Modell",
+    score: "Punkte",
+    actual: "Aktuell",
+    officialResults: "Offizielle Ergebnisse",
+    updatedWhenKnown: "Aktualisiert, sobald bekannt",
+    reference: "Referenz",
+    noReasoning: "Fur diese Prognose ist keine Begrundungszusammenfassung gespeichert.",
+    groupWinner: "Gruppensieger",
+    worldCup: "Weltmeisterschaft",
+    finalFour: "Final Four",
+    scoringKicker: "Tore",
+    winner: "Sieger",
+    topScorerTeam: "Top-Torschutzen-Team",
+    semifinalists: "Halbfinalisten",
+    group: "Gruppe",
+    reasonFor: "Begrundung fur",
+    groupStage: "Gruppenphase"
+  }
+} as const;
+
+export function HomeDashboard({ locale, matches, specialPredictions }: HomeDashboardProps) {
   const { timeZone } = useTimeZone();
+  const text = DASHBOARD_TEXT[locale];
+  const common = commonText[locale];
   const options = useMemo(() => getPredictionViewOptions(matches), [matches]);
   const [viewState, setViewState] = useState<PredictionViewState>(() => getDefaultPredictionViewState(options));
   const filteredMatches = useMemo(
@@ -54,8 +149,8 @@ export function HomeDashboard({ matches, specialPredictions }: HomeDashboardProp
     [matches, viewState]
   );
   const leaderboard = useMemo(
-    () => buildPredictionViewLeaderboard(filteredMatches, { conciseProvider: viewState.mode === "best" }),
-    [filteredMatches, viewState.mode]
+    () => buildPredictionViewLeaderboard(filteredMatches, { conciseProvider: viewState.mode === "best", locale }),
+    [filteredMatches, locale, viewState.mode]
   );
   const filteredSpecialPredictions = useMemo(
     () => filterSpecialPredictionsForPredictionView(specialPredictions, viewState, filteredMatches),
@@ -73,43 +168,43 @@ export function HomeDashboard({ matches, specialPredictions }: HomeDashboardProp
     () => filteredMatches.map((match) => getDisplayMatch(match, filteredMatches)),
     [filteredMatches]
   );
-  const summary = useMemo(() => getPredictionViewSummary(viewState, matches), [viewState, matches]);
+  const summary = useMemo(() => getPredictionViewSummary(viewState, matches, locale), [viewState, matches, locale]);
   const leader = leaderboard[0];
 
   return (
     <>
       <section className="leaderSpotlight">
         <div className="leaderCard">
-          <span>Current leader</span>
-          <strong>{leader?.model ?? "No data yet"}</strong>
+          <span>{text.currentLeader}</span>
+          <strong>{leader?.model ?? common.noDataYet}</strong>
           <p className="panelDescription">
-            Top model for the active filters.
+            {text.topModel}
           </p>
-          <p>{leader ? `${leader.points} scores in this view` : "Run predictions to start the ranking."}</p>
+          <p>{leader ? `${leader.points} ${text.scoresInView}` : text.startRanking}</p>
         </div>
 
-        <aside className="rulesCard" aria-label="Scoring rules">
-          <p className="sectionKicker">Rules</p>
-          <h2>Scoring</h2>
+        <aside className="rulesCard" aria-label={text.rulesLabel}>
+          <p className="sectionKicker">{text.rules}</p>
+          <h2>{text.scoring}</h2>
           <p className="panelDescription">
-            Exact scores, goal difference, and tendencies decide match points.
+            {text.scoringDescription}
           </p>
           <div className="ruleList">
             <div className="ruleItem">
-              <strong>5 scores</strong>
-              <span>Exact score</span>
+              <strong>5 {common.scores}</strong>
+              <span>{text.exactScore}</span>
             </div>
             <div className="ruleItem">
-              <strong>2 scores</strong>
-              <span>Correct goal difference</span>
+              <strong>2 {common.scores}</strong>
+              <span>{text.correctGoalDifference}</span>
             </div>
             <div className="ruleItem">
-              <strong>1 score</strong>
-              <span>Correct tendency</span>
+              <strong>1 {common.score}</strong>
+              <span>{text.correctTendency}</span>
             </div>
             <div className="ruleItem">
-              <strong>0 scores</strong>
-              <span>Miss</span>
+              <strong>0 {common.scores}</strong>
+              <span>{text.miss}</span>
             </div>
           </div>
         </aside>
@@ -121,16 +216,19 @@ export function HomeDashboard({ matches, specialPredictions }: HomeDashboardProp
             options={options}
             state={viewState}
             summary={summary}
+            locale={locale}
             variant="embedded"
             onChange={setViewState}
           />
         }
+        locale={locale}
         leaderboard={leaderboard}
         matches={displayMatches}
       />
 
       <SpecialQuestionPredictionsTable
         columns={specialQuestionColumns}
+        locale={locale}
         matches={matches}
         rows={specialQuestionRows}
       />
@@ -138,23 +236,23 @@ export function HomeDashboard({ matches, specialPredictions }: HomeDashboardProp
       <section className="panel matchesPanel">
         <div className="panelHeader">
           <div>
-            <p className="sectionKicker">Schedule</p>
-            <h2>Latest matches</h2>
+            <p className="sectionKicker">{text.schedule}</p>
+            <h2>{text.latestMatches}</h2>
             <p className="panelDescription">
-              Fixture and result preview for the current view.
+              {text.latestDescription}
             </p>
           </div>
-          <Link href="/matches">Open details</Link>
+          <Link href={localizePath("/matches", locale)}>{text.openDetails}</Link>
         </div>
         <div className="matchList matchPreviewGrid">
           {displayMatches.slice(0, 8).map((match) => (
-            <Link className="matchCard" href={`/matches#${getMatchAnchorId(match.id)}`} key={match.id}>
+            <Link className="matchCard" href={`${localizePath("/matches", locale)}#${getMatchAnchorId(match.id)}`} key={match.id}>
               <TeamMatchup
                 compact
                 homeTeam={match.homeTeam}
                 awayTeam={match.awayTeam}
                 center={formatMatchCenter(match, timeZone)}
-                meta={formatMatchMeta(match, timeZone)}
+                meta={formatMatchMeta(match, timeZone, locale)}
               />
             </Link>
           ))}
@@ -166,62 +264,65 @@ export function HomeDashboard({ matches, specialPredictions }: HomeDashboardProp
 
 function SpecialQuestionPredictionsTable({
   columns,
+  locale,
   matches,
   rows
 }: {
   columns: SpecialQuestionColumn[];
+  locale: Locale;
   matches: DashboardMatch[];
   rows: SpecialQuestionTableRow[];
 }) {
   const actualAnswers = buildActualSpecialQuestionAnswers(matches);
+  const text = DASHBOARD_TEXT[locale];
 
   return (
     <section className="panel specialQuestionsPanel">
       <div className="panelHeader">
         <div>
-          <p className="sectionKicker">Extra questions</p>
-          <h2>Question predictions</h2>
+          <p className="sectionKicker">{text.extraQuestions}</p>
+          <h2>{text.questionPredictions}</h2>
           <p className="panelDescription">
-            Tournament-long picks for group winners, semifinalists, top scorer team, and champion.
+            {text.questionDescription}
           </p>
         </div>
-        <span className="tableSummary">{rows.length} model setups / {columns.length} questions</span>
+        <span className="tableSummary">{rows.length} {text.modelSetups} / {columns.length} {text.questions}</span>
       </div>
 
       {rows.length === 0 || columns.length === 0 ? (
         <div className="emptyState">
-          <strong>No question predictions yet</strong>
-          <p>Run special predictions first, then this table will show all 15 question picks.</p>
+          <strong>{text.noQuestions}</strong>
+          <p>{text.noQuestionsDescription}</p>
         </div>
       ) : (
         <>
           <p className="specialQuestionsHint">
-            This table has its own score. Correct question tips get 5 points; wrong or unresolved tips get 0.
+            {text.questionHint}
           </p>
           <div className="specialQuestionsScroll">
             <table className="specialQuestionsTable">
               <thead>
                 <tr>
-                  <th>Rank</th>
-                  <th>Model</th>
-                  <th>Score</th>
+                  <th>{text.rank}</th>
+                  <th>{text.model}</th>
+                  <th>{text.score}</th>
                   {columns.map((column) => (
                     <th className={getSpecialQuestionColumnClass(column.id)} title={column.label} key={column.id}>
-                      {formatQuestionHeader(column)}
+                      <SpecialQuestionHeader column={column} locale={locale} />
                     </th>
                   ))}
                 </tr>
               </thead>
               <tbody>
                 <tr className="specialQuestionsActualRow">
-                  <td>Actual</td>
+                  <td>{text.actual}</td>
                   <td>
-                    <strong>Official results</strong>
-                    <span>Updated when known</span>
+                    <strong>{text.officialResults}</strong>
+                    <span>{text.updatedWhenKnown}</span>
                   </td>
                   <td>
                     <strong>-</strong>
-                    <span>reference</span>
+                    <span>{text.reference}</span>
                   </td>
                   {columns.map((column) => (
                     <td className={getSpecialQuestionColumnClass(column.id)} key={column.id}>
@@ -245,7 +346,7 @@ function SpecialQuestionPredictionsTable({
                       </td>
                       {columns.map((column) => (
                         <td className={getSpecialQuestionColumnClass(column.id)} key={column.id}>
-                          <SpecialQuestionCell prediction={row.predictionsByQuestion.get(column.id)} />
+                          <SpecialQuestionCell locale={locale} prediction={row.predictionsByQuestion.get(column.id)} />
                         </td>
                       ))}
                     </tr>
@@ -257,6 +358,15 @@ function SpecialQuestionPredictionsTable({
         </>
       )}
     </section>
+  );
+}
+
+function SpecialQuestionHeader({ column, locale }: { column: SpecialQuestionColumn; locale: Locale }) {
+  return (
+    <span className={`specialQuestionHeaderPill ${getSpecialQuestionHeaderTone(column.id)}`}>
+      <span>{formatQuestionHeaderKicker(column.id, locale)}</span>
+      <strong>{formatQuestionHeader(column, locale)}</strong>
+    </span>
   );
 }
 
@@ -278,19 +388,19 @@ function ActualSpecialQuestionCell({ teams }: { teams: string[] }) {
   );
 }
 
-function SpecialQuestionCell({ prediction }: { prediction?: DashboardSpecialPrediction }) {
+function SpecialQuestionCell({ locale, prediction }: { locale: Locale; prediction?: DashboardSpecialPrediction }) {
   if (!prediction) {
     return <span className="specialQuestionEmpty">-</span>;
   }
 
   const value = formatSpecialPredictionValue(prediction);
-  const tooltipLines = buildSpecialQuestionReasonLines(prediction, value);
+  const tooltipLines = buildSpecialQuestionReasonLines(prediction, value, locale);
 
   return (
     <span className="specialQuestionCell">
       <SpecialQuestionPick prediction={prediction} />
       <InfoTooltip
-        label={`${prediction.model} reason for ${prediction.questionLabel}`}
+        label={`${prediction.model} ${DASHBOARD_TEXT[locale].reasonFor} ${formatSpecialQuestionLabel(prediction, locale)}`}
         lines={tooltipLines}
       />
     </span>
@@ -466,60 +576,103 @@ function formatSpecialPredictionValue(prediction: DashboardSpecialPrediction): s
 
 function buildSpecialQuestionReasonLines(
   prediction: DashboardSpecialPrediction,
-  value: string
+  value: string,
+  locale: Locale
 ): TooltipLine[] {
+  const common = commonText[locale];
+  const text = DASHBOARD_TEXT[locale];
   const lines: TooltipLine[] = [
     {
-      label: "Question",
-      text: prediction.questionLabel
+      label: common.question,
+      text: formatSpecialQuestionLabel(prediction, locale)
     },
     {
-      label: "Pick",
+      label: common.pick,
       text: value
     },
     {
-      label: "Reason",
-      text: prediction.reasoningSummary ?? "No reasoning summary stored for this prediction."
+      label: common.reason,
+      text: prediction.reasoningSummary ?? text.noReasoning
     }
   ];
 
   if (prediction.confidence !== null) {
     lines.push({
-      label: "Confidence",
+      label: common.confidence,
       text: `${Math.round(prediction.confidence * 100)}%`
     });
   }
 
   lines.push({
-    label: "Setup",
+    label: common.setup,
     text: `${prediction.accessCondition.replaceAll("_", " ")} / ${prediction.promptStrategy.replaceAll("_", " ")} / ${prediction.forecastHorizon}`
   });
 
   return lines;
 }
 
-function formatQuestionHeader(column: SpecialQuestionColumn): string {
+function formatSpecialQuestionLabel(prediction: DashboardSpecialPrediction, locale: Locale): string {
+  return formatQuestionHeader({ id: prediction.questionId, label: prediction.questionLabel }, locale);
+}
+
+function formatQuestionHeader(column: SpecialQuestionColumn, locale: Locale): string {
+  const text = DASHBOARD_TEXT[locale];
   if (column.id.startsWith("group_winner_")) {
-    return column.id.replace("group_winner_", "Group ");
+    return column.id.replace("group_winner_", `${text.group} `);
   }
 
   if (column.id === "world_champion") {
-    return "Champion";
+    return text.winner;
   }
 
   if (column.id === "top_scorer_team") {
-    return "Top scorer";
+    return text.topScorerTeam;
   }
 
   if (column.id === "semifinalists") {
-    return "Semis";
+    return text.semifinalists;
   }
 
   return column.label;
 }
 
+function formatQuestionHeaderKicker(questionId: string, locale: Locale): string {
+  const text = DASHBOARD_TEXT[locale];
+  if (questionId === "world_champion") return text.worldCup;
+  if (questionId === "semifinalists") return text.finalFour;
+  if (questionId === "top_scorer_team") return text.scoringKicker;
+  if (questionId.startsWith("group_winner_")) return text.groupWinner;
+  return commonText[locale].question;
+}
+
+function getSpecialQuestionHeaderTone(questionId: string): string {
+  if (questionId === "world_champion") return "isChampion";
+  if (questionId === "semifinalists") return "isKnockout";
+  if (questionId === "top_scorer_team") return "isScoring";
+  return "isGroup";
+}
+
 function getSpecialQuestionColumnClass(questionId: string): string {
-  return questionId === "semifinalists" ? "specialQuestionSemisColumn" : "";
+  const classes = [];
+
+  if (questionId === "semifinalists") {
+    classes.push("specialQuestionSemisColumn");
+  }
+
+  if (questionId === "world_champion" || questionId === "semifinalists" || questionId === "top_scorer_team") {
+    classes.push("specialQuestionFeatureColumn");
+  }
+
+  if (questionId === "group_winner_A") {
+    classes.push("specialQuestionGroupStartColumn");
+  }
+
+  return classes.join(" ");
+}
+
+function getGroupWinnerIndex(questionId: string): number | null {
+  const groupMatch = questionId.match(/^group_winner_([A-L])$/);
+  return groupMatch ? groupMatch[1].charCodeAt(0) - "A".charCodeAt(0) : null;
 }
 
 function getTeamInitials(teamName: string): string {
@@ -536,14 +689,15 @@ function compareSpecialQuestionColumns(a: SpecialQuestionColumn, b: SpecialQuest
 }
 
 function getSpecialQuestionOrder(questionId: string): number {
-  const groupMatch = questionId.match(/^group_winner_([A-L])$/);
-  if (groupMatch) {
-    return groupMatch[1].charCodeAt(0) - "A".charCodeAt(0);
+  if (questionId === "world_champion") return 0;
+  if (questionId === "semifinalists") return 1;
+  if (questionId === "top_scorer_team") return 2;
+
+  const groupWinnerIndex = getGroupWinnerIndex(questionId);
+  if (groupWinnerIndex !== null) {
+    return 10 + groupWinnerIndex;
   }
 
-  if (questionId === "top_scorer_team") return 12;
-  if (questionId === "semifinalists") return 13;
-  if (questionId === "world_champion") return 14;
   return 100;
 }
 
@@ -569,19 +723,25 @@ function formatMatchCenter(match: DashboardMatch, timeZone: string): string {
   return formatMatchTime(match.utcDate, timeZone);
 }
 
-function formatMatchMeta(match: DashboardMatch, timeZone: string): string | null {
-  const details = [formatCompetition(match.competition), match.venue, formatShortDate(match.utcDate, timeZone)].filter(Boolean);
+function formatMatchMeta(match: DashboardMatch, timeZone: string, locale: Locale): string | null {
+  const details = [formatCompetition(match.competition, locale), match.venue, formatShortDate(match.utcDate, timeZone, getIntlLocale(locale))].filter(Boolean);
   return details.length > 0 ? details.join(" / ") : null;
 }
 
-function formatCompetition(value?: string): string | null {
+function getIntlLocale(locale: Locale): string {
+  return locale === "de" ? "de-DE" : "en-GB";
+}
+
+function formatCompetition(value: string | undefined, locale: Locale): string | null {
   if (!value) {
     return null;
   }
 
+  const groupLabel = locale === "de" ? "Gruppe" : "Group";
+  const groupStageLabel = locale === "de" ? "Gruppenphase" : "Group stage";
   return value
     .replace("FIFA World Cup", "World Cup")
-    .replace("GROUP_STAGE", "Group stage")
-    .replace(/GROUP_([A-L])/g, "Group $1")
+    .replace("GROUP_STAGE", groupStageLabel)
+    .replace(/GROUP_([A-L])/g, `${groupLabel} $1`)
     .replaceAll(" - ", " / ");
 }

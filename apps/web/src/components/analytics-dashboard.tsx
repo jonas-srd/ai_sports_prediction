@@ -25,26 +25,179 @@ import {
   type TournamentStage
 } from "@/lib/benchmark-analytics";
 import { InfoTooltip, type TooltipLine } from "@/components/info-tooltip";
+import { type Locale } from "@/lib/i18n";
 
 type AnalyticsDashboardProps = {
+  locale: Locale;
   predictions: BenchmarkDisplayPrediction[];
 };
 
 const METRICS = Object.keys(METRIC_DEFINITIONS) as AnalyticsMetric[];
 const SERIES_COLORS = ["#b33a27", "#204f35", "#d69632", "#263b67", "#7d2b1f", "#0d6b5f", "#7f5b24", "#443a2f"];
 const FILTER_HELP = {
-  metric: "Choose the evaluation metric used for ranking models, for example scores, Brier score, or log loss.",
-  forecastHorizon: "Filter predictions by when they were made, such as stage-opening, 24 hours before kickoff, or 2 hours before kickoff.",
-  access: "Filter whether the model predicted from its own knowledge only or was allowed to use web-search/tool access.",
-  prompt: "Filter the prompt format used for the prediction, for example direct score prediction or probabilistic forecast.",
-  stage: "Filter matches by tournament stage, such as group stage or knockout rounds.",
-  model: "Show predictions from one model configuration or compare all models.",
-  provider: "Filter by model provider or model family, such as OpenAI, Anthropic, Google, or Mistral.",
-  from: "Only include matches scheduled on or after this date.",
-  to: "Only include matches scheduled on or before this date."
+  en: {
+    metric: "Choose the evaluation metric used for ranking models, for example scores, Brier score, or log loss.",
+    forecastHorizon: "Filter predictions by when they were made, such as stage-opening, 24 hours before kickoff, or 2 hours before kickoff.",
+    access: "Filter whether the model predicted from its own knowledge only or was allowed to use web-search/tool access.",
+    prompt: "Filter the prompt format used for the prediction, for example direct score prediction or probabilistic forecast.",
+    stage: "Filter matches by tournament stage, such as group stage or knockout rounds.",
+    model: "Show predictions from one model configuration or compare all models.",
+    provider: "Filter by model provider or model family, such as OpenAI, Anthropic, Google, or Mistral.",
+    from: "Only include matches scheduled on or after this date.",
+    to: "Only include matches scheduled on or before this date."
+  },
+  de: {
+    metric: "Wahlt die Bewertungsmetrik fur das Modellranking, zum Beispiel Punkte, Brier Score oder Log Loss.",
+    forecastHorizon: "Filtert Prognosen danach, wann sie erstellt wurden, etwa zum Phasenstart, 24 Stunden vor Anpfiff oder 2 Stunden vor Anpfiff.",
+    access: "Filtert, ob das Modell nur aus eigenem Wissen prognostiziert hat oder Websuche/Tools nutzen durfte.",
+    prompt: "Filtert das Prompt-Format der Prognose, zum Beispiel Direct Score oder Probabilistic Forecast.",
+    stage: "Filtert Spiele nach Turnierphase, etwa Gruppenphase oder K.-o.-Runden.",
+    model: "Zeigt Prognosen einer Modellkonfiguration oder vergleicht alle Modelle.",
+    provider: "Filtert nach Modellanbieter oder Modellfamilie.",
+    from: "Berucksichtigt nur Spiele ab diesem Datum.",
+    to: "Berucksichtigt nur Spiele bis zu diesem Datum."
+  }
 } as const;
 
-export function AnalyticsDashboard({ predictions }: AnalyticsDashboardProps) {
+const ANALYTICS_TEXT = {
+  en: {
+    noBenchmark: "No benchmark predictions",
+    noBenchmarkTitle: "Analytics will appear after benchmark predictions are generated",
+    noBenchmarkDescription: "Run the benchmark prediction pipeline first. Legacy MVP predictions are intentionally excluded from this page.",
+    exportCsv: "Full dataset export to CSV",
+    filters: "Filters",
+    benchmarkSlice: "Benchmark slice",
+    reset: "Reset",
+    metric: "Metric",
+    forecastHorizon: "Forecast horizon",
+    access: "Access",
+    prompt: "Prompt",
+    stage: "Stage",
+    model: "Model",
+    provider: "Provider",
+    from: "From",
+    to: "To",
+    allHorizons: "All horizons",
+    allAccess: "All access",
+    allPrompts: "All prompts",
+    allStages: "All stages",
+    allModels: "All models",
+    allProviders: "All providers",
+    rankedLeaderboard: "Ranked leaderboard",
+    higherBetter: "Higher is better",
+    lowerBetter: "Lower is better",
+    matchOrder: "Match order",
+    performanceOverTime: "Performance over time",
+    clearHighlight: "Clear highlight",
+    detailedLeaderboard: "Detailed leaderboard",
+    modelConfigurations: "Model configurations",
+    rows: "rows",
+    predictions: "predictions",
+    noRowsFilters: "No rows match the selected filters.",
+    noScoredValues: "No scored values yet for this metric and filter set.",
+    noTableRows: "No table rows match the selected filters.",
+    noData: "No data",
+    selectedMetric: "Selected metric",
+    rank: "Rank",
+    horizon: "Horizon",
+    scored: "Scored",
+    scores: "Scores",
+    brier: "Brier",
+    logLoss: "Log loss",
+    topAcc: "Top acc.",
+    exact: "Exact",
+    gdAcc: "GD acc.",
+    totalGoalsErr: "Total-goals err.",
+    invalid: "Invalid",
+    repair: "Repair",
+    search: "Search",
+    config: "configuration",
+    stageCoverage: "Stage coverage",
+    predictionsTotal: "total predictions in this configuration.",
+    evaluationScores: "match(es) currently have evaluation scores.",
+    currentStages: "the currently selected stages",
+    stageOpening: "Stage opening means these predictions were generated once at the start of the stage, before the group-stage run.",
+    t24h: "T_24H means the prediction was scheduled approximately 24 hours before kickoff.",
+    t2h: "T_2H means the prediction was scheduled approximately 2 hours before kickoff.",
+    forecastFallback: "is the forecast horizon used for this configuration.",
+    openBook: "Open book means the model was allowed to use configured web-search/tool access before answering.",
+    closedBook: "Closed book means the model had to answer from its internal knowledge only, without search/tool access.",
+    accessFallback: "is the access condition for this configuration.",
+    directScore: "Direct score asks the model for the most likely scoreline plus required probabilities.",
+    probabilistic: "Probabilistic forecast emphasizes calibrated outcome probabilities before the scoreline.",
+    promptFallback: "is the prompt strategy used for this configuration."
+  },
+  de: {
+    noBenchmark: "Keine Benchmark-Prognosen",
+    noBenchmarkTitle: "Die Analyse erscheint nach dem Erzeugen von Benchmark-Prognosen",
+    noBenchmarkDescription: "Starte zuerst die Benchmark-Pipeline. Alte MVP-Prognosen werden auf dieser Seite bewusst ausgeschlossen.",
+    exportCsv: "Vollstandigen Datensatz als CSV exportieren",
+    filters: "Filter",
+    benchmarkSlice: "Benchmark-Ausschnitt",
+    reset: "Zurucksetzen",
+    metric: "Metrik",
+    forecastHorizon: "Prognosehorizont",
+    access: "Zugriff",
+    prompt: "Prompt",
+    stage: "Turnierphase",
+    model: "Modell",
+    provider: "Anbieter",
+    from: "Von",
+    to: "Bis",
+    allHorizons: "Alle Horizonte",
+    allAccess: "Alle Zugriffe",
+    allPrompts: "Alle Prompts",
+    allStages: "Alle Phasen",
+    allModels: "Alle Modelle",
+    allProviders: "Alle Anbieter",
+    rankedLeaderboard: "Rangliste",
+    higherBetter: "Hoher ist besser",
+    lowerBetter: "Niedriger ist besser",
+    matchOrder: "Spielreihenfolge",
+    performanceOverTime: "Leistung im Zeitverlauf",
+    clearHighlight: "Hervorhebung loschen",
+    detailedLeaderboard: "Detaillierte Rangliste",
+    modelConfigurations: "Modellkonfigurationen",
+    rows: "Zeilen",
+    predictions: "Prognosen",
+    noRowsFilters: "Keine Zeilen passen zu den ausgewahlten Filtern.",
+    noScoredValues: "Noch keine gewerteten Werte fur diese Metrik und Filterauswahl.",
+    noTableRows: "Keine Tabellenzeilen passen zu den ausgewahlten Filtern.",
+    noData: "Keine Daten",
+    selectedMetric: "Ausgewahlte Metrik",
+    rank: "Rang",
+    horizon: "Horizont",
+    scored: "Gewertet",
+    scores: "Punkte",
+    brier: "Brier",
+    logLoss: "Log Loss",
+    topAcc: "Top-Gen.",
+    exact: "Exakt",
+    gdAcc: "TD-Gen.",
+    totalGoalsErr: "Torfehler",
+    invalid: "Ungultig",
+    repair: "Reparatur",
+    search: "Suche",
+    config: "Konfiguration",
+    stageCoverage: "Phasenabdeckung",
+    predictionsTotal: "Prognosen insgesamt in dieser Konfiguration.",
+    evaluationScores: "Spiel(e) haben aktuell Auswertungen.",
+    currentStages: "die aktuell ausgewahlten Phasen",
+    stageOpening: "Stage Opening bedeutet, dass diese Prognosen einmal zu Beginn der Phase erzeugt wurden.",
+    t24h: "T_24H bedeutet, dass die Prognose ungefahr 24 Stunden vor Anpfiff geplant wurde.",
+    t2h: "T_2H bedeutet, dass die Prognose ungefahr 2 Stunden vor Anpfiff geplant wurde.",
+    forecastFallback: "ist der Prognosehorizont dieser Konfiguration.",
+    openBook: "Open Book bedeutet, dass das Modell konfigurierte Websuche/Tools verwenden durfte.",
+    closedBook: "Closed Book bedeutet, dass das Modell ohne Suche/Tools aus internem Wissen antworten musste.",
+    accessFallback: "ist die Zugriffsbedingung dieser Konfiguration.",
+    directScore: "Direct Score fragt nach dem wahrscheinlichsten Ergebnis plus benotigten Wahrscheinlichkeiten.",
+    probabilistic: "Probabilistic Forecast betont kalibrierte Ergebniswahrscheinlichkeiten vor dem Ergebnis-Tipp.",
+    promptFallback: "ist die Prompt-Strategie dieser Konfiguration."
+  }
+} as const;
+
+export function AnalyticsDashboard({ locale, predictions }: AnalyticsDashboardProps) {
+  const text = ANALYTICS_TEXT[locale];
   const defaultFilters = useMemo(() => getDefaultAnalyticsFilters(predictions), [predictions]);
   const [filters, setFilters] = useState<AnalyticsFilters>(defaultFilters);
   const [metric, setMetric] = useState<AnalyticsMetric>("kicktipp_points_90");
@@ -68,10 +221,10 @@ export function AnalyticsDashboard({ predictions }: AnalyticsDashboardProps) {
   if (predictions.length === 0) {
     return (
       <section className="panel analyticsEmptyPanel">
-        <p className="sectionKicker">No benchmark predictions</p>
-        <h2>Analytics will appear after benchmark predictions are generated</h2>
+        <p className="sectionKicker">{text.noBenchmark}</p>
+        <h2>{text.noBenchmarkTitle}</h2>
         <p>
-          Run the benchmark prediction pipeline first. Legacy MVP predictions are intentionally excluded from this page.
+          {text.noBenchmarkDescription}
         </p>
       </section>
     );
@@ -86,7 +239,7 @@ export function AnalyticsDashboard({ predictions }: AnalyticsDashboardProps) {
             type="button"
             onClick={() => exportFullDatasetCsv(predictions)}
           >
-            Full dataset export to CSV
+            {text.exportCsv}
           </button>
         </div>
       </div>
@@ -94,76 +247,76 @@ export function AnalyticsDashboard({ predictions }: AnalyticsDashboardProps) {
       <section className="panel analyticsFiltersPanel">
         <div className="panelHeader">
           <div>
-            <p className="sectionKicker">Filters</p>
-            <h2>Benchmark slice</h2>
+            <p className="sectionKicker">{text.filters}</p>
+            <h2>{text.benchmarkSlice}</h2>
           </div>
           <button className="clearFilterButton" type="button" onClick={() => {
             setFilters(defaultFilters);
             setHighlightedKey(null);
           }}>
-            Reset
+            {text.reset}
           </button>
         </div>
 
         <div className="analyticsFilterGrid">
           <SelectFilter
-            label="Metric"
-            help={FILTER_HELP.metric}
+            label={text.metric}
+            help={FILTER_HELP[locale].metric}
             value={metric}
-            options={METRICS.map((entry) => ({ value: entry, label: METRIC_DEFINITIONS[entry].label }))}
+            options={METRICS.map((entry) => ({ value: entry, label: formatMetricLabel(entry, locale) }))}
             onChange={(value) => setMetric(value as AnalyticsMetric)}
           />
           <SelectFilter
-            label="Forecast horizon"
-            help={FILTER_HELP.forecastHorizon}
+            label={text.forecastHorizon}
+            help={FILTER_HELP[locale].forecastHorizon}
             value={filters.forecastHorizon}
-            options={[{ value: "all", label: "All horizons" }, ...options.forecastHorizons.map((value) => ({ value, label: value }))]}
+            options={[{ value: "all", label: text.allHorizons }, ...options.forecastHorizons.map((value) => ({ value, label: value }))]}
             onChange={(value) => updateFilter(setFilters, "forecastHorizon", value as AnalyticsFilters["forecastHorizon"])}
           />
           <SelectFilter
-            label="Access"
-            help={FILTER_HELP.access}
+            label={text.access}
+            help={FILTER_HELP[locale].access}
             value={filters.accessCondition}
-            options={[{ value: "all", label: "All access" }, ...options.accessConditions.map((value) => ({ value, label: formatCondition(value) }))]}
+            options={[{ value: "all", label: text.allAccess }, ...options.accessConditions.map((value) => ({ value, label: formatCondition(value) }))]}
             onChange={(value) => updateFilter(setFilters, "accessCondition", value as AnalyticsFilters["accessCondition"])}
           />
           <SelectFilter
-            label="Prompt"
-            help={FILTER_HELP.prompt}
+            label={text.prompt}
+            help={FILTER_HELP[locale].prompt}
             value={filters.promptStrategy}
-            options={[{ value: "all", label: "All prompts" }, ...options.promptStrategies.map((value) => ({ value, label: formatCondition(value) }))]}
+            options={[{ value: "all", label: text.allPrompts }, ...options.promptStrategies.map((value) => ({ value, label: formatCondition(value) }))]}
             onChange={(value) => updateFilter(setFilters, "promptStrategy", value as AnalyticsFilters["promptStrategy"])}
           />
           <SelectFilter
-            label="Stage"
-            help={FILTER_HELP.stage}
+            label={text.stage}
+            help={FILTER_HELP[locale].stage}
             value={filters.stage}
-            options={[{ value: "all", label: "All stages" }, ...options.stages.map((value) => ({ value, label: formatStage(value) }))]}
+            options={[{ value: "all", label: text.allStages }, ...options.stages.map((value) => ({ value, label: formatStage(value) }))]}
             onChange={(value) => updateFilter(setFilters, "stage", value as AnalyticsFilters["stage"])}
           />
           <SelectFilter
-            label="Model"
-            help={FILTER_HELP.model}
+            label={text.model}
+            help={FILTER_HELP[locale].model}
             value={filters.model}
-            options={[{ value: "all", label: "All models" }, ...options.models.map((value) => ({ value, label: value }))]}
+            options={[{ value: "all", label: text.allModels }, ...options.models.map((value) => ({ value, label: value }))]}
             onChange={(value) => updateFilter(setFilters, "model", value)}
           />
           <SelectFilter
-            label="Provider"
-            help={FILTER_HELP.provider}
+            label={text.provider}
+            help={FILTER_HELP[locale].provider}
             value={filters.provider}
-            options={[{ value: "all", label: "All providers" }, ...options.providers.map((value) => ({ value, label: value }))]}
+            options={[{ value: "all", label: text.allProviders }, ...options.providers.map((value) => ({ value, label: value }))]}
             onChange={(value) => updateFilter(setFilters, "provider", value)}
           />
           <DateFilter
-            label="From"
-            help={FILTER_HELP.from}
+            label={text.from}
+            help={FILTER_HELP[locale].from}
             value={filters.dateFrom}
             onChange={(value) => updateFilter(setFilters, "dateFrom", value)}
           />
           <DateFilter
-            label="To"
-            help={FILTER_HELP.to}
+            label={text.to}
+            help={FILTER_HELP[locale].to}
             value={filters.dateTo}
             onChange={(value) => updateFilter(setFilters, "dateTo", value)}
           />
@@ -174,13 +327,14 @@ export function AnalyticsDashboard({ predictions }: AnalyticsDashboardProps) {
         <div className="panel analyticsChartPanel">
           <div className="analyticsChartHeader">
             <div>
-              <p className="sectionKicker">Ranked leaderboard</p>
-              <h2>{metricDefinition.label}</h2>
+              <p className="sectionKicker">{text.rankedLeaderboard}</p>
+              <h2>{formatMetricLabel(metric, locale)}</h2>
             </div>
-            <span className="metricDirectionBadge">{metricDefinition.direction === "higher" ? "Higher is better" : "Lower is better"}</span>
+            <span className="metricDirectionBadge">{metricDefinition.direction === "higher" ? text.higherBetter : text.lowerBetter}</span>
           </div>
           <RankedBarChart
             highlightedKey={highlightedKey}
+            locale={locale}
             metric={metric}
             rows={leaderboard}
             onSelect={(key) => setHighlightedKey(highlightedKey === key ? null : key)}
@@ -190,29 +344,30 @@ export function AnalyticsDashboard({ predictions }: AnalyticsDashboardProps) {
         <div className="panel analyticsChartPanel">
           <div className="analyticsChartHeader">
             <div>
-              <p className="sectionKicker">Match order</p>
-              <h2>Performance over time</h2>
+              <p className="sectionKicker">{text.matchOrder}</p>
+              <h2>{text.performanceOverTime}</h2>
             </div>
             {highlightedKey ? (
               <button className="clearFilterButton" type="button" onClick={() => setHighlightedKey(null)}>
-                Clear highlight
+                {text.clearHighlight}
               </button>
             ) : null}
           </div>
-          <LineChart metric={metric} series={series} />
+          <LineChart locale={locale} metric={metric} series={series} />
         </div>
       </section>
 
       <section className="panel analyticsTablePanel">
         <div className="panelHeader">
           <div>
-            <p className="sectionKicker">Detailed leaderboard</p>
-            <h2>Model configurations</h2>
+            <p className="sectionKicker">{text.detailedLeaderboard}</p>
+            <h2>{text.modelConfigurations}</h2>
           </div>
-          <span className="tableSummary">{leaderboard.length} rows / {filteredPredictions.length} predictions</span>
+          <span className="tableSummary">{leaderboard.length} {text.rows} / {filteredPredictions.length} {text.predictions}</span>
         </div>
         <AnalyticsTable
           highlightedKey={highlightedKey}
+          locale={locale}
           metric={metric}
           rows={leaderboard}
           onSelect={(key) => setHighlightedKey(highlightedKey === key ? null : key)}
@@ -225,21 +380,24 @@ export function AnalyticsDashboard({ predictions }: AnalyticsDashboardProps) {
 function RankedBarChart({
   rows,
   metric,
+  locale,
   highlightedKey,
   onSelect
 }: {
   rows: AnalyticsLeaderboardRow[];
   metric: AnalyticsMetric;
+  locale: Locale;
   highlightedKey: string | null;
   onSelect: (key: string) => void;
 }) {
   const metricDefinition = getMetricDefinition(metric);
+  const text = ANALYTICS_TEXT[locale];
   const values = rows.map((row) => row.metricValue).filter((value): value is number => value !== null);
   const min = values.length > 0 ? Math.min(...values) : 0;
   const max = values.length > 0 ? Math.max(...values) : 0;
 
   if (rows.length === 0) {
-    return <EmptyChart label="No rows match the selected filters." />;
+    return <EmptyChart label={text.noRowsFilters} locale={locale} />;
   }
 
   return (
@@ -258,8 +416,8 @@ function RankedBarChart({
             <span className="barLabel barModelLabel">
               <span>{row.model}</span>
               <InfoTooltip
-                label={`${row.model} configuration`}
-                lines={buildModelConfigurationHelp(row)}
+                label={`${row.model} ${text.config}`}
+                lines={buildModelConfigurationHelp(row, locale)}
               />
             </span>
             <span className="barTrack">
@@ -289,12 +447,13 @@ function getBarWidth(value: number | null, min: number, max: number, direction: 
   return Math.max(4, Math.min(100, normalized * 100));
 }
 
-function LineChart({ series, metric }: { series: AnalyticsSeries[]; metric: AnalyticsMetric }) {
+function LineChart({ locale, series, metric }: { locale: Locale; series: AnalyticsSeries[]; metric: AnalyticsMetric }) {
   const metricDefinition = getMetricDefinition(metric);
+  const text = ANALYTICS_TEXT[locale];
   const allValues = series.flatMap((entry) => entry.values.map((value) => value.value)).filter((value): value is number => value !== null);
 
   if (series.length === 0 || allValues.length === 0) {
-    return <EmptyChart label="No scored values yet for this metric and filter set." />;
+    return <EmptyChart label={text.noScoredValues} locale={locale} />;
   }
 
   const domain = getLineChartDomain(metricDefinition, allValues);
@@ -307,7 +466,7 @@ function LineChart({ series, metric }: { series: AnalyticsSeries[]; metric: Anal
 
   return (
     <div className="lineChartWrap">
-      <svg className="lineChart" role="img" viewBox="0 0 720 300" aria-label={`${metricDefinition.label} over matches`}>
+      <svg className="lineChart" role="img" viewBox="0 0 720 300" aria-label={`${formatMetricLabel(metric, locale)} ${text.performanceOverTime}`}>
         <line className="chartAxis" x1="54" x2="690" y1="248" y2="248" />
         <line className="chartAxis" x1="54" x2="54" y1="24" y2="248" />
         <line className="chartGridLine" x1="54" x2="690" y1="136" y2="136" />
@@ -323,9 +482,9 @@ function LineChart({ series, metric }: { series: AnalyticsSeries[]; metric: Anal
             </g>
           );
         })}
-        <text className="chartAxisLabel" x="372" y="292" textAnchor="middle">Match order</text>
+        <text className="chartAxisLabel" x="372" y="292" textAnchor="middle">{text.matchOrder}</text>
         <text className="chartAxisLabel" textAnchor="middle" transform="translate(14 136) rotate(-90)">
-          {metricDefinition.shortLabel}
+          {formatMetricShortLabel(metric, locale)}
         </text>
         {series.map((entry, index) => {
           const points = entry.values
@@ -364,16 +523,19 @@ function LineChart({ series, metric }: { series: AnalyticsSeries[]; metric: Anal
 function AnalyticsTable({
   rows,
   metric,
+  locale,
   highlightedKey,
   onSelect
 }: {
   rows: AnalyticsLeaderboardRow[];
   metric: AnalyticsMetric;
+  locale: Locale;
   highlightedKey: string | null;
   onSelect: (key: string) => void;
 }) {
+  const text = ANALYTICS_TEXT[locale];
   if (rows.length === 0) {
-    return <EmptyChart label="No table rows match the selected filters." />;
+    return <EmptyChart label={text.noTableRows} locale={locale} />;
   }
 
   return (
@@ -381,24 +543,24 @@ function AnalyticsTable({
       <table className="analyticsTable">
         <thead>
           <tr>
-            <th>Rank</th>
-            <th>Model</th>
-            <th>Provider</th>
-            <th>Horizon</th>
-            <th>Access</th>
-            <th>Prompt</th>
-            <th>Scored</th>
-            <th>Scores</th>
-            <th>Brier</th>
-            <th>Log loss</th>
-            <th>Top acc.</th>
-            <th>Exact</th>
-            <th>GD acc.</th>
-            <th>Total-goals err.</th>
-            <th>Invalid</th>
-            <th>Repair</th>
-            <th>Search</th>
-            <th>Selected metric</th>
+            <th>{text.rank}</th>
+            <th>{text.model}</th>
+            <th>{text.provider}</th>
+            <th>{text.horizon}</th>
+            <th>{text.access}</th>
+            <th>{text.prompt}</th>
+            <th>{text.scored}</th>
+            <th>{text.scores}</th>
+            <th>{text.brier}</th>
+            <th>{text.logLoss}</th>
+            <th>{text.topAcc}</th>
+            <th>{text.exact}</th>
+            <th>{text.gdAcc}</th>
+            <th>{text.totalGoalsErr}</th>
+            <th>{text.invalid}</th>
+            <th>{text.repair}</th>
+            <th>{text.search}</th>
+            <th>{text.selectedMetric}</th>
           </tr>
         </thead>
         <tbody>
@@ -413,8 +575,8 @@ function AnalyticsTable({
                 <span className="modelConfigCell">
                   <span>{row.model}</span>
                   <InfoTooltip
-                    label={`${row.model} configuration`}
-                    lines={buildModelConfigurationHelp(row)}
+                    label={`${row.model} ${text.config}`}
+                    lines={buildModelConfigurationHelp(row, locale)}
                   />
                 </span>
               </td>
@@ -584,86 +746,164 @@ function FilterLabel({ label, help }: { label: string; help: string }) {
   );
 }
 
-function buildModelConfigurationHelp(row: AnalyticsLeaderboardRow): TooltipLine[] {
+function buildModelConfigurationHelp(row: AnalyticsLeaderboardRow, locale: Locale): TooltipLine[] {
+  const text = ANALYTICS_TEXT[locale];
   const stages = row.stages.length > 0
     ? row.stages.map(formatStage).join(", ")
-    : "the currently selected stages";
+    : text.currentStages;
 
   return [
     {
       label: row.forecastHorizon,
-      text: explainForecastHorizon(row.forecastHorizon)
+      text: explainForecastHorizon(row.forecastHorizon, locale)
     },
     {
       label: formatCondition(row.accessCondition),
-      text: explainAccessCondition(row.accessCondition)
+      text: explainAccessCondition(row.accessCondition, locale)
     },
     {
       label: formatCondition(row.promptStrategy),
-      text: explainPromptStrategy(row.promptStrategy)
+      text: explainPromptStrategy(row.promptStrategy, locale)
     },
     {
-      label: "Stage coverage",
+      label: text.stageCoverage,
       text: stages
     },
     {
-      label: "Predictions",
-      text: `${row.predictionsTotal} total predictions in this configuration.`
+      label: text.predictions,
+      text: `${row.predictionsTotal} ${text.predictionsTotal}`
     },
     {
-      label: "Evaluation",
-      text: `${row.matchesScored} match(es) currently have evaluation scores.`
+      label: locale === "de" ? "Auswertung" : "Evaluation",
+      text: `${row.matchesScored} ${text.evaluationScores}`
     }
   ];
 }
 
-function explainForecastHorizon(value: string): string {
+function explainForecastHorizon(value: string, locale: Locale): string {
+  const text = ANALYTICS_TEXT[locale];
   if (value === "STAGE_OPENING") {
-    return "Stage opening means these predictions were generated once at the start of the stage, before the group-stage run.";
+    return text.stageOpening;
   }
 
   if (value === "T_24H") {
-    return "T_24H means the prediction was scheduled approximately 24 hours before kickoff.";
+    return text.t24h;
   }
 
   if (value === "T_2H") {
-    return "T_2H means the prediction was scheduled approximately 2 hours before kickoff.";
+    return text.t2h;
   }
 
-  return `${value} is the forecast horizon used for this configuration.`;
+  return `${value} ${text.forecastFallback}`;
 }
 
-function explainAccessCondition(value: string): string {
+function explainAccessCondition(value: string, locale: Locale): string {
+  const text = ANALYTICS_TEXT[locale];
   if (value === "open_book") {
-    return "Open book means the model was allowed to use configured web-search/tool access before answering.";
+    return text.openBook;
   }
 
   if (value === "closed_book") {
-    return "Closed book means the model had to answer from its internal knowledge only, without search/tool access.";
+    return text.closedBook;
   }
 
-  return `${formatCondition(value)} is the access condition for this configuration.`;
+  return `${formatCondition(value)} ${text.accessFallback}`;
 }
 
-function explainPromptStrategy(value: string): string {
+function explainPromptStrategy(value: string, locale: Locale): string {
+  const text = ANALYTICS_TEXT[locale];
   if (value === "direct_score") {
-    return "Direct score asks the model for the most likely scoreline plus required probabilities.";
+    return text.directScore;
   }
 
   if (value === "probabilistic_forecast") {
-    return "Probabilistic forecast emphasizes calibrated outcome probabilities before the scoreline.";
+    return text.probabilistic;
   }
 
-  return `${formatCondition(value)} is the prompt strategy used for this configuration.`;
+  return `${formatCondition(value)} ${text.promptFallback}`;
 }
 
-function EmptyChart({ label }: { label: string }) {
+function EmptyChart({ label, locale }: { label: string; locale: Locale }) {
   return (
     <div className="emptyState analyticsEmptyState">
-      <strong>No data</strong>
+      <strong>{ANALYTICS_TEXT[locale].noData}</strong>
       <p>{label}</p>
     </div>
   );
+}
+
+function formatMetricLabel(metric: AnalyticsMetric, locale: Locale): string {
+  if (locale === "en") {
+    return METRIC_DEFINITIONS[metric].label;
+  }
+
+  switch (metric) {
+    case "kicktipp_points_90":
+      return "Punkte";
+    case "brier_90":
+      return "Brier Score";
+    case "log_loss_90":
+      return "Log Loss";
+    case "top_outcome_accuracy_90":
+      return "Top-Outcome-Genauigkeit";
+    case "exact_score_accuracy_90":
+      return "Exakte Ergebnisgenauigkeit";
+    case "goal_difference_accuracy_90":
+      return "Tordifferenz-Genauigkeit";
+    case "mean_goal_difference_abs_error_90":
+      return "Mittlerer Tordifferenzfehler";
+    case "mean_total_goals_abs_error_90":
+      return "Mittlerer Gesamt-Torfehler";
+    case "advancement_accuracy":
+      return "Weiterkommens-Genauigkeit";
+    case "invalid_output_rate":
+      return "Rate ungultiger Ausgaben";
+    case "repair_rate":
+      return "Reparaturrate";
+    case "normalization_rate":
+      return "Normalisierungsrate";
+    case "open_book_search_observed_rate":
+      return "Beobachtete Open-Book-Suche";
+    case "score_probability_consistency_rate":
+      return "Score/Wahrscheinlichkeit-Konsistenz";
+  }
+}
+
+function formatMetricShortLabel(metric: AnalyticsMetric, locale: Locale): string {
+  if (locale === "en") {
+    return METRIC_DEFINITIONS[metric].shortLabel;
+  }
+
+  switch (metric) {
+    case "kicktipp_points_90":
+      return "Punkte";
+    case "brier_90":
+      return "Brier";
+    case "log_loss_90":
+      return "Log Loss";
+    case "top_outcome_accuracy_90":
+      return "Top-Gen.";
+    case "exact_score_accuracy_90":
+      return "Exakt";
+    case "goal_difference_accuracy_90":
+      return "TD-Gen.";
+    case "mean_goal_difference_abs_error_90":
+      return "TD-Fehler";
+    case "mean_total_goals_abs_error_90":
+      return "Torfehler";
+    case "advancement_accuracy":
+      return "Weiter";
+    case "invalid_output_rate":
+      return "Ungultig";
+    case "repair_rate":
+      return "Reparatur";
+    case "normalization_rate":
+      return "Norm.";
+    case "open_book_search_observed_rate":
+      return "Suche";
+    case "score_probability_consistency_rate":
+      return "Konsist.";
+  }
 }
 
 function getFilterOptions(predictions: BenchmarkDisplayPrediction[]) {

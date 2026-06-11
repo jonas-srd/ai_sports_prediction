@@ -9,6 +9,7 @@ import type {
 } from "@/lib/benchmark-analytics";
 import { buildAnalyticsLeaderboard, formatCondition } from "@/lib/benchmark-analytics";
 import type { DashboardLeaderboardEntry, DashboardMatch, DashboardPrediction } from "@/lib/dashboard-data";
+import type { Locale } from "@/lib/i18n";
 
 export type PredictionViewMode = "best" | "custom";
 export type CustomPredictionMode = "all" | "filtered";
@@ -31,6 +32,7 @@ export type PredictionViewOptions = {
 
 type LeaderboardDisplayOptions = {
   conciseProvider?: boolean;
+  locale?: Locale;
 };
 
 export function getPredictionViewOptions(matches: DashboardMatch[]): PredictionViewOptions {
@@ -95,7 +97,7 @@ export function buildPredictionViewLeaderboard(
     .map((row) => ({
       model: row.model,
       provider: options.conciseProvider
-        ? `${row.provider} / best setup`
+        ? `${row.provider} / ${options.locale === "de" ? "bestes Setup" : "best setup"}`
         : formatProviderWithConfig(row.provider, row.accessCondition, row.promptStrategy, row.forecastHorizon),
       points: row.kicktippPoints90 ?? 0,
       exact: Math.round((row.exactScoreAccuracy90 ?? 0) * row.matchesScored),
@@ -108,18 +110,25 @@ export function buildPredictionViewLeaderboard(
     }));
 }
 
-export function getPredictionViewSummary(state: PredictionViewState, matches: DashboardMatch[]): string {
+export function getPredictionViewSummary(state: PredictionViewState, matches: DashboardMatch[], locale: Locale = "en"): string {
   const shown = getAllPredictions(filterMatchesForPredictionView(matches, state)).length;
+  const picksShown = locale === "de" ? "Tipps angezeigt" : "picks shown";
 
   if (state.mode === "best") {
-    return `Best setup per model, ${shown} picks shown`;
+    return locale === "de"
+      ? `Bestes Setup pro Modell, ${shown} ${picksShown}`
+      : `Best setup per model, ${shown} ${picksShown}`;
   }
 
   if (state.customMode === "all") {
-    return `All model strategies, ${shown} picks shown`;
+    return locale === "de"
+      ? `Alle Modellstrategien, ${shown} ${picksShown}`
+      : `All model strategies, ${shown} ${picksShown}`;
   }
 
-  return `Custom strategy view, ${shown} picks shown`;
+  return locale === "de"
+    ? `Benutzerdefinierte Strategieansicht, ${shown} ${picksShown}`
+    : `Custom strategy view, ${shown} ${picksShown}`;
 }
 
 export function getPredictionConfigurationKey(prediction: DashboardPrediction): string {

@@ -10,8 +10,10 @@ import type { DashboardMatch, DashboardPrediction } from "@/lib/dashboard-data";
 import { formatCondition, formatStage } from "@/lib/benchmark-analytics";
 import { InfoTooltip, type TooltipLine } from "@/components/info-tooltip";
 import { TeamMatchup } from "@/components/team-matchup";
+import { commonText, type Locale } from "@/lib/i18n";
 
 type MatchPredictionCardProps = {
+  locale: Locale;
   match: DashboardMatch;
   center: string;
   meta?: string | null;
@@ -28,6 +30,7 @@ type PredictionRow = {
 };
 
 export function MatchPredictionCard({
+  locale,
   match,
   center,
   meta,
@@ -45,6 +48,8 @@ export function MatchPredictionCard({
   const displayHomeTeam = homeTeamLabel ?? match.homeTeam;
   const displayAwayTeam = awayTeamLabel ?? match.awayTeam;
   const anchorId = getMatchAnchorId(match.id);
+  const text = MATCH_CARD_TEXT[locale];
+  const common = commonText[locale];
 
   useEffect(() => {
     const openIfTargeted = () => {
@@ -70,7 +75,7 @@ export function MatchPredictionCard({
       {badge ? <span className="matchNumberBadge">{badge}</span> : null}
       <button
         aria-expanded={isOpen}
-        aria-label={`${isOpen ? "Hide" : "Show"} predictions for ${displayHomeTeam} vs ${displayAwayTeam}`}
+        aria-label={`${isOpen ? text.hide : text.show} ${text.predictionsFor} ${displayHomeTeam} vs ${displayAwayTeam}`}
         className="predictionMatchButton"
         type="button"
         onClick={() => setIsOpen((current) => !current)}
@@ -82,28 +87,28 @@ export function MatchPredictionCard({
           center={center}
           meta={meta}
         />
-        <span className="matchDisclosure">{isOpen ? "Hide predictions" : "Show predictions"}</span>
+        <span className="matchDisclosure">{isOpen ? text.hidePredictions : text.showPredictions}</span>
       </button>
 
       {isOpen ? (
         <div className="matchPredictionPanel">
           <div className={`matchPredictionHeader${predictionControls ? " hasControls" : ""}`}>
             <div className="matchPredictionSummary">
-              <span>Predictions</span>
-              <strong>{rows.length} model picks</strong>
+              <span>{common.predictions}</span>
+              <strong>{rows.length} {text.modelPicks}</strong>
             </div>
             {predictionControls ? (
               <div className="matchPredictionControls">
                 {predictionControls}
               </div>
             ) : null}
-            <span className="finalScoreBadge">Result {formatActualScore(match)}</span>
+            <span className="finalScoreBadge">{common.result} {formatActualScore(match, locale)}</span>
           </div>
 
           {rows.length === 0 ? (
             <div className="emptyPredictionPanel">
-              <strong>No predictions yet</strong>
-              <p>Run the prediction script for this match to show model picks here.</p>
+              <strong>{text.noPredictions}</strong>
+              <p>{text.noPredictionsDescription}</p>
             </div>
           ) : (
             <div className="matchPredictionGrid">
@@ -113,8 +118,8 @@ export function MatchPredictionCard({
                     <div className="matchPredictionModelName">
                       <strong>{row.prediction.model}</strong>
                       <InfoTooltip
-                        label={`${row.prediction.model} configuration`}
-                        lines={buildPredictionConfigurationHelp(row.prediction)}
+                        label={`${row.prediction.model} ${text.configuration}`}
+                        lines={buildPredictionConfigurationHelp(row.prediction, locale)}
                       />
                     </div>
                     <span>{row.prediction.provider}</span>
@@ -131,17 +136,17 @@ export function MatchPredictionCard({
                   </span>
 
                   <div className="probabilityStack">
-                    <span>90' {formatProbabilities(row.prediction.homeWin90Prob, row.prediction.draw90Prob, row.prediction.awayWin90Prob)}</span>
+                    <span>90' {formatProbabilities(row.prediction.homeWin90Prob, row.prediction.draw90Prob, row.prediction.awayWin90Prob, locale)}</span>
                     {hasAdvancement(row.prediction) ? (
-                      <span>Adv {formatAdvancement(row.prediction)}</span>
+                      <span>{text.advancementShort} {formatAdvancement(row.prediction)}</span>
                     ) : (
-                      <span>Full {formatProbabilities(row.prediction.homeWinFullProb, row.prediction.drawFullProb, row.prediction.awayWinFullProb)}</span>
+                      <span>{text.fullShort} {formatProbabilities(row.prediction.homeWinFullProb, row.prediction.drawFullProb, row.prediction.awayWinFullProb, locale)}</span>
                     )}
                   </div>
 
                   <div className="predictionPoints">
-                    <strong>{row.prediction.scorePoints !== null ? `${row.prediction.scorePoints} scores` : "pending"}</strong>
-                    <span>{row.prediction.scoreReason ?? getPendingLabel(hasResult, row.prediction)}</span>
+                    <strong>{row.prediction.scorePoints !== null ? `${row.prediction.scorePoints} ${common.scores}` : common.pending}</strong>
+                    <span>{formatScoreReason(row.prediction.scoreReason, locale) ?? getPendingLabel(hasResult, row.prediction, locale)}</span>
                   </div>
 
                   {row.prediction.reason ? (
@@ -170,97 +175,103 @@ function getMatchAnchorId(matchId: string): string {
   return `match-${matchId}`;
 }
 
-function buildPredictionConfigurationHelp(prediction: DashboardPrediction): TooltipLine[] {
+function buildPredictionConfigurationHelp(prediction: DashboardPrediction, locale: Locale): TooltipLine[] {
+  const text = MATCH_CARD_TEXT[locale];
+  const common = commonText[locale];
   return [
     {
       label: prediction.forecastHorizon,
-      text: explainForecastHorizon(prediction.forecastHorizon)
+      text: explainForecastHorizon(prediction.forecastHorizon, locale)
     },
     {
       label: formatCondition(prediction.accessCondition),
-      text: explainAccessCondition(prediction.accessCondition)
+      text: explainAccessCondition(prediction.accessCondition, locale)
     },
     {
       label: formatCondition(prediction.promptStrategy),
-      text: explainPromptStrategy(prediction.promptStrategy)
+      text: explainPromptStrategy(prediction.promptStrategy, locale)
     },
     {
       label: formatStage(prediction.stage),
-      text: "Tournament phase this prediction belongs to."
+      text: text.stageHelp
     },
     {
-      label: "Pick",
+      label: common.pick,
       text: `${formatPredictionScore(prediction)} after 90 minutes.`
     },
     {
-      label: "Validation",
+      label: common.validation,
       text: prediction.isValidForScoring
-        ? "Output is valid for scoring."
-        : `Output is not valid for scoring (${prediction.validationStatus ?? "invalid"}).`
+        ? text.validOutput
+        : `${text.invalidOutput} (${prediction.validationStatus ?? text.invalid}).`
     },
     {
-      label: "Evaluation",
+      label: common.evaluation,
       text: prediction.scorePoints === null
-        ? "Still pending for this match."
-        : `${prediction.scorePoints} scores, reason: ${prediction.scoreReason ?? "scored"}.`
+        ? text.stillPending
+        : `${prediction.scorePoints} ${common.scores}, ${common.reason}: ${formatScoreReason(prediction.scoreReason, locale) ?? text.scored}.`
     }
   ];
 }
 
-function explainForecastHorizon(value: string): string {
+function explainForecastHorizon(value: string, locale: Locale): string {
+  const text = MATCH_CARD_TEXT[locale];
   if (value === "STAGE_OPENING") {
-    return "Prediction generated once at the start of the tournament stage, before the relevant matches were played.";
+    return text.stageOpening;
   }
 
   if (value === "T_24H") {
-    return "Prediction scheduled approximately 24 hours before kickoff.";
+    return text.t24h;
   }
 
   if (value === "T_2H") {
-    return "Prediction scheduled approximately 2 hours before kickoff.";
+    return text.t2h;
   }
 
-  return `${value} is the forecast horizon used for this prediction.`;
+  return `${value} ${text.forecastFallback}`;
 }
 
-function explainAccessCondition(value: string): string {
+function explainAccessCondition(value: string, locale: Locale): string {
+  const text = MATCH_CARD_TEXT[locale];
   if (value === "open_book") {
-    return "Model was allowed to use configured web-search/tool access before answering.";
+    return text.openBook;
   }
 
   if (value === "closed_book") {
-    return "Model had to answer from internal knowledge only, without search/tool access.";
+    return text.closedBook;
   }
 
-  return `${formatCondition(value)} is the access condition stored for this prediction.`;
+  return `${formatCondition(value)} ${text.accessFallback}`;
 }
 
-function explainPromptStrategy(value: string): string {
+function explainPromptStrategy(value: string, locale: Locale): string {
+  const text = MATCH_CARD_TEXT[locale];
   if (value === "direct_score") {
-    return "Prompt asks for the most likely scoreline plus required probabilities.";
+    return text.directScore;
   }
 
   if (value === "probabilistic_forecast") {
-    return "Prompt emphasizes calibrated outcome probabilities before the scoreline.";
+    return text.probabilistic;
   }
 
-  return `${formatCondition(value)} is the prompt strategy stored for this prediction.`;
+  return `${formatCondition(value)} ${text.promptFallback}`;
 }
 
-function formatActualScore(match: DashboardMatch): string {
+function formatActualScore(match: DashboardMatch, locale: Locale): string {
   if (match.actualHome === null || match.actualAway === null) {
-    return "open";
+    return commonText[locale].open;
   }
 
   return `${match.actualHome} - ${match.actualAway}`;
 }
 
-function getPendingLabel(hasResult: boolean, prediction: DashboardPrediction): string {
+function getPendingLabel(hasResult: boolean, prediction: DashboardPrediction, locale: Locale): string {
+  const text = MATCH_CARD_TEXT[locale];
   if (!prediction.isValidForScoring) {
-    return prediction.validationStatus ?? "invalid";
+    return prediction.validationStatus ?? text.invalid;
   }
 
-  return hasResult ? "awaiting evaluation" : "waiting for result";
+  return hasResult ? text.awaitingEvaluation : text.waitingForResult;
 }
 
 function formatPredictionScore(prediction: DashboardPrediction): string {
@@ -271,13 +282,80 @@ function formatPredictionScore(prediction: DashboardPrediction): string {
   return `${prediction.predictedHome} - ${prediction.predictedAway}`;
 }
 
-function formatProbabilities(home: number | null, draw: number | null, away: number | null): string {
+function formatProbabilities(home: number | null, draw: number | null, away: number | null, locale: Locale): string {
   if (home === null || draw === null || away === null) {
-    return "probabilities pending";
+    return MATCH_CARD_TEXT[locale].probabilitiesPending;
   }
 
   return `H ${formatPercent(home)} / D ${formatPercent(draw)} / A ${formatPercent(away)}`;
 }
+
+const MATCH_CARD_TEXT = {
+  en: {
+    show: "Show",
+    hide: "Hide",
+    predictionsFor: "predictions for",
+    hidePredictions: "Hide predictions",
+    showPredictions: "Show predictions",
+    modelPicks: "model picks",
+    noPredictions: "No predictions yet",
+    noPredictionsDescription: "Run the prediction script for this match to show model picks here.",
+    configuration: "configuration",
+    advancementShort: "Adv",
+    fullShort: "Full",
+    stageHelp: "Tournament phase this prediction belongs to.",
+    validOutput: "Output is valid for scoring.",
+    invalidOutput: "Output is not valid for scoring",
+    invalid: "invalid",
+    stillPending: "Still pending for this match.",
+    scored: "scored",
+    stageOpening: "Prediction generated once at the start of the tournament stage, before the relevant matches were played.",
+    t24h: "Prediction scheduled approximately 24 hours before kickoff.",
+    t2h: "Prediction scheduled approximately 2 hours before kickoff.",
+    forecastFallback: "is the forecast horizon used for this prediction.",
+    openBook: "Model was allowed to use configured web-search/tool access before answering.",
+    closedBook: "Model had to answer from internal knowledge only, without search/tool access.",
+    accessFallback: "is the access condition stored for this prediction.",
+    directScore: "Prompt asks for the most likely scoreline plus required probabilities.",
+    probabilistic: "Prompt emphasizes calibrated outcome probabilities before the scoreline.",
+    promptFallback: "is the prompt strategy stored for this prediction.",
+    awaitingEvaluation: "awaiting evaluation",
+    waitingForResult: "waiting for result",
+    probabilitiesPending: "probabilities pending"
+  },
+  de: {
+    show: "Zeige",
+    hide: "Verberge",
+    predictionsFor: "Vorhersagen fur",
+    hidePredictions: "Vorhersagen ausblenden",
+    showPredictions: "Vorhersagen anzeigen",
+    modelPicks: "Modelltipps",
+    noPredictions: "Noch keine Vorhersagen",
+    noPredictionsDescription: "Starte das Vorhersage-Skript fur dieses Spiel, um Modelltipps anzuzeigen.",
+    configuration: "Konfiguration",
+    advancementShort: "Weiter",
+    fullShort: "Vollzeit",
+    stageHelp: "Turnierphase, zu der diese Prognose gehort.",
+    validOutput: "Ausgabe ist fur die Wertung gultig.",
+    invalidOutput: "Ausgabe ist nicht fur die Wertung gultig",
+    invalid: "ungultig",
+    stillPending: "Fur dieses Spiel noch offen.",
+    scored: "gewertet",
+    stageOpening: "Prognose wurde einmal zu Beginn der Turnierphase erstellt, bevor die relevanten Spiele gespielt wurden.",
+    t24h: "Prognose wurde ungefahr 24 Stunden vor Anpfiff geplant.",
+    t2h: "Prognose wurde ungefahr 2 Stunden vor Anpfiff geplant.",
+    forecastFallback: "ist der Prognosehorizont dieser Prognose.",
+    openBook: "Das Modell durfte vor der Antwort konfigurierte Websuche/Tools verwenden.",
+    closedBook: "Das Modell musste ohne Suche/Tools aus internem Wissen antworten.",
+    accessFallback: "ist die gespeicherte Zugriffsbedingung dieser Prognose.",
+    directScore: "Der Prompt fragt nach dem wahrscheinlichsten Ergebnis plus den benotigten Wahrscheinlichkeiten.",
+    probabilistic: "Der Prompt betont kalibrierte Ergebniswahrscheinlichkeiten vor dem Ergebnis-Tipp.",
+    promptFallback: "ist die gespeicherte Prompt-Strategie dieser Prognose.",
+    awaitingEvaluation: "wartet auf Auswertung",
+    waitingForResult: "wartet auf Ergebnis",
+    probabilitiesPending: "Wahrscheinlichkeiten offen"
+  }
+} as const;
 
 function formatAdvancement(prediction: DashboardPrediction): string {
   return `H ${formatPercent(prediction.homeAdvancesProb)} / A ${formatPercent(prediction.awayAdvancesProb)}`;
@@ -293,4 +371,18 @@ function formatPercent(value: number | null): string {
 
 function hasAdvancement(prediction: DashboardPrediction): boolean {
   return prediction.homeAdvancesProb !== null || prediction.awayAdvancesProb !== null;
+}
+
+function formatScoreReason(value: string | null, locale: Locale): string | null {
+  if (!value || locale === "en") {
+    return value;
+  }
+
+  const normalized = value.toLowerCase();
+  if (normalized.includes("exact")) return "exaktes Ergebnis";
+  if (normalized.includes("goal difference")) return "richtige Tordifferenz";
+  if (normalized.includes("tendency")) return "richtige Tendenz";
+  if (normalized.includes("miss")) return "Fehltipp";
+  if (normalized.includes("invalid")) return "ungultig";
+  return value;
 }

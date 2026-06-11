@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+﻿import type { Metadata } from "next";
 
 export const metadata: Metadata = {
   title: "About | LLM SoccerArena",
@@ -222,23 +222,39 @@ export default function AboutPage() {
           <div className="aboutTeamMember">
             <strong>Jonas Schweisthal</strong>
             <p>
-              PhD researcher at the Chair of Prof. Feuerriegel. Designed and built the benchmark workflow, prediction protocol,
-              scoring pipeline, database architecture, and public dashboard.
+              PhD researcher at LMU Munich & Munich Center for Machine Learning (MCML). Designed and built the benchmark workflow,
+              prediction protocol, scoring pipeline, database architecture, and public dashboard.
             </p>
           </div>
           <div className="aboutTeamMember">
-            <strong>Jonas Schröder</strong>
+            <strong>Jonas Schroeder</strong>
             <p>
-              PhD researcher at the Chair of Prof. Feuerriegel. Designed and built the benchmark workflow, prediction protocol,
-              scoring pipeline, database architecture, and public dashboard.
+              PhD researcher at LMU Munich & Munich Center for Machine Learning (MCML). Designed and built the benchmark workflow,
+              prediction protocol, scoring pipeline, database architecture, and public dashboard.
+            </p>
+          </div>
+          <div className="aboutTeamMember">
+            <strong>Oliver Mueller</strong>
+            <p>
+              Scientific collaborator. Professor in Data Analytics at Paderborn University & Head of AI Competence Center
+              of the Software Innovation Campus Paderborn (SICP).
+            </p>
+          </div>
+          <div className="aboutTeamMember">
+            <strong>Markus Weinmann</strong>
+            <p>
+              Project lead. Professor in Business Analytics at the University of Cologne & Institute for Business AI.
             </p>
           </div>
           <div className="aboutTeamMember">
             <strong>Stefan Feuerriegel</strong>
-            <p>Project Lead.</p>
+            <p>
+              Project lead. Professor in AI for Management at LMU Munich School of Management & Munich Center for Machine Learning (MCML).
+            </p>
           </div>
         </div>
       </section>
     </main>
   );
 }
+

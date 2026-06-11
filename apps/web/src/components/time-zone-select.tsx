@@ -2,15 +2,19 @@
 
 import { TIME_ZONE_OPTIONS } from "@/lib/timezone";
 import { useTimeZone } from "@/components/time-zone-provider";
+import { useLocale } from "@/components/locale-provider";
+import { commonText } from "@/lib/i18n";
 
 export function TimeZoneSelect() {
   const { timeZone, setTimeZone } = useTimeZone();
+  const { locale } = useLocale();
+  const text = commonText[locale];
 
   return (
-    <label className="siteNavTimeZone">
-      <span>Timezone</span>
+    <label className="siteNavControl">
+      <span>{text.timezone}</span>
       <select
-        aria-label="Display timezone"
+        aria-label={text.displayTimezone}
         value={timeZone}
         onChange={(event) => setTimeZone(event.target.value)}
       >

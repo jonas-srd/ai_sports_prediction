@@ -4,9 +4,10 @@
  */
 import type { Metadata } from "next";
 import type { ReactNode } from "react";
-import Link from "next/link";
+import { HtmlLangSync } from "@/components/html-lang-sync";
+import { LocaleProvider } from "@/components/locale-provider";
+import { SiteNav } from "@/components/site-nav";
 import { TimeZoneProvider } from "@/components/time-zone-provider";
-import { TimeZoneSelect } from "@/components/time-zone-select";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -18,23 +19,13 @@ export default function RootLayout({ children }: Readonly<{ children: ReactNode 
   return (
     <html lang="en">
       <body>
-        <TimeZoneProvider>
-          <header className="siteNav">
-            <div className="siteNavInner">
-              <Link className="siteNavLogo" href="/">LLM SoccerArena</Link>
-              <nav className="siteNavLinks">
-                <Link href="/">Home</Link>
-                <Link href="/about">About</Link>
-                <Link href="/tournament-tree">World Cup Bracket</Link>
-                <Link href="/matches">Matches</Link>
-                <Link href="/analytics">Analytics</Link>
-                <Link href="/impressum">Legal Notice</Link>
-              </nav>
-              <TimeZoneSelect />
-            </div>
-          </header>
-          {children}
-        </TimeZoneProvider>
+        <LocaleProvider>
+          <TimeZoneProvider>
+            <HtmlLangSync />
+            <SiteNav />
+            {children}
+          </TimeZoneProvider>
+        </LocaleProvider>
       </body>
     </html>
   );

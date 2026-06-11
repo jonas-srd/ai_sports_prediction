@@ -35,26 +35,26 @@ export function formatMatchTime(value: string | undefined, timeZone: string): st
   }).format(date);
 }
 
-export function formatShortDate(value: string | undefined, timeZone: string): string | null {
+export function formatShortDate(value: string | undefined, timeZone: string, locale = "en-GB"): string | null {
   const date = parseDate(value);
   if (!date) {
     return null;
   }
 
-  return new Intl.DateTimeFormat("en-GB", {
+  return new Intl.DateTimeFormat(locale, {
     month: "short",
     day: "numeric",
     timeZone
   }).format(date);
 }
 
-export function formatShortDateTime(value: string | undefined, timeZone: string): string {
+export function formatShortDateTime(value: string | undefined, timeZone: string, locale = "en-GB"): string {
   const date = parseDate(value);
   if (!date) {
     return "Date open";
   }
 
-  return new Intl.DateTimeFormat("en-GB", {
+  return new Intl.DateTimeFormat(locale, {
     month: "short",
     day: "numeric",
     hour: "2-digit",
@@ -63,13 +63,13 @@ export function formatShortDateTime(value: string | undefined, timeZone: string)
   }).format(date);
 }
 
-export function formatFullDay(value: string | undefined, timeZone: string): string {
+export function formatFullDay(value: string | undefined, timeZone: string, locale = "en-GB"): string {
   const date = parseDate(value);
   if (!date) {
     return "Date open";
   }
 
-  return new Intl.DateTimeFormat("en-GB", {
+  return new Intl.DateTimeFormat(locale, {
     weekday: "long",
     day: "numeric",
     month: "long",

@@ -17,8 +17,10 @@ import { MatchPredictionCard } from "@/components/match-prediction-card";
 import { PredictionViewControls } from "@/components/prediction-view-controls";
 import { formatFullDay, formatMatchTime, getLocalDateKey } from "@/lib/timezone";
 import { useTimeZone } from "@/components/time-zone-provider";
+import type { Locale } from "@/lib/i18n";
 
 type MatchesScheduleProps = {
+  locale: Locale;
   matches: DashboardMatch[];
 };
 
@@ -28,7 +30,34 @@ type ScheduleDay = {
   matches: DashboardMatch[];
 };
 
-export function MatchesSchedule({ matches }: MatchesScheduleProps) {
+const SCHEDULE_TEXT = {
+  en: {
+    knockout: "Knockout",
+    mixedDay: "Mixed day",
+    viewGroups: "View groups",
+    groupStage: "Group stage",
+    roundOf32: "Round of 32",
+    roundOf16: "Round of 16",
+    quarterFinals: "Quarter-finals",
+    semiFinals: "Semi-finals",
+    thirdPlace: "Third place",
+    final: "Final"
+  },
+  de: {
+    knockout: "K.-o.-Phase",
+    mixedDay: "Gemischter Tag",
+    viewGroups: "Gruppen ansehen",
+    groupStage: "Gruppenphase",
+    roundOf32: "Runde der 32",
+    roundOf16: "Achtelfinale",
+    quarterFinals: "Viertelfinale",
+    semiFinals: "Halbfinale",
+    thirdPlace: "Spiel um Platz 3",
+    final: "Finale"
+  }
+} as const;
+
+export function MatchesSchedule({ locale, matches }: MatchesScheduleProps) {
   const { timeZone } = useTimeZone();
   const options = useMemo(() => getPredictionViewOptions(matches), [matches]);
   const [viewState, setViewState] = useState<PredictionViewState>(() => getDefaultPredictionViewState(options));
@@ -36,7 +65,7 @@ export function MatchesSchedule({ matches }: MatchesScheduleProps) {
     () => filterMatchesForPredictionView(matches, viewState),
     [matches, viewState]
   );
-  const scheduleDays = useMemo(() => groupMatchesByDay(filteredMatches, timeZone), [filteredMatches, timeZone]);
+  const scheduleDays = useMemo(() => groupMatchesByDay(filteredMatches, timeZone, locale), [filteredMatches, timeZone, locale]);
 
   return (
     <section className="scheduleList">
@@ -44,7 +73,7 @@ export function MatchesSchedule({ matches }: MatchesScheduleProps) {
         <section className="scheduleDay" key={day.key}>
           <div className="scheduleDayHeader">
             <h2>{day.label}</h2>
-            <span>{formatScheduleDayTag(day.matches)}</span>
+            <span>{formatScheduleDayTag(day.matches, locale)}</span>
           </div>
           <div className="scheduleDayMatches">
             {day.matches.map((match) => {
@@ -53,11 +82,13 @@ export function MatchesSchedule({ matches }: MatchesScheduleProps) {
                 <MatchPredictionCard
                   className="scheduleMatchCard"
                   key={match.id}
+                  locale={locale}
                   match={displayMatch}
                   center={formatMatchCenter(match, timeZone)}
-                  meta={formatMatchMeta(match)}
+                  meta={formatMatchMeta(match, locale)}
                   predictionControls={
                     <PredictionViewControls
+                      locale={locale}
                       options={options}
                       state={viewState}
                       summary=""
@@ -75,14 +106,14 @@ export function MatchesSchedule({ matches }: MatchesScheduleProps) {
   );
 }
 
-function groupMatchesByDay(matches: DashboardMatch[], timeZone: string): ScheduleDay[] {
+function groupMatchesByDay(matches: DashboardMatch[], timeZone: string, locale: Locale): ScheduleDay[] {
   const days = new Map<string, ScheduleDay>();
 
   for (const match of matches) {
     const key = getDayKey(match, timeZone);
     const day = days.get(key) ?? {
       key,
-      label: formatDayLabel(match.utcDate, timeZone),
+      label: formatDayLabel(match.utcDate, timeZone, locale),
       matches: []
     };
 
@@ -103,16 +134,17 @@ function isKnockoutMatch(match: DashboardMatch): boolean {
   return !competition.includes("GROUP_STAGE");
 }
 
-function formatScheduleDayTag(matches: DashboardMatch[]): string {
+function formatScheduleDayTag(matches: DashboardMatch[], locale: Locale): string {
+  const text = SCHEDULE_TEXT[locale];
   if (matches.length > 0 && matches.every(isKnockoutMatch)) {
-    return "Knockout";
+    return text.knockout;
   }
 
   if (matches.some(isKnockoutMatch)) {
-    return "Mixed day";
+    return text.mixedDay;
   }
 
-  return "View groups";
+  return text.viewGroups;
 }
 
 function compareMatches(a: DashboardMatch, b: DashboardMatch): number {
@@ -136,8 +168,8 @@ function getTimeValue(value?: string): number {
   return Number.isNaN(time) ? Number.MAX_SAFE_INTEGER : time;
 }
 
-function formatDayLabel(value: string | undefined, timeZone: string): string {
-  return formatFullDay(value, timeZone);
+function formatDayLabel(value: string | undefined, timeZone: string, locale: Locale): string {
+  return formatFullDay(value, timeZone, locale === "de" ? "de-DE" : "en-GB");
 }
 
 function formatMatchCenter(match: DashboardMatch, timeZone: string): string {
@@ -148,37 +180,38 @@ function formatMatchCenter(match: DashboardMatch, timeZone: string): string {
   return formatMatchTime(match.utcDate, timeZone);
 }
 
-function formatMatchMeta(match: DashboardMatch): string | null {
-  const details = [formatCompetition(match.competition), match.venue].filter(Boolean);
+function formatMatchMeta(match: DashboardMatch, locale: Locale): string | null {
+  const details = [formatCompetition(match.competition, locale), match.venue].filter(Boolean);
   return details.length > 0 ? details.join(" - ") : null;
 }
 
-function formatCompetition(value?: string): string | null {
+function formatCompetition(value: string | undefined, locale: Locale): string | null {
   if (!value) {
     return null;
   }
 
+  const text = SCHEDULE_TEXT[locale];
   const details: string[] = [];
 
   if (value.includes("GROUP_STAGE")) {
-    details.push("Group stage");
+    details.push(text.groupStage);
   } else if (value.includes("LAST_32")) {
-    details.push("Round of 32");
+    details.push(text.roundOf32);
   } else if (value.includes("LAST_16")) {
-    details.push("Round of 16");
+    details.push(text.roundOf16);
   } else if (value.includes("QUARTER_FINALS")) {
-    details.push("Quarter-finals");
+    details.push(text.quarterFinals);
   } else if (value.includes("SEMI_FINALS")) {
-    details.push("Semi-finals");
+    details.push(text.semiFinals);
   } else if (value.includes("THIRD_PLACE")) {
-    details.push("Third place");
+    details.push(text.thirdPlace);
   } else if (value.includes("FINAL")) {
-    details.push("Final");
+    details.push(text.final);
   }
 
   const group = value.match(/GROUP_([A-L])/);
   if (group) {
-    details.push(`Group ${group[1]}`);
+    details.push(`${locale === "de" ? "Gruppe" : "Group"} ${group[1]}`);
   }
 
   if (details.length > 0) {

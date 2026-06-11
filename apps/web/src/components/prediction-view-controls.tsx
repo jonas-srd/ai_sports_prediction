@@ -12,8 +12,10 @@ import type {
 } from "@/lib/benchmark-analytics";
 import { formatCondition } from "@/lib/benchmark-analytics";
 import type { PredictionViewOptions, PredictionViewState } from "@/lib/prediction-view";
+import type { Locale } from "@/lib/i18n";
 
 type PredictionViewControlsProps = {
+  locale: Locale;
   state: PredictionViewState;
   options: PredictionViewOptions;
   summary: string;
@@ -25,6 +27,7 @@ export function PredictionViewControls({
   state,
   options,
   summary,
+  locale,
   onChange,
   variant = "panel"
 }: PredictionViewControlsProps) {
@@ -67,20 +70,22 @@ export function PredictionViewControls({
   const setWrapperRef = (node: HTMLElement | null) => {
     wrapperRef.current = node;
   };
+  const text = PREDICTION_VIEW_TEXT[locale];
 
   if (variant === "embedded") {
     return (
       <div
         className={`predictionViewEmbedded${showAdvancedControls ? " hasAdvancedControls" : ""}`}
-        aria-label="Prediction display settings"
+        aria-label={text.settingsLabel}
         ref={setWrapperRef}
       >
         <div className="predictionViewEmbeddedTop">
-          <ViewModeSegment state={state} onChange={handleChange} />
+          <ViewModeSegment locale={locale} state={state} onChange={handleChange} />
         </div>
         {showAdvancedControls ? (
           <AdvancedPredictionControls
             isCustomFiltered={isCustomFiltered}
+            locale={locale}
             options={options}
             state={state}
             onChange={handleChange}
@@ -91,22 +96,23 @@ export function PredictionViewControls({
   }
 
   return (
-    <section className="panel predictionViewPanel" aria-label="Prediction display settings" ref={setWrapperRef}>
+    <section className="panel predictionViewPanel" aria-label={text.settingsLabel} ref={setWrapperRef}>
       <div className="predictionViewHeader">
         <div>
-          <p className="sectionKicker">Prediction view</p>
-          <h2>Simple by default</h2>
+          <p className="sectionKicker">{text.kicker}</p>
+          <h2>{text.title}</h2>
           <p>
-            Best per model keeps the page readable. Customize only if you want to inspect benchmark strategies.
+            {text.description}
           </p>
         </div>
         <span className="tableSummary">{summary}</span>
       </div>
 
-      <ViewModeSegment state={state} onChange={handleChange} />
+      <ViewModeSegment locale={locale} state={state} onChange={handleChange} />
       {showAdvancedControls ? (
         <AdvancedPredictionControls
           isCustomFiltered={isCustomFiltered}
+          locale={locale}
           options={options}
           state={state}
           onChange={handleChange}
@@ -117,20 +123,23 @@ export function PredictionViewControls({
 }
 
 type ViewModeSegmentProps = {
+  locale: Locale;
   state: PredictionViewState;
   onChange: (nextState: PredictionViewState) => void;
 };
 
-function ViewModeSegment({ state, onChange }: ViewModeSegmentProps) {
+function ViewModeSegment({ locale, state, onChange }: ViewModeSegmentProps) {
+  const text = PREDICTION_VIEW_TEXT[locale];
+
   return (
-    <div className="segmentedControl" role="group" aria-label="Prediction view mode">
+    <div className="segmentedControl" role="group" aria-label={text.modeLabel}>
       <button
         aria-pressed={state.mode === "best"}
         className={state.mode === "best" ? "isActive" : ""}
         type="button"
         onClick={() => onChange({ ...state, mode: "best" })}
       >
-        Best per model
+        {text.bestPerModel}
       </button>
       <button
         aria-pressed={state.mode === "custom"}
@@ -138,7 +147,7 @@ function ViewModeSegment({ state, onChange }: ViewModeSegmentProps) {
         type="button"
         onClick={() => onChange({ ...state, mode: "custom" })}
       >
-        Customize
+        {text.customize}
       </button>
     </div>
   );
@@ -146,6 +155,7 @@ function ViewModeSegment({ state, onChange }: ViewModeSegmentProps) {
 
 type AdvancedPredictionControlsProps = {
   isCustomFiltered: boolean;
+  locale: Locale;
   state: PredictionViewState;
   options: PredictionViewOptions;
   onChange: (nextState: PredictionViewState) => void;
@@ -153,6 +163,7 @@ type AdvancedPredictionControlsProps = {
 
 function AdvancedPredictionControls({
   isCustomFiltered,
+  locale,
   state,
   options,
   onChange
@@ -160,17 +171,18 @@ function AdvancedPredictionControls({
   if (state.mode !== "custom") {
     return null;
   }
+  const text = PREDICTION_VIEW_TEXT[locale];
 
   return (
     <div className="advancedPredictionControls">
-      <div className="segmentedControl secondarySegmentedControl" role="group" aria-label="Custom strategy mode">
+      <div className="segmentedControl secondarySegmentedControl" role="group" aria-label={text.customModeLabel}>
         <button
           aria-pressed={state.customMode === "all"}
           className={state.customMode === "all" ? "isActive" : ""}
           type="button"
           onClick={() => onChange({ ...state, customMode: "all" })}
         >
-          All strategies
+          {text.allStrategies}
         </button>
         <button
           aria-pressed={state.customMode === "filtered"}
@@ -178,35 +190,43 @@ function AdvancedPredictionControls({
           type="button"
           onClick={() => onChange({ ...state, customMode: "filtered" })}
         >
-          Choose filters
+          {text.chooseFilters}
         </button>
       </div>
 
       {isCustomFiltered ? (
         <div className="predictionFilterGrid">
           <MultiSelectGroup
-            label="Models"
+            clearLabel={text.clear}
+            label={text.models}
+            selectAllLabel={text.selectAll}
             values={options.models}
             selected={state.models}
             formatValue={(value) => value}
             onChange={(models) => onChange({ ...state, models })}
           />
           <MultiSelectGroup
-            label="Access"
+            clearLabel={text.clear}
+            label={text.access}
+            selectAllLabel={text.selectAll}
             values={options.accessConditions}
             selected={state.accessConditions}
             formatValue={formatCondition}
             onChange={(accessConditions) => onChange({ ...state, accessConditions })}
           />
           <MultiSelectGroup
-            label="Prompt"
+            clearLabel={text.clear}
+            label={text.prompt}
+            selectAllLabel={text.selectAll}
             values={options.promptStrategies}
             selected={state.promptStrategies}
             formatValue={formatCondition}
             onChange={(promptStrategies) => onChange({ ...state, promptStrategies })}
           />
           <MultiSelectGroup
-            label="Horizon"
+            clearLabel={text.clear}
+            label={text.horizon}
+            selectAllLabel={text.selectAll}
             values={options.forecastHorizons}
             selected={state.forecastHorizons}
             formatValue={(value) => value}
@@ -215,7 +235,7 @@ function AdvancedPredictionControls({
         </div>
       ) : (
         <p className="advancedPredictionHint">
-          Showing every access, prompt, and horizon variant, matching the full benchmark view.
+          {text.allStrategiesHint}
         </p>
       )}
     </div>
@@ -223,7 +243,9 @@ function AdvancedPredictionControls({
 }
 
 type MultiSelectGroupProps<T extends AccessCondition | PromptStrategy | ForecastHorizon | string> = {
+  clearLabel: string;
   label: string;
+  selectAllLabel: string;
   values: T[];
   selected: T[];
   formatValue: (value: T) => string;
@@ -231,7 +253,9 @@ type MultiSelectGroupProps<T extends AccessCondition | PromptStrategy | Forecast
 };
 
 function MultiSelectGroup<T extends AccessCondition | PromptStrategy | ForecastHorizon | string>({
+  clearLabel,
   label,
+  selectAllLabel,
   values,
   selected,
   formatValue,
@@ -247,7 +271,7 @@ function MultiSelectGroup<T extends AccessCondition | PromptStrategy | ForecastH
         type="button"
         onClick={() => onChange(allSelected ? [] : values)}
       >
-        {allSelected ? "Clear" : "Select all"}
+        {allSelected ? clearLabel : selectAllLabel}
       </button>
       <div className="filterChipGrid">
         {values.map((value) => {
@@ -270,6 +294,47 @@ function MultiSelectGroup<T extends AccessCondition | PromptStrategy | ForecastH
     </fieldset>
   );
 }
+
+const PREDICTION_VIEW_TEXT = {
+  en: {
+    settingsLabel: "Prediction display settings",
+    kicker: "Prediction view",
+    title: "Simple by default",
+    description: "Best per model keeps the page readable. Customize only if you want to inspect benchmark strategies.",
+    modeLabel: "Prediction view mode",
+    bestPerModel: "Best per model",
+    customize: "Customize",
+    customModeLabel: "Custom strategy mode",
+    allStrategies: "All strategies",
+    chooseFilters: "Choose filters",
+    models: "Models",
+    access: "Access",
+    prompt: "Prompt",
+    horizon: "Horizon",
+    clear: "Clear",
+    selectAll: "Select all",
+    allStrategiesHint: "Showing every access, prompt, and horizon variant, matching the full benchmark view."
+  },
+  de: {
+    settingsLabel: "Anzeigeeinstellungen fur Vorhersagen",
+    kicker: "Vorhersageansicht",
+    title: "Standardmassig einfach",
+    description: "Bestes Setup pro Modell halt die Seite lesbar. Passe die Ansicht nur an, wenn du Benchmark-Strategien untersuchen willst.",
+    modeLabel: "Modus der Vorhersageansicht",
+    bestPerModel: "Bestes pro Modell",
+    customize: "Anpassen",
+    customModeLabel: "Benutzerdefinierter Strategiemodus",
+    allStrategies: "Alle Strategien",
+    chooseFilters: "Filter wahlen",
+    models: "Modelle",
+    access: "Zugriff",
+    prompt: "Prompt",
+    horizon: "Horizont",
+    clear: "Leeren",
+    selectAll: "Alle wahlen",
+    allStrategiesHint: "Zeigt alle Zugriffs-, Prompt- und Horizontvarianten wie in der vollstandigen Benchmark-Ansicht."
+  }
+} as const;
 
 function toggleValue<T extends string>(values: T[], value: T): T[] {
   if (values.includes(value)) {

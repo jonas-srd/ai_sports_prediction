@@ -71,11 +71,11 @@ a {
 
 .siteNavInner {
   display: grid;
-  grid-template-columns: auto auto auto;
+  grid-template-columns: minmax(220px, 1fr) auto minmax(220px, 1fr);
   align-items: center;
   justify-content: center;
-  gap: clamp(64px, 7.6vw, 124px);
-  width: min(1240px, calc(100% - 40px));
+  gap: clamp(22px, 3vw, 48px);
+  width: min(1380px, calc(100% - 36px));
   margin: 0 auto;
   padding: 14px 0;
 }
@@ -92,7 +92,7 @@ a {
 .siteNavLinks {
   grid-column: 2;
   display: flex;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   gap: 6px;
   justify-content: center;
 }
@@ -107,6 +107,7 @@ a {
   font-size: 0.78rem;
   font-weight: 900;
   letter-spacing: 0.04em;
+  white-space: nowrap;
 }
 
 .siteNavLinks a:hover {
@@ -115,8 +116,15 @@ a {
   color: var(--red);
 }
 
-.siteNavTimeZone {
+.siteNavControls {
   justify-self: end;
+  display: inline-flex;
+  flex-wrap: nowrap;
+  gap: 8px;
+  justify-content: flex-end;
+}
+
+.siteNavControl {
   display: inline-flex;
   align-items: center;
   gap: 7px;
@@ -129,7 +137,7 @@ a {
   box-shadow: 0 8px 20px rgba(214, 150, 50, 0.1);
 }
 
-.siteNavTimeZone span {
+.siteNavControl span {
   color: var(--muted);
   font-family: "Courier New", monospace;
   font-size: 0.64rem;
@@ -138,25 +146,25 @@ a {
   text-transform: uppercase;
 }
 
-.siteNavTimeZone select {
-  max-width: 92px;
+.siteNavControl select {
+  max-width: 82px;
   border: 1px solid rgba(179, 58, 39, 0.18);
   border-radius: 999px;
   background: rgba(255, 255, 255, 0.72);
   color: var(--red);
   cursor: pointer;
-  padding: 7px 24px 7px 10px;
+  padding: 7px 20px 7px 10px;
   font-family: "Courier New", monospace;
   font-size: 0.7rem;
   font-weight: 900;
 }
 
-.siteNavTimeZone select:hover {
+.siteNavControl select:hover {
   background: rgba(255, 248, 233, 0.96);
   color: var(--green);
 }
 
-.siteNavTimeZone select:focus-visible {
+.siteNavControl select:focus-visible {
   outline: 2px solid rgba(179, 58, 39, 0.34);
   outline-offset: 2px;
 }
@@ -957,7 +965,7 @@ h2 {
 
 .specialQuestionsTable th {
   color: var(--muted);
-  padding: 0 7px 4px;
+  padding: 0 7px 8px;
   font-family: "Courier New", monospace;
   font-size: 0.62rem;
   font-weight: 900;
@@ -965,6 +973,52 @@ h2 {
   text-align: left;
   text-transform: uppercase;
   white-space: nowrap;
+}
+
+.specialQuestionHeaderPill {
+  display: inline-grid;
+  gap: 3px;
+  min-width: 76px;
+  border: 1px solid rgba(70, 55, 35, 0.12);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.48);
+  padding: 7px 9px;
+  box-shadow: 0 8px 16px rgba(43, 34, 20, 0.045);
+}
+
+.specialQuestionHeaderPill span {
+  color: var(--muted);
+  font-size: 0.54rem;
+  letter-spacing: 0.08em;
+}
+
+.specialQuestionHeaderPill strong {
+  color: var(--ink);
+  font-size: 0.68rem;
+  line-height: 1.05;
+  text-transform: none;
+  white-space: normal;
+}
+
+.specialQuestionHeaderPill.isChampion {
+  border-color: rgba(214, 150, 50, 0.42);
+  background:
+    radial-gradient(circle at 90% 0%, rgba(240, 196, 91, 0.34), transparent 3rem),
+    rgba(255, 248, 233, 0.82);
+}
+
+.specialQuestionHeaderPill.isKnockout {
+  border-color: rgba(179, 58, 39, 0.26);
+  background:
+    radial-gradient(circle at 90% 0%, rgba(179, 58, 39, 0.16), transparent 3rem),
+    rgba(255, 255, 255, 0.5);
+}
+
+.specialQuestionHeaderPill.isScoring {
+  border-color: rgba(32, 79, 53, 0.24);
+  background:
+    radial-gradient(circle at 90% 0%, rgba(32, 79, 53, 0.14), transparent 3rem),
+    rgba(255, 255, 255, 0.5);
 }
 
 .specialQuestionsTable td {
@@ -1106,6 +1160,30 @@ h2 {
 
 .specialQuestionsTable .specialQuestionSemisColumn {
   min-width: 178px;
+}
+
+.specialQuestionsTable .specialQuestionFeatureColumn {
+  min-width: 112px;
+}
+
+.specialQuestionsTable .specialQuestionGroupStartColumn {
+  padding-left: 18px;
+  box-shadow: -10px 0 0 -8px rgba(179, 58, 39, 0.32);
+}
+
+.specialQuestionsTable th.specialQuestionGroupStartColumn {
+  position: relative;
+}
+
+.specialQuestionsTable th.specialQuestionGroupStartColumn::before {
+  position: absolute;
+  top: 8px;
+  bottom: 10px;
+  left: 4px;
+  width: 2px;
+  border-radius: 999px;
+  background: linear-gradient(to bottom, rgba(179, 58, 39, 0.16), rgba(179, 58, 39, 0.42), rgba(179, 58, 39, 0.16));
+  content: "";
 }
 
 .specialQuestionPick.isCorrect {
@@ -3145,9 +3223,10 @@ h2 {
   .siteNavLinks {
     grid-column: 1 / -1;
     grid-row: 2;
+    flex-wrap: wrap;
   }
 
-  .siteNavTimeZone {
+  .siteNavControls {
     grid-column: 2;
     grid-row: 1;
   }
@@ -3254,15 +3333,15 @@ h2 {
     justify-content: flex-start;
   }
 
-  .siteNavTimeZone {
+  .siteNavControls {
     justify-self: end;
   }
 
-  .siteNavTimeZone span {
+  .siteNavControl span {
     display: none;
   }
 
-  .siteNavTimeZone select {
+  .siteNavControl select {
     max-width: 92px;
   }
 

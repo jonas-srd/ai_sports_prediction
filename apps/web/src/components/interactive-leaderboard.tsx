@@ -11,35 +11,92 @@ import type { DashboardLeaderboardEntry, DashboardMatch, DashboardPrediction } f
 import { formatCondition, formatStage } from "@/lib/benchmark-analytics";
 import { InfoTooltip, type TooltipLine } from "@/components/info-tooltip";
 import { ModelInspector } from "@/components/model-inspector";
+import { commonText, localizePath, type Locale } from "@/lib/i18n";
 
 type InteractiveLeaderboardProps = {
+  locale: Locale;
   leaderboard: DashboardLeaderboardEntry[];
   matches: DashboardMatch[];
   controls?: ReactNode;
 };
 
-export function InteractiveLeaderboard({ leaderboard, matches, controls }: InteractiveLeaderboardProps) {
+const LEADERBOARD_TEXT = {
+  en: {
+    kicker: "Model ranking",
+    title: "Leaderboard",
+    description: "Match-prediction ranking after applying the active filters.",
+    viewMatches: "View matches",
+    noRanking: "No ranking yet",
+    noRankingDescription: "Run predictions first, then click a model here to inspect its details.",
+    hidePredictions: "Hide model predictions",
+    showPredictions: "Show model predictions",
+    stageCoverageEmpty: "No tournament stage metadata available yet.",
+    predictionsIncluded: "prediction(s) included in this leaderboard row.",
+    scored: "scored",
+    exactHits: "exact hit(s)",
+    config: "configuration",
+    forecastFallback: "is the forecast horizon used for this leaderboard row.",
+    stageOpening: "Predictions generated once at the start of the tournament stage, before the relevant matches were played.",
+    t24h: "Predictions scheduled approximately 24 hours before kickoff.",
+    t2h: "Predictions scheduled approximately 2 hours before kickoff.",
+    openBook: "Model was allowed to use configured web-search/tool access before answering.",
+    closedBook: "Model had to answer from internal knowledge only, without search/tool access.",
+    accessFallback: "is the access condition stored for this leaderboard row.",
+    directScore: "Prompt asks for the most likely scoreline plus required probabilities.",
+    probabilistic: "Prompt emphasizes calibrated outcome probabilities before the scoreline.",
+    promptFallback: "is the prompt strategy stored for this leaderboard row."
+  },
+  de: {
+    kicker: "Modellranking",
+    title: "Leaderboard",
+    description: "Ranking der Match-Prognosen nach Anwendung der aktiven Filter.",
+    viewMatches: "Spiele ansehen",
+    noRanking: "Noch kein Ranking",
+    noRankingDescription: "Starte zuerst Vorhersagen. Danach kannst du hier ein Modell anklicken und Details ansehen.",
+    hidePredictions: "Modellprognosen ausblenden",
+    showPredictions: "Modellprognosen anzeigen",
+    stageCoverageEmpty: "Noch keine Metadaten zur Turnierphase verfugbar.",
+    predictionsIncluded: "Prognose(n) in dieser Leaderboard-Zeile.",
+    scored: "gewertet",
+    exactHits: "exakte Treffer",
+    config: "Konfiguration",
+    forecastFallback: "ist der Prognosehorizont dieser Leaderboard-Zeile.",
+    stageOpening: "Prognosen wurden einmal zu Beginn der Turnierphase erstellt, bevor die relevanten Spiele gespielt wurden.",
+    t24h: "Prognosen wurden ungefahr 24 Stunden vor Anpfiff geplant.",
+    t2h: "Prognosen wurden ungefahr 2 Stunden vor Anpfiff geplant.",
+    openBook: "Das Modell durfte vor der Antwort konfigurierte Websuche/Tools verwenden.",
+    closedBook: "Das Modell musste ohne Suche/Tools aus internem Wissen antworten.",
+    accessFallback: "ist die gespeicherte Zugriffsbedingung dieser Leaderboard-Zeile.",
+    directScore: "Der Prompt fragt nach dem wahrscheinlichsten Ergebnis plus den benotigten Wahrscheinlichkeiten.",
+    probabilistic: "Der Prompt betont kalibrierte Ergebniswahrscheinlichkeiten vor dem Ergebnis-Tipp.",
+    promptFallback: "ist die gespeicherte Prompt-Strategie dieser Leaderboard-Zeile."
+  }
+} as const;
+
+export function InteractiveLeaderboard({ locale, leaderboard, matches, controls }: InteractiveLeaderboardProps) {
   const [selectedKey, setSelectedKey] = useState<string | null>(null);
+  const text = LEADERBOARD_TEXT[locale];
+  const common = commonText[locale];
 
   return (
     <section className="contentStack">
       <div className="panel leaderboardPanel">
         <div className="panelHeader leaderboardPanelHeader">
           <div className="leaderboardHeaderTitle">
-            <p className="sectionKicker">Model ranking</p>
-            <h2>Leaderboard</h2>
+            <p className="sectionKicker">{text.kicker}</p>
+            <h2>{text.title}</h2>
             <p className="panelDescription">
-              Match-prediction ranking after applying the active filters.
+              {text.description}
             </p>
           </div>
           {controls ? <div className="leaderboardHeaderControls">{controls}</div> : <span className="leaderboardHeaderControls" />}
-          <Link className="leaderboardHeaderLink" href="/matches">View matches</Link>
+          <Link className="leaderboardHeaderLink" href={localizePath("/matches", locale)}>{text.viewMatches}</Link>
         </div>
 
         {leaderboard.length === 0 ? (
           <div className="emptyState">
-            <strong>No ranking yet</strong>
-            <p>Run predictions first, then click a model here to inspect its details.</p>
+            <strong>{text.noRanking}</strong>
+            <p>{text.noRankingDescription}</p>
           </div>
         ) : (
           <div className="leaderboard">
@@ -58,21 +115,22 @@ export function InteractiveLeaderboard({ leaderboard, matches, controls }: Inter
                       <div className="leaderboardModelName">
                         <strong>{entry.model}</strong>
                         <InfoTooltip
-                          label={`${entry.model} configuration`}
-                          lines={buildLeaderboardConfigurationHelp(entry, matches)}
+                          label={`${entry.model} ${text.config}`}
+                          lines={buildLeaderboardConfigurationHelp(entry, matches, locale)}
                         />
                       </div>
                       <p>{entry.provider}</p>
                     </div>
                     <span className="leaderboardDisclosureText">
-                      {selectedKey === getEntryKey(entry) ? "Hide model predictions" : "Show model predictions"}
+                      {selectedKey === getEntryKey(entry) ? text.hidePredictions : text.showPredictions}
                     </span>
-                    <span className="points">{entry.points} scores</span>
+                    <span className="points">{entry.points} {common.scores}</span>
                   </button>
 
                   {selectedKey === getEntryKey(entry) ? (
                     <ModelInspector
                       inline
+                      locale={locale}
                       matches={matches}
                       selectedKey={entry.key}
                       selectedModel={entry.model}
@@ -90,8 +148,11 @@ export function InteractiveLeaderboard({ leaderboard, matches, controls }: Inter
 
 function buildLeaderboardConfigurationHelp(
   entry: DashboardLeaderboardEntry,
-  matches: DashboardMatch[]
+  matches: DashboardMatch[],
+  locale: Locale
 ): TooltipLine[] {
+  const text = LEADERBOARD_TEXT[locale];
+  const common = commonText[locale];
   const predictions = getEntryPredictions(entry, matches);
   const stages = sortedUnique(predictions.map((prediction) => formatStage(prediction.stage)));
   const scored = predictions.filter((prediction) => prediction.scorePoints !== null).length;
@@ -104,40 +165,40 @@ function buildLeaderboardConfigurationHelp(
   if (horizon) {
     lines.push({
       label: horizon,
-      text: explainForecastHorizon(horizon)
+      text: explainForecastHorizon(horizon, locale)
     });
   }
 
   if (access) {
     lines.push({
       label: formatCondition(access),
-      text: explainAccessCondition(access)
+      text: explainAccessCondition(access, locale)
     });
   }
 
   if (prompt) {
     lines.push({
       label: formatCondition(prompt),
-      text: explainPromptStrategy(prompt)
+      text: explainPromptStrategy(prompt, locale)
     });
   }
 
   lines.push(
     {
-      label: "Stage coverage",
-      text: stages.length > 0 ? stages.join(", ") : "No tournament stage metadata available yet."
+      label: common.stageCoverage,
+      text: stages.length > 0 ? stages.join(", ") : text.stageCoverageEmpty
     },
     {
-      label: "Predictions",
-      text: `${predictions.length} prediction(s) included in this leaderboard row.`
+      label: common.predictions,
+      text: `${predictions.length} ${text.predictionsIncluded}`
     },
     {
-      label: "Evaluation",
-      text: `${scored} scored, ${Math.max(0, predictions.length - scored)} pending.`
+      label: common.evaluation,
+      text: `${scored} ${text.scored}, ${Math.max(0, predictions.length - scored)} ${common.pending}.`
     },
     {
       label: "Ranking",
-      text: `${entry.points} scores, ${entry.exact} exact hit(s).`
+      text: `${entry.points} ${common.scores}, ${entry.exact} ${text.exactHits}.`
     }
   );
 
@@ -160,44 +221,47 @@ function getPredictionKey(prediction: DashboardPrediction): string {
   ].join("::");
 }
 
-function explainForecastHorizon(value: string): string {
+function explainForecastHorizon(value: string, locale: Locale): string {
+  const text = LEADERBOARD_TEXT[locale];
   if (value === "STAGE_OPENING") {
-    return "Predictions generated once at the start of the tournament stage, before the relevant matches were played.";
+    return text.stageOpening;
   }
 
   if (value === "T_24H") {
-    return "Predictions scheduled approximately 24 hours before kickoff.";
+    return text.t24h;
   }
 
   if (value === "T_2H") {
-    return "Predictions scheduled approximately 2 hours before kickoff.";
+    return text.t2h;
   }
 
-  return `${value} is the forecast horizon used for this leaderboard row.`;
+  return `${value} ${text.forecastFallback}`;
 }
 
-function explainAccessCondition(value: string): string {
+function explainAccessCondition(value: string, locale: Locale): string {
+  const text = LEADERBOARD_TEXT[locale];
   if (value === "open_book") {
-    return "Model was allowed to use configured web-search/tool access before answering.";
+    return text.openBook;
   }
 
   if (value === "closed_book") {
-    return "Model had to answer from internal knowledge only, without search/tool access.";
+    return text.closedBook;
   }
 
-  return `${formatCondition(value)} is the access condition stored for this leaderboard row.`;
+  return `${formatCondition(value)} ${text.accessFallback}`;
 }
 
-function explainPromptStrategy(value: string): string {
+function explainPromptStrategy(value: string, locale: Locale): string {
+  const text = LEADERBOARD_TEXT[locale];
   if (value === "direct_score") {
-    return "Prompt asks for the most likely scoreline plus required probabilities.";
+    return text.directScore;
   }
 
   if (value === "probabilistic_forecast") {
-    return "Prompt emphasizes calibrated outcome probabilities before the scoreline.";
+    return text.probabilistic;
   }
 
-  return `${formatCondition(value)} is the prompt strategy stored for this leaderboard row.`;
+  return `${formatCondition(value)} ${text.promptFallback}`;
 }
 
 function sortedUnique(values: string[]): string[] {

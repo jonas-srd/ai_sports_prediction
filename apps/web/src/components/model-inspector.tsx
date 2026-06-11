@@ -12,8 +12,10 @@ import { getMatchupLabels } from "@/lib/match-display";
 import { TeamMatchup } from "@/components/team-matchup";
 import { formatMatchTime, formatShortDateTime } from "@/lib/timezone";
 import { useTimeZone } from "@/components/time-zone-provider";
+import { commonText, type Locale } from "@/lib/i18n";
 
 type ModelInspectorProps = {
+  locale: Locale;
   matches: DashboardMatch[];
   selectedModel: string;
   selectedKey?: string;
@@ -30,8 +32,45 @@ type FocusRow = {
   prediction: DashboardMatch["predictions"][number] | undefined;
 };
 
-export function ModelInspector({ matches, selectedModel, selectedKey, inline = false }: ModelInspectorProps) {
+const INSPECTOR_TEXT = {
+  en: {
+    noPredictions: "No model predictions yet",
+    noPredictionsDescription: "Run `npm run predict:next` after syncing matches to unlock model details.",
+    scores: "Scores",
+    exactHits: "Exact hits",
+    scoredPicks: "Scored picks",
+    pending: "Pending",
+    noMatches: "No matches for this model",
+    noMatchesDescription: "Sync more fixtures or run predictions for this model.",
+    final: "Final",
+    reasoning: "Reasoning:",
+    notScored: "not scored",
+    invalid: "invalid",
+    awaitingEvaluation: "awaiting evaluation",
+    groupStage: "Group stage"
+  },
+  de: {
+    noPredictions: "Noch keine Modellprognosen",
+    noPredictionsDescription: "Fuhre nach dem Synchronisieren der Spiele `npm run predict:next` aus, um Modelldetails zu sehen.",
+    scores: "Punkte",
+    exactHits: "Exakte Treffer",
+    scoredPicks: "Gewertete Tipps",
+    pending: "Offen",
+    noMatches: "Keine Spiele fur dieses Modell",
+    noMatchesDescription: "Synchronisiere weitere Spiele oder starte Prognosen fur dieses Modell.",
+    final: "Endstand",
+    reasoning: "Begrundung:",
+    notScored: "nicht gewertet",
+    invalid: "ungultig",
+    awaitingEvaluation: "wartet auf Auswertung",
+    groupStage: "Gruppenphase"
+  }
+} as const;
+
+export function ModelInspector({ locale, matches, selectedModel, selectedKey, inline = false }: ModelInspectorProps) {
   const { timeZone } = useTimeZone();
+  const text = INSPECTOR_TEXT[locale];
+  const common = commonText[locale];
   const models = useMemo(() => getModels(matches), [matches]);
   const inspectorClassName = `panel interactivePanel${inline ? " inlineInspector" : ""}`;
   const activeModel = models.some((entry) => entry.model === selectedModel)
@@ -53,8 +92,8 @@ export function ModelInspector({ matches, selectedModel, selectedKey, inline = f
     return (
       <section className={inspectorClassName}>
         <div className="emptyState">
-          <strong>No model predictions yet</strong>
-          <p>Run `npm run predict:next` after syncing matches to unlock model details.</p>
+          <strong>{text.noPredictions}</strong>
+          <p>{text.noPredictionsDescription}</p>
         </div>
       </section>
     );
@@ -64,19 +103,19 @@ export function ModelInspector({ matches, selectedModel, selectedKey, inline = f
     <section className={inspectorClassName}>
       <div className="focusStats">
         <div className="focusStat">
-          <span>Scores</span>
+          <span>{text.scores}</span>
           <strong>{totalScores}</strong>
         </div>
         <div className="focusStat">
-          <span>Exact hits</span>
+          <span>{text.exactHits}</span>
           <strong>{exactHits}</strong>
         </div>
         <div className="focusStat">
-          <span>Scored picks</span>
+          <span>{text.scoredPicks}</span>
           <strong>{scoredRows.length}</strong>
         </div>
         <div className="focusStat">
-          <span>Pending</span>
+          <span>{text.pending}</span>
           <strong>{pendingPicks}</strong>
         </div>
       </div>
@@ -84,8 +123,8 @@ export function ModelInspector({ matches, selectedModel, selectedKey, inline = f
       <div className="modelMatchList">
         {rows.length === 0 ? (
           <div className="emptyState">
-            <strong>No matches for this model</strong>
-            <p>Sync more fixtures or run predictions for this model.</p>
+            <strong>{text.noMatches}</strong>
+            <p>{text.noMatchesDescription}</p>
           </div>
         ) : (
           rows.map((row) => {
@@ -98,27 +137,27 @@ export function ModelInspector({ matches, selectedModel, selectedKey, inline = f
                     homeTeam={labels.homeTeamLabel}
                     awayTeam={labels.awayTeamLabel}
                     center={formatMatchCenter(row.match, timeZone)}
-                    meta={formatMatchMeta(row.match, timeZone)}
+                    meta={formatMatchMeta(row.match, timeZone, locale)}
                   />
                 </div>
 
                 <div className="modelPredictionDetails">
                   <div className="modelScoreLine">
-                    <span>Pick {formatPrediction(row.prediction)}</span>
-                    <span>Final {formatScore(row.match.actualHome, row.match.actualAway)}</span>
+                    <span>{common.pick} {formatPrediction(row.prediction)}</span>
+                    <span>{text.final} {formatScore(row.match.actualHome, row.match.actualAway, locale)}</span>
                     {row.prediction ? <span>{formatPredictionContext(row.prediction)}</span> : null}
                   </div>
 
                   {row.prediction?.reason ? (
                     <p className="modelPredictionReason">
-                      <strong>Reasoning:</strong> {row.prediction.reason}
+                      <strong>{text.reasoning}</strong> {row.prediction.reason}
                     </p>
                   ) : null}
                 </div>
 
                 <div className="resultTag">
-                  <strong>{formatPoints(row.prediction)}</strong>
-                  <span>{row.prediction?.scoreReason ?? getPendingLabel(row.prediction)}</span>
+                  <strong>{formatPoints(row.prediction, locale)}</strong>
+                  <span>{formatScoreReason(row.prediction?.scoreReason ?? null, locale) ?? getPendingLabel(row.prediction, locale)}</span>
                 </div>
               </div>
             );
@@ -161,20 +200,26 @@ function formatMatchCenter(match: DashboardMatch, timeZone: string): string {
   return formatMatchTime(match.utcDate, timeZone);
 }
 
-function formatMatchMeta(match: DashboardMatch, timeZone: string): string | null {
-  const details = [formatCompetition(match.competition), match.venue, formatShortDateTime(match.utcDate, timeZone)].filter(Boolean);
+function formatMatchMeta(match: DashboardMatch, timeZone: string, locale: Locale): string | null {
+  const details = [formatCompetition(match.competition, locale), match.venue, formatShortDateTime(match.utcDate, timeZone, getIntlLocale(locale))].filter(Boolean);
   return details.length > 0 ? details.join(" / ") : null;
 }
 
-function formatCompetition(value?: string): string | null {
+function getIntlLocale(locale: Locale): string {
+  return locale === "de" ? "de-DE" : "en-GB";
+}
+
+function formatCompetition(value: string | undefined, locale: Locale): string | null {
   if (!value) {
     return null;
   }
 
+  const groupLabel = locale === "de" ? "Gruppe" : "Group";
+  const groupStageLabel = locale === "de" ? "Gruppenphase" : "Group stage";
   return value
     .replace("FIFA World Cup", "World Cup")
-    .replace("GROUP_STAGE", "Group stage")
-    .replace(/GROUP_([A-Z])/g, "Group $1")
+    .replace("GROUP_STAGE", groupStageLabel)
+    .replace(/GROUP_([A-Z])/g, `${groupLabel} $1`)
     .replaceAll(" - ", " / ");
 }
 
@@ -186,9 +231,9 @@ function formatPrediction(prediction: DashboardMatch["predictions"][number] | un
   return `${prediction.predictedHome} - ${prediction.predictedAway}`;
 }
 
-function formatScore(home: number | null, away: number | null): string {
+function formatScore(home: number | null, away: number | null, locale: Locale): string {
   if (home === null || away === null) {
-    return "open";
+    return commonText[locale].open;
   }
 
   return `${home} - ${away}`;
@@ -198,24 +243,26 @@ function formatPredictionContext(prediction: DashboardPrediction): string {
   return `${prediction.forecastHorizon} / ${formatCondition(prediction.accessCondition)} / ${formatCondition(prediction.promptStrategy)}`;
 }
 
-function getPendingLabel(prediction: DashboardPrediction | undefined): string {
+function getPendingLabel(prediction: DashboardPrediction | undefined, locale: Locale): string {
+  const text = INSPECTOR_TEXT[locale];
   if (!prediction) {
-    return "not scored";
+    return text.notScored;
   }
 
   if (!prediction.isValidForScoring) {
-    return prediction.validationStatus ?? "invalid";
+    return prediction.validationStatus ?? text.invalid;
   }
 
-  return "awaiting evaluation";
+  return text.awaitingEvaluation;
 }
 
-function formatPoints(prediction: DashboardPrediction | undefined): string {
+function formatPoints(prediction: DashboardPrediction | undefined, locale: Locale): string {
+  const common = commonText[locale];
   if (!prediction) {
-    return "no pick";
+    return common.noPick;
   }
 
-  return prediction.scorePoints !== null ? `${prediction.scorePoints} scores` : "pending";
+  return prediction.scorePoints !== null ? `${prediction.scorePoints} ${common.scores}` : common.pending;
 }
 
 function getPredictionKey(prediction: DashboardPrediction): string {
@@ -226,4 +273,18 @@ function getPredictionKey(prediction: DashboardPrediction): string {
     prediction.accessCondition,
     prediction.promptStrategy
   ].join("::");
+}
+
+function formatScoreReason(value: string | null, locale: Locale): string | null {
+  if (!value || locale === "en") {
+    return value;
+  }
+
+  const normalized = value.toLowerCase();
+  if (normalized.includes("exact")) return "exaktes Ergebnis";
+  if (normalized.includes("goal difference")) return "richtige Tordifferenz";
+  if (normalized.includes("tendency")) return "richtige Tendenz";
+  if (normalized.includes("miss")) return "Fehltipp";
+  if (normalized.includes("invalid")) return "ungultig";
+  return value;
 }
