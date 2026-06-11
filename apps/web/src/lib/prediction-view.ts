@@ -243,7 +243,7 @@ function getPreferredPromptRank(value?: PromptStrategy): number {
 function getPreferredHorizonRank(value?: ForecastHorizon): number {
   if (value === "STAGE_OPENING") return 0;
   if (value === "T_24H") return 1;
-  if (value === "T_1H") return 2;
+  if (value === "T_2H") return 2;
   return 3;
 }
 

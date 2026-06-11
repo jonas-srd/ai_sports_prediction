@@ -89,9 +89,25 @@ Useful one-off commands to run from the Railway shell:
 npm run db:init
 npm run db:status
 npm run sync:football-data
-npm run predict:next
+npm run benchmark:predict:due -- --horizon=T_24H --window-before-min=15 --window-after-min=60 --concurrency=3
+npm run benchmark:predict:due -- --horizon=T_2H --window-before-min=10 --window-after-min=60 --concurrency=3
+npm run benchmark:predict:stage-opening -- --stage=group_stage --concurrency=3
 npm run score
 ```
+
+Recommended production schedule:
+
+```text
+fixture sync: run periodically before prediction jobs
+T_24H due runner: every 15-30 minutes
+T_2H due runner: every 5-10 or 10-15 minutes
+stage-opening runner: run manually or shortly after an official stage/round is fully known
+scoring/evaluation: run after result sync
+```
+
+Keep the web service command focused on starting the web app. Run these prediction and scoring commands as separate scheduled jobs or one-off commands; do not put cron orchestration into the web service startup command.
+
+`T_2H` remains scheduled at kickoff minus 2 hours, but timing metadata treats actual calls within +/- 60 minutes as on-time to allow for long API batches.
 
 The health endpoint is:
 

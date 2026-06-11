@@ -165,8 +165,8 @@ function explainForecastHorizon(value: string): string {
     return "Predictions scheduled approximately 24 hours before kickoff.";
   }
 
-  if (value === "T_1H") {
-    return "Predictions scheduled approximately 1 hour before kickoff.";
+  if (value === "T_2H") {
+    return "Predictions scheduled approximately 2 hours before kickoff.";
   }
 
   return `${value} is the forecast horizon used for this leaderboard row.`;

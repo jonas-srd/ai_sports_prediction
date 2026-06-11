@@ -101,7 +101,7 @@ function initializeSchema(db: SqliteDb): void {
 
       access_condition text not null check (access_condition in ('closed_book', 'open_book', 'not_applicable')),
       prompt_strategy text not null check (prompt_strategy in ('direct_score', 'probabilistic_forecast', 'not_applicable')),
-      forecast_horizon text not null check (forecast_horizon in ('T_24H', 'T_1H', 'STAGE_OPENING')),
+      forecast_horizon text not null check (forecast_horizon in ('T_24H', 'T_2H', 'STAGE_OPENING')),
       sample_id integer not null default 1,
 
       scheduled_prediction_time_utc text,
@@ -234,7 +234,7 @@ function initializeSchema(db: SqliteDb): void {
 
     create table if not exists special_prediction_runs (
       id text primary key,
-      forecast_horizon text not null check (forecast_horizon in ('T_24H', 'T_1H', 'STAGE_OPENING')),
+      forecast_horizon text not null check (forecast_horizon in ('T_24H', 'T_2H', 'STAGE_OPENING')),
       sample_id integer not null default 1,
       started_at_utc text not null,
       created_at text not null default current_timestamp
@@ -257,7 +257,7 @@ function initializeSchema(db: SqliteDb): void {
 
       access_condition text not null check (access_condition in ('closed_book', 'open_book', 'not_applicable')),
       prompt_strategy text not null check (prompt_strategy in ('direct_score', 'probabilistic_forecast', 'not_applicable')),
-      forecast_horizon text not null check (forecast_horizon in ('T_24H', 'T_1H', 'STAGE_OPENING')),
+      forecast_horizon text not null check (forecast_horizon in ('T_24H', 'T_2H', 'STAGE_OPENING')),
       sample_id integer not null default 1,
 
       actual_prediction_time_utc text,
@@ -345,22 +345,19 @@ function initializeSchema(db: SqliteDb): void {
       unique (prediction_id, candidate_id)
     );
 
-    create index if not exists idx_benchmark_predictions_match on benchmark_predictions(match_id);
-    create index if not exists idx_benchmark_predictions_predictor on benchmark_predictions(predictor_type, predictor_id);
-    create index if not exists idx_benchmark_predictions_conditions on benchmark_predictions(
-      forecast_horizon,
-      access_condition,
-      prompt_strategy
+    create table if not exists scheduler_locks (
+      lock_key text primary key,
+      owner text not null,
+      acquired_at_utc text not null,
+      expires_at_utc text not null,
+      updated_at_utc text not null default current_timestamp
     );
-    create index if not exists idx_special_predictions_question on special_predictions(question_id);
-    create index if not exists idx_special_predictions_predictor on special_predictions(predictor_type, predictor_id);
-    create index if not exists idx_special_predictions_conditions on special_predictions(
-      forecast_horizon,
-      access_condition,
-      prompt_strategy
-    );
-    create index if not exists idx_special_prediction_options_prediction on special_prediction_options(prediction_id);
+
+    create index if not exists idx_scheduler_locks_expires on scheduler_locks(expires_at_utc);
   `);
+
+  migrateForecastHorizonFromT1HToT2H(db);
+  createIndexes(db);
 
   ensureColumn(db, "matches", "venue", "text");
   ensureColumn(db, "matches", "home_score_90", "integer");
@@ -386,6 +383,74 @@ function initializeSchema(db: SqliteDb): void {
   ensureColumn(db, "models", "supports_tool_access", "integer");
   ensureColumn(db, "models", "is_open_weight", "integer");
   backfillLegacyGroupStageResultColumns(db);
+}
+
+function createIndexes(db: SqliteDb): void {
+  db.exec(`
+    create index if not exists idx_benchmark_predictions_match on benchmark_predictions(match_id);
+    create index if not exists idx_benchmark_predictions_predictor on benchmark_predictions(predictor_type, predictor_id);
+    create index if not exists idx_benchmark_predictions_conditions on benchmark_predictions(
+      forecast_horizon,
+      access_condition,
+      prompt_strategy
+    );
+    create index if not exists idx_special_predictions_question on special_predictions(question_id);
+    create index if not exists idx_special_predictions_predictor on special_predictions(predictor_type, predictor_id);
+    create index if not exists idx_special_predictions_conditions on special_predictions(
+      forecast_horizon,
+      access_condition,
+      prompt_strategy
+    );
+    create index if not exists idx_special_prediction_options_prediction on special_prediction_options(prediction_id);
+    create index if not exists idx_scheduler_locks_expires on scheduler_locks(expires_at_utc);
+  `);
+}
+
+function migrateForecastHorizonFromT1HToT2H(db: SqliteDb): void {
+  const tables = ["benchmark_predictions", "special_prediction_runs", "special_predictions"];
+  const oldSchemaTables = tables.filter((table) => {
+    const row = db.prepare(`
+      select sql
+      from sqlite_master
+      where type = 'table' and name = ?
+    `).get(table) as { sql: string } | undefined;
+
+    return Boolean(row?.sql.includes("'T_1H'"));
+  });
+
+  if (oldSchemaTables.length > 0) {
+    const schemaVersion = db.pragma("schema_version", { simple: true }) as number;
+
+    db.pragma("writable_schema = ON");
+    try {
+      for (const table of oldSchemaTables) {
+        db.prepare(`
+          update sqlite_master
+          set sql = replace(sql, '''T_1H''', '''T_2H''')
+          where type = 'table' and name = ?
+        `).run(table);
+      }
+      db.pragma(`schema_version = ${schemaVersion + 1}`);
+    } finally {
+      db.pragma("writable_schema = OFF");
+    }
+  }
+
+  for (const table of tables) {
+    if (hasTable(db, table)) {
+      db.prepare(`update ${table} set forecast_horizon = 'T_2H' where forecast_horizon = 'T_1H'`).run();
+    }
+  }
+}
+
+function hasTable(db: SqliteDb, table: string): boolean {
+  const row = db.prepare(`
+    select 1 as exists_value
+    from sqlite_master
+    where type = 'table' and name = ?
+  `).get(table) as { exists_value: number } | undefined;
+
+  return Boolean(row);
 }
 
 function ensureColumn(db: SqliteDb, table: string, column: string, definition: string): void {

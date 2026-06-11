@@ -5,6 +5,7 @@
  */
 import "../load-env";
 import { createHash, randomUUID } from "node:crypto";
+import { pathToFileURL } from "node:url";
 import {
   createSqliteDb,
   getDefaultDbPath,
@@ -37,11 +38,11 @@ import type {
   PredictionValidationResult
 } from "@llm-kicktipp/llm";
 
-type BenchmarkAccessCondition = "closed_book" | "open_book";
+export type BenchmarkAccessCondition = "closed_book" | "open_book";
 
-type BenchmarkPromptStrategy = "direct_score" | "probabilistic_forecast";
+export type BenchmarkPromptStrategy = "direct_score" | "probabilistic_forecast";
 
-type BenchmarkCondition = {
+export type BenchmarkCondition = {
   accessCondition: BenchmarkAccessCondition;
   promptStrategy: BenchmarkPromptStrategy;
 };
@@ -89,14 +90,53 @@ type CliArgs = {
   horizon: ForecastHorizon;
   limit: number | null;
   matchId: string | null;
+  matchIds: string[] | null;
   modelIds: string[] | null;
   sampleId: number;
   groupStageOnly: boolean;
   concurrency: number;
   skipExisting: boolean;
   skipAnyExisting: boolean;
+  force: boolean;
+  dryRun: boolean;
   accessConditions: BenchmarkAccessCondition[] | null;
   promptStrategies: BenchmarkPromptStrategy[] | null;
+};
+
+export type BenchmarkRunnerOptions = {
+  horizon: ForecastHorizon;
+  matches?: MatchRow[];
+  limit?: number | null;
+  matchId?: string | null;
+  matchIds?: string[] | null;
+  modelIds?: string[] | null;
+  sampleId?: number;
+  groupStageOnly?: boolean;
+  concurrency?: number;
+  skipExisting?: boolean;
+  skipAnyExisting?: boolean;
+  force?: boolean;
+  dryRun?: boolean;
+  accessConditions?: BenchmarkAccessCondition[] | null;
+  promptStrategies?: BenchmarkPromptStrategy[] | null;
+  db?: SqliteDb;
+};
+
+export type BenchmarkRunResult = {
+  runId: string;
+  matches: number;
+  models: number;
+  tasks: number;
+  written: number;
+  skipped: number;
+  failures: number;
+};
+
+export type BenchmarkCoverageSummary = {
+  total: number;
+  valid: number;
+  missing: number;
+  invalid: number;
 };
 
 type BenchmarkTask = {
@@ -110,55 +150,148 @@ type ExistingPredictionStatus = {
   is_valid_for_scoring: number;
 } | null;
 
-async function main() {
-  const apiKey = process.env.OPENROUTER_API_KEY;
-  if (!apiKey) {
-    throw new Error("Missing OPENROUTER_API_KEY. Add it to .env, not to frontend code.");
-  }
+type BenchmarkTaskResult = "written" | "skipped" | "failed";
 
+async function main() {
   const args = parseCliArgs(process.argv.slice(2));
-  const db = createSqliteDb();
+
+  await runBenchmarkPredictions({
+    horizon: args.horizon,
+    limit: args.limit,
+    matchId: args.matchId,
+    matchIds: args.matchIds,
+    modelIds: args.modelIds,
+    sampleId: args.sampleId,
+    groupStageOnly: args.groupStageOnly,
+    concurrency: args.concurrency,
+    skipExisting: args.skipExisting,
+    skipAnyExisting: args.skipAnyExisting,
+    force: args.force,
+    dryRun: args.dryRun,
+    accessConditions: args.accessConditions,
+    promptStrategies: args.promptStrategies
+  });
+}
+
+export async function runBenchmarkPredictions(options: BenchmarkRunnerOptions): Promise<BenchmarkRunResult> {
+  const db = options.db ?? createSqliteDb();
+  const shouldCloseDb = !options.db;
   const allModels = getConfiguredLlmModels();
   const activeModels = allModels
     .filter((model) => model.active)
-    .filter((model) => !args.modelIds || args.modelIds.includes(model.id));
+    .filter((model) => !options.modelIds || options.modelIds.includes(model.id));
 
-  if (args.modelIds && activeModels.length === 0) {
-    throw new Error(`No configured active models matched: ${args.modelIds.join(", ")}`);
+  if (options.modelIds && activeModels.length === 0) {
+    throw new Error(`No configured active models matched: ${options.modelIds.join(", ")}`);
   }
 
   await upsertModels(db, allModels);
 
-  const matches = selectMatches(await listMatches(db), args);
-  const conditions = selectConditions(args);
+  const matches = selectMatches(options.matches ?? await listMatches(db), {
+    horizon: options.horizon,
+    limit: options.matches ? null : options.limit ?? null,
+    matchId: options.matchId ?? null,
+    matchIds: options.matchIds ?? null,
+    modelIds: options.modelIds ?? null,
+    sampleId: options.sampleId ?? 1,
+    groupStageOnly: options.groupStageOnly ?? false,
+    concurrency: options.concurrency ?? DEFAULT_CONCURRENCY,
+    skipExisting: options.skipExisting ?? false,
+    skipAnyExisting: options.skipAnyExisting ?? false,
+    force: options.force ?? false,
+    dryRun: options.dryRun ?? false,
+    accessConditions: options.accessConditions ?? null,
+    promptStrategies: options.promptStrategies ?? null
+  });
+  const conditions = selectConditions({
+    accessConditions: options.accessConditions ?? null,
+    promptStrategies: options.promptStrategies ?? null
+  });
   if (conditions.length === 0) {
     throw new Error("No benchmark conditions selected. Check --access and --prompt-strategy.");
   }
   const tasks = createBenchmarkTasks(matches, activeModels, conditions);
+  const runId = randomUUID();
+  const runnerArgs: CliArgs = {
+    horizon: options.horizon,
+    limit: options.limit ?? null,
+    matchId: options.matchId ?? null,
+    matchIds: options.matchIds ?? null,
+    modelIds: options.modelIds ?? null,
+    sampleId: options.sampleId ?? 1,
+    groupStageOnly: options.groupStageOnly ?? false,
+    concurrency: options.concurrency ?? DEFAULT_CONCURRENCY,
+    skipExisting: options.skipExisting ?? false,
+    skipAnyExisting: options.skipAnyExisting ?? false,
+    force: options.force ?? false,
+    dryRun: options.dryRun ?? false,
+    accessConditions: options.accessConditions ?? null,
+    promptStrategies: options.promptStrategies ?? null
+  };
+
+  console.log(`Benchmark run: ${runId}`);
+  console.log(`Horizon: ${options.horizon}`);
+  console.log(`Found ${matches.length} matches and ${activeModels.length} active models.`);
+  console.log(`Conditions: ${conditions.map((condition) => `${condition.accessCondition}/${condition.promptStrategy}`).join(", ")}`);
+  console.log(`Tasks: ${tasks.length}; concurrency: ${runnerArgs.concurrency}`);
+  console.log(`Skip existing: ${runnerArgs.force ? "off (force)" : runnerArgs.skipAnyExisting ? "any predictions" : runnerArgs.skipExisting ? "valid predictions" : "off"}`);
+  console.log(`Dry run: ${runnerArgs.dryRun ? "yes" : "no"}`);
+  console.log(`SQLite DB: ${getDefaultDbPath()}`);
+
+  const initialCoverage = inspectBenchmarkTaskCoverage(db, tasks, runnerArgs);
+  console.log(`Existing prediction coverage: valid=${initialCoverage.valid}; invalid=${initialCoverage.invalid}; missing=${initialCoverage.missing}; total=${initialCoverage.total}`);
+
+  if (runnerArgs.dryRun || tasks.length === 0) {
+    if (shouldCloseDb) db.close();
+    return {
+      runId,
+      matches: matches.length,
+      models: activeModels.length,
+      tasks: tasks.length,
+      written: 0,
+      skipped: tasks.length,
+      failures: 0
+    };
+  }
+
+  const apiKey = process.env.OPENROUTER_API_KEY;
+  if (!apiKey) {
+    if (shouldCloseDb) db.close();
+    throw new Error("Missing OPENROUTER_API_KEY. Add it to .env, not to frontend code.");
+  }
+
   const openRouter = new OpenRouterClient({
     apiKey,
     siteUrl: process.env.OPENROUTER_SITE_URL,
     siteName: process.env.OPENROUTER_SITE_NAME
   });
-  const runId = randomUUID();
 
-  console.log(`Benchmark run: ${runId}`);
-  console.log(`Horizon: ${args.horizon}`);
-  console.log(`Found ${matches.length} matches and ${activeModels.length} active models.`);
-  console.log(`Conditions: ${conditions.map((condition) => `${condition.accessCondition}/${condition.promptStrategy}`).join(", ")}`);
-  console.log(`Tasks: ${tasks.length}; concurrency: ${args.concurrency}`);
-  console.log(`Skip existing: ${args.skipAnyExisting ? "any predictions" : args.skipExisting ? "valid predictions" : "off"}`);
-  console.log(`SQLite DB: ${getDefaultDbPath()}`);
+  const taskResults: BenchmarkTaskResult[] = [];
+  await runWithConcurrency(tasks, runnerArgs.concurrency, async (task) => {
+    const result = await runBenchmarkTask({
+      db,
+      openRouter,
+      runId,
+      args: runnerArgs,
+      task
+    });
+    taskResults.push(result);
+  });
 
-  await runWithConcurrency(tasks, args.concurrency, (task) => runBenchmarkTask({
-    db,
-    openRouter,
+  const finalCoverage = inspectBenchmarkTaskCoverage(db, tasks, runnerArgs);
+  console.log(`Post-run prediction coverage: valid=${finalCoverage.valid}; invalid=${finalCoverage.invalid}; missing=${finalCoverage.missing}; total=${finalCoverage.total}`);
+
+  if (shouldCloseDb) db.close();
+
+  return {
     runId,
-    args,
-    task
-  }));
-
-  db.close();
+    matches: matches.length,
+    models: activeModels.length,
+    tasks: tasks.length,
+    written: taskResults.filter((result) => result === "written").length,
+    skipped: taskResults.filter((result) => result === "skipped").length,
+    failures: taskResults.filter((result) => result === "failed").length
+  };
 }
 
 async function runBenchmarkTask(options: {
@@ -167,19 +300,19 @@ async function runBenchmarkTask(options: {
   runId: string;
   args: CliArgs;
   task: BenchmarkTask;
-}): Promise<void> {
+}): Promise<BenchmarkTaskResult> {
   const { db, openRouter, runId, args, task } = options;
   const { match, model, condition } = task;
   const existing = getExistingBenchmarkPredictionStatus(db, task, args);
 
-  if (args.skipAnyExisting && existing) {
+  if (!args.force && args.skipAnyExisting && existing) {
     console.log(formatSkippedLog(match, model.name, condition, "existing"));
-    return;
+    return "skipped";
   }
 
-  if (args.skipExisting && existing?.is_valid_for_scoring === 1) {
+  if (!args.force && args.skipExisting && existing?.is_valid_for_scoring === 1) {
     console.log(formatSkippedLog(match, model.name, condition, existing.validation_status ?? "valid"));
-    return;
+    return "skipped";
   }
 
   const prompt = buildPredictionPrompt({
@@ -279,6 +412,7 @@ async function runBenchmarkTask(options: {
       completion.toolMetadata.openBookCompliance,
       finalValidation.status
     ));
+    return "written";
   } catch (error) {
     const failedAt = new Date().toISOString();
     await upsertBenchmarkPrediction(db, {
@@ -317,6 +451,7 @@ async function runBenchmarkTask(options: {
     });
 
     console.error(formatFailureLog(match, model.name, condition, error));
+    return "failed";
   }
 }
 
@@ -326,9 +461,12 @@ function parseCliArgs(args: string[]): CliArgs {
   const all = args.includes("--all");
   const groupStageOnly = args.includes("--group-stage");
   const modelIds = readArg(args, "model") ?? readArg(args, "models");
+  const matchIds = readArg(args, "match-ids");
   const sampleId = Number.parseInt(readArg(args, "sample-id") ?? "1", 10);
   const skipExisting = args.includes("--skip-existing");
   const skipAnyExisting = args.includes("--skip-any-existing");
+  const force = args.includes("--force");
+  const dryRun = args.includes("--dry-run");
 
   if (!Number.isInteger(sampleId) || sampleId < 1) {
     throw new Error("Invalid --sample-id. Use a positive integer.");
@@ -342,12 +480,15 @@ function parseCliArgs(args: string[]): CliArgs {
     horizon,
     limit: all || (groupStageOnly && rawLimit === null) ? null : parseLimit(rawLimit),
     matchId: readArg(args, "match-id"),
+    matchIds: matchIds ? parseCommaSeparated(matchIds) : null,
     modelIds: modelIds ? modelIds.split(",").map((entry) => entry.trim()).filter(Boolean) : null,
     sampleId,
     groupStageOnly,
     concurrency: parseConcurrency(readArg(args, "concurrency")),
     skipExisting,
     skipAnyExisting,
+    force,
+    dryRun,
     accessConditions: parseAccessConditions(readArg(args, "access")),
     promptStrategies: parsePromptStrategies(readArg(args, "prompt-strategy") ?? readArg(args, "strategy"))
   };
@@ -373,11 +514,11 @@ function readArg(args: string[], name: string): string | null {
 }
 
 function parseHorizon(value: string): ForecastHorizon {
-  if (value === "T_24H" || value === "T_1H" || value === "STAGE_OPENING") {
+  if (value === "T_24H" || value === "T_2H" || value === "STAGE_OPENING") {
     return value;
   }
 
-  throw new Error("Invalid --horizon. Use T_24H, T_1H, or STAGE_OPENING.");
+  throw new Error("Invalid --horizon. Use T_24H, T_2H, or STAGE_OPENING.");
 }
 
 function parseLimit(value: string | null): number {
@@ -450,14 +591,15 @@ function parseCommaSeparated(value: string): string[] {
 function selectMatches(matches: MatchRow[], args: CliArgs): MatchRow[] {
   const selected = matches
     .filter((match) => !args.matchId || match.id === args.matchId)
-    .filter((match) => args.matchId || ["SCHEDULED", "TIMED"].includes(match.status))
+    .filter((match) => !args.matchIds || args.matchIds.includes(match.id))
+    .filter((match) => args.matchId || args.matchIds || ["SCHEDULED", "TIMED"].includes(match.status))
     .filter((match) => !args.groupStageOnly || isGroupStageMatch(match))
     .sort((a, b) => new Date(a.utc_date).getTime() - new Date(b.utc_date).getTime());
 
   return args.limit === null ? selected : selected.slice(0, args.limit);
 }
 
-function selectConditions(args: CliArgs): BenchmarkCondition[] {
+function selectConditions(args: Pick<CliArgs, "accessConditions" | "promptStrategies">): BenchmarkCondition[] {
   return CONDITIONS.filter((condition) => {
     const accessMatches = !args.accessConditions || args.accessConditions.includes(condition.accessCondition);
     const strategyMatches = !args.promptStrategies || args.promptStrategies.includes(condition.promptStrategy);
@@ -574,6 +716,70 @@ function getExistingBenchmarkPredictionStatus(
   return row ?? null;
 }
 
+export async function inspectBenchmarkPredictionCoverage(
+  db: SqliteDb,
+  options: Omit<BenchmarkRunnerOptions, "db" | "dryRun" | "force" | "skipExisting" | "skipAnyExisting" | "concurrency">
+): Promise<BenchmarkCoverageSummary> {
+  const allModels = getConfiguredLlmModels();
+  const activeModels = allModels
+    .filter((model) => model.active)
+    .filter((model) => !options.modelIds || options.modelIds.includes(model.id));
+  const matches = selectMatches(options.matches ?? await listMatches(db), {
+    horizon: options.horizon,
+    limit: options.matches ? null : options.limit ?? null,
+    matchId: options.matchId ?? null,
+    matchIds: options.matchIds ?? null,
+    modelIds: options.modelIds ?? null,
+    sampleId: options.sampleId ?? 1,
+    groupStageOnly: options.groupStageOnly ?? false,
+    concurrency: DEFAULT_CONCURRENCY,
+    skipExisting: true,
+    skipAnyExisting: false,
+    force: false,
+    dryRun: false,
+    accessConditions: options.accessConditions ?? null,
+    promptStrategies: options.promptStrategies ?? null
+  });
+  const conditions = selectConditions({
+    accessConditions: options.accessConditions ?? null,
+    promptStrategies: options.promptStrategies ?? null
+  });
+  const tasks = createBenchmarkTasks(matches, activeModels, conditions);
+
+  return inspectBenchmarkTaskCoverage(db, tasks, {
+    horizon: options.horizon,
+    sampleId: options.sampleId ?? 1
+  });
+}
+
+function inspectBenchmarkTaskCoverage(
+  db: SqliteDb,
+  tasks: BenchmarkTask[],
+  args: Pick<CliArgs, "horizon" | "sampleId">
+): BenchmarkCoverageSummary {
+  let valid = 0;
+  let invalid = 0;
+  let missing = 0;
+
+  for (const task of tasks) {
+    const existing = getExistingBenchmarkPredictionStatus(db, task, args as CliArgs);
+    if (!existing) {
+      missing += 1;
+    } else if (existing.is_valid_for_scoring === 1) {
+      valid += 1;
+    } else {
+      invalid += 1;
+    }
+  }
+
+  return {
+    total: tasks.length,
+    valid,
+    missing,
+    invalid
+  };
+}
+
 async function createChatCompletionWithBackoff(
   openRouter: OpenRouterClient,
   modelId: string,
@@ -629,7 +835,7 @@ function sleep(ms: number): Promise<void> {
 
 function getScheduledPredictionTimeUtc(match: MatchRow, horizon: ForecastHorizon): string {
   const kickoff = new Date(match.utc_date);
-  const offsetMinutes = horizon === "T_24H" ? 1440 : horizon === "T_1H" ? 60 : 0;
+  const offsetMinutes = horizon === "T_24H" ? 1440 : horizon === "T_2H" ? 120 : 0;
   const scheduled = horizon === "STAGE_OPENING"
     ? new Date()
     : new Date(kickoff.getTime() - offsetMinutes * 60_000);
@@ -652,8 +858,8 @@ function getTimingMetadata(
     return { minutesBeforeKickoff, timingStatus: "missed" };
   }
 
-  const target = horizon === "T_24H" ? 1440 : 60;
-  const tolerance = horizon === "T_24H" ? 90 : 20;
+  const target = horizon === "T_24H" ? 1440 : 120;
+  const tolerance = horizon === "T_24H" ? 90 : 60;
   const delta = minutesBeforeKickoff - target;
 
   if (Math.abs(delta) <= tolerance) {
@@ -910,7 +1116,9 @@ function formatRetryLog(
   ].join(" | ");
 }
 
-main().catch((error) => {
-  console.error(error);
-  process.exitCode = 1;
-});
+if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
+  main().catch((error) => {
+    console.error(error);
+    process.exitCode = 1;
+  });
+}

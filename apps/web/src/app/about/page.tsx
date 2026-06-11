@@ -31,7 +31,7 @@ const pipelineSteps = [
 const methods = [
   {
     label: "Forecast horizons",
-    text: "A horizon records when a prediction was made, for example at stage opening, 24 hours before kickoff, or 1 hour before kickoff."
+    text: "A horizon records when a prediction was made, for example at stage opening, 24 hours before kickoff, or 2 hours before kickoff."
   },
   {
     label: "Closed book",

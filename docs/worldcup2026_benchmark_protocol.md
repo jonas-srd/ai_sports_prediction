@@ -278,11 +278,11 @@ The primary analysis should use only valid T-24h predictions. Stage-opening fall
 
 ### 7.2 Secondary horizon: T-1h
 
-A secondary/add-on horizon may generate predictions approximately 1 hour before kickoff.
+A secondary/add-on horizon may generate predictions approximately 2 hours before kickoff.
 
 ```json
 {
-  "forecast_horizon": "T_1H",
+  "forecast_horizon": "T_2H",
   "target_offset_minutes": -60,
   "primary": false
 }
@@ -328,7 +328,7 @@ Every prediction must store timing metadata, including:
 
 ```json
 {
-  "forecast_horizon": "T_24H | T_1H | STAGE_OPENING",
+  "forecast_horizon": "T_24H | T_2H | STAGE_OPENING",
   "stage_context": "group_stage | round_of_32 | round_of_16 | quarterfinal | semifinal | third_place | final",
   "scheduled_prediction_time_utc": "...",
   "actual_prediction_time_utc": "...",
@@ -962,7 +962,7 @@ For each prediction, store:
 
   "access_condition": "closed_book | open_book",
   "prompt_strategy": "direct_score | probabilistic_forecast",
-  "forecast_horizon": "T_24H | T_1H | STAGE_OPENING",
+  "forecast_horizon": "T_24H | T_2H | STAGE_OPENING",
   "sample_id": 1,
 
   "scheduled_prediction_time_utc": "...",

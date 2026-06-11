@@ -138,13 +138,34 @@ npm run benchmark:predict -- --group-stage --prompt-strategy=direct_score --skip
 
 `--skip-existing` skips already valid predictions and retries invalid/API-error rows. Use `--skip-any-existing` only when you want to preserve every existing row regardless of validity.
 
+Run production benchmark prediction schedulers:
+
+```bash
+npm run benchmark:predict:due -- --horizon=T_24H --window-before-min=15 --window-after-min=60 --concurrency=3
+npm run benchmark:predict:due -- --horizon=T_2H --window-before-min=10 --window-after-min=60 --concurrency=3
+npm run benchmark:predict:stage-opening -- --stage=group_stage --concurrency=3
+npm run benchmark:predict:stage-opening -- --stage=round_of_16 --concurrency=3
+```
+
+The due runner selects matches whose target prediction time is inside the polling window. The horizon remains kickoff minus 24 hours for `T_24H` and kickoff minus 2 hours for `T_2H`; the polling interval is only how often the job is invoked. `T_2H` timing is considered on-time within +/- 60 minutes because the full API batch can take close to an hour. The stage-opening runner refuses partial stages and runs only after the full group stage or knockout round is known. Both jobs skip valid existing predictions by default, fill missing/invalid rows, and use a DB-backed scheduler lock.
+
+Recommended production cadence:
+
+```text
+fixture sync: every 15-60 minutes, depending on provider limits
+T_24H due runner: every 15-30 minutes
+T_2H due runner: every 5-10 or 10-15 minutes
+stage-opening runner: manually, or scheduled shortly after official stage/round completion
+scoring/evaluation: after result sync
+```
+
 Run the one-time pre-tournament Kicktipp special-question predictions:
 
 ```bash
 npm run special:predict -- --concurrency=2
 ```
 
-This generates the 15 tournament-level questions once for the same active model roster and the same 2x2 `closed_book`/`open_book` x `direct_score`/`probabilistic_forecast` strategy design. The special predictions use the existing initial horizon name `STAGE_OPENING`; no `T_24H` or `T_1H` special predictions are generated.
+This generates the 15 tournament-level questions once for the same active model roster and the same 2x2 `closed_book`/`open_book` x `direct_score`/`probabilistic_forecast` strategy design. The special predictions use the existing initial horizon name `STAGE_OPENING`; no `T_24H` or `T_2H` special predictions are generated.
 
 Special prediction rerun behavior:
 

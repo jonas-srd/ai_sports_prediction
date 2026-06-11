@@ -93,11 +93,11 @@ type PromptStrategy = "direct_score" | "probabilistic_forecast";
 ### 3.3 Forecast horizon
 
 ```ts
-type ForecastHorizon = "T_24H" | "T_1H" | "STAGE_OPENING";
+type ForecastHorizon = "T_24H" | "T_2H" | "STAGE_OPENING";
 ```
 
 - `T_24H`: primary paper horizon, approximately 24 hours before kickoff.
-- `T_1H`: secondary horizon, approximately 1 hour before kickoff.
+- `T_2H`: secondary horizon, approximately 2 hours before kickoff.
 - `STAGE_OPENING`: fallback/early prediction when a fixture set becomes known.
 
 ### 3.4 Predictor type
@@ -410,12 +410,12 @@ forecast_horizon = "T_24H"
 is_primary_horizon = true
 ```
 
-### 7.2 T_1H
+### 7.2 T_2H
 
-Secondary horizon. Run approximately 1 hour before kickoff if operationally feasible.
+Secondary horizon. Run approximately 2 hours before kickoff if operationally feasible.
 
 ```ts
-forecast_horizon = "T_1H"
+forecast_horizon = "T_2H"
 is_primary_horizon = false
 ```
 
@@ -779,7 +779,7 @@ Extend existing match-level views to show:
 - short reason;
 - access condition badge: closed-book/open-book;
 - prompt strategy badge: direct/probabilistic;
-- forecast horizon badge: T_24H/T_1H/STAGE_OPENING;
+- forecast horizon badge: T_24H/T_2H/STAGE_OPENING;
 - search-used indicator for open-book predictions.
 
 ### 13.2 Leaderboards
@@ -812,7 +812,7 @@ Reuse current interactive comparison UI and extend it to compare:
 - closed-book vs open-book;
 - direct-score vs probabilistic-forecast;
 - models within a condition;
-- T_24H vs T_1H;
+- T_24H vs T_2H;
 - match-level model disagreement.
 
 ### 13.4 Tournament tree/bracket

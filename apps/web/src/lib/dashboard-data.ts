@@ -861,7 +861,7 @@ function toPromptStrategy(value: string): PromptStrategy {
 }
 
 function toForecastHorizon(value: string): ForecastHorizon {
-  return value === "T_24H" || value === "T_1H" || value === "STAGE_OPENING" ? value : "STAGE_OPENING";
+  return value === "T_24H" || value === "T_2H" || value === "STAGE_OPENING" ? value : "STAGE_OPENING";
 }
 
 function parseStringArray(value: string | null): string[] {

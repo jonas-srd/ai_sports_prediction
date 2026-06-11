@@ -34,7 +34,7 @@ const METRICS = Object.keys(METRIC_DEFINITIONS) as AnalyticsMetric[];
 const SERIES_COLORS = ["#b33a27", "#204f35", "#d69632", "#263b67", "#7d2b1f", "#0d6b5f", "#7f5b24", "#443a2f"];
 const FILTER_HELP = {
   metric: "Choose the evaluation metric used for ranking models, for example scores, Brier score, or log loss.",
-  forecastHorizon: "Filter predictions by when they were made, such as stage-opening, 24 hours before kickoff, or 1 hour before kickoff.",
+  forecastHorizon: "Filter predictions by when they were made, such as stage-opening, 24 hours before kickoff, or 2 hours before kickoff.",
   access: "Filter whether the model predicted from its own knowledge only or was allowed to use web-search/tool access.",
   prompt: "Filter the prompt format used for the prediction, for example direct score prediction or probabilistic forecast.",
   stage: "Filter matches by tournament stage, such as group stage or knockout rounds.",
@@ -626,8 +626,8 @@ function explainForecastHorizon(value: string): string {
     return "T_24H means the prediction was scheduled approximately 24 hours before kickoff.";
   }
 
-  if (value === "T_1H") {
-    return "T_1H means the prediction was scheduled approximately 1 hour before kickoff.";
+  if (value === "T_2H") {
+    return "T_2H means the prediction was scheduled approximately 2 hours before kickoff.";
   }
 
   return `${value} is the forecast horizon used for this configuration.`;

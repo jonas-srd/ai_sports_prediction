@@ -69,7 +69,7 @@ export type AccessCondition = "closed_book" | "open_book" | "not_applicable";
 
 export type PromptStrategy = "direct_score" | "probabilistic_forecast" | "not_applicable";
 
-export type ForecastHorizon = "T_24H" | "T_1H" | "STAGE_OPENING";
+export type ForecastHorizon = "T_24H" | "T_2H" | "STAGE_OPENING";
 
 export type TimingStatus = "on_time" | "early" | "late" | "missed" | "fallback";
 
