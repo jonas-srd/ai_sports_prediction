@@ -2,7 +2,8 @@
  * Purpose: Displays a football fixture in one compact line with team flags.
  * The layout mirrors common match-center rows: home team, center time/score, away team, then metadata.
  */
-import { getTeamFlag } from "@/lib/country-flags";
+import { formatTeamName, getTeamFlag } from "@/lib/country-flags";
+import type { Locale } from "@/lib/i18n";
 
 type TeamMatchupProps = {
   homeTeam: string;
@@ -10,23 +11,26 @@ type TeamMatchupProps = {
   center: string;
   meta?: string | null;
   compact?: boolean;
+  locale?: Locale;
 };
 
-export function TeamMatchup({ homeTeam, awayTeam, center, meta, compact = false }: TeamMatchupProps) {
+export function TeamMatchup({ homeTeam, awayTeam, center, meta, compact = false, locale = "en" }: TeamMatchupProps) {
   const homeIsSeed = getSeedFlagLabel(homeTeam) !== null;
   const awayIsSeed = getSeedFlagLabel(awayTeam) !== null;
+  const displayHomeTeam = formatTeamName(homeTeam, locale);
+  const displayAwayTeam = formatTeamName(awayTeam, locale);
 
   return (
     <div className={`fixtureMatchup${compact ? " compactFixture" : ""}`}>
       <div className="fixtureLine">
         <span className="fixtureTeam homeFixtureTeam">
-          {!homeIsSeed && <span>{homeTeam}</span>}
-          <TeamFlag teamName={homeTeam} />
+          {!homeIsSeed && <span>{displayHomeTeam}</span>}
+          <TeamFlag locale={locale} teamName={homeTeam} />
         </span>
         <strong className="fixtureCenter">{center}</strong>
         <span className="fixtureTeam awayFixtureTeam">
-          <TeamFlag teamName={awayTeam} />
-          {!awayIsSeed && <span>{awayTeam}</span>}
+          <TeamFlag locale={locale} teamName={awayTeam} />
+          {!awayIsSeed && <span>{displayAwayTeam}</span>}
         </span>
       </div>
       {meta ? <p className="fixtureMeta">{meta}</p> : null}
@@ -34,7 +38,7 @@ export function TeamMatchup({ homeTeam, awayTeam, center, meta, compact = false 
   );
 }
 
-function TeamFlag({ teamName }: { teamName: string }) {
+function TeamFlag({ locale, teamName }: { locale: Locale; teamName: string }) {
   const seedLabel = getSeedFlagLabel(teamName);
   if (seedLabel) {
     return (
@@ -51,7 +55,7 @@ function TeamFlag({ teamName }: { teamName: string }) {
 
   return (
     <img
-      alt={flag.alt}
+      alt={locale === "de" ? `Flagge ${formatTeamName(teamName, locale)}` : flag.alt}
       className="countryFlag"
       loading="lazy"
       src={flag.src}

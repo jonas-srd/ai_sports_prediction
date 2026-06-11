@@ -137,6 +137,7 @@ export function ModelInspector({ locale, matches, selectedModel, selectedKey, in
                     homeTeam={labels.homeTeamLabel}
                     awayTeam={labels.awayTeamLabel}
                     center={formatMatchCenter(row.match, timeZone)}
+                    locale={locale}
                     meta={formatMatchMeta(row.match, timeZone, locale)}
                   />
                 </div>

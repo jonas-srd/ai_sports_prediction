@@ -85,6 +85,7 @@ export function MatchPredictionCard({
           homeTeam={displayHomeTeam}
           awayTeam={displayAwayTeam}
           center={center}
+          locale={locale}
           meta={meta}
         />
         <span className="matchDisclosure">{isOpen ? text.hidePredictions : text.showPredictions}</span>

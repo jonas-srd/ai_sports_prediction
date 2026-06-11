@@ -227,14 +227,14 @@ export default function AboutPage() {
             </p>
           </div>
           <div className="aboutTeamMember">
-            <strong>Jonas Schroeder</strong>
+            <strong>Jonas Schr&ouml;der</strong>
             <p>
               PhD researcher at LMU Munich & Munich Center for Machine Learning (MCML). Designed and built the benchmark workflow,
               prediction protocol, scoring pipeline, database architecture, and public dashboard.
             </p>
           </div>
           <div className="aboutTeamMember">
-            <strong>Oliver Mueller</strong>
+            <strong>Oliver M&uuml;ller</strong>
             <p>
               Scientific collaborator. Professor in Data Analytics at Paderborn University & Head of AI Competence Center
               of the Software Innovation Campus Paderborn (SICP).
@@ -257,4 +257,3 @@ export default function AboutPage() {
     </main>
   );
 }
-

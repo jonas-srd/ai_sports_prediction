@@ -4,7 +4,7 @@
  * Purpose: Dedicated World Cup knockout tournament tree page.
  */
 import type { DashboardMatch } from "@/lib/dashboard-data";
-import { getTeamFlag } from "@/lib/country-flags";
+import { formatTeamName, getTeamFlag } from "@/lib/country-flags";
 import {
   getDisplayMatch,
   getGroupRankings,
@@ -211,7 +211,7 @@ function GroupTable({ locale, standings }: { locale: Locale; standings: GroupSta
               <td className="groupTableTeam">
                 <span className="groupTableTeamInner">
                   <GroupTeamFlag teamName={standing.team} />
-                  <span>{standing.team}</span>
+                  <span>{formatTeamName(standing.team, locale)}</span>
                 </span>
               </td>
               <td>{standing.played}</td>

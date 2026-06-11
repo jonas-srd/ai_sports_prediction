@@ -21,7 +21,7 @@ import { InteractiveLeaderboard } from "@/components/interactive-leaderboard";
 import { PredictionViewControls } from "@/components/prediction-view-controls";
 import { TeamMatchup } from "@/components/team-matchup";
 import { InfoTooltip, type TooltipLine } from "@/components/info-tooltip";
-import { getTeamFlag } from "@/lib/country-flags";
+import { formatTeamName, getTeamFlag } from "@/lib/country-flags";
 import { formatMatchTime, formatShortDate } from "@/lib/timezone";
 import { useTimeZone } from "@/components/time-zone-provider";
 import { commonText, localizePath, type Locale } from "@/lib/i18n";
@@ -252,6 +252,7 @@ export function HomeDashboard({ locale, matches, specialPredictions }: HomeDashb
                 homeTeam={match.homeTeam}
                 awayTeam={match.awayTeam}
                 center={formatMatchCenter(match, timeZone)}
+                locale={locale}
                 meta={formatMatchMeta(match, timeZone, locale)}
               />
             </Link>
@@ -326,7 +327,7 @@ function SpecialQuestionPredictionsTable({
                   </td>
                   {columns.map((column) => (
                     <td className={getSpecialQuestionColumnClass(column.id)} key={column.id}>
-                      <ActualSpecialQuestionCell teams={actualAnswers.get(column.id) ?? []} />
+                      <ActualSpecialQuestionCell locale={locale} teams={actualAnswers.get(column.id) ?? []} />
                     </td>
                   ))}
                 </tr>
@@ -370,24 +371,6 @@ function SpecialQuestionHeader({ column, locale }: { column: SpecialQuestionColu
   );
 }
 
-function ActualSpecialQuestionCell({ teams }: { teams: string[] }) {
-  if (teams.length === 0) {
-    return <span className="specialQuestionActualPending">TBD</span>;
-  }
-
-  return (
-    <span
-      aria-label={teams.join(", ")}
-      className={`specialQuestionFlagList${teams.length > 1 ? " isMulti" : ""} isActual`}
-      title={teams.join(", ")}
-    >
-      {teams.map((team) => (
-        <TeamPickFlag key={team} teamName={team} />
-      ))}
-    </span>
-  );
-}
-
 function SpecialQuestionCell({ locale, prediction }: { locale: Locale; prediction?: DashboardSpecialPrediction }) {
   if (!prediction) {
     return <span className="specialQuestionEmpty">-</span>;
@@ -398,7 +381,7 @@ function SpecialQuestionCell({ locale, prediction }: { locale: Locale; predictio
 
   return (
     <span className="specialQuestionCell">
-      <SpecialQuestionPick prediction={prediction} />
+      <SpecialQuestionPick locale={locale} prediction={prediction} />
       <InfoTooltip
         label={`${prediction.model} ${DASHBOARD_TEXT[locale].reasonFor} ${formatSpecialQuestionLabel(prediction, locale)}`}
         lines={tooltipLines}
@@ -407,10 +390,30 @@ function SpecialQuestionCell({ locale, prediction }: { locale: Locale; predictio
   );
 }
 
-function SpecialQuestionPick({ prediction }: { prediction: DashboardSpecialPrediction }) {
+function ActualSpecialQuestionCell({ locale, teams }: { locale: Locale; teams: string[] }) {
+  const displayTeams = teams.map((team) => formatTeamName(team, locale));
+  if (teams.length === 0) {
+    return <span className="specialQuestionActualPending">TBD</span>;
+  }
+
+  return (
+    <span
+      aria-label={displayTeams.join(", ")}
+      className={`specialQuestionFlagList${teams.length > 1 ? " isMulti" : ""} isActual`}
+      title={displayTeams.join(", ")}
+    >
+      {teams.map((team) => (
+        <TeamPickFlag key={team} locale={locale} teamName={team} />
+      ))}
+    </span>
+  );
+}
+
+function SpecialQuestionPick({ locale, prediction }: { locale: Locale; prediction: DashboardSpecialPrediction }) {
   const teams = prediction.predictionType === "multi_choice_fixed_k"
     ? prediction.finalPicks
     : prediction.finalPick ? [prediction.finalPick] : [];
+  const displayTeams = teams.map((team) => formatTeamName(team, locale));
   const correctnessClass = prediction.isCorrect === true ? " isCorrect" : prediction.isCorrect === false ? " isWrong" : "";
 
   if (teams.length === 0) {
@@ -419,36 +422,37 @@ function SpecialQuestionPick({ prediction }: { prediction: DashboardSpecialPredi
 
   return (
     <span
-      aria-label={teams.join(", ")}
+      aria-label={displayTeams.join(", ")}
       className={`specialQuestionFlagList${teams.length > 1 ? " isMulti" : ""}${correctnessClass}`}
-      title={teams.join(", ")}
+      title={displayTeams.join(", ")}
     >
       {teams.map((team) => (
-        <TeamPickFlag key={team} teamName={team} />
+        <TeamPickFlag key={team} locale={locale} teamName={team} />
       ))}
     </span>
   );
 }
 
-function TeamPickFlag({ teamName }: { teamName: string }) {
+function TeamPickFlag({ locale, teamName }: { locale: Locale; teamName: string }) {
   const flag = getTeamFlag(teamName);
+  const displayTeamName = formatTeamName(teamName, locale);
 
   if (!flag) {
     return (
-      <span className="specialQuestionFlag specialQuestionFlagFallback" title={teamName}>
-        {getTeamInitials(teamName)}
+      <span className="specialQuestionFlag specialQuestionFlagFallback" title={displayTeamName}>
+        {getTeamInitials(displayTeamName)}
       </span>
     );
   }
 
   return (
     <img
-      alt={flag.alt}
+      alt={locale === "de" ? `Flagge ${displayTeamName}` : flag.alt}
       className="specialQuestionFlag"
       loading="lazy"
       src={flag.src}
       srcSet={flag.srcSet}
-      title={teamName}
+      title={displayTeamName}
     />
   );
 }
