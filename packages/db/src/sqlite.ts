@@ -419,21 +419,7 @@ function migrateForecastHorizonFromT1HToT2H(db: SqliteDb): void {
   });
 
   if (oldSchemaTables.length > 0) {
-    const schemaVersion = db.pragma("schema_version", { simple: true }) as number;
-
-    db.pragma("writable_schema = ON");
-    try {
-      for (const table of oldSchemaTables) {
-        db.prepare(`
-          update sqlite_master
-          set sql = replace(sql, '''T_1H''', '''T_2H''')
-          where type = 'table' and name = ?
-        `).run(table);
-      }
-      db.pragma(`schema_version = ${schemaVersion + 1}`);
-    } finally {
-      db.pragma("writable_schema = OFF");
-    }
+    rebuildForecastHorizonTables(db, oldSchemaTables);
   }
 
   for (const table of tables) {
@@ -441,6 +427,398 @@ function migrateForecastHorizonFromT1HToT2H(db: SqliteDb): void {
       db.prepare(`update ${table} set forecast_horizon = 'T_2H' where forecast_horizon = 'T_1H'`).run();
     }
   }
+}
+
+function rebuildForecastHorizonTables(db: SqliteDb, tables: string[]): void {
+  const rebuilders: Record<string, () => void> = {
+    benchmark_predictions: () => rebuildBenchmarkPredictions(db),
+    special_prediction_runs: () => rebuildSpecialPredictionRuns(db),
+    special_predictions: () => rebuildSpecialPredictions(db)
+  };
+
+  const previousForeignKeys = db.pragma("foreign_keys", { simple: true }) as number;
+  db.pragma("foreign_keys = OFF");
+
+  try {
+    const transaction = db.transaction(() => {
+      for (const table of tables) {
+        rebuilders[table]?.();
+      }
+    });
+
+    transaction();
+  } finally {
+    db.pragma(`foreign_keys = ${previousForeignKeys ? "ON" : "OFF"}`);
+  }
+}
+
+function rebuildBenchmarkPredictions(db: SqliteDb): void {
+  db.exec(`
+    alter table benchmark_predictions rename to benchmark_predictions_t1h_migration;
+
+    create table benchmark_predictions (
+      id text primary key,
+      run_id text,
+      match_id text not null references matches(id) on delete cascade,
+
+      predictor_type text not null check (predictor_type in ('llm', 'baseline')),
+      predictor_id text not null,
+      provider text not null,
+      model_id text references models(id) on delete set null,
+      model_version text,
+
+      access_condition text not null check (access_condition in ('closed_book', 'open_book', 'not_applicable')),
+      prompt_strategy text not null check (prompt_strategy in ('direct_score', 'probabilistic_forecast', 'not_applicable')),
+      forecast_horizon text not null check (forecast_horizon in ('T_24H', 'T_2H', 'STAGE_OPENING')),
+      sample_id integer not null default 1,
+
+      scheduled_prediction_time_utc text,
+      actual_prediction_time_utc text,
+      kickoff_time_utc text,
+      minutes_before_kickoff integer,
+      timing_status text check (timing_status is null or timing_status in ('on_time', 'early', 'late', 'missed', 'fallback')),
+
+      prompt_template_id text,
+      prompt_hash text,
+      raw_prompt text,
+      raw_response text not null,
+      response_id text,
+      temperature real,
+      top_p real,
+      max_tokens integer,
+      latency_ms integer,
+      input_tokens integer,
+      output_tokens integer,
+      cost_usd real,
+
+      home_win_90_prob real,
+      draw_90_prob real,
+      away_win_90_prob real,
+      expected_home_goals_90 real,
+      expected_away_goals_90 real,
+      most_likely_score_90_home integer,
+      most_likely_score_90_away integer,
+      home_win_full_prob real,
+      draw_full_prob real,
+      away_win_full_prob real,
+      most_likely_score_full_home integer,
+      most_likely_score_full_away integer,
+      home_advances_prob real,
+      away_advances_prob real,
+      confidence real,
+      reason text,
+
+      validation_status text check (
+        validation_status is null or validation_status in (
+          'valid',
+          'normalized',
+          'repaired',
+          'repaired_and_normalized',
+          'invalid_json',
+          'invalid_schema',
+          'invalid_probability_range',
+          'invalid_probability_sum',
+          'invalid_score',
+          'invalid_after_repair',
+          'api_error',
+          'timeout'
+        )
+      ),
+      is_valid_for_scoring integer not null default 0,
+      repair_attempted integer not null default 0,
+      repair_raw_response text,
+      normalization_applied integer not null default 0,
+      normalized_fields text not null default '[]',
+      validation_errors text not null default '[]',
+      prob_sum_90_original real,
+      prob_sum_90_final real,
+      prob_sum_full_original real,
+      prob_sum_full_final real,
+      prob_sum_advancement_original real,
+      prob_sum_advancement_final real,
+
+      tools_enabled integer not null default 0,
+      tool_type text,
+      tool_calls_observed integer,
+      num_tool_calls integer,
+      tool_trace_available integer not null default 0,
+      tool_trace text,
+      open_book_compliance text not null default 'not_applicable' check (
+        open_book_compliance in ('observed_search', 'no_observed_search', 'unknown', 'not_applicable')
+      ),
+
+      created_at text not null default current_timestamp,
+      updated_at text not null default current_timestamp,
+
+      unique (
+        match_id,
+        predictor_type,
+        predictor_id,
+        forecast_horizon,
+        access_condition,
+        prompt_strategy,
+        sample_id
+      )
+    );
+
+    insert into benchmark_predictions
+    select
+      id,
+      run_id,
+      match_id,
+      predictor_type,
+      predictor_id,
+      provider,
+      model_id,
+      model_version,
+      access_condition,
+      prompt_strategy,
+      case forecast_horizon when 'T_1H' then 'T_2H' else forecast_horizon end,
+      sample_id,
+      scheduled_prediction_time_utc,
+      actual_prediction_time_utc,
+      kickoff_time_utc,
+      minutes_before_kickoff,
+      timing_status,
+      prompt_template_id,
+      prompt_hash,
+      raw_prompt,
+      raw_response,
+      response_id,
+      temperature,
+      top_p,
+      max_tokens,
+      latency_ms,
+      input_tokens,
+      output_tokens,
+      cost_usd,
+      home_win_90_prob,
+      draw_90_prob,
+      away_win_90_prob,
+      expected_home_goals_90,
+      expected_away_goals_90,
+      most_likely_score_90_home,
+      most_likely_score_90_away,
+      home_win_full_prob,
+      draw_full_prob,
+      away_win_full_prob,
+      most_likely_score_full_home,
+      most_likely_score_full_away,
+      home_advances_prob,
+      away_advances_prob,
+      confidence,
+      reason,
+      validation_status,
+      is_valid_for_scoring,
+      repair_attempted,
+      repair_raw_response,
+      normalization_applied,
+      normalized_fields,
+      validation_errors,
+      prob_sum_90_original,
+      prob_sum_90_final,
+      prob_sum_full_original,
+      prob_sum_full_final,
+      prob_sum_advancement_original,
+      prob_sum_advancement_final,
+      tools_enabled,
+      tool_type,
+      tool_calls_observed,
+      num_tool_calls,
+      tool_trace_available,
+      tool_trace,
+      open_book_compliance,
+      created_at,
+      updated_at
+    from benchmark_predictions_t1h_migration;
+
+    drop table benchmark_predictions_t1h_migration;
+  `);
+}
+
+function rebuildSpecialPredictionRuns(db: SqliteDb): void {
+  db.exec(`
+    alter table special_prediction_runs rename to special_prediction_runs_t1h_migration;
+
+    create table special_prediction_runs (
+      id text primary key,
+      forecast_horizon text not null check (forecast_horizon in ('T_24H', 'T_2H', 'STAGE_OPENING')),
+      sample_id integer not null default 1,
+      started_at_utc text not null,
+      created_at text not null default current_timestamp
+    );
+
+    insert into special_prediction_runs (
+      id,
+      forecast_horizon,
+      sample_id,
+      started_at_utc,
+      created_at
+    )
+    select
+      id,
+      case forecast_horizon when 'T_1H' then 'T_2H' else forecast_horizon end,
+      sample_id,
+      started_at_utc,
+      created_at
+    from special_prediction_runs_t1h_migration;
+
+    drop table special_prediction_runs_t1h_migration;
+  `);
+}
+
+function rebuildSpecialPredictions(db: SqliteDb): void {
+  db.exec(`
+    alter table special_predictions rename to special_predictions_t1h_migration;
+
+    create table special_predictions (
+      id text primary key,
+      run_id text references special_prediction_runs(id) on delete set null,
+
+      question_id text not null,
+      question_label text not null,
+      prediction_type text not null check (prediction_type in ('single_choice', 'multi_choice_fixed_k')),
+      k integer,
+
+      predictor_type text not null check (predictor_type in ('llm', 'baseline')),
+      predictor_id text not null,
+      provider text not null,
+      model_id text references models(id) on delete set null,
+      model_version text,
+
+      access_condition text not null check (access_condition in ('closed_book', 'open_book', 'not_applicable')),
+      prompt_strategy text not null check (prompt_strategy in ('direct_score', 'probabilistic_forecast', 'not_applicable')),
+      forecast_horizon text not null check (forecast_horizon in ('T_24H', 'T_2H', 'STAGE_OPENING')),
+      sample_id integer not null default 1,
+
+      actual_prediction_time_utc text,
+      prompt_template_id text,
+      prompt_hash text,
+      raw_prompt text,
+      raw_response text not null,
+      parsed_response text,
+      response_id text,
+      temperature real,
+      top_p real,
+      max_tokens integer,
+      latency_ms integer,
+      input_tokens integer,
+      output_tokens integer,
+      cost_usd real,
+
+      final_pick text,
+      final_picks text not null default '[]',
+      confidence real,
+      reasoning_summary text,
+
+      validation_status text check (
+        validation_status is null or validation_status in (
+          'valid',
+          'normalized',
+          'repaired',
+          'repaired_and_normalized',
+          'invalid_json',
+          'invalid_schema',
+          'invalid_probability_range',
+          'invalid_probability_sum',
+          'invalid_candidate',
+          'invalid_pick_count',
+          'invalid_rank',
+          'invalid_after_repair',
+          'api_error',
+          'timeout'
+        )
+      ),
+      is_valid_for_scoring integer not null default 0,
+      repair_attempted integer not null default 0,
+      repair_raw_response text,
+      normalization_applied integer not null default 0,
+      normalized_fields text not null default '[]',
+      validation_errors text not null default '[]',
+      probability_sum_original real,
+      probability_sum_final real,
+
+      tools_enabled integer not null default 0,
+      tool_type text,
+      tool_calls_observed integer,
+      num_tool_calls integer,
+      tool_trace_available integer not null default 0,
+      tool_trace text,
+      open_book_compliance text not null default 'not_applicable' check (
+        open_book_compliance in ('observed_search', 'no_observed_search', 'unknown', 'not_applicable')
+      ),
+
+      created_at text not null default current_timestamp,
+      updated_at text not null default current_timestamp,
+
+      unique (
+        question_id,
+        predictor_type,
+        predictor_id,
+        forecast_horizon,
+        access_condition,
+        prompt_strategy,
+        sample_id
+      )
+    );
+
+    insert into special_predictions
+    select
+      id,
+      run_id,
+      question_id,
+      question_label,
+      prediction_type,
+      k,
+      predictor_type,
+      predictor_id,
+      provider,
+      model_id,
+      model_version,
+      access_condition,
+      prompt_strategy,
+      case forecast_horizon when 'T_1H' then 'T_2H' else forecast_horizon end,
+      sample_id,
+      actual_prediction_time_utc,
+      prompt_template_id,
+      prompt_hash,
+      raw_prompt,
+      raw_response,
+      parsed_response,
+      response_id,
+      temperature,
+      top_p,
+      max_tokens,
+      latency_ms,
+      input_tokens,
+      output_tokens,
+      cost_usd,
+      final_pick,
+      final_picks,
+      confidence,
+      reasoning_summary,
+      validation_status,
+      is_valid_for_scoring,
+      repair_attempted,
+      repair_raw_response,
+      normalization_applied,
+      normalized_fields,
+      validation_errors,
+      probability_sum_original,
+      probability_sum_final,
+      tools_enabled,
+      tool_type,
+      tool_calls_observed,
+      num_tool_calls,
+      tool_trace_available,
+      tool_trace,
+      open_book_compliance,
+      created_at,
+      updated_at
+    from special_predictions_t1h_migration;
+
+    drop table special_predictions_t1h_migration;
+  `);
 }
 
 function hasTable(db: SqliteDb, table: string): boolean {
