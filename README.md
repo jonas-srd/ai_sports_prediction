@@ -201,6 +201,20 @@ exports/worldcup2026_tool_logs.jsonl
 
 The exports include invalid benchmark predictions and unevaluated rows. See `docs/worldcup2026_paper_exports.md`.
 
+Create a compressed SQLite backup. By default this writes one backup per UTC day and skips if today's backup already exists:
+
+```bash
+npm run backup:db
+```
+
+Force a second backup for the same UTC day:
+
+```bash
+npm run backup:db -- --force
+```
+
+Local backups are written next to the SQLite database under `data/backups` unless `SQLITE_BACKUP_DIR` is set.
+
 Start the local website:
 
 ```bash
@@ -273,15 +287,140 @@ The minimal flagship MVP setup uses paid OpenRouter models and requires credits:
 OPENROUTER_MODEL_IDS=openai/gpt-5.5,anthropic/claude-opus-4.8,google/gemini-3.1-pro-preview,x-ai/grok-4.3,deepseek/deepseek-v4-pro,qwen/qwen3.7-max,mistralai/mistral-large-2512
 ```
 
-## Public Deployment
+## Railway Deployment
 
-SQLite is good for the local MVP. For a public Railway deployment, keep this limitation in mind:
+The production Railway setup uses a single web service with one persistent SQLite volume. The web app reads the database and the internal cron loop writes updates into the same SQLite file.
+
+Do not run a separate Railway cron service with a separate volume for SQLite. Two services with two volumes will create two different database files, so web will not display cron updates.
+
+Required Railway service setup:
 
 ```text
-Railway can run the app, but the local SQLite file should not be treated as durable production storage unless it is backed by a persistent volume.
+Service: @llm-kicktipp/web
+Volume mount: /app/data
+Custom Start Command: sh scripts/start-web-with-db-seed.sh
+Replicas: 1
 ```
 
-Pragmatic public options later:
+Recommended Railway env vars:
+
+```text
+SQLITE_DB_PATH=/app/data/world-cup.db
+SQLITE_SEED_OVERWRITE=0
+ENABLE_INTERNAL_CRON=1
+FOOTBALL_DATA_API_KEY=...
+FOOTBALL_DATA_COMPETITION=WC
+FOOTBALL_DATA_SEASON=2026
+OPENROUTER_API_KEY=...
+OPENROUTER_SITE_URL=https://your-railway-domain.example
+OPENROUTER_SITE_NAME=World Cup LLM Rank
+BACKUP_DOWNLOAD_TOKEN=use-a-long-random-secret
+```
+
+Optional Railway env vars:
+
+```text
+INTERNAL_CRON_INTERVAL_SECONDS=900
+SQLITE_BACKUP_DIR=/app/data/backups
+```
+
+`ENABLE_INTERNAL_CRON=1` starts `scripts/run-production-cron-loop.sh` in the background before Next.js starts. The loop runs:
+
+```text
+fixture/result sync
+T_24H due predictions
+T_2H due predictions
+stage-opening prediction checks
+benchmark evaluation
+daily SQLite backup
+```
+
+The due prediction jobs select only matches whose target prediction time is inside their polling windows. Stage-opening jobs are safe to run repeatedly because they refuse partial stages and skip valid existing predictions.
+
+### Seeding Railway SQLite
+
+The Docker image contains `deploy/seed/world-cup.db.gz`. On startup, `scripts/start-web-with-db-seed.sh` restores this seed only when `/app/data/world-cup.db` is missing, unless forced.
+
+To update Railway from a local database:
+
+1. Rebuild `deploy/seed/world-cup.db.gz` from local `data/world-cup.db`.
+2. Commit and deploy the new seed.
+3. Temporarily set:
+
+```text
+ENABLE_INTERNAL_CRON=0
+SQLITE_SEED_OVERWRITE=1
+```
+
+4. Redeploy or restart once. Logs should show:
+
+```text
+SQLITE_SEED_OVERWRITE=1 set. Replacing SQLite database at /app/data/world-cup.db from seed.
+```
+
+5. Immediately restore normal settings:
+
+```text
+ENABLE_INTERNAL_CRON=1
+SQLITE_SEED_OVERWRITE=0
+```
+
+Never leave `SQLITE_SEED_OVERWRITE=1` enabled permanently. It would replace cron-generated data on every restart.
+
+### Railway Backups
+
+The internal cron loop runs:
+
+```bash
+npm run backup:db
+```
+
+This creates one compressed SQLite backup per UTC day in:
+
+```text
+/app/data/backups
+```
+
+Backups are stored as:
+
+```text
+world-cup-YYYY-MM-DDTHH-MM-SS-sssZ.db.gz
+```
+
+The backup script uses SQLite's backup API before compression, so it is safer than copying `world-cup.db` directly while WAL mode is active.
+
+List available backups through the protected API:
+
+```bash
+curl -H "Authorization: Bearer YOUR_BACKUP_DOWNLOAD_TOKEN" \
+  https://YOUR_RAILWAY_DOMAIN/api/admin/backups
+```
+
+Download one backup:
+
+```bash
+curl -H "Authorization: Bearer YOUR_BACKUP_DOWNLOAD_TOKEN" \
+  https://YOUR_RAILWAY_DOMAIN/api/admin/backups/world-cup-2026-06-11T03-00-00-000Z.db.gz \
+  -o world-cup-backup.db.gz
+```
+
+`BACKUP_DOWNLOAD_TOKEN` must be set or the backup routes return `401`.
+
+For paper work, keep the downloaded `.db.gz` files outside Railway as well, for example in institutional storage, cloud storage, or a local archive. The Railway volume is the operational source of truth, not the only archive.
+
+### Paper Exports On Railway
+
+Paper CSV/JSONL exports can be generated manually from the Railway shell:
+
+```bash
+npm run benchmark:export -- --out-dir=/app/data/exports/latest
+```
+
+These files are derived artifacts. The SQLite backups are the primary research backup because they contain the full raw prompts, raw responses, validations, evaluations, and scheduler state.
+
+### Longer-Term Options
+
+Pragmatic options if SQLite becomes limiting:
 
 1. Keep using SQLite locally, export static JSON, and deploy the read-only website.
 2. Move the same DB repository layer to a hosted SQL database when automatic public updates matter.
@@ -299,6 +438,7 @@ Pragmatic public options later:
 - `apps/cron/src/jobs/predict-next.ts`: predicts the next scheduled matches for local testing.
 - `apps/cron/src/jobs/score-results.ts`: scores finished matches using Kicktipp rules.
 - `apps/cron/src/jobs/export-worldcup2026-paper-data.ts`: exports paper-analysis CSV/JSONL datasets.
+- `apps/cron/src/jobs/backup-sqlite-db.ts`: creates daily compressed SQLite backups.
 - `packages/db`: SQLite connection, schema, and repository helpers.
 - `packages/llm`: model IDs, prompt construction, and OpenRouter calls.
 - `packages/scorer`: shared points logic.

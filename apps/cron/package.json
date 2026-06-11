@@ -20,6 +20,7 @@
     "special:predict": "tsx src/jobs/run-special-predictions.ts",
     "benchmark:evaluate": "tsx src/jobs/evaluate-benchmark-predictions.ts",
     "benchmark:export": "tsx src/jobs/export-worldcup2026-paper-data.ts",
+    "backup:db": "tsx src/jobs/backup-sqlite-db.ts",
     "score": "tsx src/jobs/score-results.ts",
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },

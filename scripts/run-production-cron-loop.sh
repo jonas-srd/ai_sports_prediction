@@ -33,6 +33,8 @@ while true; do
 
   run_job npm run benchmark:evaluate
 
+  run_job npm run backup:db
+
   echo "[$(date -u)] Cron loop sleeping ${INTERVAL_SECONDS}s."
   sleep "$INTERVAL_SECONDS"
 done
