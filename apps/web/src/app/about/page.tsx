@@ -215,16 +215,29 @@ export default function AboutPage() {
         </div>
       </section>
 
-      <section className="panel aboutIntroPanel">
-        <p className="sectionKicker">Project team</p>
-        <h2>Designed and built by researchers</h2>
-        <p>
-          LLM SoccerArena was designed and built by Jonas Schweisthal and Jonas Schröder, PhD researchers at the Chair of Prof. Feuerriegel.
-        </p>
-        <p>
-          The project team designed the benchmark workflow, prediction protocol, scoring pipeline, database architecture, and public dashboard
-          for comparing LLM forecasts of the FIFA World Cup 2026.
-        </p>
+      <section className="panel aboutPanel aboutTeamPanel">
+        <p className="sectionKicker">Developer Team</p>
+        <h2>Project contributors</h2>
+        <div className="aboutTeamList">
+          <div className="aboutTeamMember">
+            <strong>Jonas Schweisthal</strong>
+            <p>
+              PhD researcher at the Chair of Prof. Feuerriegel. Designed and built the benchmark workflow, prediction protocol,
+              scoring pipeline, database architecture, and public dashboard.
+            </p>
+          </div>
+          <div className="aboutTeamMember">
+            <strong>Jonas Schröder</strong>
+            <p>
+              PhD researcher at the Chair of Prof. Feuerriegel. Designed and built the benchmark workflow, prediction protocol,
+              scoring pipeline, database architecture, and public dashboard.
+            </p>
+          </div>
+          <div className="aboutTeamMember">
+            <strong>Stefan Feuerriegel</strong>
+            <p>Project Lead.</p>
+          </div>
+        </div>
       </section>
     </main>
   );

@@ -3020,14 +3020,21 @@ h2 {
   gap: 18px;
 }
 
+.aboutTeamPanel {
+  width: 100%;
+  margin-bottom: 18px;
+}
+
 .aboutStepList,
-.aboutDefinitionList {
+.aboutDefinitionList,
+.aboutTeamList {
   display: grid;
   gap: 12px;
 }
 
 .aboutStep,
-.aboutDefinition {
+.aboutDefinition,
+.aboutTeamMember {
   border: 1px solid rgba(70, 55, 35, 0.12);
   border-radius: 20px;
   background: rgba(255, 255, 255, 0.46);
@@ -3035,7 +3042,8 @@ h2 {
 }
 
 .aboutStep strong,
-.aboutDefinition strong {
+.aboutDefinition strong,
+.aboutTeamMember strong {
   display: block;
   margin-bottom: 6px;
   color: var(--red);
@@ -3048,6 +3056,7 @@ h2 {
 
 .aboutStep p,
 .aboutDefinition p,
+.aboutTeamMember p,
 .aboutCautionPanel p {
   margin: 0;
   color: var(--muted);
