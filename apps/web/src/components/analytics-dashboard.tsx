@@ -416,7 +416,8 @@ function RankedBarChart({
           >
             <span className="barRank">#{row.rank}</span>
             <span className="barLabel barModelLabel">
-              <span>{row.model}</span>
+              <span className="barModelName">{row.model}</span>
+              <span className="barSetupBox">{formatAnalyticsSetupLabel(row)}</span>
               <InfoTooltip
                 label={`${row.model} ${text.config}`}
                 lines={buildModelConfigurationHelp(row, locale)}
@@ -431,6 +432,15 @@ function RankedBarChart({
       })}
     </div>
   );
+}
+
+function formatAnalyticsSetupLabel(row: AnalyticsLeaderboardRow): string {
+  return [
+    row.provider,
+    row.accessCondition.replaceAll("_", " "),
+    row.promptStrategy.replaceAll("_", " "),
+    row.forecastHorizon
+  ].join(" / ");
 }
 
 function getBarWidth(value: number | null, min: number, max: number, direction: "higher" | "lower"): number {

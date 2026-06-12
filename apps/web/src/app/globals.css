@@ -3069,24 +3069,44 @@ h2 {
   overflow: hidden;
   font-weight: 900;
   text-overflow: ellipsis;
-  white-space: nowrap;
 }
 
 .barModelLabel {
-  display: inline-flex;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
   min-width: 0;
   align-items: center;
+  align-content: center;
   gap: 7px;
   overflow: visible;
 }
 
-.barModelLabel > span:first-child {
+.barModelName {
+  grid-column: 1;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
+.barSetupBox {
+  grid-column: 1 / -1;
+  justify-self: start;
+  max-width: 100%;
+  overflow-wrap: anywhere;
+  border: 1px solid rgba(70, 55, 35, 0.12);
+  border-radius: 999px;
+  background: rgba(255, 248, 233, 0.78);
+  color: var(--muted);
+  padding: 4px 8px;
+  font-family: "Courier New", monospace;
+  font-size: 0.58rem;
+  font-weight: 900;
+  line-height: 1.05;
+}
+
 .barModelLabel .filterInfo {
+  grid-column: 2;
+  grid-row: 1;
   flex: 0 0 auto;
 }
 
