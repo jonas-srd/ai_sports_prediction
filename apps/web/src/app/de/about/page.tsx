@@ -7,69 +7,117 @@ export const metadata: Metadata = {
   description: "Projektüberblick, Methodik, Wertung und Grenzen von LLM SoccerArena."
 };
 
-const pipelineSteps = [
+const aboutPoints = [
   {
-    title: "1. Spiele und Metadaten",
-    text: "Wir halten Spielplan, Teams, Anstoßzeiten, Turnierphasen, Stadien und offizielle Ergebnisse an einem Ort zusammen."
+    label: "Worum es geht",
+    text: "LLM SoccerArena ist ein Live-Benchmark und Tippspiel für künstliche Intelligenzen. Während der FIFA-Weltmeisterschaft 2026 sagen führende KI-Sprachmodelle Spiele und Turnierausgänge voraus, und wir vergleichen diese Prognosen mit den offiziellen Ergebnissen."
   },
   {
-    title: "2. Prognoseläufe",
-    text: "Jedes Modell tippt in einem klar benannten Setup: Zeitpunkt, Informationszugriff, Prompt-Stil und Sample-ID."
+    label: "Die Frage",
+    text: "KI-Chatbots klingen bei fast allem selbstsicher. Fußball ist ein harter öffentlicher Test: Die Spiele stehen fest, die Ergebnisse sind eindeutig, und niemand kennt den Ausgang vorher. Wir fragen, ob Sprachmodelle Fußball prognostizieren können und ob Live-Webzugriff hilft."
   },
   {
-    title: "3. Output-Checks",
-    text: "Wir prüfen, ob die Antwort sauber nutzbar ist: Ergebnis, Wahrscheinlichkeiten, Pflichtfelder und genug Informationen für die Wertung."
+    label: "Was die Seite zeigt",
+    text: "Das Dashboard zeigt Modell-Ranglisten, jeden Tipp pro Spiel, turnierweite Zusatzfragen, den Turnierbaum, den Spielplan und detaillierte Analysen für verschiedene Modell-Setups."
   },
   {
-    title: "4. Wertung",
-    text: "Sobald ein Spiel beendet ist, bekommen die Tipps einfache Match-Punkte plus zusätzliche Metriken für Wahrscheinlichkeiten und Trefferqualität."
-  },
-  {
-    title: "5. Öffentliches Dashboard",
-    text: "Die Website macht daraus Rankings, Match-Ansichten, Fragen-Tabellen, den Turnierbaum und Analysen."
+    label: "Was das Ranking bedeutet",
+    text: "Eine hohe Platzierung bedeutet, dass ein Modell-Setup bei den bisher gewerteten Spielen gut abgeschnitten hat. Sie beweist kein Fußballverständnis und garantiert nicht den Ausgang des nächsten Spiels."
   }
 ];
 
-const methodGroups = [
+const pipelineSteps = [
   {
-    title: "Zeitpunkt",
-    intro: "Dasselbe Spiel kann zu verschiedenen Momenten getippt werden, weil sich die Lage vor Anpfiff verändern kann.",
+    title: "1. Vor einem Spiel",
+    text: "Jedes Modell-Setup sagt das wahrscheinlichste 90-Minuten-Ergebnis, Ergebniswahrscheinlichkeiten, erwartete Tore, Full-Match-Wahrscheinlichkeiten und bei K.-o.-Spielen Weiterkommenswahrscheinlichkeiten voraus."
+  },
+  {
+    title: "2. Zeitstempel und Speicherung",
+    text: "Vorhersagen werden mit Prompt, Rohantwort, Run-ID, Spiel-ID, Zeitmetadaten, Modell-ID, Zugriffsbedingung, Prompt-Strategie, Prognosehorizont und Sample-ID gespeichert."
+  },
+  {
+    title: "3. Validierung",
+    text: "Antworten müssen gültiges JSON mit Pflichtfeldern enthalten, Wahrscheinlichkeiten im erlaubten Bereich haben, Wahrscheinlichkeitsvektoren müssen innerhalb der Toleranz zu 1 summieren, und Ergebnis-Tipps müssen nichtnegative ganze Zahlen sein."
+  },
+  {
+    title: "4. Auswertung",
+    text: "Sobald offizielle Ergebnisse vorliegen, berechnet das System Match-Punkte sowie probabilistische, kategoriale, Ergebnis- und Zuverlässigkeitsmetriken."
+  }
+];
+
+const researchQuestions = [
+  "Wie genau sagen verschiedene Modelle WM-2026-Spiele voraus?",
+  "Verbessert Open-Book-Webzugriff die Prognosen gegenüber Closed Book?",
+  "Verbessert probabilistisches Prompting die Prognosen gegenüber direktem Ergebnis-Prompting?",
+  "Wie oft erzeugen Modelle gültige, nutzbare und in sich stimmige Vorhersagen?",
+  "Wie gut sagen Modelle in K.-o.-Spielen vorher, welches Team weiterkommt?"
+];
+
+const designGroups = [
+  {
+    title: "Versuchsdesign",
     entries: [
       {
-        label: "Prognosehorizonte",
-        text: "Ein Horizont sagt, wann der Tipp entstanden ist: zum Beispiel zum Phasenstart, 24 Stunden vor Anpfiff oder 2 Stunden vor Anpfiff."
+        label: "2x2-Benchmark",
+        text: "Das Kerndesign kreuzt zwei Zugriffsbedingungen, Closed Book und Open Book, mit zwei Prompt-Strategien, Direct Score und Probabilistic Forecast."
+      },
+      {
+        label: "Versuchseinheit",
+        text: "Die Einheit ist Modell x Spiel x Prognosehorizont x Zugriffsbedingung x Prompt-Strategie x Sample-ID. Der Kern-Benchmark nutzt einen deterministischen Aufruf pro Einheit."
+      },
+      {
+        label: "Modell-Setups",
+        text: "Die Website unterscheidet vollständige Setups, nicht nur Modellnamen. Dadurch bleiben Open Book, Closed Book, Direct Score, Probabilistic Forecast und verschiedene Horizonte getrennt sichtbar."
       }
     ]
   },
   {
-    title: "Informationszugriff",
-    intro: "Manche Läufe sind bewusst abgeschirmt, andere dürfen aktuelle öffentliche Informationen nutzen.",
+    title: "Prognosezeitpunkt",
     entries: [
       {
-        label: "Closed Book",
-        text: "Das Modell bekommt nur die Spieldaten. Es soll keine Suche, Tools, Quoten, News, Aufstellungen oder frische externe Infos nutzen."
+        label: "T-24h",
+        text: "Vorhersagen rund 24 Stunden vor dem Anpfiff. Primäre Analysen können auf gültige T-24h-Vorhersagen beschränkt werden."
       },
       {
-        label: "Open Book",
-        text: "Das Modell darf konfigurierte Suche oder Tools verwenden. So sieht man, ob aktuelle Informationen dem Tipp helfen."
+        label: "T-2h",
+        text: "Vorhersagen rund zwei Stunden vor dem Anpfiff. Dieser Horizont ist operativ fragiler, kann bei Open Book aber spätere öffentliche Informationen einbeziehen."
+      },
+      {
+        label: "STAGE_OPENING",
+        text: "Gruppenspiele werden einmal zum Phasenbeginn vorhergesagt; K.-o.-Spiele werden vorhergesagt, sobald die Paarung bekannt ist. Diese Vorhersagen ersetzen keine fehlenden T-24h-Vorhersagen."
       }
     ]
   },
   {
-    title: "Antwortstil",
-    intro: "Wir variieren den Prompt, um zu sehen, ob Modelle anders tippen, wenn sie zuerst an Ergebnisse oder zuerst an Wahrscheinlichkeiten denken.",
-    entries: [
+    title: "Informationszugriff und Prompts",
+    branches: [
       {
-        label: "Direct Score",
-        text: "Das Modell nennt zuerst das wahrscheinlichste Ergebnis und gibt zusätzlich Sieg-, Remis-, Niederlage- und bei Bedarf Weiterkommenswahrscheinlichkeiten."
+        label: "Informationszugriff",
+        text: "Pro Vorhersagelauf wird genau eine Zugriffsbedingung verwendet.",
+        choices: [
+          {
+            label: "Closed Book",
+            text: "Nur spielidentifizierende Felder; keine Websuche, Tools, Quoten, Nachrichten, Form, Ranglisten, Verletzungen oder Aufstellungen."
+          },
+          {
+            label: "Open Book",
+            text: "Derselbe Spielblock plus konfigurierte Websuche/Tool-Zugriff und die Anweisung, aktuelle öffentliche Informationen abzurufen."
+          }
+        ]
       },
       {
-        label: "Probabilistic Forecast",
-        text: "Das Modell startet mit Wahrscheinlichkeiten und nennt danach das wahrscheinlichste Ergebnis. Dadurch wird die Sicherheit leichter vergleichbar."
-      },
-      {
-        label: "Bestes pro Modell",
-        text: "Die Startseite zeigt normalerweise das stärkste Setup pro Modell, damit das Ranking lesbar bleibt. Filter zeigen alle Varianten."
+        label: "Prompt-Strategie",
+        text: "Genau eine Prompt-Strategie wird mit der Zugriffsbedingung kombiniert.",
+        choices: [
+          {
+            label: "Direct Score",
+            text: "Zuerst das wahrscheinlichste Ergebnis nennen, danach dazu konsistente Wahrscheinlichkeiten angeben."
+          },
+          {
+            label: "Probabilistic Forecast",
+            text: "Zuerst kalibrierte Wahrscheinlichkeiten und erwartete Tore schätzen, danach das Ergebnis ableiten."
+          }
+        ]
       }
     ]
   }
@@ -77,44 +125,44 @@ const methodGroups = [
 
 const metrics = [
   {
-    label: "Match-Punkte",
-    text: "Exaktes Ergebnis nach 90 Minuten gibt 5 Punkte, richtige Tordifferenz 2, richtige Tendenz 1 und Fehltipps 0."
+    label: "Tippspiel-Punkte",
+    text: "Exaktes 90-Minuten-Ergebnis gibt 5 Punkte, richtige Tordifferenz 2, richtige Tendenz 1 und ein Fehltipp 0."
   },
   {
-    label: "Brier Score",
-    text: "Misst die probabilistische Kalibrierung von Ergebniswahrscheinlichkeiten. Niedriger ist besser."
+    label: "Wahrscheinlichkeitsmetriken",
+    text: "Der Benchmark berichtet den 90-Minuten-Multiklassen-Brier-Score und den Multiklassen-Log-Loss. Niedriger ist jeweils besser."
   },
   {
-    label: "Log Loss",
-    text: "Bestraft selbstsichere Wahrscheinlichkeitsprognosen, die dem tatsächlichen Resultat niedrige Wahrscheinlichkeit geben. Niedriger ist besser."
+    label: "Genauigkeitsmetriken",
+    text: "Wir messen Top-Outcome-Genauigkeit, Tendenz-Genauigkeit aus dem Ergebnis-Tipp, exakte Ergebnisgenauigkeit, Tordifferenz-Genauigkeit und Weiterkommensgenauigkeit."
   },
   {
-    label: "Genauigkeitsflags",
-    text: "Erfassen exakte Ergebnisse, Tordifferenz, Tendenz, Top-Outcome und Weiterkommen in K.-o.-Spielen."
+    label: "Zuverlässigkeitsdiagnostik",
+    text: "Wir berichten Raten für ungültige, reparierte, normalisierte und fehlende Vorhersagen sowie Open-Book-Suchbeobachtung und Ergebnis-Wahrscheinlichkeits-Konsistenz."
   },
   {
-    label: "Zuverlässigkeitsmetriken",
-    text: "Erfassen ungültige Ausgaben, reparierte Ausgaben, Normalisierung, Tool-Nutzung und Konsistenz zwischen Ergebnis-Tipp und Wahrscheinlichkeitsmaximum."
+    label: "Turnierweite Fragen",
+    text: "Jedes Modell-Setup beantwortet 15 turnierweite Fragen. Diese werden getrennt von Match-Prognosen gewertet, mit 5 Punkten pro richtiger Antwort."
   }
 ];
 
-const questionMethods = [
-  {
-    label: "Zusatzfragen",
-    text: "Modelle beantworten zusätzlich 15 turnierweite Fragen: Gruppensieger, Halbfinalisten, Team des Torschützenkönigs und Weltmeister."
-  },
-  {
-    label: "Fragenanzeige",
-    text: "Die Startseite zeigt eine Zeile pro Modell-Setup und eine Spalte pro Frage. Tipps erscheinen als Flaggen; die kurze Begründung steckt hinter dem Info-Icon."
-  },
-  {
-    label: "Fragenwertung",
-    text: "Die Fragenwertung ist vom Match-Ranking getrennt. Jede richtige Antwort gibt 5 Punkte; falsche oder noch offene Antworten geben 0."
-  },
-  {
-    label: "Offizielle Antworten",
-    text: "Die Tabelle enthält eine Zeile mit offiziellen Resultaten. Manche Antworten werden im Turnierverlauf klar, andere erst ganz am Ende."
-  }
+const activeModels = [
+  "GPT-5.5",
+  "Claude Opus 4.8",
+  "Claude Fable 5",
+  "Gemini 3.1 Pro",
+  "Grok 4.3",
+  "DeepSeek V4 Pro",
+  "Qwen 3.7 Max",
+  "Mistral Large 2512"
+];
+
+const limitations = [
+  "Ein einzelnes Turnier ist eine kleine Stichprobe, besonders am Anfang.",
+  "Neuere Modelle können auch ohne Websuche mehr aktuelle öffentliche Informationen kennen.",
+  "Open-Book-Modelle können öffentliche Quoten oder Marktberichte lesen; deshalb müssen Open-Book-Ergebnisse vorsichtig interpretiert werden.",
+  "K.-o.-Spiele nach Verlängerung und Elfmeterschießen brauchen separate Weiterkommensmetriken.",
+  "Fußball ist verrauscht und torarm, deshalb liegen auch gut kalibrierte Prognosen oft daneben."
 ];
 
 export default function GermanAboutPage() {
@@ -122,80 +170,131 @@ export default function GermanAboutPage() {
     <main className="shell aboutShell">
       <section className="hero compactHero heroCentered">
         <p className="eyebrow">Über das Projekt</p>
-        <h1>Was macht LLM SoccerArena?</h1>
+        <h1>LLM SoccerArena</h1>
         <p className="heroText">
-          LLM SoccerArena vergleicht, wie große Sprachmodelle die FIFA-Weltmeisterschaft 2026 tippen.
-          Die Seite sammelt die Vorhersagen, prüft ob sie nutzbar sind, wertet sie gegen echte Ergebnisse aus und zeigt die verschiedenen Modellvarianten im Dashboard.
+          Ein live laufender, zeitgestempelter Benchmark dafür, wie große Sprachmodelle die FIFA-Weltmeisterschaft 2026 vorhersagen.
         </p>
       </section>
+
+      <nav className="aboutAnchorNav" aria-label="Abschnitte der Infoseite">
+        <a href="#about">Über LLM SoccerArena</a>
+        <a href="#methodology">Methodik</a>
+        <a href="#team">Team</a>
+      </nav>
+
+      <header className="aboutSectionHeader" id="about">
+        <p className="sectionKicker">Abschnitt 1</p>
+        <h2>Über LLM SoccerArena</h2>
+        <p>Was das Projekt ist, was das Dashboard zeigt und wie das Ranking zu lesen ist.</p>
+      </header>
 
       <section className="panel aboutIntroPanel">
-        <p className="sectionKicker">Kernidee</p>
-        <h2>Ein Benchmark, viele Modellkonfigurationen</h2>
+        <p className="sectionKicker">Überblick</p>
+        <h2>Was dieser Benchmark macht</h2>
         <p>
-          Der Benchmark vergleicht ganze Tipp-Setups, nicht nur Modellnamen. Eine Zeile kann ein bestimmtes Modell mit einem bestimmten Zeitpunkt,
-          Informationszugriff, Prompt-Stil und einer Sample-ID bedeuten. So werden die Varianten sichtbar, statt alles in einen Topf zu werfen.
-        </p>
-        <p>
-          Die Startseite beginnt mit einer einfachen Ansicht: bestes Setup pro Modell. Über Filter kann man die vollständigen Varianten direkt vergleichen.
+          Man kann es sich wie ein Tippspiel vorstellen, bei dem die Spieler GPT-5.5, Claude,
+          Gemini, Grok, DeepSeek, Qwen, Mistral und andere Modell-Setups sind. Die Prognosen
+          sind Forschungsergebnisse und öffentliche Benchmark-Daten, keine Wettempfehlungen.
         </p>
       </section>
 
       <section className="aboutGrid">
-        <div className="panel aboutPanel">
-          <p className="sectionKicker">Pipeline</p>
-          <h2>Was Schritt für Schritt passiert</h2>
-          <div className="aboutStepList">
-            {pipelineSteps.map((step) => (
-              <div className="aboutStep" key={step.title}>
-                <strong>{step.title}</strong>
-                <p>{step.text}</p>
-              </div>
-            ))}
+        {aboutPoints.map((entry) => (
+          <div className="panel aboutPanel" key={entry.label}>
+            <p className="sectionKicker">{entry.label}</p>
+            <p>{entry.text}</p>
           </div>
+        ))}
+      </section>
+
+      <header className="aboutSectionHeader" id="methodology">
+        <p className="sectionKicker">Abschnitt 2</p>
+        <h2>Methodik</h2>
+        <p>Wie Vorhersagen erzeugt, validiert, bewertet und nach Setup getrennt werden.</p>
+      </header>
+
+      <section className="panel aboutPanel aboutMethodologyPanel">
+        <p className="sectionKicker">Pipeline</p>
+        <h2>Wie der Benchmark funktioniert</h2>
+        <div className="aboutStepList">
+          {pipelineSteps.map((step) => (
+            <div className="aboutStep" key={step.title}>
+              <strong>{step.title}</strong>
+              <p>{step.text}</p>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      <section className="aboutGrid">
+        <div className="panel aboutPanel">
+          <p className="sectionKicker">Forschungsfragen</p>
+          <h2>Was wir testen</h2>
+          <ul className="aboutBulletList">
+            {researchQuestions.map((question) => (
+              <li key={question}>{question}</li>
+            ))}
+          </ul>
         </div>
 
         <div className="panel aboutPanel">
-          <p className="sectionKicker">Methodik</p>
-          <h2>Wie Match-Prognosen variieren</h2>
-          <div className="aboutMethodGroupList">
-            {methodGroups.map((group) => (
-              <div className="aboutMethodGroup" key={group.title}>
-                <div>
-                  <strong>{group.title}</strong>
-                  <p>{group.intro}</p>
-                </div>
-                <div className="aboutDefinitionList">
-                  {group.entries.map((entry) => (
-                    <div className="aboutDefinition" key={entry.label}>
-                      <strong>{entry.label}</strong>
-                      <p>{entry.text}</p>
+          <p className="sectionKicker">Modelle</p>
+          <h2>Aktives Flaggschiff-Set</h2>
+          <p>
+            Der aktive 2x2-Vergleich läuft über OpenRouter. Das genaue Set kann sich mit
+            der Modellverfügbarkeit ändern; aktuell umfasst es:
+          </p>
+          <div className="aboutPillList">
+            {activeModels.map((model) => (
+              <span key={model}>{model}</span>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <section className="aboutStack">
+        {designGroups.map((group) => (
+          <div className="panel aboutPanel" key={group.title}>
+            <p className="sectionKicker">Methodik</p>
+            <h2>{group.title}</h2>
+            {"branches" in group ? (
+              <div className="aboutNestedSetup">
+                <div className="aboutNestedRoot">Ein Modell-Setup</div>
+                {group.branches.map((branch) => (
+                  <div className="aboutNestedBranch" key={branch.label}>
+                    <div className="aboutNestedBranchHeader">
+                      <strong>{branch.label}</strong>
+                      <p>{branch.text}</p>
                     </div>
-                  ))}
-                </div>
+                    <div className="aboutNestedChoices">
+                      {branch.choices.map((choice) => (
+                        <div className="aboutNestedChoice" key={choice.label}>
+                          <strong>{choice.label}</strong>
+                          <p>{choice.text}</p>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ))}
               </div>
-            ))}
+            ) : (
+              <div className="aboutDefinitionList">
+                {group.entries.map((entry) => (
+                  <div className="aboutDefinition" key={entry.label}>
+                    <strong>{entry.label}</strong>
+                    <p>{entry.text}</p>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
-        </div>
+        ))}
       </section>
 
       <section className="aboutGrid">
-        <div className="panel aboutPanel">
-          <p className="sectionKicker">Zusatzfragen</p>
-          <h2>Turnierweite Prognosen</h2>
-          <div className="aboutDefinitionList">
-            {questionMethods.map((entry) => (
-              <div className="aboutDefinition" key={entry.label}>
-                <strong>{entry.label}</strong>
-                <p>{entry.text}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-
         <div className="panel aboutPanel">
           <p className="sectionKicker">Auswertung</p>
-          <h2>Wie Prognosen bewertet werden</h2>
+          <h2>Scoring und Metriken</h2>
           <div className="aboutDefinitionList">
             {metrics.map((entry) => (
               <div className="aboutDefinition" key={entry.label}>
@@ -205,68 +304,53 @@ export default function GermanAboutPage() {
             ))}
           </div>
         </div>
-      </section>
 
-      <section className="aboutGrid">
         <div className="panel aboutPanel aboutCautionPanel">
-          <p className="sectionKicker">Interpretation</p>
-          <h2>Was das Ranking bedeutet</h2>
-          <p>
-            Eine hohe Punktzahl bedeutet, dass ein Modell-Setup bei bereits bekannten Ergebnissen gut abgeschnitten hat.
-            Das beweist kein allgemeines Fußballverständnis und garantiert nicht die nächsten Spiele.
-          </p>
-          <p>
-            Rankings können sich bewegen, wenn weitere Spiele gespielt werden, neue Horizonte dazukommen,
-            Zusatzfragen entschieden sind und offene Prognosen Punkte bekommen.
-          </p>
-          <p>Die Prognosen sind Forschungsergebnisse. Sie sind keine Wettberatung und keine Empfehlung.</p>
-        </div>
-
-        <div className="panel aboutPanel">
           <p className="sectionKicker">Grenzen</p>
-          <h2>Was zu beachten ist</h2>
-          <div className="aboutDefinitionList">
-            <div className="aboutDefinition">
-              <strong>Kleine Stichproben am Anfang</strong>
-              <p>Zu Turnierbeginn sind viele Wertungen offen, daher können Leaderboards instabil sein.</p>
-            </div>
-            <div className="aboutDefinition">
-              <strong>Open-Book-Beobachtbarkeit</strong>
-              <p>Suchläufe werden getrackt, aber Tool-Verhalten hängt von Provider-Support und sichtbaren Tool-Spuren ab.</p>
-            </div>
-            <div className="aboutDefinition">
-              <strong>Fußballunsicherheit</strong>
-              <p>Auch gut kalibrierte Prognosen können falsch sein, weil Fußball rauschanfällig und torarm ist.</p>
-            </div>
-          </div>
+          <h2>Wie das Ranking zu lesen ist</h2>
+          <ul className="aboutBulletList">
+            {limitations.map((limitation) => (
+              <li key={limitation}>{limitation}</li>
+            ))}
+          </ul>
+          <p>
+            Rankings verschieben sich, wenn mehr Spiele gewertet werden, weitere Horizonte
+            hinzukommen und offene turnierweite Antworten aufgelöst werden.
+          </p>
         </div>
       </section>
+
+      <header className="aboutSectionHeader" id="team">
+        <p className="sectionKicker">Abschnitt 3</p>
+        <h2>Team</h2>
+        <p>Die Forschenden und Beitragenden hinter LLM SoccerArena.</p>
+      </header>
 
       <section className="panel aboutPanel aboutTeamPanel">
-        <p className="sectionKicker">Entwicklerteam</p>
-        <h2>Projektbeiträge</h2>
+        <p className="sectionKicker">Personen</p>
+        <h2>Wer dahintersteht</h2>
         <div className="aboutTeamList">
           <div className="aboutTeamMember">
             <strong>Jonas Schweisthal</strong>
-            <p>Doktorand an der LMU Munich & Munich Center for Machine Learning (MCML). Konzeption und Umsetzung von Benchmark-Workflow, Prognoseprotokoll, Scoring-Pipeline, Datenbankarchitektur und Dashboard.</p>
+            <p>Doktorand an der LMU München und am Munich Center for Machine Learning (MCML).</p>
             <ObfuscatedEmail reversedDomain="ed.uml" reversedLocalPart="lahtsiewhcs.sanoj" />
           </div>
           <div className="aboutTeamMember">
             <strong>Jonas Schröder</strong>
-            <p>Doktorand an der LMU Munich & Munich Center for Machine Learning (MCML). Konzeption und Umsetzung von Benchmark-Workflow, Prognoseprotokoll, Scoring-Pipeline, Datenbankarchitektur und Dashboard.</p>
+            <p>Doktorand an der LMU München und am Munich Center for Machine Learning (MCML).</p>
             <ObfuscatedEmail reversedDomain="ed.uml" reversedLocalPart="redeorhcs.sanoj" />
           </div>
           <div className="aboutTeamMember">
             <strong>Oliver Müller</strong>
-            <p>Wissenschaftlicher Mitarbeiter. Professor für Data Analytics an der Universität Paderborn & Head of AI Competence Center des Software Innovation Campus Paderborn (SICP).</p>
+            <p>Professor für Data Analytics an der Universität Paderborn und Leiter des AI Competence Center am SICP.</p>
           </div>
           <div className="aboutTeamMember">
             <strong>Markus Weinmann</strong>
-            <p>Projektleitung. Professor für Business Analytics an der Universität zu Köln & Institute for Business AI.</p>
+            <p>Professor für Business Analytics an der Universität zu Köln und am Institute for Business AI.</p>
           </div>
           <div className="aboutTeamMember">
             <strong>Stefan Feuerriegel</strong>
-            <p>Projektleitung. Professor in AI for Management an der LMU Munich School of Management & Munich Center for Machine Learning (MCML).</p>
+            <p>Professor für AI for Management an der LMU Munich School of Management und am MCML.</p>
             <ObfuscatedEmail reversedDomain="ed.uml" reversedLocalPart="legeirreuef" />
           </div>
         </div>
