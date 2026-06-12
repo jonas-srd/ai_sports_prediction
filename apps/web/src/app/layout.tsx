@@ -3,6 +3,7 @@
  * The UI is intentionally simple so the 48h effort stays focused on data flow and scoring.
  */
 import type { Metadata } from "next";
+import Script from "next/script";
 import type { ReactNode } from "react";
 import { HtmlLangSync } from "@/components/html-lang-sync";
 import { LocaleProvider } from "@/components/locale-provider";
@@ -28,6 +29,15 @@ export default function RootLayout({ children }: Readonly<{ children: ReactNode 
   return (
     <html lang="en">
       <body>
+        <Script src="https://www.googletagmanager.com/gtag/js?id=G-NHGXB530M0" strategy="afterInteractive" />
+        <Script id="google-analytics" strategy="afterInteractive">
+          {`
+            window.dataLayer = window.dataLayer || [];
+            function gtag(){dataLayer.push(arguments);}
+            gtag('js', new Date());
+            gtag('config', 'G-NHGXB530M0');
+          `}
+        </Script>
         <LocaleProvider>
           <TimeZoneProvider>
             <HtmlLangSync />
