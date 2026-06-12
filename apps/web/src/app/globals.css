@@ -1068,7 +1068,7 @@ h2 {
   font-size: 0.62rem;
   font-weight: 900;
   letter-spacing: 0.06em;
-  text-align: left;
+  text-align: center;
   text-transform: uppercase;
   white-space: nowrap;
 }
@@ -1077,11 +1077,13 @@ h2 {
   display: inline-grid;
   gap: 3px;
   min-width: 76px;
+  justify-items: center;
   border: 1px solid rgba(70, 55, 35, 0.12);
   border-radius: 14px;
   background: rgba(255, 255, 255, 0.48);
   padding: 7px 9px;
   box-shadow: 0 8px 16px rgba(43, 34, 20, 0.045);
+  text-align: center;
 }
 
 .specialQuestionHeaderPill span {
@@ -1126,7 +1128,8 @@ h2 {
   padding: 9px 7px;
   font-family: "Courier New", monospace;
   font-weight: 900;
-  vertical-align: top;
+  text-align: center;
+  vertical-align: middle;
 }
 
 .specialQuestionsTable td:first-child {
@@ -1212,6 +1215,7 @@ h2 {
   max-width: 190px;
   align-items: center;
   gap: 6px;
+  justify-content: center;
   min-width: 0;
 }
 
@@ -1223,6 +1227,7 @@ h2 {
   display: inline-flex;
   align-items: center;
   gap: 5px;
+  justify-content: center;
   min-width: 0;
 }
 
@@ -1230,6 +1235,7 @@ h2 {
   display: grid;
   grid-template-columns: repeat(4, 30px);
   gap: 6px;
+  justify-content: center;
   min-width: 138px;
 }
 
