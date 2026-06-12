@@ -7,6 +7,25 @@ export const metadata: Metadata = {
   description: "Projektüberblick, Methodik, Wertung und Grenzen von LLM SoccerArena."
 };
 
+type AboutEntry = {
+  label: string;
+  text: string;
+};
+
+type AboutNestedBranch = AboutEntry & {
+  choices: AboutEntry[];
+};
+
+type AboutDesignGroup =
+  | {
+      title: string;
+      entries: AboutEntry[];
+    }
+  | {
+      title: string;
+      branches: AboutNestedBranch[];
+    };
+
 const aboutPoints = [
   {
     label: "Worum es geht",
@@ -53,7 +72,7 @@ const researchQuestions = [
   "Wie gut sagen Modelle in K.-o.-Spielen vorher, welches Team weiterkommt?"
 ];
 
-const designGroups = [
+const designGroups: AboutDesignGroup[] = [
   {
     title: "Versuchsdesign",
     entries: [

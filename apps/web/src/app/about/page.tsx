@@ -7,6 +7,25 @@ export const metadata: Metadata = {
   description: "Project overview, methodology, scoring, and limitations of LLM SoccerArena."
 };
 
+type AboutEntry = {
+  label: string;
+  text: string;
+};
+
+type AboutNestedBranch = AboutEntry & {
+  choices: AboutEntry[];
+};
+
+type AboutDesignGroup =
+  | {
+      title: string;
+      entries: AboutEntry[];
+    }
+  | {
+      title: string;
+      branches: AboutNestedBranch[];
+    };
+
 const aboutPoints = [
   {
     label: "What this is",
@@ -53,7 +72,7 @@ const researchQuestions = [
   "How well do models predict knockout advancement?"
 ];
 
-const designGroups = [
+const designGroups: AboutDesignGroup[] = [
   {
     title: "Experimental design",
     entries: [
