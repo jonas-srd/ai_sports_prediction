@@ -295,10 +295,10 @@ export function getMetricDefinition(metric: AnalyticsMetric): MetricDefinition {
   return METRIC_DEFINITIONS[metric];
 }
 
-export function getDefaultAnalyticsFilters(records: BenchmarkDisplayPrediction[]): AnalyticsFilters {
+export function getDefaultAnalyticsFilters(): AnalyticsFilters {
   return {
     ...DEFAULT_ANALYTICS_FILTERS,
-    forecastHorizon: records.some((record) => record.forecastHorizon === "T_24H") ? "T_24H" : "all"
+    forecastHorizon: "all"
   };
 }
 

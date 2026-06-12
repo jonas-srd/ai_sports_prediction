@@ -493,15 +493,11 @@ function filterSpecialPredictionsForPredictionView(
   state: PredictionViewState,
   filteredMatches: DashboardMatch[]
 ): DashboardSpecialPrediction[] {
-  const allowedKeys = state.mode === "best"
-    ? new Set(filteredMatches.flatMap((match) => match.predictions.map(getPredictionConfigurationKey)))
-    : null;
+  if (state.mode === "best") {
+    return filterBestSpecialPredictionsForPredictionView(predictions, filteredMatches);
+  }
 
   return predictions.filter((prediction) => {
-    if (allowedKeys) {
-      return allowedKeys.has(getSpecialPredictionConfigurationKey(prediction));
-    }
-
     if (state.customMode === "all") {
       return true;
     }
@@ -511,6 +507,66 @@ function filterSpecialPredictionsForPredictionView(
       && state.promptStrategies.includes(prediction.promptStrategy)
       && state.forecastHorizons.includes(prediction.forecastHorizon);
   });
+}
+
+function filterBestSpecialPredictionsForPredictionView(
+  predictions: DashboardSpecialPrediction[],
+  filteredMatches: DashboardMatch[]
+): DashboardSpecialPrediction[] {
+  const preferredKeys = new Set(filteredMatches.flatMap((match) => match.predictions.map(getPredictionConfigurationKey)));
+  const selectedKeys = getBestSpecialPredictionKeysByModel(predictions, preferredKeys);
+
+  return predictions.filter((prediction) => selectedKeys.has(getSpecialPredictionConfigurationKey(prediction)));
+}
+
+function getBestSpecialPredictionKeysByModel(
+  predictions: DashboardSpecialPrediction[],
+  preferredKeys: Set<string>
+): Set<string> {
+  const setupsByModel = new Map<string, Map<string, DashboardSpecialPrediction[]>>();
+
+  for (const prediction of predictions) {
+    const modelKey = getSpecialPredictionModelKey(prediction);
+    const setupKey = getSpecialPredictionConfigurationKey(prediction);
+    const modelSetups = setupsByModel.get(modelKey) ?? new Map<string, DashboardSpecialPrediction[]>();
+    const setupPredictions = modelSetups.get(setupKey) ?? [];
+
+    setupPredictions.push(prediction);
+    modelSetups.set(setupKey, setupPredictions);
+    setupsByModel.set(modelKey, modelSetups);
+  }
+
+  const selectedKeys = new Set<string>();
+  for (const modelSetups of setupsByModel.values()) {
+    const setupKeys = [...modelSetups.keys()];
+    const preferredSetupKeys = setupKeys.filter((key) => preferredKeys.has(key));
+    const candidates = preferredSetupKeys.length > 0 ? preferredSetupKeys : setupKeys;
+    const selectedKey = candidates.sort((a, b) => compareSpecialSetupKeys(a, b, modelSetups))[0];
+
+    if (selectedKey) {
+      selectedKeys.add(selectedKey);
+    }
+  }
+
+  return selectedKeys;
+}
+
+function compareSpecialSetupKeys(
+  a: string,
+  b: string,
+  modelSetups: Map<string, DashboardSpecialPrediction[]>
+): number {
+  const aPredictions = modelSetups.get(a) ?? [];
+  const bPredictions = modelSetups.get(b) ?? [];
+  const aValid = aPredictions.filter((prediction) => prediction.isValidForScoring).length;
+  const bValid = bPredictions.filter((prediction) => prediction.isValidForScoring).length;
+  const aPoints = aPredictions.reduce((sum, prediction) => sum + prediction.questionScorePoints, 0);
+  const bPoints = bPredictions.reduce((sum, prediction) => sum + prediction.questionScorePoints, 0);
+
+  return bPredictions.length - aPredictions.length
+    || bValid - aValid
+    || bPoints - aPoints
+    || a.localeCompare(b);
 }
 
 function buildSpecialQuestionColumns(predictions: DashboardSpecialPrediction[]): SpecialQuestionColumn[] {
@@ -564,6 +620,13 @@ function getSpecialPredictionConfigurationKey(prediction: DashboardSpecialPredic
     prediction.forecastHorizon,
     prediction.accessCondition,
     prediction.promptStrategy
+  ].join("::");
+}
+
+function getSpecialPredictionModelKey(prediction: DashboardSpecialPrediction): string {
+  return [
+    prediction.predictorId,
+    prediction.provider
   ].join("::");
 }
 

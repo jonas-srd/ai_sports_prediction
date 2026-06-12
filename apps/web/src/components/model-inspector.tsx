@@ -145,7 +145,6 @@ export function ModelInspector({ locale, matches, selectedModel, selectedKey, in
                 <div className="modelPredictionDetails">
                   <div className="modelScoreLine">
                     <span>{common.pick} {formatPrediction(row.prediction)}</span>
-                    <span>{text.final} {formatScore(row.match.actualHome, row.match.actualAway, locale)}</span>
                     {row.prediction ? <span>{formatPredictionContext(row.prediction)}</span> : null}
                   </div>
                 </div>
@@ -228,14 +227,6 @@ function formatPrediction(prediction: DashboardMatch["predictions"][number] | un
   }
 
   return `${prediction.predictedHome} - ${prediction.predictedAway}`;
-}
-
-function formatScore(home: number | null, away: number | null, locale: Locale): string {
-  if (home === null || away === null) {
-    return commonText[locale].open;
-  }
-
-  return `${home} - ${away}`;
 }
 
 function formatPredictionContext(prediction: DashboardPrediction): string {

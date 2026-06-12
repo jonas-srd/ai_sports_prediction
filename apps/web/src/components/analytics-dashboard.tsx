@@ -103,7 +103,7 @@ const ANALYTICS_TEXT = {
     rank: "Rank",
     horizon: "Horizon",
     scored: "Scored",
-    scores: "Scores",
+    scores: "Points",
     brier: "Brier",
     logLoss: "Log loss",
     topAcc: "Top acc.",
@@ -200,7 +200,7 @@ const ANALYTICS_TEXT = {
 
 export function AnalyticsDashboard({ locale, predictions, specialPredictions }: AnalyticsDashboardProps) {
   const text = ANALYTICS_TEXT[locale];
-  const defaultFilters = useMemo(() => getDefaultAnalyticsFilters(predictions), [predictions]);
+  const defaultFilters = useMemo(() => getDefaultAnalyticsFilters(), []);
   const [filters, setFilters] = useState<AnalyticsFilters>(defaultFilters);
   const [metric, setMetric] = useState<AnalyticsMetric>("kicktipp_points_90");
   const [highlightedKey, setHighlightedKey] = useState<string | null>(null);
