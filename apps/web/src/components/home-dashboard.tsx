@@ -12,7 +12,6 @@ import {
   buildPredictionViewLeaderboard,
   filterMatchesForPredictionView,
   getDefaultPredictionViewState,
-  getPredictionConfigurationKey,
   getPredictionViewOptions,
   getPredictionViewSummary,
   type PredictionViewState
@@ -72,7 +71,7 @@ const DASHBOARD_TEXT = {
     questions: "questions",
     noQuestions: "No question predictions yet",
     noQuestionsDescription: "Run special predictions first, then this table will show all 15 question picks.",
-    questionHint: "This table has its own score. Correct question tips get 5 points; wrong or unresolved tips get 0.",
+    questionHint: "Shown setup: Open Book / Probabilistic Forecast / STAGE_OPENING. Correct question tips get 5 points; wrong or unresolved tips get 0.",
     rank: "Rank",
     model: "Model",
     score: "Score",
@@ -116,7 +115,7 @@ const DASHBOARD_TEXT = {
     questions: "Fragen",
     noQuestions: "Noch keine Fragen-Prognosen",
     noQuestionsDescription: "Starte zuerst die Zusatzprognosen, dann zeigt diese Tabelle alle 15 Tipps.",
-    questionHint: "Diese Tabelle hat eine eigene Wertung. Richtige Tipps erhalten 5 Punkte; falsche oder offene Tipps erhalten 0.",
+    questionHint: "Angezeigtes Setup: Open Book / Probabilistic Forecast / STAGE_OPENING. Richtige Tipps erhalten 5 Punkte; falsche oder offene Tipps erhalten 0.",
     rank: "Rang",
     model: "Modell",
     score: "Punkte",
@@ -153,8 +152,8 @@ export function HomeDashboard({ locale, matches, specialPredictions }: HomeDashb
     [filteredMatches, locale, viewState.mode]
   );
   const filteredSpecialPredictions = useMemo(
-    () => filterSpecialPredictionsForPredictionView(specialPredictions, viewState, filteredMatches),
-    [specialPredictions, viewState, filteredMatches]
+    () => filterPreferredSpecialQuestionPredictions(specialPredictions),
+    [specialPredictions]
   );
   const specialQuestionColumns = useMemo(
     () => buildSpecialQuestionColumns(filteredSpecialPredictions),
@@ -488,85 +487,14 @@ function buildActualSpecialQuestionAnswers(matches: DashboardMatch[]): Map<strin
   return new Map(Object.entries(answers));
 }
 
-function filterSpecialPredictionsForPredictionView(
-  predictions: DashboardSpecialPrediction[],
-  state: PredictionViewState,
-  filteredMatches: DashboardMatch[]
+function filterPreferredSpecialQuestionPredictions(
+  predictions: DashboardSpecialPrediction[]
 ): DashboardSpecialPrediction[] {
-  if (state.mode === "best") {
-    return filterBestSpecialPredictionsForPredictionView(predictions, filteredMatches);
-  }
-
-  return predictions.filter((prediction) => {
-    if (state.customMode === "all") {
-      return true;
-    }
-
-    return state.models.includes(prediction.model)
-      && state.accessConditions.includes(prediction.accessCondition)
-      && state.promptStrategies.includes(prediction.promptStrategy)
-      && state.forecastHorizons.includes(prediction.forecastHorizon);
-  });
-}
-
-function filterBestSpecialPredictionsForPredictionView(
-  predictions: DashboardSpecialPrediction[],
-  filteredMatches: DashboardMatch[]
-): DashboardSpecialPrediction[] {
-  const preferredKeys = new Set(filteredMatches.flatMap((match) => match.predictions.map(getPredictionConfigurationKey)));
-  const selectedKeys = getBestSpecialPredictionKeysByModel(predictions, preferredKeys);
-
-  return predictions.filter((prediction) => selectedKeys.has(getSpecialPredictionConfigurationKey(prediction)));
-}
-
-function getBestSpecialPredictionKeysByModel(
-  predictions: DashboardSpecialPrediction[],
-  preferredKeys: Set<string>
-): Set<string> {
-  const setupsByModel = new Map<string, Map<string, DashboardSpecialPrediction[]>>();
-
-  for (const prediction of predictions) {
-    const modelKey = getSpecialPredictionModelKey(prediction);
-    const setupKey = getSpecialPredictionConfigurationKey(prediction);
-    const modelSetups = setupsByModel.get(modelKey) ?? new Map<string, DashboardSpecialPrediction[]>();
-    const setupPredictions = modelSetups.get(setupKey) ?? [];
-
-    setupPredictions.push(prediction);
-    modelSetups.set(setupKey, setupPredictions);
-    setupsByModel.set(modelKey, modelSetups);
-  }
-
-  const selectedKeys = new Set<string>();
-  for (const modelSetups of setupsByModel.values()) {
-    const setupKeys = [...modelSetups.keys()];
-    const preferredSetupKeys = setupKeys.filter((key) => preferredKeys.has(key));
-    const candidates = preferredSetupKeys.length > 0 ? preferredSetupKeys : setupKeys;
-    const selectedKey = candidates.sort((a, b) => compareSpecialSetupKeys(a, b, modelSetups))[0];
-
-    if (selectedKey) {
-      selectedKeys.add(selectedKey);
-    }
-  }
-
-  return selectedKeys;
-}
-
-function compareSpecialSetupKeys(
-  a: string,
-  b: string,
-  modelSetups: Map<string, DashboardSpecialPrediction[]>
-): number {
-  const aPredictions = modelSetups.get(a) ?? [];
-  const bPredictions = modelSetups.get(b) ?? [];
-  const aValid = aPredictions.filter((prediction) => prediction.isValidForScoring).length;
-  const bValid = bPredictions.filter((prediction) => prediction.isValidForScoring).length;
-  const aPoints = aPredictions.reduce((sum, prediction) => sum + prediction.questionScorePoints, 0);
-  const bPoints = bPredictions.reduce((sum, prediction) => sum + prediction.questionScorePoints, 0);
-
-  return bPredictions.length - aPredictions.length
-    || bValid - aValid
-    || bPoints - aPoints
-    || a.localeCompare(b);
+  return predictions.filter((prediction) =>
+    prediction.accessCondition === "open_book"
+    && prediction.promptStrategy === "probabilistic_forecast"
+    && prediction.forecastHorizon === "STAGE_OPENING"
+  );
 }
 
 function buildSpecialQuestionColumns(predictions: DashboardSpecialPrediction[]): SpecialQuestionColumn[] {
@@ -620,13 +548,6 @@ function getSpecialPredictionConfigurationKey(prediction: DashboardSpecialPredic
     prediction.forecastHorizon,
     prediction.accessCondition,
     prediction.promptStrategy
-  ].join("::");
-}
-
-function getSpecialPredictionModelKey(prediction: DashboardSpecialPrediction): string {
-  return [
-    prediction.predictorId,
-    prediction.provider
   ].join("::");
 }
 
