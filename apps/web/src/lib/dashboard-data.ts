@@ -107,7 +107,31 @@ export const sampleMatches: DashboardMatch[] = [
   }
 ];
 
+const DASHBOARD_DATA_CACHE_TTL_MS = 60_000;
+
+type CacheEntry<T> = {
+  value: T;
+  expiresAtMs: number;
+};
+
+let dashboardMatchesCache: CacheEntry<DashboardMatch[]> | null = null;
+let specialQuestionPredictionsCache: CacheEntry<DashboardSpecialPrediction[]> | null = null;
+
 export function getDashboardMatches(): DashboardMatch[] {
+  const cachedMatches = getCachedValue(dashboardMatchesCache);
+  if (cachedMatches) {
+    return cachedMatches;
+  }
+
+  const matches = readDashboardMatches();
+  if (matches !== sampleMatches) {
+    dashboardMatchesCache = createCacheEntry(matches);
+  }
+
+  return matches;
+}
+
+function readDashboardMatches(): DashboardMatch[] {
   const dbPath = getSqliteDbPath();
   if (!existsSync(dbPath)) {
     return sampleMatches;
@@ -163,6 +187,18 @@ export function getLeaderboard(): DashboardLeaderboardEntry[] {
 }
 
 export function getSpecialQuestionPredictions(): DashboardSpecialPrediction[] {
+  const cachedPredictions = getCachedValue(specialQuestionPredictionsCache);
+  if (cachedPredictions) {
+    return cachedPredictions;
+  }
+
+  const predictions = readSpecialQuestionPredictions();
+  specialQuestionPredictionsCache = createCacheEntry(predictions);
+
+  return predictions;
+}
+
+function readSpecialQuestionPredictions(): DashboardSpecialPrediction[] {
   const dbPath = getSqliteDbPath();
   if (!existsSync(dbPath)) {
     return [];
@@ -176,6 +212,21 @@ export function getSpecialQuestionPredictions(): DashboardSpecialPrediction[] {
   } catch {
     return [];
   }
+}
+
+function getCachedValue<T>(cacheEntry: CacheEntry<T> | null): T | null {
+  if (!cacheEntry || cacheEntry.expiresAtMs <= Date.now()) {
+    return null;
+  }
+
+  return cacheEntry.value;
+}
+
+function createCacheEntry<T>(value: T): CacheEntry<T> {
+  return {
+    value,
+    expiresAtMs: Date.now() + DASHBOARD_DATA_CACHE_TTL_MS
+  };
 }
 
 type DbMatchRow = {
