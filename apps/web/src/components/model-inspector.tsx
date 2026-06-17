@@ -13,6 +13,7 @@ import { TeamMatchup } from "@/components/team-matchup";
 import { formatMatchTime, formatShortDateTime } from "@/lib/timezone";
 import { useTimeZone } from "@/components/time-zone-provider";
 import { commonText, type Locale } from "@/lib/i18n";
+import { getModelWarning } from "@/lib/model-warnings";
 
 type ModelInspectorProps = {
   locale: Locale;
@@ -36,7 +37,7 @@ const INSPECTOR_TEXT = {
   en: {
     noPredictions: "No model predictions yet",
     noPredictionsDescription: "Run `npm run predict:next` after syncing matches to unlock model details.",
-    scores: "Scores",
+    scores: "Points",
     exactHits: "Exact hits",
     scoredPicks: "Scored picks",
     pending: "Pending",
@@ -145,7 +146,16 @@ export function ModelInspector({ locale, matches, selectedModel, selectedKey, in
                 <div className="modelPredictionDetails">
                   <div className="modelScoreLine">
                     <span>{common.pick} {formatPrediction(row.prediction)}</span>
-                    {row.prediction ? <span>{formatPredictionContext(row.prediction)}</span> : null}
+                    {row.prediction ? (
+                      <span>
+                        {formatPredictionContext(row.prediction)}
+                        {getModelWarning(row.prediction, locale) ? (
+                          <span className="modelWarningBadge" title={getModelWarning(row.prediction, locale)?.text}>
+                            {getModelWarning(row.prediction, locale)?.label}
+                          </span>
+                        ) : null}
+                      </span>
+                    ) : null}
                   </div>
                 </div>
 

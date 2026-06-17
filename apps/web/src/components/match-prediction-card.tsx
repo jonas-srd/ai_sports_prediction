@@ -11,6 +11,7 @@ import { formatCondition, formatStage } from "@/lib/benchmark-analytics";
 import { InfoTooltip, type TooltipLine } from "@/components/info-tooltip";
 import { TeamMatchup } from "@/components/team-matchup";
 import { commonText, type Locale } from "@/lib/i18n";
+import { getModelWarning } from "@/lib/model-warnings";
 
 type MatchPredictionCardProps = {
   locale: Locale;
@@ -121,6 +122,11 @@ export function MatchPredictionCard({
                   <div className="matchPredictionModel">
                     <div className="matchPredictionModelName">
                       <strong>{row.prediction.model}</strong>
+                      {getModelWarning(row.prediction, locale) ? (
+                        <span className="modelWarningBadge" title={getModelWarning(row.prediction, locale)?.text}>
+                          {getModelWarning(row.prediction, locale)?.label}
+                        </span>
+                      ) : null}
                       <InfoTooltip
                         label={`${row.prediction.model} ${text.configuration}`}
                         lines={buildPredictionConfigurationHelp(row.prediction, locale)}
@@ -182,7 +188,8 @@ function getMatchAnchorId(matchId: string): string {
 function buildPredictionConfigurationHelp(prediction: DashboardPrediction, locale: Locale): TooltipLine[] {
   const text = MATCH_CARD_TEXT[locale];
   const common = commonText[locale];
-  return [
+  const warning = getModelWarning(prediction, locale);
+  const lines: TooltipLine[] = [
     {
       label: prediction.forecastHorizon,
       text: explainForecastHorizon(prediction.forecastHorizon, locale)
@@ -216,6 +223,15 @@ function buildPredictionConfigurationHelp(prediction: DashboardPrediction, local
         : `${prediction.scorePoints} ${common.scores}, ${common.reason}: ${formatScoreReason(prediction.scoreReason, locale) ?? text.scored}.`
     }
   ];
+
+  if (warning) {
+    lines.unshift({
+      label: warning.label,
+      text: warning.text
+    });
+  }
+
+  return lines;
 }
 
 function explainForecastHorizon(value: string, locale: Locale): string {

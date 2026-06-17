@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import {
   buildAnalyticsLeaderboard,
+  buildAnalyticsSeries,
   filterBenchmarkPredictions,
   type BenchmarkDisplayPrediction
 } from "./benchmark-analytics";
@@ -17,6 +18,8 @@ const basePrediction: BenchmarkDisplayPrediction = {
   forecastHorizon: "T_24H",
   stage: "group_stage",
   matchDate: "2026-06-11T19:00:00Z",
+  actualHome90: 1,
+  actualAway90: 0,
   sampleId: 1,
   predictedHome: 1,
   predictedAway: 0,
@@ -100,12 +103,12 @@ test("filters by benchmark condition", () => {
   ];
 
   const filtered = filterBenchmarkPredictions(records, {
-    forecastHorizon: "T_24H",
-    accessCondition: "open_book",
-    promptStrategy: "probabilistic_forecast",
-    stage: "all",
-    model: "all",
-    provider: "all",
+    forecastHorizons: ["T_24H"],
+    accessConditions: ["open_book"],
+    promptStrategies: ["probabilistic_forecast"],
+    stages: [],
+    models: [],
+    providers: [],
     dateFrom: "",
     dateTo: ""
   });
@@ -131,4 +134,33 @@ test("invalid predictions count in validity metrics but not performance metrics"
 
   assert.equal(invalidRows.find((row) => row.model === "Model B")?.metricValue, 1);
   assert.equal(pointsRows.find((row) => row.model === "Model B")?.metricValue, null);
+});
+
+test("timeline series stop at the last match with an available result", () => {
+  const records = [
+    { ...basePrediction, forecastHorizon: "STAGE_OPENING" as const },
+    {
+      ...basePrediction,
+      id: "p2",
+      matchId: "m2",
+      matchDate: "2026-06-12T19:00:00Z",
+      forecastHorizon: "STAGE_OPENING" as const,
+      kicktippPoints90: 1
+    },
+    {
+      ...basePrediction,
+      id: "future-stage-opening",
+      matchId: "m3",
+      matchDate: "2026-06-28T19:00:00Z",
+      actualHome90: null,
+      actualAway90: null,
+      kicktippPoints90: null,
+      forecastHorizon: "STAGE_OPENING" as const
+    }
+  ];
+
+  const [series] = buildAnalyticsSeries(records, "kicktipp_points_90");
+
+  assert.equal(series.values.length, 2);
+  assert.deepEqual(series.values.map((value) => value.matchOrder), [1, 2]);
 });

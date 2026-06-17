@@ -91,12 +91,12 @@ export type BenchmarkDisplayPrediction = {
 };
 
 export type AnalyticsFilters = {
-  forecastHorizon: ForecastHorizon | "all";
-  accessCondition: AccessCondition | "all";
-  promptStrategy: PromptStrategy | "all";
-  stage: TournamentStage | "all";
-  model: string;
-  provider: string;
+  forecastHorizons: ForecastHorizon[];
+  accessConditions: AccessCondition[];
+  promptStrategies: PromptStrategy[];
+  stages: TournamentStage[];
+  models: string[];
+  providers: string[];
   dateFrom: string;
   dateTo: string;
 };
@@ -154,8 +154,8 @@ export type AnalyticsSeries = {
 export const METRIC_DEFINITIONS: Record<AnalyticsMetric, MetricDefinition> = {
   kicktipp_points_90: {
     key: "kicktipp_points_90",
-    label: "Scores",
-    shortLabel: "Scores",
+    label: "Points",
+    shortLabel: "Points",
     direction: "higher",
     kind: "sum",
     includeInvalid: false,
@@ -281,12 +281,12 @@ export const METRIC_DEFINITIONS: Record<AnalyticsMetric, MetricDefinition> = {
 };
 
 export const DEFAULT_ANALYTICS_FILTERS: AnalyticsFilters = {
-  forecastHorizon: "T_24H",
-  accessCondition: "all",
-  promptStrategy: "all",
-  stage: "all",
-  model: "all",
-  provider: "all",
+  forecastHorizons: [],
+  accessConditions: [],
+  promptStrategies: [],
+  stages: [],
+  models: [],
+  providers: [],
   dateFrom: "",
   dateTo: ""
 };
@@ -297,8 +297,7 @@ export function getMetricDefinition(metric: AnalyticsMetric): MetricDefinition {
 
 export function getDefaultAnalyticsFilters(): AnalyticsFilters {
   return {
-    ...DEFAULT_ANALYTICS_FILTERS,
-    forecastHorizon: "all"
+    ...DEFAULT_ANALYTICS_FILTERS
   };
 }
 
@@ -307,12 +306,12 @@ export function filterBenchmarkPredictions(
   filters: AnalyticsFilters
 ): BenchmarkDisplayPrediction[] {
   return records.filter((record) => {
-    if (filters.forecastHorizon !== "all" && record.forecastHorizon !== filters.forecastHorizon) return false;
-    if (filters.accessCondition !== "all" && record.accessCondition !== filters.accessCondition) return false;
-    if (filters.promptStrategy !== "all" && record.promptStrategy !== filters.promptStrategy) return false;
-    if (filters.stage !== "all" && record.stage !== filters.stage) return false;
-    if (filters.model !== "all" && record.model !== filters.model) return false;
-    if (filters.provider !== "all" && record.provider !== filters.provider) return false;
+    if (!isAllowed(record.forecastHorizon, filters.forecastHorizons)) return false;
+    if (!isAllowed(record.accessCondition, filters.accessConditions)) return false;
+    if (!isAllowed(record.promptStrategy, filters.promptStrategies)) return false;
+    if (!isAllowed(record.stage, filters.stages)) return false;
+    if (!isAllowed(record.model, filters.models)) return false;
+    if (!isAllowed(record.provider, filters.providers)) return false;
     if (filters.dateFrom && (!record.matchDate || record.matchDate.slice(0, 10) < filters.dateFrom)) return false;
     if (filters.dateTo && (!record.matchDate || record.matchDate.slice(0, 10) > filters.dateTo)) return false;
     return true;
@@ -365,19 +364,26 @@ export function rankAnalyticsRows(
 export function buildAnalyticsSeries(
   records: BenchmarkDisplayPrediction[],
   metric: AnalyticsMetric,
-  highlightedKey?: string | null
+  highlightedKey?: string | null,
+  orderedKeys?: string[]
 ): AnalyticsSeries[] {
   const metricDefinition = getMetricDefinition(metric);
   const groups = groupByConfiguration(records);
-  const entries = [...groups.entries()]
-    .filter(([key]) => !highlightedKey || key === highlightedKey)
-    .sort(([leftKey], [rightKey]) => leftKey.localeCompare(rightKey))
+  const timeline = buildResultTimeline(records);
+  const selectedKeys = highlightedKey
+    ? [highlightedKey]
+    : orderedKeys?.length
+      ? orderedKeys
+      : [...groups.keys()].sort((leftKey, rightKey) => leftKey.localeCompare(rightKey));
+  const entries = selectedKeys
+    .map((key) => [key, groups.get(key)] as const)
+    .filter((entry): entry is readonly [string, BenchmarkDisplayPrediction[]] => Boolean(entry[1]))
     .slice(0, highlightedKey ? 1 : 8);
 
   return entries.map(([key, group]) => ({
     key,
     label: formatConfigurationLabel(group[0]),
-    values: buildSeriesValues(group, metricDefinition)
+    values: buildSeriesValues(group, metricDefinition, timeline)
   }));
 }
 
@@ -460,14 +466,43 @@ function summarizeGroup(key: string, records: BenchmarkDisplayPrediction[]): Omi
   };
 }
 
-function buildSeriesValues(records: BenchmarkDisplayPrediction[], metricDefinition: MetricDefinition): AnalyticsSeries["values"] {
+function buildResultTimeline(records: BenchmarkDisplayPrediction[]): Map<string, number> {
+  const resultedMatches = new Map<string, { matchId: string; date: string | null }>();
+
+  for (const record of records) {
+    if (!hasMatchResult(record)) {
+      continue;
+    }
+
+    const current = resultedMatches.get(record.matchId);
+    if (!current || getTimeValue(record.matchDate) < getTimeValue(current.date)) {
+      resultedMatches.set(record.matchId, {
+        matchId: record.matchId,
+        date: record.matchDate
+      });
+    }
+  }
+
+  return new Map(
+    [...resultedMatches.values()]
+      .sort((left, right) => getTimeValue(left.date) - getTimeValue(right.date) || left.matchId.localeCompare(right.matchId))
+      .map((match, index) => [match.matchId, index + 1])
+  );
+}
+
+function buildSeriesValues(
+  records: BenchmarkDisplayPrediction[],
+  metricDefinition: MetricDefinition,
+  timeline: Map<string, number>
+): AnalyticsSeries["values"] {
   const ordered = records
     .slice()
+    .filter((record) => timeline.has(record.matchId))
     .sort((left, right) => getTimeValue(left.matchDate) - getTimeValue(right.matchDate) || left.matchId.localeCompare(right.matchId));
   const values: AnalyticsSeries["values"] = [];
   const cumulative: number[] = [];
 
-  ordered.forEach((record, index) => {
+  ordered.forEach((record) => {
     const value = getRecordMetricValue(record, metricDefinition.key);
     const include = shouldIncludeRecordForMetric(record, metricDefinition) && value !== null;
 
@@ -476,7 +511,7 @@ function buildSeriesValues(records: BenchmarkDisplayPrediction[], metricDefiniti
     }
 
     values.push({
-      matchOrder: index + 1,
+      matchOrder: timeline.get(record.matchId) ?? values.length + 1,
       matchId: record.matchId,
       date: record.matchDate,
       value: getCumulativeValue(cumulative, metricDefinition)
@@ -575,6 +610,15 @@ function shouldIncludeRecordForMetric(record: BenchmarkDisplayPrediction, metric
 
 function isScoredPerformanceRecord(record: BenchmarkDisplayPrediction): boolean {
   return record.isValidForScoring && record.kicktippPoints90 !== null;
+}
+
+function hasMatchResult(record: BenchmarkDisplayPrediction): boolean {
+  return record.actualHome90 !== null && record.actualHome90 !== undefined
+    && record.actualAway90 !== null && record.actualAway90 !== undefined;
+}
+
+function isAllowed<T extends string>(value: T, selected: T[]): boolean {
+  return selected.length === 0 || selected.includes(value);
 }
 
 function getConfigurationKey(record: BenchmarkDisplayPrediction): string {

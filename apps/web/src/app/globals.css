@@ -2498,6 +2498,25 @@ h2 {
   width: min(1720px, calc(100% - 32px));
   margin-right: auto;
   margin-left: auto;
+  padding-top: 18px;
+}
+
+.analyticsShell .compactHero {
+  max-width: 760px;
+  margin-bottom: 18px;
+}
+
+.analyticsShell .compactHero h1 {
+  margin-bottom: 12px;
+  font-size: clamp(2.6rem, 6vw, 5.4rem);
+  letter-spacing: 0;
+}
+
+.analyticsShell .heroText {
+  max-width: 720px;
+  margin-bottom: 10px;
+  font-size: 1.02rem;
+  line-height: 1.42;
 }
 
 .analyticsStack {
@@ -2562,7 +2581,14 @@ h2 {
 
 .analyticsFilterGrid {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+  align-items: start;
+}
+
+.dateRangeFilterRow {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 12px;
 }
 
@@ -2789,6 +2815,124 @@ h2 {
 .filterField {
   display: grid;
   gap: 7px;
+}
+
+.analyticsMultiSelectDropdown,
+.analyticsSingleSelectDropdown {
+  position: relative;
+  min-width: 0;
+}
+
+.analyticsDropdownShell {
+  position: relative;
+}
+
+.analyticsDropdownSummary {
+  position: relative;
+  display: flex;
+  width: 100%;
+  min-height: 43px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  border: 1px solid rgba(70, 55, 35, 0.16);
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.58);
+  color: var(--ink);
+  cursor: pointer;
+  padding: 11px 12px;
+  font-family: inherit;
+  font-size: 0.9rem;
+  font-weight: 900;
+}
+
+.analyticsDropdownSummary::after {
+  flex: 0 0 auto;
+  width: 7px;
+  height: 7px;
+  border-right: 2px solid var(--ink);
+  border-bottom: 2px solid var(--ink);
+  content: "";
+  transform: translateY(-2px) rotate(45deg);
+}
+
+.analyticsDropdownShell[open] .analyticsDropdownSummary::after {
+  transform: translateY(2px) rotate(225deg);
+}
+
+.analyticsDropdownSummary::-webkit-details-marker {
+  display: none;
+}
+
+.analyticsDropdownSummary span:first-child {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.analyticsMultiSelectMenu {
+  box-sizing: border-box;
+  width: 100%;
+  margin-top: 8px;
+  border: 1px solid rgba(70, 55, 35, 0.16);
+  border-radius: 18px;
+  background: rgba(255, 251, 241, 0.98);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.62);
+  padding: 12px;
+}
+
+.analyticsFilterChipGrid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  max-height: 220px;
+  overflow: auto;
+}
+
+.analyticsMultiSelectDropdown .filterChip {
+  display: grid;
+  grid-template-columns: 16px minmax(0, 1fr);
+  justify-content: stretch;
+  border-radius: 12px;
+  padding: 8px 10px;
+  text-align: left;
+}
+
+.analyticsMultiSelectDropdown .filterChip input {
+  justify-self: start;
+}
+
+.analyticsMultiSelectDropdown .filterChip span {
+  overflow: visible;
+  min-width: 0;
+  max-width: none;
+  text-overflow: clip;
+  white-space: normal;
+  line-height: 1.15;
+  text-align: left;
+}
+
+.analyticsSelectOption {
+  display: block;
+  width: 100%;
+  border: 1px solid rgba(70, 55, 35, 0.14);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.54);
+  color: var(--muted);
+  cursor: pointer;
+  padding: 9px 10px;
+  font-family: "Courier New", monospace;
+  font-size: 0.66rem;
+  font-weight: 900;
+  line-height: 1.15;
+  text-align: left;
+}
+
+.analyticsSelectOption:hover,
+.analyticsSelectOption:focus-visible,
+.analyticsSelectOption.isSelected {
+  border-color: rgba(32, 79, 53, 0.28);
+  background: rgba(32, 79, 53, 0.09);
+  color: var(--green);
 }
 
 .filterLabel {
@@ -3059,6 +3203,12 @@ h2 {
   background: rgba(255, 248, 233, 0.82);
 }
 
+.barChartRow.hasWarning,
+.analyticsTable tr.hasWarning td {
+  border-color: rgba(214, 150, 50, 0.36);
+  background: rgba(255, 247, 226, 0.72);
+}
+
 .barRank {
   display: grid;
   width: 34px;
@@ -3111,6 +3261,25 @@ h2 {
   line-height: 1.05;
 }
 
+.modelWarningBadge {
+  display: inline-flex;
+  width: fit-content;
+  max-width: 100%;
+  align-items: center;
+  border: 1px solid rgba(179, 58, 39, 0.24);
+  border-radius: 999px;
+  background: rgba(179, 58, 39, 0.1);
+  color: var(--red);
+  padding: 3px 7px;
+  font-family: "Courier New", monospace;
+  font-size: 0.56rem;
+  font-weight: 900;
+  letter-spacing: 0.05em;
+  line-height: 1.1;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
 .barModelLabel .filterInfo {
   grid-column: 2;
   grid-row: 1;
@@ -3148,7 +3317,7 @@ h2 {
   width: 100%;
   min-height: 260px;
   border: 1px solid rgba(70, 55, 35, 0.12);
-  border-radius: 20px;
+  border-radius: 14px;
   background:
     linear-gradient(rgba(70, 55, 35, 0.045) 1px, transparent 1px),
     linear-gradient(90deg, rgba(70, 55, 35, 0.035) 1px, transparent 1px),
@@ -3157,7 +3326,7 @@ h2 {
 }
 
 .chartAxis {
-  stroke: rgba(70, 55, 35, 0.26);
+  stroke: rgba(70, 55, 35, 0.42);
   stroke-width: 2;
 }
 
@@ -3167,7 +3336,7 @@ h2 {
 }
 
 .chartGridLine {
-  stroke: rgba(70, 55, 35, 0.12);
+  stroke: rgba(70, 55, 35, 0.16);
   stroke-dasharray: 5 6;
   stroke-width: 1.5;
 }
@@ -3191,6 +3360,8 @@ h2 {
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
+  max-height: 116px;
+  overflow: auto;
 }
 
 .lineChartLegend span {
@@ -3205,6 +3376,7 @@ h2 {
   font-family: "Courier New", monospace;
   font-size: 0.62rem;
   font-weight: 900;
+  line-height: 1.15;
 }
 
 .lineChartLegend i {
@@ -3784,7 +3956,8 @@ h2 {
   }
 
   .analyticsChartGrid,
-  .analyticsFilterGrid {
+  .analyticsFilterGrid,
+  .dateRangeFilterRow {
     grid-template-columns: 1fr;
   }
 

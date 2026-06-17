@@ -27,6 +27,7 @@ import {
 import type { DashboardSpecialPrediction } from "@/lib/dashboard-data";
 import { InfoTooltip, type TooltipLine } from "@/components/info-tooltip";
 import { type Locale } from "@/lib/i18n";
+import { getModelWarning, hasModelWarning } from "@/lib/model-warnings";
 
 type AnalyticsDashboardProps = {
   locale: Locale;
@@ -35,16 +36,25 @@ type AnalyticsDashboardProps = {
 };
 
 const METRICS = Object.keys(METRIC_DEFINITIONS) as AnalyticsMetric[];
-const SERIES_COLORS = ["#b33a27", "#204f35", "#d69632", "#263b67", "#7d2b1f", "#0d6b5f", "#7f5b24", "#443a2f"];
+const SERIES_STYLES = [
+  { color: "#b33a27", dash: "", width: 4.5 },
+  { color: "#204f35", dash: "10 5", width: 4.2 },
+  { color: "#263b67", dash: "2 5", width: 4.2 },
+  { color: "#8a5a00", dash: "14 5 2 5", width: 4.2 },
+  { color: "#7d2b1f", dash: "7 4", width: 3.8 },
+  { color: "#0d6b5f", dash: "2 4 10 4", width: 3.8 },
+  { color: "#5b3a89", dash: "12 6", width: 3.8 },
+  { color: "#443a2f", dash: "3 5", width: 3.8 }
+];
 const FILTER_HELP = {
   en: {
-    metric: "Choose the evaluation metric used for ranking models, for example scores, Brier score, or log loss.",
-    forecastHorizon: "Filter predictions by when they were made, such as stage-opening, 24 hours before kickoff, or 2 hours before kickoff.",
-    access: "Filter whether the model predicted from its own knowledge only or was allowed to use web-search/tool access.",
-    prompt: "Filter the prompt format used for the prediction, for example direct score prediction or probabilistic forecast.",
-    stage: "Filter matches by tournament stage, such as group stage or knockout rounds.",
-    model: "Show predictions from one model configuration or compare all models.",
-    provider: "Filter by model provider or model family, such as OpenAI, Anthropic, Google, or Mistral.",
+    metric: "Choose the evaluation metric used for ranking models, for example points, Brier score, or log loss.",
+    forecastHorizon: "Choose one or more prediction horizons, such as stage-opening, 24 hours before kickoff, or 2 hours before kickoff.",
+    access: "Choose one or more access conditions: internal knowledge only or web-search/tool access.",
+    prompt: "Choose one or more prompt formats, for example direct score prediction or probabilistic forecast.",
+    stage: "Choose one or more tournament stages, such as group stage or knockout rounds.",
+    model: "Choose one or more model configurations to compare.",
+    provider: "Choose one or more providers or model families, such as OpenAI, Anthropic, Google, or Mistral.",
     from: "Only include matches scheduled on or after this date.",
     to: "Only include matches scheduled on or before this date."
   },
@@ -85,10 +95,12 @@ const ANALYTICS_TEXT = {
     allStages: "All stages",
     allModels: "All models",
     allProviders: "All providers",
+    clear: "Clear",
+    selectAll: "Select all",
     rankedLeaderboard: "Ranked leaderboard",
     higherBetter: "Higher is better",
     lowerBetter: "Lower is better",
-    matchOrder: "Match order",
+    matchOrder: "Resulted match order",
     performanceOverTime: "Performance over time",
     clearHighlight: "Clear highlight",
     detailedLeaderboard: "Detailed leaderboard",
@@ -127,7 +139,8 @@ const ANALYTICS_TEXT = {
     accessFallback: "is the access condition for this configuration.",
     directScore: "Direct score asks the model for the most likely scoreline plus required probabilities.",
     probabilistic: "Probabilistic forecast emphasizes calibrated outcome probabilities before the scoreline.",
-    promptFallback: "is the prompt strategy used for this configuration."
+    promptFallback: "is the prompt strategy used for this configuration.",
+    partialCoverage: "Partial coverage"
   },
   de: {
     noBenchmark: "Keine Benchmark-Prognosen",
@@ -152,10 +165,12 @@ const ANALYTICS_TEXT = {
     allStages: "Alle Phasen",
     allModels: "Alle Modelle",
     allProviders: "Alle Anbieter",
+    clear: "Leeren",
+    selectAll: "Alle wählen",
     rankedLeaderboard: "Rangliste",
     higherBetter: "Höher ist besser",
     lowerBetter: "Niedriger ist besser",
-    matchOrder: "Spielreihenfolge",
+    matchOrder: "Reihenfolge gewerteter Spiele",
     performanceOverTime: "Leistung im Zeitverlauf",
     clearHighlight: "Hervorhebung löschen",
     detailedLeaderboard: "Detaillierte Rangliste",
@@ -194,7 +209,8 @@ const ANALYTICS_TEXT = {
     accessFallback: "ist die Zugriffsbedingung dieser Konfiguration.",
     directScore: "Direct Score fragt nach dem wahrscheinlichsten Ergebnis plus benötigten Wahrscheinlichkeiten.",
     probabilistic: "Probabilistic Forecast betont kalibrierte Ergebniswahrscheinlichkeiten vor dem Ergebnis-Tipp.",
-    promptFallback: "ist die Prompt-Strategie dieser Konfiguration."
+    promptFallback: "ist die Prompt-Strategie dieser Konfiguration.",
+    partialCoverage: "Teilabdeckung"
   }
 } as const;
 
@@ -214,9 +230,10 @@ export function AnalyticsDashboard({ locale, predictions, specialPredictions }: 
     () => buildAnalyticsLeaderboard(filteredPredictions, metric),
     [filteredPredictions, metric]
   );
+  const seriesOrder = useMemo(() => leaderboard.map((row) => row.key), [leaderboard]);
   const series = useMemo(
-    () => buildAnalyticsSeries(filteredPredictions, metric, highlightedKey),
-    [filteredPredictions, metric, highlightedKey]
+    () => buildAnalyticsSeries(filteredPredictions, metric, highlightedKey, seriesOrder),
+    [filteredPredictions, metric, highlightedKey, seriesOrder]
   );
   const metricDefinition = getMetricDefinition(metric);
 
@@ -246,7 +263,21 @@ export function AnalyticsDashboard({ locale, predictions, specialPredictions }: 
         </div>
       </div>
 
-      <section className="panel analyticsFiltersPanel">
+      <section
+        className="panel analyticsFiltersPanel"
+        onClickCapture={(event) => {
+          const target = event.target as HTMLElement;
+          if (target.closest(".analyticsDropdownShell")) {
+            return;
+          }
+
+          event.currentTarget
+            .querySelectorAll<HTMLDetailsElement>(".analyticsDropdownShell[open]")
+            .forEach((dropdown) => {
+              dropdown.open = false;
+            });
+        }}
+      >
         <div className="panelHeader">
           <div>
             <p className="sectionKicker">{text.filters}</p>
@@ -266,62 +297,91 @@ export function AnalyticsDashboard({ locale, predictions, specialPredictions }: 
             help={FILTER_HELP[locale].metric}
             value={metric}
             options={METRICS.map((entry) => ({ value: entry, label: formatMetricLabel(entry, locale) }))}
-            onChange={(value) => setMetric(value as AnalyticsMetric)}
+            onChange={(value) => {
+              setMetric(value as AnalyticsMetric);
+              setHighlightedKey(null);
+            }}
           />
-          <SelectFilter
+          <MultiSelectFilter
             label={text.forecastHorizon}
             help={FILTER_HELP[locale].forecastHorizon}
-            value={filters.forecastHorizon}
-            options={[{ value: "all", label: text.allHorizons }, ...options.forecastHorizons.map((value) => ({ value, label: value }))]}
-            onChange={(value) => updateFilter(setFilters, "forecastHorizon", value as AnalyticsFilters["forecastHorizon"])}
+            clearLabel={text.clear}
+            selectAllLabel={text.selectAll}
+            values={options.forecastHorizons}
+            selected={filters.forecastHorizons}
+            allLabel={text.allHorizons}
+            formatValue={(value) => value}
+            onChange={(value) => updateFilter(setFilters, "forecastHorizons", value)}
           />
-          <SelectFilter
+          <MultiSelectFilter
             label={text.access}
             help={FILTER_HELP[locale].access}
-            value={filters.accessCondition}
-            options={[{ value: "all", label: text.allAccess }, ...options.accessConditions.map((value) => ({ value, label: formatCondition(value) }))]}
-            onChange={(value) => updateFilter(setFilters, "accessCondition", value as AnalyticsFilters["accessCondition"])}
+            clearLabel={text.clear}
+            selectAllLabel={text.selectAll}
+            values={options.accessConditions}
+            selected={filters.accessConditions}
+            allLabel={text.allAccess}
+            formatValue={formatCondition}
+            onChange={(value) => updateFilter(setFilters, "accessConditions", value)}
           />
-          <SelectFilter
+          <MultiSelectFilter
             label={text.prompt}
             help={FILTER_HELP[locale].prompt}
-            value={filters.promptStrategy}
-            options={[{ value: "all", label: text.allPrompts }, ...options.promptStrategies.map((value) => ({ value, label: formatCondition(value) }))]}
-            onChange={(value) => updateFilter(setFilters, "promptStrategy", value as AnalyticsFilters["promptStrategy"])}
+            clearLabel={text.clear}
+            selectAllLabel={text.selectAll}
+            values={options.promptStrategies}
+            selected={filters.promptStrategies}
+            allLabel={text.allPrompts}
+            formatValue={formatCondition}
+            onChange={(value) => updateFilter(setFilters, "promptStrategies", value)}
           />
-          <SelectFilter
+          <MultiSelectFilter
             label={text.stage}
             help={FILTER_HELP[locale].stage}
-            value={filters.stage}
-            options={[{ value: "all", label: text.allStages }, ...options.stages.map((value) => ({ value, label: formatStage(value) }))]}
-            onChange={(value) => updateFilter(setFilters, "stage", value as AnalyticsFilters["stage"])}
+            clearLabel={text.clear}
+            selectAllLabel={text.selectAll}
+            values={options.stages}
+            selected={filters.stages}
+            allLabel={text.allStages}
+            formatValue={formatStage}
+            onChange={(value) => updateFilter(setFilters, "stages", value)}
           />
-          <SelectFilter
+          <MultiSelectFilter
             label={text.model}
             help={FILTER_HELP[locale].model}
-            value={filters.model}
-            options={[{ value: "all", label: text.allModels }, ...options.models.map((value) => ({ value, label: value }))]}
-            onChange={(value) => updateFilter(setFilters, "model", value)}
+            clearLabel={text.clear}
+            selectAllLabel={text.selectAll}
+            values={options.models}
+            selected={filters.models}
+            allLabel={text.allModels}
+            formatValue={(value) => value}
+            onChange={(value) => updateFilter(setFilters, "models", value)}
           />
-          <SelectFilter
+          <MultiSelectFilter
             label={text.provider}
             help={FILTER_HELP[locale].provider}
-            value={filters.provider}
-            options={[{ value: "all", label: text.allProviders }, ...options.providers.map((value) => ({ value, label: value }))]}
-            onChange={(value) => updateFilter(setFilters, "provider", value)}
+            clearLabel={text.clear}
+            selectAllLabel={text.selectAll}
+            values={options.providers}
+            selected={filters.providers}
+            allLabel={text.allProviders}
+            formatValue={(value) => value}
+            onChange={(value) => updateFilter(setFilters, "providers", value)}
           />
-          <DateFilter
-            label={text.from}
-            help={FILTER_HELP[locale].from}
-            value={filters.dateFrom}
-            onChange={(value) => updateFilter(setFilters, "dateFrom", value)}
-          />
-          <DateFilter
-            label={text.to}
-            help={FILTER_HELP[locale].to}
-            value={filters.dateTo}
-            onChange={(value) => updateFilter(setFilters, "dateTo", value)}
-          />
+          <div className="dateRangeFilterRow">
+            <DateFilter
+              label={text.from}
+              help={FILTER_HELP[locale].from}
+              value={filters.dateFrom}
+              onChange={(value) => updateFilter(setFilters, "dateFrom", value)}
+            />
+            <DateFilter
+              label={text.to}
+              help={FILTER_HELP[locale].to}
+              value={filters.dateTo}
+              onChange={(value) => updateFilter(setFilters, "dateTo", value)}
+            />
+          </div>
         </div>
       </section>
 
@@ -407,9 +467,10 @@ function RankedBarChart({
       {rows.slice(0, 12).map((row) => {
         const value = row.metricValue;
         const width = getBarWidth(value, min, max, metricDefinition.direction);
+        const warning = getModelWarning(row, locale);
         return (
           <button
-            className={`barChartRow${highlightedKey === row.key ? " isSelected" : ""}`}
+            className={`barChartRow${highlightedKey === row.key ? " isSelected" : ""}${warning ? " hasWarning" : ""}`}
             key={row.key}
             type="button"
             onClick={() => onSelect(row.key)}
@@ -417,6 +478,7 @@ function RankedBarChart({
             <span className="barRank">#{row.rank}</span>
             <span className="barLabel barModelLabel">
               <span className="barModelName">{row.model}</span>
+              {warning ? <WarningBadge warning={warning} /> : null}
               <span className="barSetupBox">{formatAnalyticsSetupLabel(row)}</span>
               <InfoTooltip
                 label={`${row.model} ${text.config}`}
@@ -499,6 +561,7 @@ function LineChart({ locale, series, metric }: { locale: Locale; series: Analyti
           {formatMetricShortLabel(metric, locale)}
         </text>
         {series.map((entry, index) => {
+          const style = SERIES_STYLES[index % SERIES_STYLES.length];
           const points = entry.values
             .filter((point) => point.value !== null)
             .map((point) => {
@@ -512,24 +575,46 @@ function LineChart({ locale, series, metric }: { locale: Locale; series: Analyti
               fill="none"
               key={entry.key}
               points={points.join(" ")}
-              stroke={SERIES_COLORS[index % SERIES_COLORS.length]}
+              stroke={style.color}
+              strokeDasharray={style.dash}
               strokeLinecap="round"
               strokeLinejoin="round"
-              strokeWidth="4"
+              strokeWidth={style.width}
             />
           ) : null;
         })}
       </svg>
       <div className="lineChartLegend">
-        {series.map((entry, index) => (
+        {series.map((entry, index) => {
+          const style = SERIES_STYLES[index % SERIES_STYLES.length];
+          return (
           <span key={entry.key}>
-            <i style={{ background: SERIES_COLORS[index % SERIES_COLORS.length] }} />
-            {entry.label}
+            <i style={{ background: style.color }} />
+            {formatSeriesLegendLabel(entry.label)}
           </span>
-        ))}
+          );
+        })}
       </div>
     </div>
   );
+}
+
+function formatSeriesLegendLabel(label: string): string {
+  const parts = label.split(" / ");
+  if (parts.length < 4) {
+    return label;
+  }
+
+  const [model, access, prompt, horizon] = parts;
+  return `${model} · ${abbreviateCondition(access)} · ${abbreviateCondition(prompt)} · ${horizon}`;
+}
+
+function abbreviateCondition(value: string): string {
+  if (value === "Closed Book") return "CB";
+  if (value === "Open Book") return "OB";
+  if (value === "Direct Score") return "DS";
+  if (value === "Probabilistic Forecast") return "PF";
+  return value;
 }
 
 function AnalyticsTable({
@@ -576,43 +661,56 @@ function AnalyticsTable({
           </tr>
         </thead>
         <tbody>
-          {rows.map((row) => (
-            <tr
-              className={highlightedKey === row.key ? "isSelected" : ""}
-              key={row.key}
-              onClick={() => onSelect(row.key)}
-            >
-              <td>#{row.rank}</td>
-              <td>
-                <span className="modelConfigCell">
-                  <span>{row.model}</span>
-                  <InfoTooltip
-                    label={`${row.model} ${text.config}`}
-                    lines={buildModelConfigurationHelp(row, locale)}
-                  />
-                </span>
-              </td>
-              <td>{row.provider}</td>
-              <td>{row.forecastHorizon}</td>
-              <td>{formatCondition(row.accessCondition)}</td>
-              <td>{formatCondition(row.promptStrategy)}</td>
-              <td>{row.matchesScored}</td>
-              <td>{formatMetricValue("kicktipp_points_90", row.kicktippPoints90)}</td>
-              <td>{formatMetricValue("brier_90", row.brier90)}</td>
-              <td>{formatMetricValue("log_loss_90", row.logLoss90)}</td>
-              <td>{formatMetricValue("top_outcome_accuracy_90", row.topOutcomeAccuracy90)}</td>
-              <td>{formatMetricValue("exact_score_accuracy_90", row.exactScoreAccuracy90)}</td>
-              <td>{formatMetricValue("goal_difference_accuracy_90", row.goalDifferenceAccuracy90)}</td>
-              <td>{formatMetricValue("mean_total_goals_abs_error_90", row.meanTotalGoalsAbsError90)}</td>
-              <td>{formatMetricValue("invalid_output_rate", row.invalidOutputRate)}</td>
-              <td>{formatMetricValue("repair_rate", row.repairRate)}</td>
-              <td>{formatMetricValue("open_book_search_observed_rate", row.openBookSearchObservedRate)}</td>
-              <td>{formatMetricValue(metric, row.metricValue)}</td>
-            </tr>
-          ))}
+          {rows.map((row) => {
+            const warning = getModelWarning(row, locale);
+
+            return (
+              <tr
+                className={`${highlightedKey === row.key ? "isSelected" : ""}${warning ? " hasWarning" : ""}`}
+                key={row.key}
+                onClick={() => onSelect(row.key)}
+              >
+                <td>#{row.rank}</td>
+                <td>
+                  <span className="modelConfigCell">
+                    <span>{row.model}</span>
+                    {warning ? <WarningBadge warning={warning} /> : null}
+                    <InfoTooltip
+                      label={`${row.model} ${text.config}`}
+                      lines={buildModelConfigurationHelp(row, locale)}
+                    />
+                  </span>
+                </td>
+                <td>{row.provider}</td>
+                <td>{row.forecastHorizon}</td>
+                <td>{formatCondition(row.accessCondition)}</td>
+                <td>{formatCondition(row.promptStrategy)}</td>
+                <td>{row.matchesScored}</td>
+                <td>{formatMetricValue("kicktipp_points_90", row.kicktippPoints90)}</td>
+                <td>{formatMetricValue("brier_90", row.brier90)}</td>
+                <td>{formatMetricValue("log_loss_90", row.logLoss90)}</td>
+                <td>{formatMetricValue("top_outcome_accuracy_90", row.topOutcomeAccuracy90)}</td>
+                <td>{formatMetricValue("exact_score_accuracy_90", row.exactScoreAccuracy90)}</td>
+                <td>{formatMetricValue("goal_difference_accuracy_90", row.goalDifferenceAccuracy90)}</td>
+                <td>{formatMetricValue("mean_total_goals_abs_error_90", row.meanTotalGoalsAbsError90)}</td>
+                <td>{formatMetricValue("invalid_output_rate", row.invalidOutputRate)}</td>
+                <td>{formatMetricValue("repair_rate", row.repairRate)}</td>
+                <td>{formatMetricValue("open_book_search_observed_rate", row.openBookSearchObservedRate)}</td>
+                <td>{formatMetricValue(metric, row.metricValue)}</td>
+              </tr>
+            );
+          })}
         </tbody>
       </table>
     </div>
+  );
+}
+
+function WarningBadge({ warning }: { warning: NonNullable<ReturnType<typeof getModelWarning>> }) {
+  return (
+    <span className="modelWarningBadge" title={warning.text}>
+      {warning.label}
+    </span>
   );
 }
 
@@ -629,16 +727,110 @@ function SelectFilter({
   options: Array<{ value: string; label: string }>;
   onChange: (value: string) => void;
 }) {
+  const selectedOption = options.find((option) => option.value === value);
+
   return (
-    <label className="filterField">
+    <div className="filterField analyticsSingleSelectDropdown">
       <FilterLabel help={help} label={label} />
-      <select value={value} onChange={(event) => onChange(event.target.value)}>
-        {options.map((option) => (
-          <option key={option.value} value={option.value}>{option.label}</option>
-        ))}
-      </select>
-    </label>
+      <details className="analyticsDropdownShell" name="analytics-filter-dropdowns">
+        <summary className="analyticsDropdownSummary">
+          <span>{selectedOption?.label ?? value}</span>
+        </summary>
+        <div className="analyticsMultiSelectMenu">
+          <div className="filterChipGrid analyticsFilterChipGrid">
+            {options.map((option) => (
+              <button
+                className={`analyticsSelectOption${option.value === value ? " isSelected" : ""}`}
+                key={option.value}
+                type="button"
+                onClick={(event) => {
+                  onChange(option.value);
+                  const details = event.currentTarget.closest("details");
+                  if (details) {
+                    details.open = false;
+                  }
+                }}
+              >
+                {option.label}
+              </button>
+            ))}
+          </div>
+        </div>
+      </details>
+    </div>
   );
+}
+
+function MultiSelectFilter<T extends string>({
+  label,
+  help,
+  clearLabel,
+  selectAllLabel,
+  allLabel,
+  values,
+  selected,
+  formatValue,
+  onChange
+}: {
+  label: string;
+  help: string;
+  clearLabel: string;
+  selectAllLabel: string;
+  allLabel: string;
+  values: T[];
+  selected: T[];
+  formatValue: (value: T) => string;
+  onChange: (value: T[]) => void;
+}) {
+  const allSelected = selected.length === 0 || selected.length === values.length;
+  const activeLabel = selected.length === 0 ? allLabel : `${selected.length}/${values.length}`;
+
+  return (
+    <div className="filterField analyticsMultiSelectDropdown">
+      <FilterLabel help={help} label={label} />
+      <details className="analyticsDropdownShell" name="analytics-filter-dropdowns">
+        <summary className="analyticsDropdownSummary">
+          <span>{activeLabel}</span>
+        </summary>
+        <div className="analyticsMultiSelectMenu">
+          <button
+            className="filterSelectAllButton"
+            type="button"
+            onClick={() => onChange(allSelected ? [] : values)}
+          >
+            {allSelected ? clearLabel : selectAllLabel}
+          </button>
+          <div className="filterChipGrid analyticsFilterChipGrid">
+            {values.map((value) => {
+              const isChecked = selected.length === 0 || selected.includes(value);
+              const id = `analytics-${label}-${value}`.replace(/[^a-z0-9_-]+/gi, "-");
+
+              return (
+                <label className={`filterChip${isChecked ? " isChecked" : ""}`} htmlFor={id} key={value}>
+                  <input
+                    checked={isChecked}
+                    id={id}
+                    type="checkbox"
+                    onChange={() => onChange(toggleSelection(selected, value, values))}
+                  />
+                  <span>{formatValue(value)}</span>
+                </label>
+              );
+            })}
+          </div>
+        </div>
+      </details>
+    </div>
+  );
+}
+
+function toggleSelection<T extends string>(selected: T[], value: T, values: T[]): T[] {
+  const normalizedSelected = selected.length === 0 ? values : selected;
+  const next = normalizedSelected.includes(value)
+    ? normalizedSelected.filter((entry) => entry !== value)
+    : [...normalizedSelected, value];
+
+  return next.length === values.length ? [] : next;
 }
 
 function getLineChartDomain(metricDefinition: ReturnType<typeof getMetricDefinition>, values: number[]): { min: number; max: number } {
@@ -646,36 +838,37 @@ function getLineChartDomain(metricDefinition: ReturnType<typeof getMetricDefinit
   const maxValue = Math.max(...values);
 
   if (metricDefinition.kind === "rate") {
-    return getRateChartDomain(minValue, maxValue);
+    return { min: 0, max: 1 };
+  }
+
+  if (metricDefinition.key === "kicktipp_points_90") {
+    return { min: 0, max: getNiceUpperBound(maxValue, 5) };
+  }
+
+  if (metricDefinition.key === "brier_90") {
+    const upper = maxValue <= 2 ? Math.min(2, getNiceUpperBound(Math.max(maxValue, 0.5), 0.5)) : getNiceUpperBound(maxValue, 1);
+    return { min: 0, max: upper };
+  }
+
+  if (metricDefinition.key === "log_loss_90") {
+    return { min: 0, max: getNiceUpperBound(maxValue, 1) };
+  }
+
+  if (minValue >= 0) {
+    return { min: 0, max: getNiceUpperBound(maxValue, 1) };
   }
 
   return getNumericChartDomain(minValue, maxValue);
 }
 
-function getRateChartDomain(minValue: number, maxValue: number): { min: number; max: number } {
-  if (minValue === maxValue) {
-    if (maxValue >= 1) {
-      return { min: 0.9, max: 1 };
-    }
-
-    if (minValue <= 0) {
-      return { min: 0, max: 0.1 };
-    }
-
-    const padding = Math.max(0.05, Math.abs(maxValue) * 0.1);
-    return {
-      min: Math.max(0, minValue - padding),
-      max: Math.min(1, maxValue + padding)
-    };
+function getNiceUpperBound(maxValue: number, fallback: number): number {
+  if (!Number.isFinite(maxValue) || maxValue <= 0) {
+    return fallback;
   }
 
-  const range = maxValue - minValue;
-  const padding = Math.max(0.02, range * 0.14);
-
-  return {
-    min: Math.max(0, minValue - padding),
-    max: Math.min(1, maxValue + padding)
-  };
+  const padded = maxValue * 1.12;
+  const step = niceNumber(padded / 4);
+  return Math.max(fallback, Math.ceil(padded / step) * step);
 }
 
 function getNumericChartDomain(minValue: number, maxValue: number): { min: number; max: number } {
@@ -763,8 +956,9 @@ function buildModelConfigurationHelp(row: AnalyticsLeaderboardRow, locale: Local
   const stages = row.stages.length > 0
     ? row.stages.map(formatStage).join(", ")
     : text.currentStages;
+  const warning = getModelWarning(row, locale);
 
-  return [
+  const lines: TooltipLine[] = [
     {
       label: row.forecastHorizon,
       text: explainForecastHorizon(row.forecastHorizon, locale)
@@ -790,6 +984,15 @@ function buildModelConfigurationHelp(row: AnalyticsLeaderboardRow, locale: Local
       text: `${row.matchesScored} ${text.evaluationScores}`
     }
   ];
+
+  if (warning) {
+    lines.unshift({
+      label: warning.label,
+      text: warning.text
+    });
+  }
+
+  return lines;
 }
 
 function explainForecastHorizon(value: string, locale: Locale): string {
@@ -997,7 +1200,7 @@ function exportFullDatasetCsv(
     "Away goal abs error 90",
     "Total goals abs error 90",
     "Goal difference abs error 90",
-    "Scores 90",
+    "Points 90",
     "Advancement accuracy",
     "Score/prob argmax consistent 90",
     "Special question ID",

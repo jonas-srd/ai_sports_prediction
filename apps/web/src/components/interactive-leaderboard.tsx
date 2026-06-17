@@ -12,6 +12,7 @@ import { formatCondition, formatStage } from "@/lib/benchmark-analytics";
 import { InfoTooltip, type TooltipLine } from "@/components/info-tooltip";
 import { ModelInspector } from "@/components/model-inspector";
 import { commonText, localizePath, type Locale } from "@/lib/i18n";
+import { getModelWarning } from "@/lib/model-warnings";
 
 type InteractiveLeaderboardProps = {
   locale: Locale;
@@ -102,6 +103,7 @@ export function InteractiveLeaderboard({ locale, leaderboard, matches, controls 
           <div className="leaderboard">
             {leaderboard.map((entry, index) => {
               const rank = getLeaderboardRank(leaderboard, index);
+              const warning = getModelWarning(entry, locale);
               return (
                 <div className="leaderboardItem" key={entry.key ?? entry.model}>
                   <button
@@ -114,6 +116,11 @@ export function InteractiveLeaderboard({ locale, leaderboard, matches, controls 
                     <div>
                       <div className="leaderboardModelName">
                         <strong>{entry.model}</strong>
+                        {warning ? (
+                          <span className="modelWarningBadge" title={warning.text}>
+                            {warning.label}
+                          </span>
+                        ) : null}
                         <InfoTooltip
                           label={`${entry.model} ${text.config}`}
                           lines={buildLeaderboardConfigurationHelp(entry, matches, locale)}
@@ -159,8 +166,16 @@ function buildLeaderboardConfigurationHelp(
   const horizon = entry.forecastHorizon ?? predictions[0]?.forecastHorizon;
   const access = entry.accessCondition ?? predictions[0]?.accessCondition;
   const prompt = entry.promptStrategy ?? predictions[0]?.promptStrategy;
+  const warning = getModelWarning({ ...entry, forecastHorizon: horizon }, locale);
 
   const lines: TooltipLine[] = [];
+
+  if (warning) {
+    lines.push({
+      label: warning.label,
+      text: warning.text
+    });
+  }
 
   if (horizon) {
     lines.push({
