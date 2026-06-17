@@ -405,6 +405,29 @@ curl -H "Authorization: Bearer YOUR_BACKUP_DOWNLOAD_TOKEN" \
   -o world-cup-backup.db.gz
 ```
 
+Replace the local `data/world-cup.db` with the newest host backup:
+
+```env
+WORLD_CUP_HOST_URL=https://YOUR_RAILWAY_DOMAIN
+BACKUP_DOWNLOAD_TOKEN=YOUR_BACKUP_DOWNLOAD_TOKEN
+```
+
+Then run:
+
+```powershell
+npm run db:download-host
+```
+
+For a one-off run without editing `.env`:
+
+```powershell
+$env:WORLD_CUP_HOST_URL="https://YOUR_RAILWAY_DOMAIN"
+$env:BACKUP_DOWNLOAD_TOKEN="YOUR_BACKUP_DOWNLOAD_TOKEN"
+npm run db:download-host
+```
+
+The script saves the current local database under `data/backups` before replacing it. Stop `npm run dev` or any SQLite browser before running it so the local database file is not locked.
+
 `BACKUP_DOWNLOAD_TOKEN` must be set or the backup routes return `401`.
 
 For paper work, keep the downloaded `.db.gz` files outside Railway as well, for example in institutional storage, cloud storage, or a local archive. The Railway volume is the operational source of truth, not the only archive.

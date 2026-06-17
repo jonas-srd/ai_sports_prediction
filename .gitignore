@@ -14,3 +14,4 @@ data/*.db-*
 data/*.sqlite
 data/backups/
 exports/
+.claude/

@@ -1404,6 +1404,7 @@ h2 {
 .scheduleDay {
   box-sizing: border-box;
   min-width: 0;
+  scroll-margin-top: 96px;
   border: 1px solid var(--line);
   border-radius: 30px;
   background:

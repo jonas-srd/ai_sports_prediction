@@ -4,7 +4,7 @@
  * Purpose: Interactive schedule body for the Matches page.
  * It applies the same prediction-view filters as Home before match cards render.
  */
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import type { DashboardMatch } from "@/lib/dashboard-data";
 import { getDisplayMatch } from "@/lib/match-display";
 import {
@@ -59,18 +59,59 @@ const SCHEDULE_TEXT = {
 
 export function MatchesSchedule({ locale, matches }: MatchesScheduleProps) {
   const { timeZone } = useTimeZone();
+  const dayRefs = useRef(new Map<string, HTMLElement>());
+  const lastAutoScrolledKey = useRef<string | null>(null);
   const options = useMemo(() => getPredictionViewOptions(matches), [matches]);
   const [viewState, setViewState] = useState<PredictionViewState>(() => getDefaultPredictionViewState(options));
+  const [initialDayKey, setInitialDayKey] = useState<string | null>(null);
   const filteredMatches = useMemo(
     () => filterMatchesForPredictionView(matches, viewState),
     [matches, viewState]
   );
   const scheduleDays = useMemo(() => groupMatchesByDay(filteredMatches, timeZone, locale), [filteredMatches, timeZone, locale]);
 
+  useEffect(() => {
+    setInitialDayKey(getInitialScheduleDayKey(scheduleDays, timeZone));
+  }, [scheduleDays, timeZone]);
+
+  useEffect(() => {
+    if (window.location.hash) {
+      return;
+    }
+
+    if (!initialDayKey) {
+      return;
+    }
+
+    const scrollKey = `${timeZone}:${initialDayKey}`;
+    if (lastAutoScrolledKey.current === scrollKey) {
+      return;
+    }
+
+    lastAutoScrolledKey.current = scrollKey;
+    const timeoutId = window.setTimeout(() => {
+      dayRefs.current.get(initialDayKey)?.scrollIntoView({ block: "start" });
+    }, 0);
+
+    return () => window.clearTimeout(timeoutId);
+  }, [initialDayKey, timeZone]);
+
   return (
     <section className="scheduleList">
       {scheduleDays.map((day) => (
-        <section className="scheduleDay" key={day.key}>
+        <section
+          className="scheduleDay"
+          data-initial-scroll-target={day.key === initialDayKey ? "true" : undefined}
+          data-day-key={day.key}
+          key={day.key}
+          ref={(node) => {
+            if (node) {
+              dayRefs.current.set(day.key, node);
+            } else {
+              dayRefs.current.delete(day.key);
+            }
+          }}
+        >
           <div className="scheduleDayHeader">
             <h2>{day.label}</h2>
             <span>{formatScheduleDayTag(day.matches, locale)}</span>
@@ -127,6 +168,21 @@ function groupMatchesByDay(matches: DashboardMatch[], timeZone: string, locale: 
       matches: day.matches.sort(compareMatches)
     }))
     .sort((a, b) => compareDateKeys(a.key, b.key));
+}
+
+function getInitialScheduleDayKey(days: ScheduleDay[], timeZone: string): string | null {
+  if (days.length === 0) {
+    return null;
+  }
+
+  const todayKey = getLocalDateKey(new Date().toISOString(), timeZone);
+  const today = days.find((day) => day.key === todayKey);
+  if (today) {
+    return today.key;
+  }
+
+  const nextMatchDay = days.find((day) => compareDateKeys(day.key, todayKey) > 0);
+  return nextMatchDay?.key ?? days[days.length - 1]?.key ?? null;
 }
 
 function isKnockoutMatch(match: DashboardMatch): boolean {

@@ -21,7 +21,7 @@ import { PredictionViewControls } from "@/components/prediction-view-controls";
 import { TeamMatchup } from "@/components/team-matchup";
 import { InfoTooltip, type TooltipLine } from "@/components/info-tooltip";
 import { formatTeamName, getTeamFlag } from "@/lib/country-flags";
-import { formatMatchTime, formatShortDate } from "@/lib/timezone";
+import { formatMatchTime, formatShortDate, getLocalDateKey } from "@/lib/timezone";
 import { useTimeZone } from "@/components/time-zone-provider";
 import { commonText, localizePath, type Locale } from "@/lib/i18n";
 
@@ -61,7 +61,7 @@ const DASHBOARD_TEXT = {
     correctTendency: "Correct tendency",
     miss: "Miss",
     schedule: "Schedule",
-    latestMatches: "Latest matches",
+    latestMatches: "Latest and upcoming matches",
     latestDescription: "Fixture and result preview for the current view.",
     openDetails: "Open details",
     extraQuestions: "Extra questions",
@@ -105,7 +105,7 @@ const DASHBOARD_TEXT = {
     correctTendency: "Richtige Tendenz",
     miss: "Fehltipp",
     schedule: "Spielplan",
-    latestMatches: "Neueste Spiele",
+    latestMatches: "Neueste und kommende Spiele",
     latestDescription: "Spiel- und Ergebnisvorschau für die aktuelle Ansicht.",
     openDetails: "Details öffnen",
     extraQuestions: "Zusatzfragen",
@@ -166,6 +166,10 @@ export function HomeDashboard({ locale, matches, specialPredictions }: HomeDashb
   const displayMatches = useMemo(
     () => filteredMatches.map((match) => getDisplayMatch(match, filteredMatches)),
     [filteredMatches]
+  );
+  const latestMatches = useMemo(
+    () => getLatestMatches(displayMatches, timeZone),
+    [displayMatches, timeZone]
   );
   const summary = useMemo(() => getPredictionViewSummary(viewState, matches, locale), [viewState, matches, locale]);
   const leader = leaderboard[0];
@@ -244,7 +248,7 @@ export function HomeDashboard({ locale, matches, specialPredictions }: HomeDashb
           <Link href={localizePath("/matches", locale)}>{text.openDetails}</Link>
         </div>
         <div className="matchList matchPreviewGrid">
-          {displayMatches.slice(0, 8).map((match) => (
+          {latestMatches.map((match) => (
             <Link className="matchCard" href={`${localizePath("/matches", locale)}#${getMatchAnchorId(match.id)}`} key={match.id}>
               <TeamMatchup
                 compact
@@ -702,6 +706,39 @@ function getSpecialQuestionRank(rows: SpecialQuestionTableRow[], index: number):
 
 function getMatchAnchorId(matchId: string): string {
   return `match-${matchId}`;
+}
+
+function getLatestMatches(matches: DashboardMatch[], timeZone: string): DashboardMatch[] {
+  const todayKey = getLocalDateKey(new Date().toISOString(), timeZone);
+  const entries = matches.map((match) => ({
+    dayKey: getLocalDateKey(match.utcDate, timeZone),
+    match,
+    time: getTimeValue(match.utcDate)
+  }));
+  const today = entries
+    .filter((entry) => entry.dayKey === todayKey)
+    .sort((a, b) => a.time - b.time || compareTeamNames(a.match, b.match));
+  const upcoming = entries
+    .filter((entry) => entry.dayKey > todayKey)
+    .sort((a, b) => a.time - b.time || compareTeamNames(a.match, b.match));
+  const recentPast = entries
+    .filter((entry) => entry.dayKey < todayKey)
+    .sort((a, b) => b.time - a.time || compareTeamNames(a.match, b.match));
+
+  return [...today, ...upcoming, ...recentPast].slice(0, 8).map((entry) => entry.match);
+}
+
+function compareTeamNames(a: DashboardMatch, b: DashboardMatch): number {
+  return a.homeTeam.localeCompare(b.homeTeam) || a.awayTeam.localeCompare(b.awayTeam);
+}
+
+function getTimeValue(value?: string): number {
+  if (!value) {
+    return Number.MIN_SAFE_INTEGER;
+  }
+
+  const time = new Date(value).getTime();
+  return Number.isNaN(time) ? Number.MIN_SAFE_INTEGER : time;
 }
 
 function formatMatchCenter(match: DashboardMatch, timeZone: string): string {
