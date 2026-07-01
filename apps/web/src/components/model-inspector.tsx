@@ -2,11 +2,11 @@
 
 /**
  * Purpose: Browser-side drilldown for the model selected from the leaderboard.
- * SQLite data is still loaded by the server page; this component only filters and scores it interactively.
+ * Server data is loaded by the page; this component only filters and scores it interactively.
  */
 import { useMemo } from "react";
-import type { DashboardMatch } from "@/lib/dashboard-data";
-import type { DashboardPrediction } from "@/lib/dashboard-data";
+import type { DashboardMatch } from "@/lib/dashboard-types";
+import type { DashboardPrediction } from "@/lib/dashboard-types";
 import { formatCondition } from "@/lib/benchmark-analytics";
 import { getMatchupLabels } from "@/lib/match-display";
 import { TeamMatchup } from "@/components/team-matchup";
@@ -36,7 +36,7 @@ type FocusRow = {
 const INSPECTOR_TEXT = {
   en: {
     noPredictions: "No model predictions yet",
-    noPredictionsDescription: "Run `npm run predict:next` after syncing matches to unlock model details.",
+    noPredictionsDescription: "Queued prediction jobs will unlock model details once they finish.",
     scores: "Points",
     exactHits: "Exact hits",
     scoredPicks: "Scored picks",
@@ -52,7 +52,7 @@ const INSPECTOR_TEXT = {
   },
   de: {
     noPredictions: "Noch keine Modellprognosen",
-    noPredictionsDescription: "Führe nach dem Synchronisieren der Spiele `npm run predict:next` aus, um Modelldetails zu sehen.",
+    noPredictionsDescription: "Geplante Prognose-Jobs schalten Modelldetails frei, sobald sie abgeschlossen sind.",
     scores: "Punkte",
     exactHits: "Exakte Treffer",
     scoredPicks: "Gewertete Tipps",

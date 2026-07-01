@@ -2,8 +2,8 @@ import type { Metadata } from "next";
 import { ObfuscatedEmail } from "@/components/obfuscated-email";
 
 export const metadata: Metadata = {
-  title: "Legal Notice | LLM SoccerArena",
-  description: "Legal notice and provider information for LLM SoccerArena."
+  title: "Legal Notice | AI Sports Prediction",
+  description: "Legal notice and provider information for AI Sports Prediction."
 };
 
 export default function LegalNoticePage() {
@@ -129,7 +129,7 @@ export default function LegalNoticePage() {
         <div className="legalBlock">
           <h2>Additional Notice</h2>
           <p>
-            LLM SoccerArena is an experimental benchmark and analysis project.
+            AI Sports Prediction is an experimental benchmark and analysis project.
             The displayed predictions are automatically generated model forecasts
             and do not constitute betting, financial, or other professional advice.
           </p>

@@ -13,8 +13,8 @@ import { TimeZoneProvider } from "@/components/time-zone-provider";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "LLM SoccerArena",
-  description: "Compare soccer score predictions from multiple LLMs.",
+  title: "AI Sports Prediction",
+  description: "Compare AI sports predictions, score forecasts, and benchmark results.",
   icons: {
     icon: [
       { url: "/favicon.ico", sizes: "32x32" },

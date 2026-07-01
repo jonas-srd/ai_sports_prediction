@@ -1,116 +1,119 @@
 # Railway Deployment
 
-This project is deployed as one Docker-backed Railway service.
+Deploy one Docker image as separate Railway services. Each service uses `SERVICE_ROLE` to select its runtime behavior.
 
-## Railway Service
+## Services
 
-Use the repository root as the service root. Railway should detect the root `Dockerfile`.
+```text
+web      SERVICE_ROLE=web
+api      SERVICE_ROLE=api
+worker   SERVICE_ROLE=worker
+migrate  SERVICE_ROLE=migrate
+backup   SERVICE_ROLE=backup
+```
 
-Required environment variables:
+Use the repository root as the service root for every service.
+
+## Required Services
+
+- Managed Postgres with snapshots and point-in-time recovery enabled.
+- Managed Redis for BullMQ.
+- Optional S3-compatible object storage for logical exports.
+
+## Required Variables
 
 ```env
-SQLITE_DB_PATH=/app/data/world-cup.db
+DATABASE_URL=postgres://...
+DATABASE_SSL=1
+REDIS_URL=redis://...
+AI_SPORTS_API_URL=https://your-internal-api-url
 FOOTBALL_DATA_API_KEY=your_key
 FOOTBALL_DATA_COMPETITION=WC
 FOOTBALL_DATA_SEASON=2026
 OPENROUTER_API_KEY=your_key
-OPENROUTER_SITE_NAME=World Cup LLM Rank
-OPENROUTER_SITE_URL=https://your-railway-domain
+OPENROUTER_SITE_NAME=AI Sports Prediction
+OPENROUTER_SITE_URL=https://your-public-domain
+ADMIN_API_TOKEN=long-random-token
 ```
 
-Optional environment variables:
+## Optional Backup Variables
 
 ```env
-OPENROUTER_MODEL_IDS=
-OPENROUTER_TEST_MODEL=openai/gpt-5.5
-API_FOOTBALL_KEY=
-API_FOOTBALL_LEAGUE_ID=1
-API_FOOTBALL_SEASON=2026
-SQLITE_SEED_OVERWRITE=0
+POSTGRES_BACKUP_DIR=/app/data/postgres-backups
+BACKUP_S3_BUCKET=
+BACKUP_S3_PREFIX=ai-sports-prediction/backups
+BACKUP_S3_REGION=
+BACKUP_S3_ENDPOINT=
+BACKUP_S3_FORCE_PATH_STYLE=0
 ```
 
-## Volume
+## Database Migration
 
-Add a Railway volume to the service and mount it at:
-
-```text
-/app/data
-```
-
-The SQLite database will live at:
-
-```text
-/app/data/world-cup.db
-```
-
-Do not store the database inside the container filesystem. It must be on the mounted volume to survive redeploys.
-
-## Initial Database Seed
-
-The Docker image can include a compressed seed database at:
-
-```text
-/app/deploy/seed/world-cup.db.gz
-```
-
-On container start, `scripts/start-web-with-db-seed.sh` restores that seed into:
-
-```text
-$SQLITE_DB_PATH
-```
-
-By default, this only happens when the target database file does not exist or is empty.
-
-If the current Railway volume database should be replaced once, set this Railway variable for one deploy:
-
-```env
-SQLITE_SEED_OVERWRITE=1
-```
-
-After the seeded deploy is running, remove `SQLITE_SEED_OVERWRITE` or set it back to `0`. Otherwise every restart or redeploy will reset the volume database back to the packaged seed.
-
-To refresh the packaged seed from the current local database:
+Run migrations explicitly, not from request handlers:
 
 ```bash
-python -c "import gzip, shutil; from pathlib import Path; Path('deploy/seed').mkdir(parents=True, exist_ok=True); shutil.copyfileobj(open('data/world-cup.db','rb'), gzip.open('deploy/seed/world-cup.db.gz','wb'))"
+SERVICE_ROLE=migrate
 ```
 
-## Commands
-
-The web service starts with:
+or:
 
 ```bash
-sh scripts/start-web-with-db-seed.sh
+npm run db:migrate:postgres
 ```
 
-Useful one-off commands to run from the Railway shell:
+## API
+
+Health:
+
+```text
+/health
+```
+
+Read endpoints:
+
+```text
+/v1/matches
+/v1/benchmark-predictions
+/v1/special-predictions
+```
+
+Protected admin endpoint:
+
+```text
+/v1/admin/backups
+```
+
+Use:
+
+```http
+Authorization: Bearer <ADMIN_API_TOKEN>
+```
+
+## Worker
+
+The worker listens to Redis queues:
+
+```text
+fixture-sync
+predictions
+scoring
+backups
+```
+
+Workers write all attempts to `job_attempts`.
+
+## Backups
+
+Schedule a backup service:
 
 ```bash
-npm run db:init
-npm run db:status
-npm run sync:football-data
-npm run benchmark:predict:due -- --horizon=T_24H --window-before-min=15 --window-after-min=60 --concurrency=3
-npm run benchmark:predict:due -- --horizon=T_2H --window-before-min=10 --window-after-min=60 --concurrency=3
-npm run benchmark:predict:stage-opening -- --stage=group_stage --concurrency=3
-npm run score
+SERVICE_ROLE=backup
 ```
 
-Recommended production schedule:
+or enqueue backups:
 
-```text
-fixture sync: run periodically before prediction jobs
-T_24H due runner: every 15-30 minutes
-T_2H due runner: every 5-10 or 10-15 minutes
-stage-opening runner: run manually or shortly after an official stage/round is fully known
-scoring/evaluation: run after result sync
+```bash
+npm run queue:backup
 ```
 
-Keep the web service command focused on starting the web app. Run these prediction and scoring commands as separate scheduled jobs or one-off commands; do not put cron orchestration into the web service startup command.
-
-`T_2H` remains scheduled at kickoff minus 2 hours, but timing metadata treats actual calls within +/- 60 minutes as on-time to allow for long API batches.
-
-The health endpoint is:
-
-```text
-/api/health
-```
+The backup job writes a verified logical Postgres export, a manifest, and `backup_artifacts` / `backup_verifications` rows.

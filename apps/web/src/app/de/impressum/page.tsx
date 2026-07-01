@@ -2,8 +2,8 @@ import type { Metadata } from "next";
 import { ObfuscatedEmail } from "@/components/obfuscated-email";
 
 export const metadata: Metadata = {
-  title: "Impressum | LLM SoccerArena",
-  description: "Impressum und Anbieterinformationen für LLM SoccerArena."
+  title: "Impressum | AI Sports Prediction",
+  description: "Impressum und Anbieterinformationen für AI Sports Prediction."
 };
 
 export default function GermanLegalNoticePage() {
@@ -129,7 +129,7 @@ export default function GermanLegalNoticePage() {
         <div className="legalBlock">
           <h2>Weitere Hinweise</h2>
           <p>
-            LLM SoccerArena ist ein experimentelles Benchmark- und Analyseprojekt.
+            AI Sports Prediction ist ein experimentelles Benchmark- und Analyseprojekt.
             Die angezeigten Prognosen sind automatisch generierte Modellvorhersagen
             und stellen keine Wett-, Finanz- oder sonstige professionelle Beratung dar.
           </p>

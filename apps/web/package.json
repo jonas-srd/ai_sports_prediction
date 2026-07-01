@@ -1,5 +1,5 @@
 {
-  "name": "@llm-kicktipp/web",
+  "name": "@ai-sports-prediction/web",
   "version": "0.1.0",
   "private": true,
   "type": "module",
@@ -10,13 +10,11 @@
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
   "dependencies": {
-    "better-sqlite3": "latest",
     "next": "latest",
     "react": "latest",
     "react-dom": "latest"
   },
   "devDependencies": {
-    "@types/better-sqlite3": "latest",
     "@types/node": "latest",
     "@types/react": "latest",
     "@types/react-dom": "latest",

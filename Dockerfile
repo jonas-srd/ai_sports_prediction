@@ -7,8 +7,9 @@ RUN apt-get update \
   && rm -rf /var/lib/apt/lists/*
 
 COPY package.json package-lock.json ./
+COPY apps/api/package.json apps/api/package.json
 COPY apps/web/package.json apps/web/package.json
-COPY apps/cron/package.json apps/cron/package.json
+COPY apps/worker/package.json apps/worker/package.json
 COPY packages/db/package.json packages/db/package.json
 COPY packages/llm/package.json packages/llm/package.json
 COPY packages/scorer/package.json packages/scorer/package.json
@@ -20,8 +21,8 @@ COPY . .
 RUN npm run build
 
 ENV NODE_ENV=production
-ENV SQLITE_DB_PATH=/app/data/world-cup.db
+ENV PORT=3000
 
 EXPOSE 3000
 
-CMD ["sh", "scripts/start-web-with-db-seed.sh"]
+CMD ["sh", "scripts/start-service.sh"]

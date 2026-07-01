@@ -3,7 +3,7 @@
 /**
  * Purpose: Dedicated World Cup knockout tournament tree page.
  */
-import type { DashboardMatch } from "@/lib/dashboard-data";
+import type { DashboardMatch } from "@/lib/dashboard-types";
 import { formatTeamName, getTeamFlag } from "@/lib/country-flags";
 import {
   getDisplayMatch,

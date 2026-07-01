@@ -5,7 +5,7 @@
  * It applies the same prediction-view filters as Home before match cards render.
  */
 import { useEffect, useMemo, useRef, useState } from "react";
-import type { DashboardMatch } from "@/lib/dashboard-data";
+import type { DashboardMatch } from "@/lib/dashboard-types";
 import { getDisplayMatch } from "@/lib/match-display";
 import {
   filterMatchesForPredictionView,

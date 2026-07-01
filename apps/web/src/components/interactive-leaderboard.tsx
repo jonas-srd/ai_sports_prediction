@@ -7,7 +7,7 @@
 import { useState } from "react";
 import type { ReactNode } from "react";
 import Link from "next/link";
-import type { DashboardLeaderboardEntry, DashboardMatch, DashboardPrediction } from "@/lib/dashboard-data";
+import type { DashboardLeaderboardEntry, DashboardMatch, DashboardPrediction } from "@/lib/dashboard-types";
 import { formatCondition, formatStage } from "@/lib/benchmark-analytics";
 import { InfoTooltip, type TooltipLine } from "@/components/info-tooltip";
 import { ModelInspector } from "@/components/model-inspector";

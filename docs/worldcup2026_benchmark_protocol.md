@@ -1,6 +1,6 @@
 # WorldCupForecastBench 2026: Benchmark Protocol
 
-**Document purpose:** This document defines the scientific/source-of-truth protocol for the SoccerLLM FIFA World Cup 2026 forecasting benchmark. It is intended to guide the preregistered paper, the benchmark dataset, and the later engineering implementation in the existing web app.
+**Document purpose:** This document defines the scientific/source-of-truth protocol for the AI Sports Prediction FIFA World Cup 2026 forecasting benchmark. It is intended to guide the preregistered paper, the benchmark dataset, and the later engineering implementation in the existing web app.
 
 **Working title:** *WorldCupForecastBench 2026: A Live Benchmark of LLM Football Forecasting During the FIFA World Cup 2026*
 
@@ -1177,7 +1177,7 @@ The paper should focus on controlled LLM predictions and should not rely on publ
 
 ## 20. Implementation Principle for Existing App
 
-The protocol should be integrated into the existing SoccerLLM/web app infrastructure rather than treated as a full rebuild.
+The protocol should be integrated into the existing AI Sports Prediction/web app infrastructure rather than treated as a full rebuild.
 
 Reuse existing components where possible, including:
 

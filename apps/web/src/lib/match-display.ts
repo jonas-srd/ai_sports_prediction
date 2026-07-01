@@ -2,7 +2,7 @@
  * Purpose: Converts unresolved World Cup knockout teams into official bracket seeds.
  * API providers often return unresolved teams for future knockout games; the UI should still show the fixed path.
  */
-import type { DashboardMatch } from "@/lib/dashboard-data";
+import type { DashboardMatch } from "@/lib/dashboard-types";
 
 type KnockoutSlot = {
   matchNumber: number;

@@ -1,6 +1,6 @@
 /**
  * Purpose: Shared database row types for matches, models, predictions, and scores.
- * These types mirror the local SQLite schema and keep app and cron code aligned.
+ * These types mirror persisted prediction rows and keep backend jobs aligned.
  */
 export type ModelRow = {
   id: string;

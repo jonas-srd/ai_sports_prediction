@@ -3,7 +3,7 @@
 import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
 import { DEFAULT_TIME_ZONE, isSupportedTimeZone } from "@/lib/timezone";
 
-const STORAGE_KEY = "llm-soccerarena-time-zone";
+const STORAGE_KEY = "ai-sports-prediction-time-zone";
 
 type TimeZoneContextValue = {
   timeZone: string;

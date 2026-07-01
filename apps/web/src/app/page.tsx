@@ -1,6 +1,6 @@
 /**
  * Purpose: Main ranking dashboard.
- * Reads local SQLite data when available and falls back to sample data.
+ * Reads production data through the dedicated API and falls back to sample data locally.
  */
 import { HomePageContent } from "@/app/_route-content";
 

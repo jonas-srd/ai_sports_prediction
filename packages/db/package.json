@@ -1,5 +1,5 @@
 {
-  "name": "@llm-kicktipp/db",
+  "name": "@ai-sports-prediction/db",
   "version": "0.1.0",
   "private": true,
   "type": "module",
@@ -9,11 +9,11 @@
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
   "dependencies": {
-    "better-sqlite3": "latest"
+    "pg": "latest"
   },
   "devDependencies": {
-    "@types/better-sqlite3": "latest",
     "@types/node": "latest",
+    "@types/pg": "latest",
     "typescript": "latest"
   }
 }

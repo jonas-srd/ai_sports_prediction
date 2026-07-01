@@ -6,7 +6,7 @@
  */
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { ReactNode } from "react";
-import type { DashboardMatch, DashboardPrediction } from "@/lib/dashboard-data";
+import type { DashboardMatch, DashboardPrediction } from "@/lib/dashboard-types";
 import { formatCondition, formatStage } from "@/lib/benchmark-analytics";
 import { InfoTooltip, type TooltipLine } from "@/components/info-tooltip";
 import { TeamMatchup } from "@/components/team-matchup";

@@ -1,0 +1,24 @@
+{
+  "name": "@ai-sports-prediction/worker",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "start": "tsx src/worker.ts",
+    "migrate:postgres": "tsx src/jobs/migrate-postgres.ts",
+    "backup:postgres": "tsx src/jobs/export-postgres-backup.ts",
+    "queue:backup": "tsx src/jobs/enqueue-postgres-backup.ts",
+    "verify:postgres-backup": "tsx src/jobs/verify-postgres-backup.ts",
+    "typecheck": "tsc -p tsconfig.json --noEmit"
+  },
+  "dependencies": {
+    "@ai-sports-prediction/db": "0.1.0",
+    "@aws-sdk/client-s3": "latest",
+    "bullmq": "latest",
+    "tsx": "latest"
+  },
+  "devDependencies": {
+    "@types/node": "latest",
+    "typescript": "latest"
+  }
+}

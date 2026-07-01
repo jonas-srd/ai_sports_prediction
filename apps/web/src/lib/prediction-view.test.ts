@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import type { DashboardMatch, DashboardPrediction } from "./dashboard-data";
+import type { DashboardMatch, DashboardPrediction } from "./dashboard-types";
 import { filterMatchesForPredictionView, type PredictionViewState } from "./prediction-view";
 
 const basePrediction: DashboardPrediction = {

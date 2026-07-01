@@ -5,7 +5,7 @@ export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
 export const metadata: Metadata = {
-  title: "WM-Turnierbaum | LLM SoccerArena",
+  title: "WM-Turnierbaum | AI Sports Prediction",
   description: "Gruppen und K.-o.-Baum der FIFA-Weltmeisterschaft 2026."
 };
 

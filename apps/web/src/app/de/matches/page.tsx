@@ -5,7 +5,7 @@ export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
 export const metadata: Metadata = {
-  title: "Spiele | LLM SoccerArena",
+  title: "Spiele | AI Sports Prediction",
   description: "Spielplan und Modelltipps zur FIFA-Weltmeisterschaft 2026."
 };
 

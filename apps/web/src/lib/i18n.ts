@@ -128,9 +128,9 @@ export const commonText = {
 export const routeText = {
   en: {
     home: {
-      eyebrow: "LLM SoccerArena",
+      eyebrow: "AI Sports Prediction",
       title: "Which model predicts the FIFA World Cup 2026 best?",
-      description: "World Cup 2026 forecasts from multiple LLMs, ranked with benchmark evaluation metrics.",
+      description: "World Cup 2026 forecasts from multiple AI models, ranked with benchmark evaluation metrics.",
       cta: "View all matches"
     },
     matches: {
@@ -146,9 +146,9 @@ export const routeText = {
   },
   de: {
     home: {
-      eyebrow: "LLM SoccerArena",
+      eyebrow: "AI Sports Prediction",
       title: "Welches Modell tippt die FIFA-Weltmeisterschaft 2026 am besten?",
-      description: "WM-2026-Prognosen mehrerer LLMs, bewertet mit Benchmark-Metriken.",
+      description: "WM-2026-Prognosen mehrerer KI-Modelle, bewertet mit Benchmark-Metriken.",
       cta: "Alle Spiele ansehen"
     },
     matches: {

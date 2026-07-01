@@ -3,12 +3,13 @@ import { AnalyticsDashboard } from "@/components/analytics-dashboard";
 import { HomeDashboard } from "@/components/home-dashboard";
 import { MatchesSchedule } from "@/components/matches-schedule";
 import { TournamentTreeView } from "@/components/tournament-tree-view";
-import { getBenchmarkPredictions, getDashboardMatches, getSpecialQuestionPredictions } from "@/lib/dashboard-data";
+import { getDashboardMatchesFromApi, getSpecialPredictionsFromApi } from "@/lib/dashboard-api-data";
+import { sampleMatches } from "@/lib/dashboard-types";
 import { localizePath, routeText, type Locale } from "@/lib/i18n";
 
-export function HomePageContent({ locale }: { locale: Locale }) {
-  const matches = getDashboardMatches();
-  const specialPredictions = getSpecialQuestionPredictions();
+export async function HomePageContent({ locale }: { locale: Locale }) {
+  const matches = await getDashboardMatches();
+  const specialPredictions = await getSpecialQuestionPredictions();
   const text = routeText[locale].home;
 
   return (
@@ -29,8 +30,8 @@ export function HomePageContent({ locale }: { locale: Locale }) {
   );
 }
 
-export function MatchesPageContent({ locale }: { locale: Locale }) {
-  const matches = getDashboardMatches();
+export async function MatchesPageContent({ locale }: { locale: Locale }) {
+  const matches = await getDashboardMatches();
   const text = routeText[locale].matches;
 
   return (
@@ -48,9 +49,12 @@ export function MatchesPageContent({ locale }: { locale: Locale }) {
   );
 }
 
-export function AnalyticsPageContent({ locale }: { locale: Locale }) {
-  const predictions = getBenchmarkPredictions().filter((prediction) => !prediction.id.startsWith("legacy:"));
-  const specialPredictions = getSpecialQuestionPredictions();
+export async function AnalyticsPageContent({ locale }: { locale: Locale }) {
+  const matches = await getDashboardMatches();
+  const predictions = matches
+    .flatMap((match) => match.predictions)
+    .filter((prediction) => !prediction.id.startsWith("legacy:"));
+  const specialPredictions = await getSpecialQuestionPredictions();
   const text = routeText[locale].analytics;
 
   return (
@@ -68,8 +72,26 @@ export function AnalyticsPageContent({ locale }: { locale: Locale }) {
   );
 }
 
-export function TournamentTreePageContent({ locale }: { locale: Locale }) {
-  const matches = getDashboardMatches();
+export async function TournamentTreePageContent({ locale }: { locale: Locale }) {
+  const matches = await getDashboardMatches();
 
   return <TournamentTreeView locale={locale} matches={matches} />;
+}
+
+async function getDashboardMatches() {
+  try {
+    return await getDashboardMatchesFromApi() ?? sampleMatches;
+  } catch (error) {
+    console.error(error);
+    return sampleMatches;
+  }
+}
+
+async function getSpecialQuestionPredictions() {
+  try {
+    return await getSpecialPredictionsFromApi() ?? [];
+  } catch (error) {
+    console.error(error);
+    return [];
+  }
 }

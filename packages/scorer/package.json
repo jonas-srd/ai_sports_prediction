@@ -1,5 +1,5 @@
 {
-  "name": "@llm-kicktipp/scorer",
+  "name": "@ai-sports-prediction/scorer",
   "version": "0.1.0",
   "private": true,
   "type": "module",

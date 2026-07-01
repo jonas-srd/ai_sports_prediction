@@ -2,11 +2,11 @@
 
 /**
  * Purpose: Client-side Home engagement layer.
- * It keeps leaderboard filtering interactive while SQLite data remains server-loaded.
+ * It keeps leaderboard filtering interactive while server-loaded API data remains stable.
  */
 import { useMemo, useState } from "react";
 import Link from "next/link";
-import type { DashboardMatch, DashboardSpecialPrediction } from "@/lib/dashboard-data";
+import type { DashboardMatch, DashboardSpecialPrediction } from "@/lib/dashboard-types";
 import { getDisplayMatch, getGroupRankings } from "@/lib/match-display";
 import {
   buildPredictionViewLeaderboard,

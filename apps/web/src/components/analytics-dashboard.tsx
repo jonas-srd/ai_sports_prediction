@@ -24,7 +24,7 @@ import {
   type PromptStrategy,
   type TournamentStage
 } from "@/lib/benchmark-analytics";
-import type { DashboardSpecialPrediction } from "@/lib/dashboard-data";
+import type { DashboardSpecialPrediction } from "@/lib/dashboard-types";
 import { InfoTooltip, type TooltipLine } from "@/components/info-tooltip";
 import { type Locale } from "@/lib/i18n";
 import { getModelWarning, hasModelWarning } from "@/lib/model-warnings";

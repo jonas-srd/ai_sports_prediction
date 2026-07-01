@@ -8,7 +8,7 @@ import type {
   PromptStrategy
 } from "@/lib/benchmark-analytics";
 import { buildAnalyticsLeaderboard, formatCondition } from "@/lib/benchmark-analytics";
-import type { DashboardLeaderboardEntry, DashboardMatch, DashboardPrediction } from "@/lib/dashboard-data";
+import type { DashboardLeaderboardEntry, DashboardMatch, DashboardPrediction } from "@/lib/dashboard-types";
 import type { Locale } from "@/lib/i18n";
 
 export type PredictionViewMode = "best" | "custom";
