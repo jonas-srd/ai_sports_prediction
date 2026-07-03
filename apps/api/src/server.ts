@@ -10,9 +10,19 @@ import {
   listDashboardMatches,
   listSpecialPredictionsForApi
 } from "@ai-sports-prediction/db";
+import { createApiCache } from "./cache";
 
-const port = Number(process.env.PORT ?? process.env.API_PORT ?? 3001);
+const port = Number(process.env.API_PORT ?? process.env.PORT ?? 3001);
+const host = process.env.API_HOST ?? process.env.HOST ?? "0.0.0.0";
 const db = createPostgresPool();
+const cache = createApiCache();
+
+const CACHE_TTLS = {
+  health: Number(process.env.API_CACHE_HEALTH_TTL_SECONDS ?? 2),
+  matches: Number(process.env.API_CACHE_MATCHES_TTL_SECONDS ?? 300),
+  benchmarkPredictions: Number(process.env.API_CACHE_BENCHMARK_TTL_SECONDS ?? 300),
+  specialPredictions: Number(process.env.API_CACHE_SPECIAL_TTL_SECONDS ?? 300)
+};
 
 const server = createServer(async (request, response) => {
   try {
@@ -26,8 +36,8 @@ const server = createServer(async (request, response) => {
   }
 });
 
-server.listen(port, "0.0.0.0", () => {
-  console.log(`AI Sports Prediction API listening on ${port}`);
+server.listen(port, host, () => {
+  console.log(`AI Sports Prediction API listening on ${host}:${port}`);
 });
 
 process.on("SIGTERM", () => shutdown());
@@ -47,23 +57,42 @@ async function routeRequest(request: IncomingMessage, response: ServerResponse):
   }
 
   if (url.pathname === "/health") {
-    const postgres = await checkPostgresHealth(db);
-    sendJson(response, 200, { ok: true, service: "ai-sports-prediction-api", postgres });
+    const cached = await cache.getOrSet(
+      "health",
+      CACHE_TTLS.health,
+      async () => ({ ok: true, service: "ai-sports-prediction-api", postgres: await checkPostgresHealth(db) })
+    );
+    sendJson(response, 200, cached.value, cacheHeaders(cached.hit));
     return;
   }
 
   if (url.pathname === "/v1/matches") {
-    sendJson(response, 200, { matches: await listDashboardMatches(db) });
+    const cached = await cache.getOrSet(
+      "matches",
+      CACHE_TTLS.matches,
+      async () => ({ matches: await listDashboardMatches(db) })
+    );
+    sendJson(response, 200, cached.value, cacheHeaders(cached.hit));
     return;
   }
 
   if (url.pathname === "/v1/benchmark-predictions") {
-    sendJson(response, 200, { predictions: await listBenchmarkPredictionsForApi(db) });
+    const cached = await cache.getOrSet(
+      "benchmark-predictions",
+      CACHE_TTLS.benchmarkPredictions,
+      async () => ({ predictions: await listBenchmarkPredictionsForApi(db) })
+    );
+    sendJson(response, 200, cached.value, cacheHeaders(cached.hit));
     return;
   }
 
   if (url.pathname === "/v1/special-predictions") {
-    sendJson(response, 200, { predictions: await listSpecialPredictionsForApi(db) });
+    const cached = await cache.getOrSet(
+      "special-predictions",
+      CACHE_TTLS.specialPredictions,
+      async () => ({ predictions: await listSpecialPredictionsForApi(db) })
+    );
+    sendJson(response, 200, cached.value, cacheHeaders(cached.hit));
     return;
   }
 
@@ -89,10 +118,16 @@ function isAdminAuthorized(request: IncomingMessage): boolean {
   return request.headers.authorization === `Bearer ${token}`;
 }
 
-function sendJson(response: ServerResponse, statusCode: number, body: unknown): void {
+function sendJson(
+  response: ServerResponse,
+  statusCode: number,
+  body: unknown,
+  headers: Record<string, string> = {}
+): void {
   const payload = JSON.stringify(body);
   response.writeHead(statusCode, {
     ...corsHeaders(),
+    ...headers,
     "content-type": "application/json; charset=utf-8",
     "content-length": Buffer.byteLength(payload)
   });
@@ -113,9 +148,17 @@ function corsHeaders(): Record<string, string> {
   };
 }
 
+function cacheHeaders(hit: boolean): Record<string, string> {
+  return {
+    "cache-control": "public, max-age=30, stale-while-revalidate=300",
+    "x-api-cache": hit ? "HIT" : "MISS"
+  };
+}
+
 async function shutdown(): Promise<void> {
   console.log("Shutting down AI Sports Prediction API");
   server.close();
+  await cache.close();
   await db.end();
   process.exit(0);
 }

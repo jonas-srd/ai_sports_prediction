@@ -10,6 +10,7 @@
   },
   "dependencies": {
     "@ai-sports-prediction/db": "0.1.0",
+    "ioredis": "^5.10.1",
     "tsx": "latest"
   },
   "devDependencies": {
