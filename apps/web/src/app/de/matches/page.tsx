@@ -1,11 +1,10 @@
 import type { Metadata } from "next";
 import { MatchesPageContent } from "@/app/_route-content";
 
-export const dynamic = "force-dynamic";
-export const revalidate = 0;
+export const revalidate = 60;
 
 export const metadata: Metadata = {
-  title: "Spiele | AI Sports Prediction",
+  title: "Spiele | AI Sport Prediction",
   description: "Spielplan und Modelltipps zur FIFA-Weltmeisterschaft 2026."
 };
 

@@ -1,5 +1,5 @@
 /**
- * Purpose: Dedicated production API for AI Sports Prediction.
+ * Purpose: Dedicated production API for AI Sport Prediction.
  */
 import { createServer, type IncomingMessage, type ServerResponse } from "node:http";
 import {
@@ -37,7 +37,7 @@ const server = createServer(async (request, response) => {
 });
 
 server.listen(port, host, () => {
-  console.log(`AI Sports Prediction API listening on ${host}:${port}`);
+  console.log(`AI Sport Prediction API listening on ${host}:${port}`);
 });
 
 process.on("SIGTERM", () => shutdown());
@@ -156,7 +156,7 @@ function cacheHeaders(hit: boolean): Record<string, string> {
 }
 
 async function shutdown(): Promise<void> {
-  console.log("Shutting down AI Sports Prediction API");
+  console.log("Shutting down AI Sport Prediction API");
   server.close();
   await cache.close();
   await db.end();

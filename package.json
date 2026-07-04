@@ -2,7 +2,7 @@
   "name": "ai-sports-prediction",
   "version": "0.1.0",
   "private": true,
-  "description": "AI sports prediction platform for comparing football forecasts from multiple models.",
+  "description": "AI sport prediction platform for comparing football forecasts from multiple models.",
   "workspaces": [
     "apps/api",
     "apps/web",
@@ -20,6 +20,7 @@
     "test:analytics": "node --import tsx apps/web/src/lib/benchmark-analytics.test.ts",
     "test:special": "node --import tsx packages/llm/src/special-questions.test.ts",
     "load:test": "node scripts/load-test.mjs",
+    "aws:deploy-cloudflare-edge": "node scripts/deploy-cloudflare-edge.mjs",
     "typecheck": "npm run typecheck --workspaces --if-present",
     "db:migrate:postgres": "node scripts/run-with-env.mjs node --import tsx apps/worker/src/jobs/migrate-postgres.ts",
     "backup:postgres": "node scripts/run-with-env.mjs node --import tsx apps/worker/src/jobs/export-postgres-backup.ts",

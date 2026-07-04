@@ -1,11 +1,10 @@
 import type { Metadata } from "next";
 import { HomePageContent } from "@/app/_route-content";
 
-export const dynamic = "force-dynamic";
-export const revalidate = 0;
+export const revalidate = 60;
 
 export const metadata: Metadata = {
-  title: "AI Sports Prediction",
+  title: "AI Sport Prediction",
   description: "Vergleiche Fußball-Prognosen mehrerer LLMs."
 };
 

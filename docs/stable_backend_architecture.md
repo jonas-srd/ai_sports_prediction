@@ -1,8 +1,8 @@
-# AI Sports Prediction Stable Backend Architecture
+# AI Sport Prediction Stable Backend Architecture
 
 ## Goal
 
-AI Sports Prediction treats prediction data as durable research data. Deployments, failed jobs, provider outages, and broken backups must not erase fixtures, prompts, raw model responses, predictions, evaluations, or audit metadata.
+AI Sport Prediction treats prediction data as durable research data. Deployments, failed jobs, provider outages, and broken backups must not erase fixtures, prompts, raw model responses, predictions, evaluations, or audit metadata.
 
 ## Target Architecture
 

@@ -69,7 +69,7 @@ const workers = queues.map((queueName) => new Worker(
   { connection, prefix: queuePrefix }
 ));
 
-console.log(`AI Sports Prediction worker listening on queues: ${queues.join(", ")}`);
+console.log(`AI Sport Prediction worker listening on queues: ${queues.join(", ")}`);
 
 process.on("SIGTERM", () => shutdown());
 process.on("SIGINT", () => shutdown());
@@ -85,7 +85,7 @@ async function runQueuedJob(queueName: string, jobName: string, data: unknown): 
 }
 
 async function shutdown(): Promise<void> {
-  console.log("Shutting down AI Sports Prediction worker");
+  console.log("Shutting down AI Sport Prediction worker");
   await Promise.all(workers.map((worker) => worker.close()));
   await db.end();
   process.exit(0);

@@ -1,18 +1,35 @@
 # AWS ECS Fargate Deployment
 
-Production target for AI Sports Prediction:
+Production target for AI Sport Prediction:
 
 - RDS PostgreSQL as source of truth
 - ElastiCache Valkey/Redis OSS as BullMQ queue backend
 - S3 as verified logical backup storage
 - ECS Fargate for separate web, API, worker, migration, and backup tasks
 - Secrets Manager for database URLs and API keys
+- Cloudflare Tunnel as the first public HTTPS edge without an AWS load balancer
 
 ## 1. Networking
 
 Use `eu-central-1`.
 
-Create security groups:
+For the Cloudflare Tunnel deployment, keep the app security group closed for
+inbound public traffic:
+
+```text
+ai-sports-prediction-app
+  inbound  none
+  outbound all
+
+ai-sports-prediction-db-access
+  inbound  5432 from ai-sports-prediction-app
+  inbound  5432 from your IP for temporary local maintenance
+
+ai-sports-prediction-redis-access
+  inbound  6379 from ai-sports-prediction-app
+```
+
+If an Application Load Balancer is added later, use:
 
 ```text
 ai-sports-prediction-alb
@@ -63,6 +80,7 @@ ai-sports-prediction/redis-url
 ai-sports-prediction/openrouter-api-key
 ai-sports-prediction/football-data-api-key
 ai-sports-prediction/admin-api-token
+ai-sports-prediction/cloudflare-tunnel-token
 ```
 
 For ECS, prefer IAM task roles over static AWS access keys. The ECS task role
@@ -104,19 +122,37 @@ Name: ai-sports-prediction
 Launch type: Fargate
 ```
 
-Create task definitions from the same image:
+Create task definitions from the same image. The current public edge is a
+single ECS task family that runs web, API, and `cloudflared` side by side:
 
 ```text
-web
-  SERVICE_ROLE=web
-  PORT=3000
-  public behind Application Load Balancer
+edge
+  web container
+    SERVICE_ROLE=web
+    PORT=3000
+    INTERNAL_API_URL=http://127.0.0.1:3001
 
-api
-  SERVICE_ROLE=api
-  API_PORT=3001
-  public or private behind Application Load Balancer
+  api container
+    SERVICE_ROLE=api
+    API_PORT=3001
+    DATABASE_URL=<secret>
+    REDIS_URL=<secret>
+    API_CACHE_ENABLED=1
 
+  cloudflared container
+    TUNNEL_TOKEN=<secret>
+    routes Cloudflare public hostnames to localhost:3000 and localhost:3001
+```
+
+Use:
+
+```bash
+npm run aws:deploy-cloudflare-edge
+```
+
+The worker stays as a separate private service:
+
+```text
 worker
   SERVICE_ROLE=worker
   no load balancer
@@ -142,8 +178,9 @@ Web:
 
 ```text
 SERVICE_ROLE=web
-AI_SPORTS_API_URL=https://<api-domain>
-INTERNAL_API_URL=https://<api-domain>
+AI_SPORTS_API_URL=http://127.0.0.1:3001
+INTERNAL_API_URL=http://127.0.0.1:3001
+WEB_API_CACHE_SECONDS=60
 ```
 
 API:
@@ -155,13 +192,20 @@ DATABASE_URL=<secret>
 REDIS_URL=<secret>
 DATABASE_SSL=1
 DATABASE_SSL_REJECT_UNAUTHORIZED=1
-API_CORS_ORIGIN=https://<web-domain>
+DATABASE_SSL_CA_FILE=/etc/ssl/certs/aws-rds-global-bundle.pem
+API_CORS_ORIGIN=https://www.ai-sport-prediction.com
 ADMIN_API_TOKEN=<secret>
 API_CACHE_ENABLED=1
 API_CACHE_MATCHES_TTL_SECONDS=300
 API_CACHE_BENCHMARK_TTL_SECONDS=300
 API_CACHE_SPECIAL_TTL_SECONDS=300
 API_CACHE_HEALTH_TTL_SECONDS=2
+```
+
+Cloudflare tunnel:
+
+```text
+TUNNEL_TOKEN=<secret>
 ```
 
 Worker:
@@ -192,9 +236,9 @@ BACKUP_S3_PREFIX=ai-sports-prediction/backups
 1. Create/update secrets.
 2. Push image to ECR.
 3. Run `SERVICE_ROLE=migrate` one-off task.
-4. Start/update API service.
-5. Start/update worker service.
-6. Start/update web service.
+4. Start/update worker service.
+5. Create the Cloudflare tunnel and store its token in Secrets Manager.
+6. Start/update the Cloudflare edge service.
 7. Run one `SERVICE_ROLE=backup` one-off task and verify the S3 object plus
    `backup_artifacts` row.
 

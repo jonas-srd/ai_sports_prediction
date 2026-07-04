@@ -11,7 +11,7 @@ export function SiteFooter() {
   return (
     <footer className="siteFooter">
       <div className="siteFooterInner">
-        <span>AI Sports Prediction</span>
+        <span>AI Sport Prediction</span>
         <Link href={localizePath("/impressum", locale)}>{text.legalNotice}</Link>
       </div>
     </footer>

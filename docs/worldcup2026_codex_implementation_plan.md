@@ -1,7 +1,7 @@
 # WorldCup 2026 LLM Benchmark: Codex Implementation Plan
 
 Status: implementation companion to `docs/worldcup2026_benchmark_protocol.md`  
-Purpose: guide Codex or other coding agents to integrate the agreed benchmark protocol into the existing AI Sports Prediction web app without unnecessarily rebuilding existing functionality.
+Purpose: guide Codex or other coding agents to integrate the agreed benchmark protocol into the existing AI Sport Prediction web app without unnecessarily rebuilding existing functionality.
 
 ---
 

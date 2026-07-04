@@ -3,8 +3,8 @@ import type { Metadata } from "next";
 import { ObfuscatedEmail } from "@/components/obfuscated-email";
 
 export const metadata: Metadata = {
-  title: "About | AI Sports Prediction",
-  description: "Project overview, methodology, scoring, and limitations of AI Sports Prediction."
+  title: "About | AI Sport Prediction",
+  description: "Project overview, methodology, scoring, and limitations of AI Sport Prediction."
 };
 
 type AboutEntry = {
@@ -29,7 +29,7 @@ type AboutDesignGroup =
 const aboutPoints = [
   {
     label: "What this is",
-    text: "AI Sports Prediction is a live football prediction benchmark for artificial intelligence. During the 2026 FIFA World Cup, leading AI language models predict matches and tournament outcomes, and we compare those forecasts with the official results."
+    text: "AI Sport Prediction is a live football prediction benchmark for artificial intelligence. During the 2026 FIFA World Cup, leading AI language models predict matches and tournament outcomes, and we compare those forecasts with the official results."
   },
   {
     label: "The question",
@@ -189,21 +189,21 @@ export default function AboutPage() {
     <main className="shell aboutShell">
       <section className="hero compactHero heroCentered">
         <p className="eyebrow">About the project</p>
-        <h1>AI Sports Prediction</h1>
+        <h1>AI Sport Prediction</h1>
         <p className="heroText">
           A live, timestamped benchmark for how large language models forecast the FIFA World Cup 2026.
         </p>
       </section>
 
       <nav className="aboutAnchorNav" aria-label="About page sections">
-        <a href="#about">About AI Sports Prediction</a>
+        <a href="#about">About AI Sport Prediction</a>
         <a href="#methodology">Methodology</a>
         <a href="#team">Team</a>
       </nav>
 
       <header className="aboutSectionHeader" id="about">
         <p className="sectionKicker">Section 1</p>
-        <h2>About AI Sports Prediction</h2>
+        <h2>About AI Sport Prediction</h2>
         <p>What the project is, what the dashboard shows, and how to read the ranking.</p>
       </header>
 
@@ -342,7 +342,7 @@ export default function AboutPage() {
       <header className="aboutSectionHeader" id="team">
         <p className="sectionKicker">Section 3</p>
         <h2>Team</h2>
-        <p>The researchers and contributors behind AI Sports Prediction.</p>
+        <p>The researchers and contributors behind AI Sport Prediction.</p>
       </header>
 
       <section className="panel aboutPanel aboutTeamPanel">
@@ -377,7 +377,7 @@ export default function AboutPage() {
 
       <section className="panel aboutPanel aboutResearchPanel">
         <p className="sectionKicker">Research paper</p>
-        <h2>AI Sports Prediction Paper</h2>
+        <h2>AI Sport Prediction Paper</h2>
         <a className="aboutPdfBox" href="/research-paper.pdf" target="_blank" rel="noreferrer">
           <span>PDF</span>
           <strong>Open the paper</strong>

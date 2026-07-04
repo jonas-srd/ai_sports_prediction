@@ -21,7 +21,7 @@ export function SiteNav() {
   return (
     <header className="siteNav">
       <div className="siteNavInner">
-        <Link className="siteNavLogo" href={localizePath("/", locale)}>AI Sports Prediction</Link>
+        <Link className="siteNavLogo" href={localizePath("/", locale)}>AI Sport Prediction</Link>
         <nav className="siteNavLinks">
           {links.map((link) => (
             <Link href={localizePath(link.href, locale)} key={link.href}>

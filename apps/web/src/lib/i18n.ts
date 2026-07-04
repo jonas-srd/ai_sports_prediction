@@ -128,7 +128,7 @@ export const commonText = {
 export const routeText = {
   en: {
     home: {
-      eyebrow: "AI Sports Prediction",
+      eyebrow: "AI Sport Prediction",
       title: "Which model predicts the FIFA World Cup 2026 best?",
       description: "World Cup 2026 forecasts from multiple AI models, ranked with benchmark evaluation metrics.",
       cta: "View all matches"
@@ -146,7 +146,7 @@ export const routeText = {
   },
   de: {
     home: {
-      eyebrow: "AI Sports Prediction",
+      eyebrow: "AI Sport Prediction",
       title: "Welches Modell tippt die FIFA-Weltmeisterschaft 2026 am besten?",
       description: "WM-2026-Prognosen mehrerer KI-Modelle, bewertet mit Benchmark-Metriken.",
       cta: "Alle Spiele ansehen"

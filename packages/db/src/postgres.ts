@@ -2,6 +2,7 @@
  * Purpose: Postgres client, migrations, and production repository helpers.
  */
 import { createHash, randomUUID } from "node:crypto";
+import { readFileSync } from "node:fs";
 import { readdir, readFile } from "node:fs/promises";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -345,14 +346,29 @@ function hashJson(value: unknown): string {
     .digest("hex");
 }
 
-function getPostgresSslConfig(): boolean | { rejectUnauthorized: boolean } | undefined {
+function getPostgresSslConfig(): boolean | { rejectUnauthorized: boolean; ca?: string } | undefined {
   if (process.env.DATABASE_SSL === "0" || process.env.DATABASE_SSL === "false") {
     return undefined;
   }
 
-  if (process.env.DATABASE_SSL_REJECT_UNAUTHORIZED === "0") {
-    return { rejectUnauthorized: false };
+  const rejectUnauthorized = process.env.DATABASE_SSL_REJECT_UNAUTHORIZED !== "0";
+  const ca = process.env.DATABASE_SSL_CA ?? readOptionalFile(process.env.DATABASE_SSL_CA_FILE);
+
+  if (ca) {
+    return { rejectUnauthorized, ca };
+  }
+
+  if (!rejectUnauthorized) {
+    return { rejectUnauthorized };
   }
 
   return true;
+}
+
+function readOptionalFile(path: string | undefined): string | undefined {
+  if (!path) {
+    return undefined;
+  }
+
+  return readFileSync(path, "utf8");
 }

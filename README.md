@@ -1,6 +1,6 @@
-# AI Sports Prediction
+# AI Sport Prediction
 
-AI Sports Prediction compares football forecasts from multiple AI models and stores prediction data as durable research data.
+AI Sport Prediction compares football forecasts from multiple AI models and stores prediction data as durable research data.
 
 ## Architecture
 
@@ -60,7 +60,9 @@ SERVICE_ROLE=migrate
 SERVICE_ROLE=backup
 ```
 
-Use separate services for web, API, worker, migration, and scheduled backup. See `docs/AWS_ECS_FARGATE.md`.
+Use separate services for worker, migration, and scheduled backup. For the
+public web/API edge, the current deployment path is Cloudflare Tunnel on ECS.
+See `docs/CLOUDFLARE_TUNNEL.md` and `docs/AWS_ECS_FARGATE.md`.
 
 ## Backups
 
@@ -84,5 +86,6 @@ See `docs/backup_and_restore.md`.
 - `docs/stable_backend_architecture.md`
 - `docs/backup_and_restore.md`
 - `docs/AWS_ECS_FARGATE.md`
+- `docs/CLOUDFLARE_TUNNEL.md`
 - `docs/RAILWAY.md`
 - `docs/worldcup2026_benchmark_protocol.md`

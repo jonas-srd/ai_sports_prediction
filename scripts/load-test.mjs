@@ -70,6 +70,7 @@ async function worker() {
       latencies.push(performance.now() - requestStartedAt);
       statuses.set(response.status, (statuses.get(response.status) ?? 0) + 1);
       countHeader(responseHeaders, "x-api-cache", response.headers.get("x-api-cache"));
+      countHeader(responseHeaders, "cf-cache-status", response.headers.get("cf-cache-status"));
       completed += 1;
     } catch {
       failed += 1;

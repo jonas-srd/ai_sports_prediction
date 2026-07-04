@@ -1,11 +1,10 @@
 import type { Metadata } from "next";
 import { AnalyticsPageContent } from "@/app/_route-content";
 
-export const dynamic = "force-dynamic";
-export const revalidate = 0;
+export const revalidate = 60;
 
 export const metadata: Metadata = {
-  title: "Analyse | AI Sports Prediction",
+  title: "Analyse | AI Sport Prediction",
   description: "Benchmark-Analyse der Modellprognosen zur FIFA-Weltmeisterschaft 2026."
 };
 

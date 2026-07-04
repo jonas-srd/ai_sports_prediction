@@ -3,8 +3,8 @@ import type { Metadata } from "next";
 import { ObfuscatedEmail } from "@/components/obfuscated-email";
 
 export const metadata: Metadata = {
-  title: "Info | AI Sports Prediction",
-  description: "Projektüberblick, Methodik, Wertung und Grenzen von AI Sports Prediction."
+  title: "Info | AI Sport Prediction",
+  description: "Projektüberblick, Methodik, Wertung und Grenzen von AI Sport Prediction."
 };
 
 type AboutEntry = {
@@ -29,7 +29,7 @@ type AboutDesignGroup =
 const aboutPoints = [
   {
     label: "Worum es geht",
-    text: "AI Sports Prediction ist ein Live-Benchmark und Tippspiel für künstliche Intelligenzen. Während der FIFA-Weltmeisterschaft 2026 sagen führende KI-Sprachmodelle Spiele und Turnierausgänge voraus, und wir vergleichen diese Prognosen mit den offiziellen Ergebnissen."
+    text: "AI Sport Prediction ist ein Live-Benchmark und Tippspiel für künstliche Intelligenzen. Während der FIFA-Weltmeisterschaft 2026 sagen führende KI-Sprachmodelle Spiele und Turnierausgänge voraus, und wir vergleichen diese Prognosen mit den offiziellen Ergebnissen."
   },
   {
     label: "Die Frage",
@@ -189,21 +189,21 @@ export default function GermanAboutPage() {
     <main className="shell aboutShell">
       <section className="hero compactHero heroCentered">
         <p className="eyebrow">Über das Projekt</p>
-        <h1>AI Sports Prediction</h1>
+        <h1>AI Sport Prediction</h1>
         <p className="heroText">
           Ein live laufender, zeitgestempelter Benchmark dafür, wie große Sprachmodelle die FIFA-Weltmeisterschaft 2026 vorhersagen.
         </p>
       </section>
 
       <nav className="aboutAnchorNav" aria-label="Abschnitte der Infoseite">
-        <a href="#about">Über AI Sports Prediction</a>
+        <a href="#about">Über AI Sport Prediction</a>
         <a href="#methodology">Methodik</a>
         <a href="#team">Team</a>
       </nav>
 
       <header className="aboutSectionHeader" id="about">
         <p className="sectionKicker">Abschnitt 1</p>
-        <h2>Über AI Sports Prediction</h2>
+        <h2>Über AI Sport Prediction</h2>
         <p>Was das Projekt ist, was das Dashboard zeigt und wie das Ranking zu lesen ist.</p>
       </header>
 
@@ -342,7 +342,7 @@ export default function GermanAboutPage() {
       <header className="aboutSectionHeader" id="team">
         <p className="sectionKicker">Abschnitt 3</p>
         <h2>Team</h2>
-        <p>Die Forschenden und Beitragenden hinter AI Sports Prediction.</p>
+        <p>Die Forschenden und Beitragenden hinter AI Sport Prediction.</p>
       </header>
 
       <section className="panel aboutPanel aboutTeamPanel">
@@ -377,7 +377,7 @@ export default function GermanAboutPage() {
 
       <section className="panel aboutPanel aboutResearchPanel">
         <p className="sectionKicker">Research Paper</p>
-        <h2>AI Sports Prediction Paper</h2>
+        <h2>AI Sport Prediction Paper</h2>
         <a className="aboutPdfBox" href="/research-paper.pdf" target="_blank" rel="noreferrer">
           <span>PDF</span>
           <strong>Paper öffnen</strong>

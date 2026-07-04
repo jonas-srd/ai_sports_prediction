@@ -13,8 +13,8 @@ import { TimeZoneProvider } from "@/components/time-zone-provider";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "AI Sports Prediction",
-  description: "Compare AI sports predictions, score forecasts, and benchmark results.",
+  title: "AI Sport Prediction",
+  description: "AI Sport Prediction is getting ready for launch.",
   icons: {
     icon: [
       { url: "/favicon.ico", sizes: "32x32" },
@@ -26,6 +26,8 @@ export const metadata: Metadata = {
 };
 
 export default function RootLayout({ children }: Readonly<{ children: ReactNode }>) {
+  const showFullSite = process.env.NEXT_PUBLIC_SHOW_FULL_SITE === "1";
+
   return (
     <html lang="en">
       <body>
@@ -41,9 +43,15 @@ export default function RootLayout({ children }: Readonly<{ children: ReactNode 
         <LocaleProvider>
           <TimeZoneProvider>
             <HtmlLangSync />
-            <SiteNav />
-            {children}
-            <SiteFooter />
+            {showFullSite ? (
+              <>
+                <SiteNav />
+                {children}
+                <SiteFooter />
+              </>
+            ) : (
+              children
+            )}
           </TimeZoneProvider>
         </LocaleProvider>
       </body>
