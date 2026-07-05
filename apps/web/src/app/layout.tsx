@@ -3,8 +3,9 @@
  * The UI is intentionally simple so the 48h effort stays focused on data flow and scoring.
  */
 import type { Metadata } from "next";
-import Script from "next/script";
-import type { ReactNode } from "react";
+import { Suspense, type ReactNode } from "react";
+import { GoogleAnalytics } from "@/components/google-analytics";
+import { GoogleAnalyticsPageViews } from "@/components/google-analytics-page-views";
 import { HtmlLangSync } from "@/components/html-lang-sync";
 import { LocaleProvider } from "@/components/locale-provider";
 import { SiteFooter } from "@/components/site-footer";
@@ -27,19 +28,17 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: Readonly<{ children: ReactNode }>) {
   const showFullSite = process.env.NEXT_PUBLIC_SHOW_FULL_SITE === "1";
+  const googleAnalyticsMeasurementId = process.env.NEXT_PUBLIC_GOOGLE_ANALYTICS_ID ?? "G-YVTSCGG16P";
 
   return (
     <html lang="en">
+      <head>
+        <GoogleAnalytics measurementId={googleAnalyticsMeasurementId} />
+      </head>
       <body>
-        <Script src="https://www.googletagmanager.com/gtag/js?id=G-NHGXB530M0" strategy="afterInteractive" />
-        <Script id="google-analytics" strategy="afterInteractive">
-          {`
-            window.dataLayer = window.dataLayer || [];
-            function gtag(){dataLayer.push(arguments);}
-            gtag('js', new Date());
-            gtag('config', 'G-NHGXB530M0');
-          `}
-        </Script>
+        <Suspense fallback={null}>
+          <GoogleAnalyticsPageViews measurementId={googleAnalyticsMeasurementId} />
+        </Suspense>
         <LocaleProvider>
           <TimeZoneProvider>
             <HtmlLangSync />
