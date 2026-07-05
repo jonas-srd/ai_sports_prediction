@@ -5,7 +5,7 @@ export const revalidate = 60;
 
 export const metadata: Metadata = {
   title: "AI Sport Prediction",
-  description: "Vergleiche Fußball-Prognosen mehrerer LLMs."
+  description: "KI-Prognosen, Match-Signale und Modellanalysen für Fußball, NFL, NBA und Tennis."
 };
 
 export default function GermanHomePage() {

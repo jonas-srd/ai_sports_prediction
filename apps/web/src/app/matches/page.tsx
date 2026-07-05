@@ -1,6 +1,6 @@
 /**
- * Purpose: Match schedule page.
- * Fixtures are shown by day. The knockout bracket lives on the tournament tree page.
+ * Purpose: Multi-sport match center page.
+ * Fixtures, predictions and result checks are shown by day.
  */
 import { MatchesPageContent } from "@/app/_route-content";
 

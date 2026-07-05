@@ -1,7 +1,3 @@
-/**
- * Purpose: Root layout for the MVP dashboard.
- * The UI is intentionally simple so the 48h effort stays focused on data flow and scoring.
- */
 import type { Metadata } from "next";
 import { Suspense, type ReactNode } from "react";
 import { GoogleAnalytics } from "@/components/google-analytics";
@@ -15,7 +11,7 @@ import "./globals.css";
 
 export const metadata: Metadata = {
   title: "AI Sport Prediction",
-  description: "AI Sport Prediction is getting ready for launch.",
+  description: "AI predictions, match signals and model analytics for football, NFL, NBA and tennis.",
   icons: {
     icon: [
       { url: "/favicon.ico", sizes: "32x32" },

@@ -11,6 +11,7 @@
   ],
   "scripts": {
     "dev": "npm run dev --workspace @ai-sports-prediction/web",
+    "dev:frontend": "next dev apps/web --webpack -H 127.0.0.1 -p 3000",
     "dev:api": "node scripts/run-with-env.mjs node --import tsx apps/api/src/server.ts",
     "build": "npm run build --workspaces --if-present",
     "start": "npm run start:web",

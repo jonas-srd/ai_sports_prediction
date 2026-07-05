@@ -62,12 +62,16 @@ export const commonText = {
     timezone: "Timezone",
     displayLanguage: "Display language",
     displayTimezone: "Display timezone",
+    mainNavigation: "Main navigation",
+    sportsNavigation: "Sports navigation",
     home: "Home",
     about: "About",
-    bracket: "World Cup Bracket",
-    matches: "Matches",
-    analytics: "Analytics",
+    bracket: "Tournaments",
+    matches: "Matches & Scores",
+    analytics: "AI Analytics",
     legalNotice: "Legal Notice",
+    football: "Football",
+    tennis: "Tennis",
     scores: "points",
     score: "point",
     pending: "pending",
@@ -95,12 +99,16 @@ export const commonText = {
     timezone: "Zeitzone",
     displayLanguage: "Anzeigesprache",
     displayTimezone: "Anzeigezeitzone",
+    mainNavigation: "Hauptnavigation",
+    sportsNavigation: "Sportarten",
     home: "Start",
     about: "Info",
-    bracket: "WM-Turnierbaum",
-    matches: "Spiele",
-    analytics: "Analyse",
+    bracket: "Turniere",
+    matches: "Spiele & Scores",
+    analytics: "KI-Analyse",
     legalNotice: "Impressum",
+    football: "Fußball",
+    tennis: "Tennis",
     scores: "Punkte",
     score: "Punkt",
     pending: "offen",
@@ -129,37 +137,37 @@ export const routeText = {
   en: {
     home: {
       eyebrow: "AI Sport Prediction",
-      title: "Which model predicts the FIFA World Cup 2026 best?",
-      description: "World Cup 2026 forecasts from multiple AI models, ranked with benchmark evaluation metrics.",
-      cta: "View all matches"
+      title: "AI predictions for football, NFL, NBA and tennis.",
+      description: "A dark, fast sports intelligence hub for model forecasts, live form signals, upset alerts and transparent result checks across the biggest sports.",
+      cta: "Explore sports"
     },
     matches: {
-      eyebrow: "World Cup 2026",
-      title: "Schedule",
-      description: "All fixtures by day. Click any match to inspect model picks."
+      eyebrow: "Match Center",
+      title: "Matches, scores and model picks",
+      description: "Fixtures, model forecasts and result checks in one match center."
     },
     analytics: {
-      eyebrow: "WorldCupForecastBench 2026",
-      title: "Analytics",
-      description: "Compare model performance across horizons, access conditions, prompt strategies, stages, and reliability metrics."
+      eyebrow: "AI Performance",
+      title: "Prediction analytics",
+      description: "Compare model accuracy, confidence, reliability and sports-specific signal quality across prediction runs."
     }
   },
   de: {
     home: {
       eyebrow: "AI Sport Prediction",
-      title: "Welches Modell tippt die FIFA-Weltmeisterschaft 2026 am besten?",
-      description: "WM-2026-Prognosen mehrerer KI-Modelle, bewertet mit Benchmark-Metriken.",
-      cta: "Alle Spiele ansehen"
+      title: "KI-Prognosen für Fußball, NFL, NBA und Tennis.",
+      description: "Ein dunkles, schnelles Sport-Intelligence-Dashboard für Modellprognosen, Formsignale, Upset-Alerts und transparente Ergebnischecks.",
+      cta: "Sportarten entdecken"
     },
     matches: {
-      eyebrow: "WM 2026",
-      title: "Spielplan",
-      description: "Alle Spiele nach Tag. Klicke auf ein Spiel, um Modelltipps zu sehen."
+      eyebrow: "Match Center",
+      title: "Spiele, Scores und Modelltipps",
+      description: "Fixtures, Modellprognosen und Ergebnischecks in einem Match Center."
     },
     analytics: {
-      eyebrow: "WorldCupForecastBench 2026",
-      title: "Analyse",
-      description: "Vergleiche Modellleistung nach Horizont, Zugriff, Prompt-Strategie, Turnierphase und Zuverlässigkeitsmetriken."
+      eyebrow: "KI-Performance",
+      title: "Prediction Analytics",
+      description: "Vergleiche Modellgenauigkeit, Konfidenz, Zuverlässigkeit und sportartspezifische Signalqualität."
     }
   }
 } as const;

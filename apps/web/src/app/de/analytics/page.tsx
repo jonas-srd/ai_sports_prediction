@@ -4,8 +4,8 @@ import { AnalyticsPageContent } from "@/app/_route-content";
 export const revalidate = 60;
 
 export const metadata: Metadata = {
-  title: "Analyse | AI Sport Prediction",
-  description: "Benchmark-Analyse der Modellprognosen zur FIFA-Weltmeisterschaft 2026."
+  title: "KI-Analyse | AI Sport Prediction",
+  description: "Analyse von Modellgenauigkeit, Konfidenz und Zuverlässigkeit für Sportprognosen."
 };
 
 export default function GermanAnalyticsPage() {

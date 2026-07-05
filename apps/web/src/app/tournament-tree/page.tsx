@@ -1,5 +1,5 @@
 /**
- * Purpose: Dedicated World Cup knockout tournament tree page.
+ * Purpose: Dedicated football tournament tree page.
  */
 import { TournamentTreePageContent } from "@/app/_route-content";
 

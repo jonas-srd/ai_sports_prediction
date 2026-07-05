@@ -1,5 +1,5 @@
 /**
- * Purpose: Research/product analytics dashboard for benchmark predictions.
+ * Purpose: Product analytics dashboard for AI sports predictions.
  */
 import { AnalyticsPageContent } from "@/app/_route-content";
 

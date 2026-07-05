@@ -16,6 +16,802 @@
   --soft-shadow: 0 18px 48px rgba(0, 0, 0, 0.3);
 }
 
+/* AI Sport Prediction dark frontend refresh */
+:root {
+  --bg: #05070a;
+  --bg-2: #08100d;
+  --ink: #f4fff8;
+  --muted: #9aadb4;
+  --muted-strong: #c7d7dc;
+  --line: rgba(121, 255, 188, 0.18);
+  --line-strong: rgba(103, 216, 255, 0.34);
+  --panel: rgba(10, 17, 22, 0.88);
+  --panel-strong: #0e171d;
+  --panel-soft: rgba(15, 29, 35, 0.72);
+  --green: #29f28a;
+  --green-2: #82ffc0;
+  --cyan: #58d8ff;
+  --gold: #ffc857;
+  --gold-2: #df9f32;
+  --red: #ff5c72;
+  --cream: #0d1418;
+  --shadow: 0 26px 90px rgba(0, 0, 0, 0.42);
+  --soft-shadow: 0 18px 48px rgba(0, 0, 0, 0.28);
+}
+
+html {
+  background: var(--bg);
+  scroll-behavior: smooth;
+}
+
+body {
+  background:
+    radial-gradient(circle at 16% 0%, rgba(41, 242, 138, 0.16), transparent 30%),
+    radial-gradient(circle at 84% 8%, rgba(88, 216, 255, 0.14), transparent 28%),
+    linear-gradient(145deg, #040609 0%, #07100d 44%, #090d13 100%);
+  color: var(--ink);
+  font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  letter-spacing: 0;
+}
+
+body::before {
+  background:
+    linear-gradient(rgba(124, 255, 190, 0.045) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(124, 255, 190, 0.035) 1px, transparent 1px);
+  background-size: 44px 44px;
+  inset: 0;
+  opacity: 0.35;
+  pointer-events: none;
+  position: fixed;
+  z-index: -2;
+}
+
+body::after {
+  background: linear-gradient(180deg, rgba(5, 7, 10, 0.28), rgba(5, 7, 10, 0.82));
+  content: "";
+  inset: 0;
+  pointer-events: none;
+  position: fixed;
+  z-index: -1;
+}
+
+a {
+  color: inherit;
+}
+
+.siteNav {
+  background: rgba(5, 7, 10, 0.92);
+  border-bottom: 1px solid var(--line);
+  box-shadow: 0 18px 48px rgba(0, 0, 0, 0.32);
+  color: var(--ink);
+  position: sticky;
+  top: 0;
+  z-index: 40;
+}
+
+.siteNavTop {
+  border-bottom: 1px solid rgba(121, 255, 188, 0.12);
+}
+
+.siteNavInner {
+  align-items: center;
+  display: grid;
+  gap: 18px;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  margin: 0 auto;
+  max-width: 1480px;
+  min-height: 72px;
+  padding: 0 24px;
+}
+
+.siteNavLogo {
+  align-items: center;
+  color: var(--ink);
+  display: inline-flex;
+  font-size: 1.02rem;
+  font-weight: 850;
+  gap: 10px;
+  letter-spacing: 0;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.siteNavLogoMark {
+  align-items: center;
+  background:
+    linear-gradient(135deg, rgba(41, 242, 138, 0.22), rgba(88, 216, 255, 0.18)),
+    #07120f;
+  border: 1px solid rgba(130, 255, 192, 0.42);
+  border-radius: 8px;
+  box-shadow: 0 0 34px rgba(41, 242, 138, 0.18);
+  color: var(--green-2);
+  display: inline-flex;
+  font-size: 0.78rem;
+  height: 34px;
+  justify-content: center;
+  width: 38px;
+}
+
+.siteNavLinks {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: center;
+}
+
+.siteNavLinks a,
+.sportNavLink {
+  border: 1px solid transparent;
+  border-radius: 8px;
+  color: var(--muted-strong);
+  font-size: 0.9rem;
+  font-weight: 750;
+  padding: 9px 12px;
+  text-decoration: none;
+  transition: background 180ms ease, border-color 180ms ease, color 180ms ease, transform 180ms ease;
+}
+
+.siteNavLinks a:hover,
+.siteNavLinks a:focus-visible,
+.sportNavLink:hover,
+.sportNavLink:focus-visible {
+  background: rgba(88, 216, 255, 0.1);
+  border-color: rgba(88, 216, 255, 0.28);
+  color: var(--ink);
+  transform: translateY(-1px);
+}
+
+.siteNavControls {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: flex-end;
+}
+
+.siteNavControl {
+  align-items: center;
+  background: rgba(11, 20, 26, 0.86);
+  border: 1px solid rgba(121, 255, 188, 0.18);
+  border-radius: 8px;
+  color: var(--muted);
+  display: flex;
+  gap: 8px;
+  padding: 8px 10px;
+}
+
+.siteNavControl span {
+  color: var(--muted);
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.siteNavControl select {
+  background: transparent;
+  border: 0;
+  color: var(--ink);
+  font: inherit;
+  font-size: 0.82rem;
+  font-weight: 760;
+  outline: 0;
+}
+
+.siteNavControl select option {
+  background: #081016;
+  color: var(--ink);
+}
+
+.sportNavBar {
+  background:
+    linear-gradient(90deg, rgba(41, 242, 138, 0.12), transparent 24%),
+    rgba(7, 12, 16, 0.84);
+}
+
+.sportNavInner {
+  display: flex;
+  gap: 8px;
+  margin: 0 auto;
+  max-width: 1480px;
+  overflow-x: auto;
+  padding: 10px 24px;
+}
+
+.sportNavLink {
+  background: rgba(255, 255, 255, 0.035);
+  flex: 0 0 auto;
+  min-width: 84px;
+  text-align: center;
+}
+
+.shell,
+.analyticsShell,
+.scheduleShell,
+.aboutShell {
+  margin: 0 auto;
+  max-width: 1480px;
+  padding: 48px 24px 72px;
+  width: min(100%, 1480px);
+}
+
+.homeHero {
+  align-items: stretch;
+  display: grid;
+  gap: 24px;
+  grid-template-columns: minmax(0, 1.04fr) minmax(360px, 0.86fr);
+  margin-bottom: 22px;
+}
+
+.homeHeroCopy,
+.predictionBoard,
+.quickSportsNav,
+.sportsHubSection,
+.signalSection,
+.dashboardIntro,
+.hero,
+.panel,
+.leaderCard,
+.rulesCard,
+.aboutIntroPanel,
+.matchCard,
+.scheduleDay,
+.scheduleMatchCard,
+.analyticsCard,
+.analyticsMetric,
+.predictionView,
+.leaderboardPanel,
+.knockoutSection,
+.groupOverviewCard,
+.tournamentTreeHero,
+.comingSoonHero {
+  background:
+    linear-gradient(145deg, rgba(18, 31, 38, 0.92), rgba(7, 13, 18, 0.9)),
+    var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  box-shadow: var(--soft-shadow);
+  color: var(--ink);
+}
+
+.homeHeroCopy {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  min-height: 530px;
+  overflow: hidden;
+  padding: clamp(28px, 5vw, 72px);
+  position: relative;
+}
+
+.homeHeroCopy::before {
+  background:
+    linear-gradient(90deg, transparent 0 45%, rgba(41, 242, 138, 0.15) 45% 46%, transparent 46% 100%),
+    linear-gradient(rgba(88, 216, 255, 0.12), rgba(88, 216, 255, 0.03));
+  border: 1px solid rgba(88, 216, 255, 0.18);
+  border-radius: 8px;
+  bottom: 28px;
+  content: "";
+  height: 116px;
+  opacity: 0.62;
+  position: absolute;
+  right: 32px;
+  transform: perspective(260px) rotateX(54deg) rotateZ(-4deg);
+  width: 290px;
+}
+
+.eyebrow,
+.sectionKicker,
+.forecastLeague {
+  color: var(--green-2);
+  font-size: 0.74rem;
+  font-weight: 850;
+  letter-spacing: 0.12em;
+  margin: 0 0 12px;
+  text-transform: uppercase;
+}
+
+.homeHero h1,
+.hero h1 {
+  color: var(--ink);
+  font-size: clamp(2.65rem, 6.2vw, 6.3rem);
+  font-weight: 900;
+  letter-spacing: 0;
+  line-height: 0.95;
+  margin: 0;
+  max-width: 940px;
+}
+
+.hero h1 {
+  font-size: clamp(2.3rem, 4.8vw, 4.8rem);
+}
+
+.heroText,
+.homeHeroCopy .heroText,
+.sectionHeaderRow p,
+.dashboardIntro p {
+  color: var(--muted-strong);
+  font-size: clamp(1.02rem, 1.7vw, 1.28rem);
+  line-height: 1.7;
+  margin: 20px 0 0;
+  max-width: 760px;
+}
+
+.heroActions {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 30px;
+}
+
+.primaryLink,
+.secondaryLink {
+  align-items: center;
+  border-radius: 8px;
+  display: inline-flex;
+  font-weight: 850;
+  justify-content: center;
+  min-height: 46px;
+  padding: 12px 18px;
+  text-decoration: none;
+}
+
+.primaryLink {
+  background: linear-gradient(135deg, var(--green), var(--cyan));
+  color: #03100b;
+  box-shadow: 0 18px 46px rgba(41, 242, 138, 0.22);
+}
+
+.secondaryLink {
+  background: rgba(255, 255, 255, 0.045);
+  border: 1px solid rgba(88, 216, 255, 0.28);
+  color: var(--ink);
+}
+
+.primaryLink:hover,
+.primaryLink:focus-visible,
+.secondaryLink:hover,
+.secondaryLink:focus-visible {
+  transform: translateY(-1px);
+}
+
+.predictionBoard {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  min-height: 530px;
+  padding: 24px;
+}
+
+.boardTopLine,
+.boardHeader,
+.sportCardTop {
+  align-items: center;
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.liveBadge,
+.sportStatus,
+.boardModelCount {
+  background: rgba(41, 242, 138, 0.11);
+  border: 1px solid rgba(41, 242, 138, 0.25);
+  border-radius: 999px;
+  color: var(--green-2);
+  font-size: 0.74rem;
+  font-weight: 850;
+  padding: 7px 10px;
+}
+
+.boardPulse {
+  background: var(--green);
+  border-radius: 999px;
+  box-shadow: 0 0 0 8px rgba(41, 242, 138, 0.12);
+  height: 9px;
+  width: 9px;
+}
+
+.boardHeader h2,
+.sportsHubSection h2,
+.signalSection h2,
+.dashboardIntro h2,
+.panelHeader h2,
+.aboutSectionHeader h2 {
+  color: var(--ink);
+  font-size: clamp(1.65rem, 2.4vw, 2.8rem);
+  letter-spacing: 0;
+  margin: 0;
+}
+
+.boardHeader p {
+  color: var(--muted);
+  margin: 7px 0 0;
+}
+
+.forecastList {
+  display: grid;
+  gap: 12px;
+}
+
+.forecastRow {
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(88, 216, 255, 0.14);
+  border-radius: 8px;
+  display: grid;
+  gap: 10px;
+  grid-template-columns: minmax(0, 1fr) auto;
+  padding: 16px;
+}
+
+.forecastRow h3 {
+  color: var(--ink);
+  font-size: 1.04rem;
+  margin: 0;
+}
+
+.forecastPick {
+  align-items: flex-end;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.forecastPick span {
+  color: var(--gold);
+  font-size: 1.2rem;
+  font-weight: 900;
+}
+
+.forecastPick small {
+  color: var(--muted);
+  font-weight: 800;
+}
+
+.forecastMeter {
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 999px;
+  grid-column: 1 / -1;
+  height: 7px;
+  overflow: hidden;
+}
+
+.forecastMeter span {
+  background: linear-gradient(90deg, var(--green), var(--cyan));
+  border-radius: inherit;
+  display: block;
+  height: 100%;
+}
+
+.quickSportsNav {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin: 0 0 34px;
+  padding: 14px;
+}
+
+.quickSportsNav span {
+  color: var(--muted);
+  font-size: 0.75rem;
+  font-weight: 850;
+  letter-spacing: 0.1em;
+  margin-right: 4px;
+  text-transform: uppercase;
+}
+
+.quickSportsNav a {
+  background: rgba(255, 255, 255, 0.045);
+  border: 1px solid rgba(88, 216, 255, 0.18);
+  border-radius: 8px;
+  color: var(--ink);
+  font-weight: 850;
+  padding: 10px 14px;
+  text-decoration: none;
+}
+
+.sportsHubSection,
+.signalSection,
+.dashboardIntro {
+  margin-top: 24px;
+  padding: clamp(20px, 3.5vw, 34px);
+}
+
+.sectionHeaderRow {
+  align-items: end;
+  display: grid;
+  gap: 18px;
+  grid-template-columns: minmax(0, 0.9fr) minmax(280px, 0.7fr);
+  margin-bottom: 22px;
+}
+
+.sectionHeaderRow p {
+  font-size: 1rem;
+  margin: 0;
+}
+
+.sportCardsGrid,
+.signalGrid {
+  display: grid;
+  gap: 14px;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.sportCard,
+.signalCard {
+  background:
+    linear-gradient(180deg, rgba(88, 216, 255, 0.06), transparent 48%),
+    rgba(255, 255, 255, 0.035);
+  border: 1px solid rgba(121, 255, 188, 0.15);
+  border-radius: 8px;
+  min-height: 100%;
+  padding: 18px;
+}
+
+.sportTag {
+  color: var(--cyan);
+  font-size: 0.82rem;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.sportStatus {
+  background: rgba(255, 200, 87, 0.11);
+  border-color: rgba(255, 200, 87, 0.24);
+  color: var(--gold);
+}
+
+.sportCard h3,
+.signalCard h3 {
+  color: var(--ink);
+  font-size: 1.16rem;
+  line-height: 1.25;
+  margin: 18px 0 10px;
+}
+
+.sportCard p,
+.signalCard p,
+.sportFeatureList,
+.sportMarkets {
+  color: var(--muted-strong);
+  line-height: 1.55;
+}
+
+.sportFeatureList {
+  display: grid;
+  gap: 8px;
+  list-style: none;
+  margin: 18px 0;
+  padding: 0;
+}
+
+.sportFeatureList li {
+  border-left: 2px solid var(--green);
+  padding-left: 10px;
+}
+
+.sportMarkets {
+  border-top: 1px solid rgba(121, 255, 188, 0.14);
+  color: var(--gold);
+  font-size: 0.88rem;
+  font-weight: 800;
+  margin: 18px 0 0;
+  padding-top: 14px;
+}
+
+.signalCard span {
+  background: linear-gradient(135deg, var(--green), var(--cyan));
+  border-radius: 999px;
+  display: block;
+  height: 10px;
+  width: 48px;
+}
+
+.dashboardIntro {
+  margin-bottom: 18px;
+}
+
+.hero,
+.compactHero {
+  padding: clamp(24px, 4vw, 46px);
+}
+
+.heroCentered {
+  text-align: left;
+}
+
+.panel,
+.leaderCard,
+.rulesCard {
+  border-color: var(--line);
+}
+
+.panelHeader,
+.leaderboardPanelHeader,
+.matchPredictionHeader,
+.scheduleDayHeader {
+  border-color: rgba(121, 255, 188, 0.16);
+}
+
+.panelDescription,
+.leaderCard p,
+.rankRow p,
+.modelMeta,
+.matchCard p,
+.scheduleDayHeader p,
+.scheduleMatchCard p,
+.analyticsMetric p,
+.metricCard p,
+.aboutGrid p,
+.aboutIntroPanel p,
+.pipelineStep p,
+.designGroup p,
+.limitationCard p {
+  color: var(--muted-strong);
+}
+
+.rankRow,
+.leaderboardButton,
+.modelInspector,
+.predictionCard,
+.modelBreakdownCard,
+.metricCard,
+.pipelineStep,
+.designGroup,
+.limitationCard,
+.aboutGrid article {
+  background: rgba(255, 255, 255, 0.035);
+  border-color: rgba(121, 255, 188, 0.14);
+  border-radius: 8px;
+  color: var(--ink);
+}
+
+.leaderboardButton:hover,
+.leaderboardButton.isSelected,
+.matchCard:hover,
+.matchCard:focus-visible {
+  background: rgba(88, 216, 255, 0.09);
+  border-color: rgba(88, 216, 255, 0.34);
+}
+
+.rank,
+.points,
+.finalScoreBadge,
+.fixtureCenter,
+.probabilityBadge,
+.scorePill {
+  color: var(--gold);
+}
+
+.countryFlag,
+.flagPlaceholder {
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.18);
+}
+
+.siteFooter {
+  background: #05070a;
+  border-top: 1px solid var(--line);
+  color: var(--muted);
+}
+
+.siteFooterInner {
+  margin: 0 auto;
+  max-width: 1480px;
+  padding: 24px;
+}
+
+.siteFooter a {
+  color: var(--ink);
+}
+
+.comingSoonShell {
+  background:
+    radial-gradient(circle at 50% 10%, rgba(41, 242, 138, 0.2), transparent 34%),
+    linear-gradient(145deg, #040609, #0a1117);
+  color: var(--ink);
+}
+
+.comingSoonHero {
+  border-color: rgba(121, 255, 188, 0.26);
+  max-width: 720px;
+}
+
+@media (max-width: 1120px) {
+  .siteNavInner {
+    grid-template-columns: 1fr;
+    justify-items: start;
+    padding-bottom: 14px;
+    padding-top: 14px;
+  }
+
+  .siteNavLinks,
+  .siteNavControls {
+    justify-content: flex-start;
+  }
+
+  .homeHero,
+  .sectionHeaderRow {
+    grid-template-columns: 1fr;
+  }
+
+  .sportCardsGrid,
+  .signalGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 720px) {
+  .shell,
+  .analyticsShell,
+  .scheduleShell,
+  .aboutShell {
+    padding: 26px 14px 56px;
+  }
+
+  .siteNavInner,
+  .sportNavInner {
+    padding-left: 14px;
+    padding-right: 14px;
+  }
+
+  .siteNavLogo {
+    font-size: 0.95rem;
+  }
+
+  .siteNavLinks a,
+  .sportNavLink,
+  .quickSportsNav a {
+    font-size: 0.82rem;
+    padding: 8px 10px;
+  }
+
+  .homeHero {
+    gap: 14px;
+  }
+
+  .homeHeroCopy,
+  .predictionBoard {
+    min-height: auto;
+    padding: 22px;
+  }
+
+  .homeHeroCopy::before {
+    display: none;
+  }
+
+  .homeHero h1,
+  .hero h1 {
+    font-size: clamp(2.25rem, 14vw, 3.35rem);
+  }
+
+  .heroActions {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .primaryLink,
+  .secondaryLink {
+    width: 100%;
+  }
+
+  .sportCardsGrid,
+  .signalGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .forecastRow {
+    grid-template-columns: 1fr;
+  }
+
+  .forecastPick {
+    align-items: flex-start;
+  }
+}
+
 * {
   box-sizing: border-box;
 }
@@ -4345,4 +5141,769 @@ h2 {
     grid-template-columns: 1fr;
   }
 
+}
+
+/* Final dark UI overrides for the AI Sport Prediction frontend */
+:root {
+  --bg: #05070a;
+  --bg-2: #08100d;
+  --ink: #f4fff8;
+  --muted: #9aadb4;
+  --muted-strong: #c7d7dc;
+  --line: rgba(121, 255, 188, 0.18);
+  --line-strong: rgba(103, 216, 255, 0.34);
+  --panel: rgba(10, 17, 22, 0.88);
+  --panel-strong: #0e171d;
+  --panel-soft: rgba(15, 29, 35, 0.72);
+  --green: #29f28a;
+  --green-2: #82ffc0;
+  --cyan: #58d8ff;
+  --gold: #ffc857;
+  --gold-2: #df9f32;
+  --red: #ff5c72;
+  --cream: #0d1418;
+  --shadow: 0 26px 90px rgba(0, 0, 0, 0.42);
+  --soft-shadow: 0 18px 48px rgba(0, 0, 0, 0.28);
+}
+
+html {
+  background: var(--bg);
+  scroll-behavior: smooth;
+}
+
+body {
+  background:
+    radial-gradient(circle at 16% 0%, rgba(41, 242, 138, 0.16), transparent 30%),
+    radial-gradient(circle at 84% 8%, rgba(88, 216, 255, 0.14), transparent 28%),
+    linear-gradient(145deg, #040609 0%, #07100d 44%, #090d13 100%);
+  color: var(--ink);
+  font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  letter-spacing: 0;
+}
+
+.siteNav {
+  background: rgba(5, 7, 10, 0.94);
+  border-bottom: 1px solid var(--line);
+  box-shadow: 0 18px 48px rgba(0, 0, 0, 0.32);
+  color: var(--ink);
+  position: sticky;
+  top: 0;
+  z-index: 40;
+}
+
+.siteNavTop {
+  border-bottom: 1px solid rgba(121, 255, 188, 0.12);
+}
+
+.siteNavInner {
+  align-items: center;
+  display: grid;
+  gap: 18px;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  margin: 0 auto;
+  max-width: 1480px;
+  min-height: 72px;
+  padding: 0 24px;
+}
+
+.siteNavLogo {
+  align-items: center;
+  color: var(--ink);
+  display: inline-flex;
+  font-size: 1.02rem;
+  font-weight: 850;
+  gap: 10px;
+  letter-spacing: 0;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.siteNavLogoMark {
+  align-items: center;
+  background:
+    linear-gradient(135deg, rgba(41, 242, 138, 0.22), rgba(88, 216, 255, 0.18)),
+    #07120f;
+  border: 1px solid rgba(130, 255, 192, 0.42);
+  border-radius: 8px;
+  box-shadow: 0 0 34px rgba(41, 242, 138, 0.18);
+  color: var(--green-2);
+  display: inline-flex;
+  font-size: 0.78rem;
+  height: 34px;
+  justify-content: center;
+  width: 38px;
+}
+
+.siteNavLinks {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: center;
+}
+
+.siteNavLinks a,
+.sportNavLink {
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  color: var(--muted-strong);
+  font-size: 0.9rem;
+  font-weight: 750;
+  padding: 9px 12px;
+  text-decoration: none;
+  transition: background 180ms ease, border-color 180ms ease, color 180ms ease, transform 180ms ease;
+}
+
+.siteNavLinks a:hover,
+.siteNavLinks a:focus-visible,
+.sportNavLink:hover,
+.sportNavLink:focus-visible {
+  background: rgba(88, 216, 255, 0.1);
+  border-color: rgba(88, 216, 255, 0.28);
+  color: var(--ink);
+  transform: translateY(-1px);
+}
+
+.siteNavControls {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: flex-end;
+}
+
+.siteNavControl {
+  align-items: center;
+  background: rgba(11, 20, 26, 0.86);
+  border: 1px solid rgba(121, 255, 188, 0.18);
+  border-radius: 8px;
+  color: var(--muted);
+  display: flex;
+  gap: 8px;
+  padding: 8px 10px;
+}
+
+.siteNavControl span {
+  color: var(--muted);
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.siteNavControl select {
+  background: transparent;
+  border: 0;
+  color: var(--ink);
+  font: inherit;
+  font-size: 0.82rem;
+  font-weight: 760;
+  outline: 0;
+}
+
+.siteNavControl select option {
+  background: #081016;
+  color: var(--ink);
+}
+
+.sportNavBar {
+  background:
+    linear-gradient(90deg, rgba(41, 242, 138, 0.12), transparent 24%),
+    rgba(7, 12, 16, 0.84);
+}
+
+.sportNavInner {
+  display: flex;
+  gap: 8px;
+  margin: 0 auto;
+  max-width: 1480px;
+  overflow-x: auto;
+  padding: 10px 24px;
+}
+
+.sportNavLink {
+  background: rgba(255, 255, 255, 0.035);
+  flex: 0 0 auto;
+  min-width: 84px;
+  text-align: center;
+}
+
+.shell,
+.analyticsShell,
+.scheduleShell,
+.aboutShell {
+  margin: 0 auto;
+  max-width: 1480px;
+  padding: 48px 24px 72px;
+  width: min(100%, 1480px);
+}
+
+.homeHero {
+  align-items: stretch;
+  display: grid;
+  gap: 24px;
+  grid-template-columns: minmax(0, 1.04fr) minmax(360px, 0.86fr);
+  margin-bottom: 22px;
+}
+
+.homeHeroCopy,
+.predictionBoard,
+.quickSportsNav,
+.sportsHubSection,
+.signalSection,
+.dashboardIntro,
+.hero,
+.panel,
+.leaderCard,
+.rulesCard,
+.aboutIntroPanel,
+.matchCard,
+.scheduleDay,
+.scheduleMatchCard,
+.analyticsCard,
+.analyticsMetric,
+.predictionView,
+.leaderboardPanel,
+.knockoutSection,
+.groupOverviewCard,
+.tournamentTreeHero,
+.comingSoonHero {
+  background:
+    linear-gradient(145deg, rgba(18, 31, 38, 0.92), rgba(7, 13, 18, 0.9)),
+    var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  box-shadow: var(--soft-shadow);
+  color: var(--ink);
+}
+
+.homeHeroCopy {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  min-height: 530px;
+  overflow: hidden;
+  padding: clamp(28px, 5vw, 72px);
+  position: relative;
+}
+
+.homeHeroCopy::before {
+  background:
+    linear-gradient(90deg, transparent 0 45%, rgba(41, 242, 138, 0.15) 45% 46%, transparent 46% 100%),
+    linear-gradient(rgba(88, 216, 255, 0.12), rgba(88, 216, 255, 0.03));
+  border: 1px solid rgba(88, 216, 255, 0.18);
+  border-radius: 8px;
+  bottom: 28px;
+  content: "";
+  height: 116px;
+  opacity: 0.62;
+  position: absolute;
+  right: 32px;
+  transform: perspective(260px) rotateX(54deg) rotateZ(-4deg);
+  width: 290px;
+}
+
+.eyebrow,
+.sectionKicker,
+.forecastLeague {
+  color: var(--green-2);
+  font-size: 0.74rem;
+  font-weight: 850;
+  letter-spacing: 0.12em;
+  margin: 0 0 12px;
+  text-transform: uppercase;
+}
+
+.homeHero h1,
+.hero h1 {
+  color: var(--ink);
+  font-size: clamp(2.65rem, 6.2vw, 6.3rem);
+  font-weight: 900;
+  letter-spacing: 0;
+  line-height: 0.95;
+  margin: 0;
+  max-width: 940px;
+}
+
+.hero h1 {
+  font-size: clamp(2.3rem, 4.8vw, 4.8rem);
+}
+
+.heroText,
+.homeHeroCopy .heroText,
+.sectionHeaderRow p,
+.dashboardIntro p {
+  color: var(--muted-strong);
+  font-size: clamp(1.02rem, 1.7vw, 1.28rem);
+  line-height: 1.7;
+  margin: 20px 0 0;
+  max-width: 760px;
+}
+
+.heroActions {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 30px;
+}
+
+.primaryLink,
+.secondaryLink {
+  align-items: center;
+  border-radius: 8px;
+  display: inline-flex;
+  font-weight: 850;
+  justify-content: center;
+  min-height: 46px;
+  padding: 12px 18px;
+  text-decoration: none;
+}
+
+.primaryLink {
+  background: linear-gradient(135deg, var(--green), var(--cyan));
+  color: #03100b;
+  box-shadow: 0 18px 46px rgba(41, 242, 138, 0.22);
+}
+
+.secondaryLink {
+  background: rgba(255, 255, 255, 0.045);
+  border: 1px solid rgba(88, 216, 255, 0.28);
+  color: var(--ink);
+}
+
+.predictionBoard {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  min-height: 530px;
+  padding: 24px;
+}
+
+.boardTopLine,
+.boardHeader,
+.sportCardTop {
+  align-items: center;
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.liveBadge,
+.sportStatus,
+.boardModelCount {
+  background: rgba(41, 242, 138, 0.11);
+  border: 1px solid rgba(41, 242, 138, 0.25);
+  border-radius: 999px;
+  color: var(--green-2);
+  font-size: 0.74rem;
+  font-weight: 850;
+  padding: 7px 10px;
+}
+
+.boardPulse {
+  background: var(--green);
+  border-radius: 999px;
+  box-shadow: 0 0 0 8px rgba(41, 242, 138, 0.12);
+  height: 9px;
+  width: 9px;
+}
+
+.boardHeader h2,
+.sportsHubSection h2,
+.signalSection h2,
+.dashboardIntro h2,
+.panelHeader h2,
+.aboutSectionHeader h2 {
+  color: var(--ink);
+  font-size: clamp(1.65rem, 2.4vw, 2.8rem);
+  letter-spacing: 0;
+  margin: 0;
+}
+
+.boardHeader p {
+  color: var(--muted);
+  margin: 7px 0 0;
+}
+
+.forecastList {
+  display: grid;
+  gap: 12px;
+}
+
+.forecastRow {
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(88, 216, 255, 0.14);
+  border-radius: 8px;
+  display: grid;
+  gap: 10px;
+  grid-template-columns: minmax(0, 1fr) auto;
+  padding: 16px;
+}
+
+.forecastRow h3,
+.sportCard h3,
+.signalCard h3 {
+  color: var(--ink);
+  margin: 0;
+}
+
+.forecastPick {
+  align-items: flex-end;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.forecastPick span {
+  color: var(--gold);
+  font-size: 1.2rem;
+  font-weight: 900;
+}
+
+.forecastPick small {
+  color: var(--muted);
+  font-weight: 800;
+}
+
+.forecastMeter {
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 999px;
+  grid-column: 1 / -1;
+  height: 7px;
+  overflow: hidden;
+}
+
+.forecastMeter span {
+  background: linear-gradient(90deg, var(--green), var(--cyan));
+  border-radius: inherit;
+  display: block;
+  height: 100%;
+}
+
+.quickSportsNav {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin: 0 0 34px;
+  padding: 14px;
+}
+
+.quickSportsNav span {
+  color: var(--muted);
+  font-size: 0.75rem;
+  font-weight: 850;
+  letter-spacing: 0.1em;
+  margin-right: 4px;
+  text-transform: uppercase;
+}
+
+.quickSportsNav a {
+  background: rgba(255, 255, 255, 0.045);
+  border: 1px solid rgba(88, 216, 255, 0.18);
+  border-radius: 8px;
+  color: var(--ink);
+  font-weight: 850;
+  padding: 10px 14px;
+  text-decoration: none;
+}
+
+.sportsHubSection,
+.signalSection,
+.dashboardIntro {
+  margin-top: 24px;
+  padding: clamp(20px, 3.5vw, 34px);
+}
+
+.sectionHeaderRow {
+  align-items: end;
+  display: grid;
+  gap: 18px;
+  grid-template-columns: minmax(0, 0.9fr) minmax(280px, 0.7fr);
+  margin-bottom: 22px;
+}
+
+.sectionHeaderRow p {
+  font-size: 1rem;
+  margin: 0;
+}
+
+.sportCardsGrid,
+.signalGrid {
+  display: grid;
+  gap: 14px;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.sportCard,
+.signalCard {
+  background:
+    linear-gradient(180deg, rgba(88, 216, 255, 0.06), transparent 48%),
+    rgba(255, 255, 255, 0.035);
+  border: 1px solid rgba(121, 255, 188, 0.15);
+  border-radius: 8px;
+  min-height: 100%;
+  padding: 18px;
+}
+
+.sportTag {
+  color: var(--cyan);
+  font-size: 0.82rem;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.sportStatus {
+  background: rgba(255, 200, 87, 0.11);
+  border-color: rgba(255, 200, 87, 0.24);
+  color: var(--gold);
+}
+
+.sportCard h3,
+.signalCard h3 {
+  font-size: 1.16rem;
+  line-height: 1.25;
+  margin: 18px 0 10px;
+}
+
+.sportCard p,
+.signalCard p,
+.sportFeatureList,
+.sportMarkets {
+  color: var(--muted-strong);
+  line-height: 1.55;
+}
+
+.sportFeatureList {
+  display: grid;
+  gap: 8px;
+  list-style: none;
+  margin: 18px 0;
+  padding: 0;
+}
+
+.sportFeatureList li {
+  border-left: 2px solid var(--green);
+  padding-left: 10px;
+}
+
+.sportMarkets {
+  border-top: 1px solid rgba(121, 255, 188, 0.14);
+  color: var(--gold);
+  font-size: 0.88rem;
+  font-weight: 800;
+  margin: 18px 0 0;
+  padding-top: 14px;
+}
+
+.signalCard span {
+  background: linear-gradient(135deg, var(--green), var(--cyan));
+  border-radius: 999px;
+  display: block;
+  height: 10px;
+  width: 48px;
+}
+
+.dashboardIntro {
+  margin-bottom: 18px;
+}
+
+.hero,
+.compactHero {
+  padding: clamp(24px, 4vw, 46px);
+}
+
+.heroCentered {
+  text-align: left;
+}
+
+.panel,
+.leaderCard,
+.rulesCard {
+  border-color: var(--line);
+}
+
+.panelHeader,
+.leaderboardPanelHeader,
+.matchPredictionHeader,
+.scheduleDayHeader {
+  border-color: rgba(121, 255, 188, 0.16);
+}
+
+.panelDescription,
+.leaderCard p,
+.rankRow p,
+.modelMeta,
+.matchCard p,
+.scheduleDayHeader p,
+.scheduleMatchCard p,
+.analyticsMetric p,
+.metricCard p,
+.aboutGrid p,
+.aboutIntroPanel p,
+.pipelineStep p,
+.designGroup p,
+.limitationCard p {
+  color: var(--muted-strong);
+}
+
+.rankRow,
+.leaderboardButton,
+.modelInspector,
+.predictionCard,
+.modelBreakdownCard,
+.metricCard,
+.pipelineStep,
+.designGroup,
+.limitationCard,
+.aboutGrid article {
+  background: rgba(255, 255, 255, 0.035);
+  border-color: rgba(121, 255, 188, 0.14);
+  border-radius: 8px;
+  color: var(--ink);
+}
+
+.leaderboardButton:hover,
+.leaderboardButton.isSelected,
+.matchCard:hover,
+.matchCard:focus-visible {
+  background: rgba(88, 216, 255, 0.09);
+  border-color: rgba(88, 216, 255, 0.34);
+}
+
+.rank,
+.points,
+.finalScoreBadge,
+.fixtureCenter,
+.probabilityBadge,
+.scorePill {
+  color: var(--gold);
+}
+
+.countryFlag,
+.flagPlaceholder {
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.18);
+}
+
+.siteFooter {
+  background: #05070a;
+  border-top: 1px solid var(--line);
+  color: var(--muted);
+}
+
+.siteFooterInner {
+  margin: 0 auto;
+  max-width: 1480px;
+  padding: 24px;
+}
+
+.siteFooter a {
+  color: var(--ink);
+}
+
+.comingSoonShell {
+  background:
+    radial-gradient(circle at 50% 10%, rgba(41, 242, 138, 0.2), transparent 34%),
+    linear-gradient(145deg, #040609, #0a1117);
+  color: var(--ink);
+}
+
+.comingSoonHero {
+  border-color: rgba(121, 255, 188, 0.26);
+  max-width: 720px;
+}
+
+@media (max-width: 1120px) {
+  .siteNavInner {
+    grid-template-columns: 1fr;
+    justify-items: start;
+    padding-bottom: 14px;
+    padding-top: 14px;
+  }
+
+  .siteNavLinks,
+  .siteNavControls {
+    justify-content: flex-start;
+  }
+
+  .homeHero,
+  .sectionHeaderRow {
+    grid-template-columns: 1fr;
+  }
+
+  .sportCardsGrid,
+  .signalGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 720px) {
+  .shell,
+  .analyticsShell,
+  .scheduleShell,
+  .aboutShell {
+    padding: 26px 14px 56px;
+  }
+
+  .siteNavInner,
+  .sportNavInner {
+    padding-left: 14px;
+    padding-right: 14px;
+  }
+
+  .siteNavLogo {
+    font-size: 0.95rem;
+  }
+
+  .siteNavLinks a,
+  .sportNavLink,
+  .quickSportsNav a {
+    font-size: 0.82rem;
+    padding: 8px 10px;
+  }
+
+  .homeHero {
+    gap: 14px;
+  }
+
+  .homeHeroCopy,
+  .predictionBoard {
+    min-height: auto;
+    padding: 22px;
+  }
+
+  .homeHeroCopy::before {
+    display: none;
+  }
+
+  .homeHero h1,
+  .hero h1 {
+    font-size: clamp(2.25rem, 14vw, 3.35rem);
+  }
+
+  .heroActions {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .primaryLink,
+  .secondaryLink {
+    width: 100%;
+  }
+
+  .sportCardsGrid,
+  .signalGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .forecastRow {
+    grid-template-columns: 1fr;
+  }
+
+  .forecastPick {
+    align-items: flex-start;
+  }
 }

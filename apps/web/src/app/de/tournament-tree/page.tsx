@@ -4,8 +4,8 @@ import { TournamentTreePageContent } from "@/app/_route-content";
 export const revalidate = 60;
 
 export const metadata: Metadata = {
-  title: "WM-Turnierbaum | AI Sport Prediction",
-  description: "Gruppen und K.-o.-Baum der FIFA-Weltmeisterschaft 2026."
+  title: "Turniere | AI Sport Prediction",
+  description: "Fußball-Turnierpfade, Gruppen und K.-o.-Baum für AI Sport Prediction."
 };
 
 export default function GermanTournamentTreePage() {

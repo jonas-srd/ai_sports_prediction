@@ -1,7 +1,7 @@
 "use client";
 
 /**
- * Purpose: Dedicated World Cup knockout tournament tree page.
+ * Purpose: Dedicated football tournament tree page.
  */
 import type { DashboardMatch } from "@/lib/dashboard-types";
 import { formatTeamName, getTeamFlag } from "@/lib/country-flags";
@@ -35,7 +35,7 @@ type GroupOverview = {
 
 const TOURNAMENT_TEXT = {
   en: {
-    groupsLabel: "World Cup groups",
+    groupsLabel: "Football tournament groups",
     groupStage: "Group stage",
     groups: "Groups",
     groupDescription: "The group layout feeds the fixed knockout path below.",
@@ -48,8 +48,8 @@ const TOURNAMENT_TEXT = {
     goalsFor: "GF",
     points: "Pts",
     bracketLabel: "Interactive knockout bracket",
-    worldCup: "World Cup 2026",
-    treeTitle: "Tournament Tree",
+    worldCup: "Football tournament module",
+    treeTitle: "Tournament predictions",
     final: "Final",
     thirdPlace: "Third place",
     knockout: "Knockout",
@@ -63,7 +63,7 @@ const TOURNAMENT_TEXT = {
     semiFinal: "Semi-final"
   },
   de: {
-    groupsLabel: "WM-Gruppen",
+    groupsLabel: "Fußball-Turniergruppen",
     groupStage: "Gruppenphase",
     groups: "Gruppen",
     groupDescription: "Die Gruppeneinteilung bestimmt den festen K.-o.-Pfad darunter.",
@@ -76,8 +76,8 @@ const TOURNAMENT_TEXT = {
     goalsFor: "T",
     points: "Pkt.",
     bracketLabel: "Interaktiver K.-o.-Baum",
-    worldCup: "WM 2026",
-    treeTitle: "Turnierbaum",
+    worldCup: "Fußball-Turniermodul",
+    treeTitle: "Turnierprognosen",
     final: "Finale",
     thirdPlace: "Spiel um Platz 3",
     knockout: "K.-o.-Phase",

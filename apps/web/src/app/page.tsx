@@ -1,5 +1,5 @@
 /**
- * Purpose: Main ranking dashboard.
+ * Purpose: Main AI Sport Prediction frontend.
  * Reads production data through the dedicated API and falls back to sample data locally.
  */
 import { HomePageContent } from "@/app/_route-content";

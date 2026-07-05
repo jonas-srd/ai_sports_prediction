@@ -4,8 +4,8 @@ import { MatchesPageContent } from "@/app/_route-content";
 export const revalidate = 60;
 
 export const metadata: Metadata = {
-  title: "Spiele | AI Sport Prediction",
-  description: "Spielplan und Modelltipps zur FIFA-Weltmeisterschaft 2026."
+  title: "Spiele & Scores | AI Sport Prediction",
+  description: "Match Center mit Spielplan, Scores und Modelltipps für AI Sport Prediction."
 };
 
 export default function GermanMatchesPage() {
