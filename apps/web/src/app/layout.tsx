@@ -8,6 +8,7 @@ import { SiteFooter } from "@/components/site-footer";
 import { SiteNav } from "@/components/site-nav";
 import { TimeZoneProvider } from "@/components/time-zone-provider";
 import "./globals.css";
+import "./sportschau-nav.css";
 
 export const metadata: Metadata = {
   title: "AI Sport Prediction",

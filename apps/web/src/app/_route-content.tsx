@@ -11,7 +11,7 @@ const homeExperience = {
   en: {
     liveBadge: "Live model hub",
     primaryCta: "Explore sports",
-    secondaryCta: "View AI analytics",
+    secondaryCta: "Background & method",
     boardTitle: "Prediction board",
     boardSubtitle: "Model consensus across active sports",
     sportNavLabel: "Jump to sport",
@@ -76,7 +76,7 @@ const homeExperience = {
   de: {
     liveBadge: "Live Model Hub",
     primaryCta: "Sportarten entdecken",
-    secondaryCta: "KI-Analyse ansehen",
+    secondaryCta: "Hintergrund & Methodik",
     boardTitle: "Prediction Board",
     boardSubtitle: "Modell-Konsens über aktive Sportarten",
     sportNavLabel: "Zur Sportart springen",
@@ -155,7 +155,7 @@ export async function HomePageContent({ locale }: { locale: Locale }) {
           <p className="heroText">{text.description}</p>
           <div className="heroActions">
             <Link className="primaryLink" href="#sports">{content.primaryCta}</Link>
-            <Link className="secondaryLink" href={localizePath("/analytics", locale)}>{content.secondaryCta}</Link>
+            <Link className="secondaryLink" href={localizePath("/about", locale)}>{content.secondaryCta}</Link>
           </div>
         </div>
 
@@ -226,7 +226,7 @@ export async function HomePageContent({ locale }: { locale: Locale }) {
         </div>
       </section>
 
-      <section className="signalSection">
+      <section className="signalSection" id="signals">
         <div className="sectionHeaderRow">
           <div>
             <p className="sectionKicker">AI Layer</p>
@@ -245,7 +245,7 @@ export async function HomePageContent({ locale }: { locale: Locale }) {
         </div>
       </section>
 
-      <section className="dashboardIntro">
+      <section className="dashboardIntro" id="live-results">
         <p className="sectionKicker">{content.dashboardEyebrow}</p>
         <h2>{content.dashboardTitle}</h2>
         <p>{content.dashboardText}</p>

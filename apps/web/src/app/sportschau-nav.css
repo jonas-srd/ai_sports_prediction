@@ -1,0 +1,240 @@
+.siteNav {
+  background: #06080c;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+  box-shadow: 0 14px 34px rgba(0, 0, 0, 0.36);
+}
+
+.siteNavTop {
+  background: #070a0f;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.siteNavInner {
+  display: grid;
+  grid-template-columns: auto auto minmax(220px, 1fr) auto;
+  min-height: 64px;
+}
+
+.siteNavMenuLink,
+.siteNavSearch {
+  align-items: center;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  color: var(--ink);
+  display: inline-flex;
+  font-size: 0.9rem;
+  font-weight: 850;
+  gap: 8px;
+  min-height: 42px;
+  padding: 0 12px;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.siteNavMenuLink:hover,
+.siteNavMenuLink:focus-visible,
+.siteNavSearch:hover,
+.siteNavSearch:focus-visible {
+  background: rgba(255, 255, 255, 0.06);
+  border-color: rgba(255, 255, 255, 0.14);
+}
+
+.siteNavSearch {
+  background: rgba(255, 255, 255, 0.055);
+  border-color: rgba(255, 255, 255, 0.11);
+  color: var(--muted-strong);
+  justify-self: stretch;
+  max-width: 480px;
+}
+
+.siteNavSearch span:last-child {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.sportschauTopicBar {
+  background: #111823;
+  border-bottom: 1px solid rgba(88, 216, 255, 0.14);
+}
+
+.sportschauTopicInner {
+  align-items: center;
+  display: flex;
+  gap: 2px;
+  margin: 0 auto;
+  max-width: 1480px;
+  overflow-x: auto;
+  padding: 0 24px;
+}
+
+.topicNavLink {
+  border-bottom: 3px solid transparent;
+  color: #f8fafc;
+  flex: 0 0 auto;
+  font-size: 0.94rem;
+  font-weight: 850;
+  min-height: 46px;
+  padding: 14px 16px 11px;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.topicNavLink:hover,
+.topicNavLink:focus-visible {
+  background: rgba(255, 255, 255, 0.055);
+  border-bottom-color: var(--gold);
+}
+
+.sportNavBar {
+  background: #dce8f6;
+  border-bottom: 1px solid rgba(9, 28, 49, 0.16);
+}
+
+.sportNavInner {
+  align-items: center;
+  gap: 0;
+  min-height: 44px;
+  padding-bottom: 0;
+  padding-top: 0;
+}
+
+.sportNavLabel {
+  color: #0d2239;
+  flex: 0 0 auto;
+  font-size: 0.75rem;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  padding-right: 12px;
+  text-transform: uppercase;
+}
+
+.sportNavLink,
+.sportsMoreMenu summary {
+  align-items: center;
+  background: transparent;
+  border: 0;
+  border-left: 1px solid rgba(9, 28, 49, 0.12);
+  border-radius: 0;
+  color: #0b1f36;
+  cursor: pointer;
+  display: inline-flex;
+  flex: 0 0 auto;
+  font-size: 0.9rem;
+  font-weight: 850;
+  justify-content: center;
+  min-height: 44px;
+  min-width: 0;
+  padding: 0 16px;
+  text-align: center;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.sportNavLink:hover,
+.sportNavLink:focus-visible,
+.sportsMoreMenu summary:hover,
+.sportsMoreMenu summary:focus-visible {
+  background: rgba(9, 28, 49, 0.1);
+  color: #031426;
+  transform: none;
+}
+
+.sportsMoreMenu {
+  flex: 0 0 auto;
+  position: relative;
+}
+
+.sportsMoreMenu summary {
+  list-style: none;
+}
+
+.sportsMoreMenu summary::-webkit-details-marker {
+  display: none;
+}
+
+.sportsMoreMenu summary::after {
+  content: "▾";
+  font-size: 0.78rem;
+  margin-left: 8px;
+}
+
+.sportsMorePanel {
+  background: #f8fbff;
+  border: 1px solid rgba(9, 28, 49, 0.14);
+  border-radius: 8px;
+  box-shadow: 0 18px 38px rgba(3, 13, 24, 0.2);
+  display: grid;
+  min-width: 190px;
+  padding: 8px;
+  position: absolute;
+  right: 0;
+  top: calc(100% + 8px);
+  z-index: 50;
+}
+
+.sportsMorePanel a {
+  border-radius: 6px;
+  color: #0b1f36;
+  font-weight: 850;
+  padding: 10px 12px;
+  text-decoration: none;
+}
+
+.sportsMorePanel a:hover,
+.sportsMorePanel a:focus-visible {
+  background: rgba(9, 28, 49, 0.08);
+}
+
+@media (max-width: 1120px) {
+  .siteNavInner {
+    grid-template-columns: auto 1fr auto;
+  }
+
+  .siteNavSearch {
+    grid-column: 1 / -1;
+    max-width: none;
+    width: 100%;
+  }
+}
+
+@media (max-width: 720px) {
+  .siteNavInner {
+    grid-template-columns: 1fr auto;
+    gap: 10px;
+  }
+
+  .siteNavMenuLink {
+    order: 2;
+  }
+
+  .siteNavLogo {
+    order: 1;
+  }
+
+  .siteNavSearch {
+    order: 3;
+  }
+
+  .siteNavControls {
+    justify-content: flex-start;
+    order: 4;
+  }
+
+  .sportschauTopicInner,
+  .sportNavInner {
+    padding-left: 14px;
+    padding-right: 14px;
+  }
+
+  .topicNavLink,
+  .sportNavLink,
+  .sportsMoreMenu summary {
+    font-size: 0.82rem;
+    padding-left: 12px;
+    padding-right: 12px;
+  }
+
+  .sportNavLabel {
+    display: none;
+  }
+}
