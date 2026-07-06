@@ -11,8 +11,18 @@ import "./globals.css";
 import "./sportschau-nav.css";
 
 export const metadata: Metadata = {
+  metadataBase: new URL("https://www.ai-sport-prediction.com"),
   title: "AI Sport Prediction",
   description: "AI predictions, match signals and model analytics for football, NFL, NBA and tennis.",
+  openGraph: {
+    title: "AI Sport Prediction",
+    description: "AI predictions, match signals and model analytics for football, NFL, NBA and tennis.",
+    images: [{ url: "/site-icon.png", width: 1254, height: 1254, alt: "AI Sport Prediction" }]
+  },
+  twitter: {
+    card: "summary",
+    images: ["/site-icon.png"]
+  },
   icons: {
     icon: [
       { url: "/favicon.ico", sizes: "32x32" },

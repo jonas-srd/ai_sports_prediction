@@ -1,240 +1,371 @@
 .siteNav {
-  background: #06080c;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.12);
-  box-shadow: 0 14px 34px rgba(0, 0, 0, 0.36);
+  background: #121c27;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 18px 44px rgba(0, 0, 0, 0.34);
+  color: #f7fbff;
+  position: sticky;
+  top: 0;
+  z-index: 40;
 }
 
 .siteNavTop {
-  background: #070a0f;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  background: #162331;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.07);
 }
 
 .siteNavInner {
+  align-items: center;
   display: grid;
-  grid-template-columns: auto auto minmax(220px, 1fr) auto;
-  min-height: 64px;
+  gap: 20px;
+  grid-template-columns: auto minmax(180px, 1fr) auto auto;
+  margin: 0 auto;
+  max-width: 1280px;
+  min-height: 88px;
+  padding: 0 28px;
+  position: relative;
 }
 
-.siteNavMenuLink,
-.siteNavSearch {
+.siteNavLogo {
   align-items: center;
-  border: 1px solid transparent;
-  border-radius: 8px;
-  color: var(--ink);
+  color: #f7fbff;
   display: inline-flex;
-  font-size: 0.9rem;
-  font-weight: 850;
-  gap: 8px;
-  min-height: 42px;
-  padding: 0 12px;
+  font-size: clamp(1.05rem, 1.8vw, 1.65rem);
+  font-weight: 950;
+  gap: 12px;
+  letter-spacing: 0;
+  text-decoration: none;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.siteNavLogoMark {
+  align-items: center;
+  background:
+    radial-gradient(circle at 36% 18%, rgba(63, 213, 255, 0.95), transparent 32%),
+    linear-gradient(145deg, rgba(44, 241, 139, 0.24), rgba(78, 185, 255, 0.28)),
+    #0b1621;
+  border: 1px solid rgba(104, 222, 255, 0.22);
+  border-radius: 8px;
+  box-shadow: 0 12px 26px rgba(0, 0, 0, 0.28);
+  color: #7df5c1;
+  display: inline-flex;
+  font-size: 0.75rem;
+  height: 46px;
+  justify-content: center;
+  width: 50px;
+}
+
+.siteNavLogoMark img {
+  border-radius: inherit;
+  display: block;
+  height: 100%;
+  object-fit: cover;
+  width: 100%;
+}
+
+.siteNavHighlight {
+  align-items: center;
+  color: rgba(247, 251, 255, 0.88);
+  display: inline-flex;
+  font-size: 1rem;
+  font-weight: 780;
+  gap: 12px;
+  justify-self: center;
   text-decoration: none;
   white-space: nowrap;
 }
 
+.siteNavHighlight:hover,
+.siteNavHighlight:focus-visible {
+  color: #ffffff;
+}
+
+.siteNavPlay {
+  align-items: center;
+  border: 2px solid rgba(247, 251, 255, 0.8);
+  border-radius: 999px;
+  display: inline-flex;
+  font-size: 0.72rem;
+  height: 32px;
+  justify-content: center;
+  padding-left: 2px;
+  width: 32px;
+}
+
+.siteMenu {
+  justify-self: end;
+  position: relative;
+  z-index: 60;
+}
+
+.siteMenu summary {
+  list-style: none;
+}
+
+.siteMenu summary::-webkit-details-marker {
+  display: none;
+}
+
+.siteNavMenuLink {
+  align-items: center;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  color: #f7fbff;
+  cursor: pointer;
+  display: inline-flex;
+  font-size: 0;
+  font-weight: 900;
+  gap: 0;
+  justify-content: center;
+  min-height: 52px;
+  min-width: 58px;
+  padding: 0;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.siteNavMenuLink span:first-child {
+  font-size: 2.25rem;
+  line-height: 1;
+}
+
+.siteNavMenuLink span:last-child {
+  clip: rect(0 0 0 0);
+  height: 1px;
+  overflow: hidden;
+  position: absolute;
+  white-space: nowrap;
+  width: 1px;
+}
+
 .siteNavMenuLink:hover,
 .siteNavMenuLink:focus-visible,
-.siteNavSearch:hover,
-.siteNavSearch:focus-visible {
-  background: rgba(255, 255, 255, 0.06);
-  border-color: rgba(255, 255, 255, 0.14);
+.siteMenu[open] .siteNavMenuLink {
+  background: rgba(255, 255, 255, 0.07);
+  border-color: rgba(255, 255, 255, 0.12);
 }
 
-.siteNavSearch {
-  background: rgba(255, 255, 255, 0.055);
-  border-color: rgba(255, 255, 255, 0.11);
-  color: var(--muted-strong);
-  justify-self: stretch;
-  max-width: 480px;
+.siteMenuPanel {
+  background: #f8fbff;
+  border: 1px solid rgba(9, 28, 49, 0.14);
+  border-radius: 8px;
+  box-shadow: 0 24px 54px rgba(0, 0, 0, 0.36);
+  display: grid;
+  gap: 18px;
+  grid-template-columns: 1fr 1fr;
+  max-width: calc(100vw - 32px);
+  min-width: min(640px, calc(100vw - 32px));
+  padding: 22px;
+  position: absolute;
+  right: 0;
+  top: calc(100% + 10px);
 }
 
-.siteNavSearch span:last-child {
-  overflow: hidden;
-  text-overflow: ellipsis;
+.siteMenuPanel::before {
+  background: #f8fbff;
+  border-left: 1px solid rgba(9, 28, 49, 0.14);
+  border-top: 1px solid rgba(9, 28, 49, 0.14);
+  content: "";
+  height: 14px;
+  position: absolute;
+  right: 22px;
+  top: -8px;
+  transform: rotate(45deg);
+  width: 14px;
+}
+
+.siteMenuColumn {
+  display: grid;
+  gap: 6px;
+}
+
+.siteMenuColumn p {
+  color: #50677f;
+  font-size: 0.72rem;
+  font-weight: 900;
+  letter-spacing: 0.12em;
+  margin: 0 0 7px;
+  text-transform: uppercase;
+}
+
+.siteMenuColumn a {
+  border-radius: 8px;
+  color: #0b1f36;
+  font-size: 1rem;
+  font-weight: 900;
+  padding: 11px 12px;
+  text-decoration: none;
+}
+
+.siteMenuColumn a:hover,
+.siteMenuColumn a:focus-visible {
+  background: rgba(9, 28, 49, 0.08);
+}
+
+.siteNavControls {
+  align-items: center;
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+}
+
+.siteNavControl {
+  align-items: center;
+  background: rgba(8, 14, 21, 0.42);
+  border: 1px solid rgba(255, 255, 255, 0.11);
+  border-radius: 8px;
+  color: rgba(247, 251, 255, 0.72);
+  display: flex;
+  gap: 8px;
+  padding: 8px 10px;
+}
+
+.siteNavControl span {
+  color: rgba(247, 251, 255, 0.62);
+  font-size: 0.66rem;
+  font-weight: 850;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.siteNavControl select {
+  background: transparent;
+  border: 0;
+  color: #f7fbff;
+  font: inherit;
+  font-size: 0.8rem;
+  font-weight: 780;
+  outline: 0;
+}
+
+.siteNavControl select option {
+  background: #081016;
+  color: #f7fbff;
 }
 
 .sportschauTopicBar {
-  background: #111823;
-  border-bottom: 1px solid rgba(88, 216, 255, 0.14);
+  background: #182535;
+  border-bottom: 1px solid rgba(88, 216, 255, 0.1);
 }
 
 .sportschauTopicInner {
   align-items: center;
   display: flex;
-  gap: 2px;
+  gap: 8px;
   margin: 0 auto;
-  max-width: 1480px;
+  max-width: 1280px;
+  min-height: 48px;
   overflow-x: auto;
-  padding: 0 24px;
+  padding: 0 28px;
 }
 
 .topicNavLink {
+  align-items: center;
   border-bottom: 3px solid transparent;
-  color: #f8fafc;
+  border-radius: 0;
+  color: rgba(247, 251, 255, 0.82);
+  display: inline-flex;
   flex: 0 0 auto;
-  font-size: 0.94rem;
-  font-weight: 850;
-  min-height: 46px;
-  padding: 14px 16px 11px;
+  font-size: 0.92rem;
+  font-weight: 820;
+  justify-content: center;
+  min-height: 48px;
+  padding: 0 9px;
   text-decoration: none;
+  transition: color 160ms ease, background 160ms ease, border-color 160ms ease;
   white-space: nowrap;
 }
 
 .topicNavLink:hover,
-.topicNavLink:focus-visible {
-  background: rgba(255, 255, 255, 0.055);
-  border-bottom-color: var(--gold);
+.topicNavLink:focus-visible,
+.topicNavLink.isActive {
+  border-bottom-color: #7df5c1;
+  color: #ffffff;
 }
 
-.sportNavBar {
-  background: #dce8f6;
-  border-bottom: 1px solid rgba(9, 28, 49, 0.16);
-}
-
-.sportNavInner {
-  align-items: center;
-  gap: 0;
-  min-height: 44px;
-  padding-bottom: 0;
-  padding-top: 0;
-}
-
-.sportNavLabel {
-  color: #0d2239;
-  flex: 0 0 auto;
-  font-size: 0.75rem;
+.topicNavSportLink {
+  background: rgba(255, 255, 255, 0.14);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-bottom-color: transparent;
+  border-radius: 999px;
+  color: #f8fbff;
   font-weight: 900;
-  letter-spacing: 0.08em;
-  padding-right: 12px;
-  text-transform: uppercase;
+  min-height: 30px;
+  padding: 0 14px;
 }
 
-.sportNavLink,
-.sportsMoreMenu summary {
-  align-items: center;
-  background: transparent;
-  border: 0;
-  border-left: 1px solid rgba(9, 28, 49, 0.12);
-  border-radius: 0;
-  color: #0b1f36;
-  cursor: pointer;
-  display: inline-flex;
-  flex: 0 0 auto;
-  font-size: 0.9rem;
-  font-weight: 850;
-  justify-content: center;
-  min-height: 44px;
-  min-width: 0;
-  padding: 0 16px;
-  text-align: center;
-  text-decoration: none;
-  white-space: nowrap;
-}
-
-.sportNavLink:hover,
-.sportNavLink:focus-visible,
-.sportsMoreMenu summary:hover,
-.sportsMoreMenu summary:focus-visible {
-  background: rgba(9, 28, 49, 0.1);
-  color: #031426;
-  transform: none;
-}
-
-.sportsMoreMenu {
-  flex: 0 0 auto;
-  position: relative;
-}
-
-.sportsMoreMenu summary {
-  list-style: none;
-}
-
-.sportsMoreMenu summary::-webkit-details-marker {
-  display: none;
-}
-
-.sportsMoreMenu summary::after {
-  content: "▾";
-  font-size: 0.78rem;
-  margin-left: 8px;
-}
-
-.sportsMorePanel {
-  background: #f8fbff;
-  border: 1px solid rgba(9, 28, 49, 0.14);
-  border-radius: 8px;
-  box-shadow: 0 18px 38px rgba(3, 13, 24, 0.2);
-  display: grid;
-  min-width: 190px;
-  padding: 8px;
-  position: absolute;
-  right: 0;
-  top: calc(100% + 8px);
-  z-index: 50;
-}
-
-.sportsMorePanel a {
-  border-radius: 6px;
-  color: #0b1f36;
-  font-weight: 850;
-  padding: 10px 12px;
-  text-decoration: none;
-}
-
-.sportsMorePanel a:hover,
-.sportsMorePanel a:focus-visible {
-  background: rgba(9, 28, 49, 0.08);
+.topicNavSportLink:hover,
+.topicNavSportLink:focus-visible,
+.topicNavSportLink.isActive {
+  background: linear-gradient(135deg, rgba(125, 245, 193, 0.28), rgba(88, 216, 255, 0.24));
+  border-color: rgba(125, 245, 193, 0.42);
+  color: #ffffff;
 }
 
 @media (max-width: 1120px) {
   .siteNavInner {
-    grid-template-columns: auto 1fr auto;
+    grid-template-columns: auto minmax(120px, 1fr) auto;
   }
 
-  .siteNavSearch {
-    grid-column: 1 / -1;
-    max-width: none;
-    width: 100%;
+  .siteNavControls {
+    display: none;
+  }
+
+  .siteMenuPanel {
+    grid-template-columns: 1fr;
   }
 }
 
 @media (max-width: 720px) {
   .siteNavInner {
+    gap: 12px;
     grid-template-columns: 1fr auto;
-    gap: 10px;
+    min-height: 74px;
+    padding-left: 16px;
+    padding-right: 16px;
   }
 
-  .siteNavMenuLink {
-    order: 2;
+  .siteNavHighlight {
+    display: none;
   }
 
   .siteNavLogo {
-    order: 1;
+    font-size: 1rem;
   }
 
-  .siteNavSearch {
-    order: 3;
+  .siteNavLogoMark {
+    height: 38px;
+    width: 42px;
   }
 
-  .siteNavControls {
-    justify-content: flex-start;
-    order: 4;
+  .siteNavMenuLink {
+    min-height: 46px;
+    min-width: 50px;
   }
 
-  .sportschauTopicInner,
-  .sportNavInner {
+  .siteNavMenuLink span:first-child {
+    font-size: 1.85rem;
+  }
+
+  .sportschauTopicInner {
     padding-left: 14px;
     padding-right: 14px;
   }
 
-  .topicNavLink,
-  .sportNavLink,
-  .sportsMoreMenu summary {
+  .topicNavLink {
     font-size: 0.82rem;
+    padding-left: 8px;
+    padding-right: 8px;
+  }
+
+  .topicNavSportLink {
+    min-height: 28px;
     padding-left: 12px;
     padding-right: 12px;
   }
 
-  .sportNavLabel {
-    display: none;
+  .siteMenuPanel {
+    min-width: min(340px, calc(100vw - 28px));
   }
 }

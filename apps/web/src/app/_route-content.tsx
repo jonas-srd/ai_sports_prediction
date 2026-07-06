@@ -15,6 +15,7 @@ const homeExperience = {
     boardTitle: "Prediction board",
     boardSubtitle: "Model consensus across active sports",
     sportNavLabel: "Jump to sport",
+    sportPageCta: "Open sport page",
     sportsTitle: "Sports built for prediction",
     sportsText: "Each sport gets its own model signals, market context and result validation.",
     dashboardEyebrow: "Live preview",
@@ -80,6 +81,7 @@ const homeExperience = {
     boardTitle: "Prediction Board",
     boardSubtitle: "Modell-Konsens über aktive Sportarten",
     sportNavLabel: "Zur Sportart springen",
+    sportPageCta: "Sportseite öffnen",
     sportsTitle: "Sportarten für Prognosen",
     sportsText: "Jede Sportart bekommt eigene Modell-Signale, Kontextdaten und Ergebnisvalidierung.",
     dashboardEyebrow: "Live Preview",
@@ -140,6 +142,204 @@ const homeExperience = {
   }
 } as const;
 
+export type SportPageId = "football" | "nfl" | "nba" | "tennis";
+
+const sportPageContent: Record<Locale, Record<SportPageId, {
+  label: string;
+  eyebrow: string;
+  title: string;
+  description: string;
+  status: string;
+  sampleMatch: string;
+  samplePick: string;
+  confidence: string;
+  modelNote: string;
+  focusCards: Array<{ title: string; text: string }>;
+  signalRows: Array<{ label: string; value: string }>;
+  roadmap: string[];
+}>> = {
+  en: {
+    football: {
+      label: "Football",
+      eyebrow: "Football prediction hub",
+      title: "Football forecasts for leagues, cups and tournament paths.",
+      description: "A dedicated football view for 90-minute outcomes, exact-score ideas, form trends, xG context and knockout simulations.",
+      status: "Core module",
+      sampleMatch: "Germany vs Brazil",
+      samplePick: "2-1",
+      confidence: "64%",
+      modelNote: "Combines recent form, xG trend, home/neutral context and tournament pressure into one readable pick.",
+      focusCards: [
+        { title: "Match outcome", text: "Winner, draw probability and upset risk for regular fixtures." },
+        { title: "Exact score", text: "Scoreline ranges with confidence bands instead of one blind guess." },
+        { title: "Tournament paths", text: "Group tables, qualification chances and knockout bracket scenarios." }
+      ],
+      signalRows: [
+        { label: "Main signal", value: "xG and form curve" },
+        { label: "Market", value: "Result, exact score, qualification" },
+        { label: "Update rhythm", value: "Daily fixtures and lineup window" }
+      ],
+      roadmap: ["League forecast cards", "International tournament mode", "Lineup and injury weighting"]
+    },
+    nfl: {
+      label: "NFL",
+      eyebrow: "NFL prediction hub",
+      title: "NFL forecasts for weekly lines, margins and playoff paths.",
+      description: "A separate NFL page for win probability, spread sensitivity, team strength, injury context and postseason scenarios.",
+      status: "Build next",
+      sampleMatch: "Chiefs vs Bills",
+      samplePick: "27-24",
+      confidence: "58%",
+      modelNote: "Weights offensive efficiency, defensive pressure, quarterback availability, rest and game script.",
+      focusCards: [
+        { title: "Win probability", text: "Pregame likelihood with confidence and volatility flags." },
+        { title: "Spread sensitivity", text: "Margin ranges that show when a game is close to the line." },
+        { title: "Playoff simulator", text: "Conference paths, seeding pressure and Super Bowl routes." }
+      ],
+      signalRows: [
+        { label: "Main signal", value: "EPA, injuries and schedule" },
+        { label: "Market", value: "Winner, spread, totals, playoff path" },
+        { label: "Update rhythm", value: "Weekly slate and injury report window" }
+      ],
+      roadmap: ["Team strength index", "Injury report ingestion", "Playoff path model"]
+    },
+    nba: {
+      label: "NBA",
+      eyebrow: "NBA prediction hub",
+      title: "NBA forecasts for nightly matchups and playoff series.",
+      description: "A basketball view for pace, rest, travel, player availability, rotations and series-level probability.",
+      status: "Build next",
+      sampleMatch: "Celtics vs Knicks",
+      samplePick: "113-108",
+      confidence: "61%",
+      modelNote: "Reads pace, efficiency, lineup availability, back-to-back fatigue and travel context.",
+      focusCards: [
+        { title: "Nightly matchup", text: "Winner and score range for high-frequency regular season games." },
+        { title: "Player availability", text: "Rotations and absences shown as visible model inputs." },
+        { title: "Series view", text: "Playoff series odds with momentum and home-court context." }
+      ],
+      signalRows: [
+        { label: "Main signal", value: "Pace, efficiency and rest" },
+        { label: "Market", value: "Winner, margin, totals, series" },
+        { label: "Update rhythm", value: "Daily slate and injury updates" }
+      ],
+      roadmap: ["Daily game board", "Lineup impact layer", "Playoff series simulator"]
+    },
+    tennis: {
+      label: "Tennis",
+      eyebrow: "Tennis prediction hub",
+      title: "Tennis forecasts for surfaces, draws and set scores.",
+      description: "A tennis-specific page for match winner probability, set-score ranges, surface strength and draw context.",
+      status: "Build next",
+      sampleMatch: "Sinner vs Alcaraz",
+      samplePick: "3-1",
+      confidence: "55%",
+      modelNote: "Separates surface form, serve/return splits, best-of format and draw fatigue from generic match form.",
+      focusCards: [
+        { title: "Surface model", text: "Clay, grass and hard-court form treated as different contexts." },
+        { title: "Serve and return", text: "Service games, break pressure and return quality split out clearly." },
+        { title: "Draw path", text: "Tournament route pressure and rest days between rounds." }
+      ],
+      signalRows: [
+        { label: "Main signal", value: "Surface and serve/return split" },
+        { label: "Market", value: "Winner, set score, draw path" },
+        { label: "Update rhythm", value: "Tournament rounds and draw updates" }
+      ],
+      roadmap: ["Surface-adjusted ratings", "Draw simulation", "Set-score probability view"]
+    }
+  },
+  de: {
+    football: {
+      label: "Fußball",
+      eyebrow: "Fußball Prediction Hub",
+      title: "Fußball-Prognosen für Ligen, Pokale und Turnierpfade.",
+      description: "Eine eigene Fußball-Ansicht für 90-Minuten-Ausgänge, Exact-Score-Ideen, Formtrends, xG-Kontext und K.-o.-Simulationen.",
+      status: "Kernmodul",
+      sampleMatch: "Deutschland vs Brasilien",
+      samplePick: "2:1",
+      confidence: "64%",
+      modelNote: "Kombiniert aktuelle Form, xG-Trend, Heim-/Neutral-Kontext und Turnierdruck zu einem lesbaren Tipp.",
+      focusCards: [
+        { title: "Spielausgang", text: "Sieg, Remis-Wahrscheinlichkeit und Upset-Risiko für normale Fixtures." },
+        { title: "Exaktes Ergebnis", text: "Scoreline-Spannen mit Konfidenz statt einem einzelnen Blind-Tipp." },
+        { title: "Turnierpfade", text: "Gruppentabellen, Qualifikationschancen und K.-o.-Szenarien." }
+      ],
+      signalRows: [
+        { label: "Hauptsignal", value: "xG und Formkurve" },
+        { label: "Markt", value: "Ergebnis, Exact Score, Qualifikation" },
+        { label: "Update-Rhythmus", value: "Tägliche Spiele und Lineup-Fenster" }
+      ],
+      roadmap: ["Liga-Forecast-Karten", "Internationaler Turniermodus", "Lineup- und Verletzungsgewichtung"]
+    },
+    nfl: {
+      label: "NFL",
+      eyebrow: "NFL Prediction Hub",
+      title: "NFL-Prognosen für Weekly Lines, Margins und Playoff-Pfade.",
+      description: "Eine eigene NFL-Seite für Siegchancen, Spread-Sensitivität, Teamstärke, Injury-Kontext und Postseason-Szenarien.",
+      status: "Nächstes Modul",
+      sampleMatch: "Chiefs vs Bills",
+      samplePick: "27:24",
+      confidence: "58%",
+      modelNote: "Gewichtet Offensive Efficiency, Defensive Pressure, Quarterback-Verfügbarkeit, Rest Days und Game Script.",
+      focusCards: [
+        { title: "Siegwahrscheinlichkeit", text: "Pregame-Likelihood mit Konfidenz und Volatilitätsflag." },
+        { title: "Spread-Sensitivität", text: "Margin-Spannen, die zeigen, wann ein Spiel nah an der Line liegt." },
+        { title: "Playoff-Simulator", text: "Conference-Pfade, Seeding-Druck und Super-Bowl-Routen." }
+      ],
+      signalRows: [
+        { label: "Hauptsignal", value: "EPA, Verletzungen und Schedule" },
+        { label: "Markt", value: "Sieger, Spread, Totals, Playoff-Pfad" },
+        { label: "Update-Rhythmus", value: "Weekly Slate und Injury-Report-Fenster" }
+      ],
+      roadmap: ["Team-Strength-Index", "Injury-Report-Import", "Playoff-Pfad-Modell"]
+    },
+    nba: {
+      label: "NBA",
+      eyebrow: "NBA Prediction Hub",
+      title: "NBA-Prognosen für Nightly Matchups und Playoff-Serien.",
+      description: "Eine Basketball-Ansicht für Pace, Rest, Travel, Player Availability, Rotationen und Series Probability.",
+      status: "Nächstes Modul",
+      sampleMatch: "Celtics vs Knicks",
+      samplePick: "113:108",
+      confidence: "61%",
+      modelNote: "Liest Pace, Efficiency, Lineup-Verfügbarkeit, Back-to-back-Fatigue und Travel-Kontext.",
+      focusCards: [
+        { title: "Nightly Matchup", text: "Sieger und Score Range für hochfrequente Regular-Season-Spiele." },
+        { title: "Player Availability", text: "Rotationen und Ausfälle als sichtbare Modellinputs." },
+        { title: "Series View", text: "Playoff-Serienquoten mit Momentum und Home-Court-Kontext." }
+      ],
+      signalRows: [
+        { label: "Hauptsignal", value: "Pace, Effizienz und Rest" },
+        { label: "Markt", value: "Sieger, Margin, Totals, Serien" },
+        { label: "Update-Rhythmus", value: "Daily Slate und Injury Updates" }
+      ],
+      roadmap: ["Daily Game Board", "Lineup-Impact-Layer", "Playoff-Serien-Simulator"]
+    },
+    tennis: {
+      label: "Tennis",
+      eyebrow: "Tennis Prediction Hub",
+      title: "Tennis-Prognosen für Beläge, Draws und Satz-Ergebnisse.",
+      description: "Eine Tennis-Seite für Match-Winner-Wahrscheinlichkeit, Satzscore-Spannen, Surface Strength und Draw-Kontext.",
+      status: "Nächstes Modul",
+      sampleMatch: "Sinner vs Alcaraz",
+      samplePick: "3:1",
+      confidence: "55%",
+      modelNote: "Trennt Surface Form, Serve-/Return-Splits, Best-of-Format und Draw Fatigue von generischer Matchform.",
+      focusCards: [
+        { title: "Surface Model", text: "Clay, Grass und Hard Court werden als eigene Kontexte behandelt." },
+        { title: "Serve und Return", text: "Service Games, Break Pressure und Return Quality klar getrennt." },
+        { title: "Draw Path", text: "Turnierpfad, Rest Days und Belastung zwischen Runden." }
+      ],
+      signalRows: [
+        { label: "Hauptsignal", value: "Belag und Serve-/Return-Split" },
+        { label: "Markt", value: "Sieger, Satzscore, Draw Path" },
+        { label: "Update-Rhythmus", value: "Turnierrunden und Draw Updates" }
+      ],
+      roadmap: ["Surface-adjusted Ratings", "Draw Simulation", "Set-Score Probability View"]
+    }
+  }
+};
+
 export async function HomePageContent({ locale }: { locale: Locale }) {
   const matches = await getDashboardMatches();
   const specialPredictions = await getSpecialQuestionPredictions();
@@ -194,7 +394,7 @@ export async function HomePageContent({ locale }: { locale: Locale }) {
       <nav className="quickSportsNav" aria-label={content.sportNavLabel}>
         <span>{content.sportNavLabel}</span>
         {content.sports.map((sport) => (
-          <a href={`#${sport.id}`} key={sport.id}>{sport.label}</a>
+          <Link href={localizePath(`/${sport.id}`, locale)} key={sport.id}>{sport.label}</Link>
         ))}
       </nav>
 
@@ -221,6 +421,9 @@ export async function HomePageContent({ locale }: { locale: Locale }) {
                 ))}
               </ul>
               <p className="sportMarkets">{sport.markets}</p>
+              <Link className="sportCardLink" href={localizePath(`/${sport.id}`, locale)}>
+                {content.sportPageCta}
+              </Link>
             </article>
           ))}
         </div>
@@ -252,6 +455,118 @@ export async function HomePageContent({ locale }: { locale: Locale }) {
       </section>
 
       <HomeDashboard locale={locale} matches={matches} specialPredictions={specialPredictions} />
+    </main>
+  );
+}
+
+export function SportPageContent({ locale, sport }: { locale: Locale; sport: SportPageId }) {
+  const content = sportPageContent[locale][sport];
+  const sports = Object.entries(sportPageContent[locale]) as Array<[SportPageId, typeof content]>;
+  const relatedSports = sports.filter(([id]) => id !== sport);
+  const labels = {
+    en: {
+      back: "All sports",
+      method: "Method",
+      sample: "Sample forecast",
+      confidence: "Confidence",
+      focus: "Prediction focus",
+      signals: "Signal setup",
+      roadmap: "Build roadmap",
+      switchSport: "Switch sport"
+    },
+    de: {
+      back: "Alle Sportarten",
+      method: "Methodik",
+      sample: "Beispiel-Prognose",
+      confidence: "Konfidenz",
+      focus: "Prediction-Fokus",
+      signals: "Signal-Setup",
+      roadmap: "Build-Roadmap",
+      switchSport: "Sportart wechseln"
+    }
+  }[locale];
+
+  return (
+    <main className="shell sportPageShell">
+      <section className="sportPageHero">
+        <div className="sportPageHeroCopy">
+          <p className="eyebrow">{content.eyebrow}</p>
+          <h1>{content.title}</h1>
+          <p className="heroText">{content.description}</p>
+          <div className="heroActions">
+            <Link className="primaryLink" href={localizePath("/#sports", locale)}>{labels.back}</Link>
+            <Link className="secondaryLink" href={localizePath("/about", locale)}>{labels.method}</Link>
+          </div>
+        </div>
+
+        <aside className="sportPageModelCard">
+          <span className="liveBadge">{content.status}</span>
+          <p className="sectionKicker">{labels.sample}</p>
+          <h2>{content.sampleMatch}</h2>
+          <div className="sportPagePick">
+            <span>{content.samplePick}</span>
+            <small>{labels.confidence}: {content.confidence}</small>
+          </div>
+          <p>{content.modelNote}</p>
+        </aside>
+      </section>
+
+      <section className="sportsHubSection">
+        <div className="sectionHeaderRow">
+          <div>
+            <p className="sectionKicker">{content.label}</p>
+            <h2>{labels.focus}</h2>
+          </div>
+          <p>{content.description}</p>
+        </div>
+        <div className="sportCardsGrid">
+          {content.focusCards.map((card) => (
+            <article className="sportCard" key={card.title}>
+              <span className="sportTag">{content.label}</span>
+              <h3>{card.title}</h3>
+              <p>{card.text}</p>
+            </article>
+          ))}
+        </div>
+      </section>
+
+      <section className="sportSignalBand">
+        <div>
+          <p className="sectionKicker">{labels.signals}</p>
+          <h2>{content.label}</h2>
+        </div>
+        <div className="sportSignalList">
+          {content.signalRows.map((row) => (
+            <div className="sportSignalRow" key={row.label}>
+              <span>{row.label}</span>
+              <strong>{row.value}</strong>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      <section className="sportPageBottomGrid">
+        <article className="panel">
+          <p className="sectionKicker">{labels.roadmap}</p>
+          <h2>{content.status}</h2>
+          <ul className="sportFeatureList">
+            {content.roadmap.map((item) => (
+              <li key={item}>{item}</li>
+            ))}
+          </ul>
+        </article>
+        <article className="panel">
+          <p className="sectionKicker">{labels.switchSport}</p>
+          <h2>{labels.back}</h2>
+          <div className="sportSwitchLinks">
+            {relatedSports.map(([id, item]) => (
+              <Link href={localizePath(`/${id}`, locale)} key={id}>
+                {item.label}
+              </Link>
+            ))}
+          </div>
+        </article>
+      </section>
     </main>
   );
 }

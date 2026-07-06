@@ -1,0 +1,27 @@
+import type { Metadata } from "next";
+import { FootballCompetitionPage, footballStaticParams } from "@/components/football-pages";
+import { getCompetition } from "@/lib/football-data";
+
+type PageProps = {
+  params: Promise<{ competitionSlug: string }>;
+};
+
+export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
+  const { competitionSlug } = await params;
+  const competition = getCompetition(competitionSlug);
+
+  return {
+    title: `${competition?.name ?? "Fußball"} | AI Sport Prediction`,
+    description: competition?.description ?? "Fußball Prediction Hub."
+  };
+}
+
+export function generateStaticParams() {
+  return footballStaticParams();
+}
+
+export default async function GermanCompetitionPage({ params }: PageProps) {
+  const { competitionSlug } = await params;
+
+  return <FootballCompetitionPage competitionSlug={competitionSlug} locale="de" />;
+}

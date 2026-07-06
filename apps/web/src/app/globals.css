@@ -812,6 +812,698 @@ a {
   }
 }
 
+.footballShell {
+  max-width: 1280px;
+}
+
+.footballHero,
+.competitionHero,
+.teamHero,
+.footballPanel {
+  background: rgba(20, 33, 45, 0.92);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 0;
+  box-shadow: 0 24px 54px rgba(0, 0, 0, 0.22);
+}
+
+.footballHero {
+  margin-bottom: 18px;
+  padding: clamp(34px, 6vw, 74px) 28px;
+  text-align: center;
+}
+
+.footballEyebrow {
+  color: rgba(248, 251, 255, 0.72);
+  font-size: 0.9rem;
+  font-weight: 880;
+  letter-spacing: 0.18em;
+  margin: 0 0 10px;
+  text-transform: uppercase;
+}
+
+.footballHero h1,
+.competitionHero h1,
+.teamHero h1,
+.footballPanel h2 {
+  color: #f8fbff;
+  font-size: clamp(2rem, 4vw, 3.5rem);
+  font-weight: 950;
+  letter-spacing: 0;
+  line-height: 1;
+  margin: 0;
+  text-transform: uppercase;
+}
+
+.footballHero p:last-child,
+.competitionHero p:last-child,
+.teamHero p:last-child {
+  color: rgba(248, 251, 255, 0.74);
+  line-height: 1.65;
+  margin: 16px auto 0;
+  max-width: 760px;
+}
+
+.footballCompetitionGrid {
+  display: grid;
+  gap: 18px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.footballCountryPanel {
+  background: rgba(20, 33, 45, 0.92);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 0;
+  padding: 24px;
+}
+
+.footballCountryHeader {
+  align-items: center;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  display: flex;
+  gap: 12px;
+  margin-bottom: 18px;
+  padding-bottom: 16px;
+}
+
+.footballCountryHeader span {
+  align-items: center;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 999px;
+  color: #7df5c1;
+  display: inline-flex;
+  font-size: 0.78rem;
+  font-weight: 950;
+  height: 38px;
+  justify-content: center;
+  width: 38px;
+}
+
+.footballCountryHeader h2 {
+  color: #f8fbff;
+  font-size: 1.35rem;
+  margin: 0;
+}
+
+.competitionSplit {
+  display: grid;
+  gap: 14px;
+  grid-template-columns: 1fr 1fr;
+}
+
+.competitionColumn {
+  display: grid;
+  gap: 10px;
+}
+
+.competitionColumn > p {
+  color: rgba(248, 251, 255, 0.56);
+  font-size: 0.78rem;
+  font-weight: 900;
+  letter-spacing: 0.1em;
+  margin: 0;
+  text-transform: uppercase;
+}
+
+.competitionTile {
+  background: rgba(255, 255, 255, 0.045);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 8px;
+  color: #f8fbff;
+  display: grid;
+  gap: 7px;
+  min-height: 150px;
+  padding: 16px;
+  text-decoration: none;
+  transition: background 160ms ease, border-color 160ms ease, transform 160ms ease;
+}
+
+.competitionTile:hover,
+.competitionTile:focus-visible {
+  background: rgba(125, 245, 193, 0.08);
+  border-color: rgba(125, 245, 193, 0.24);
+  transform: translateY(-2px);
+}
+
+.competitionTile span,
+.footballNewsCard span {
+  color: #7df5c1;
+  font-size: 0.72rem;
+  font-weight: 950;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.competitionTile strong {
+  font-size: 1.1rem;
+}
+
+.competitionTile small,
+.footballNewsCard p {
+  color: rgba(248, 251, 255, 0.67);
+  line-height: 1.5;
+}
+
+.competitionTile em {
+  color: #ffc857;
+  font-size: 0.86rem;
+  font-style: normal;
+  font-weight: 900;
+  margin-top: auto;
+}
+
+.footballDetailShell {
+  margin: 0 auto;
+  max-width: 1280px;
+  padding: 0 24px 72px;
+  width: min(100%, 1280px);
+}
+
+.competitionHero,
+.teamHero {
+  align-items: center;
+  display: grid;
+  gap: 18px;
+  grid-template-columns: 1fr auto;
+  margin-top: 0;
+  padding: clamp(28px, 5vw, 54px) 32px;
+  text-align: center;
+}
+
+.competitionHero > div,
+.teamHero > div {
+  justify-self: center;
+}
+
+.footballBackLink,
+.showAllButton {
+  align-items: center;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 8px;
+  color: #f8fbff;
+  display: inline-flex;
+  font-weight: 900;
+  justify-content: center;
+  min-height: 42px;
+  padding: 0 16px;
+  text-decoration: none;
+}
+
+.competitionTabs {
+  align-items: center;
+  background: rgba(20, 33, 45, 0.92);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  display: flex;
+  gap: 22px;
+  justify-content: center;
+  overflow-x: auto;
+  padding: 22px 20px 12px;
+}
+
+.competitionTabs a {
+  border-bottom: 3px solid transparent;
+  color: rgba(248, 251, 255, 0.78);
+  font-size: 1rem;
+  font-weight: 870;
+  padding-bottom: 9px;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.competitionTabs a:hover,
+.competitionTabs a:focus-visible,
+.competitionTabs a.isActive {
+  border-bottom-color: #ffc857;
+  color: #ffffff;
+}
+
+.teamLogoRail {
+  align-items: center;
+  background: rgba(20, 33, 45, 0.92);
+  display: flex;
+  gap: 18px;
+  justify-content: center;
+  overflow-x: auto;
+  padding: 18px 24px 26px;
+}
+
+.teamLogoRail a {
+  text-decoration: none;
+}
+
+.teamCrest {
+  align-items: center;
+  background:
+    radial-gradient(circle at 26% 20%, rgba(255, 255, 255, 0.3), transparent 28%),
+    linear-gradient(135deg, var(--crest-a), var(--crest-b));
+  border: 2px solid rgba(255, 255, 255, 0.42);
+  border-radius: 999px;
+  box-shadow: 0 8px 18px rgba(0, 0, 0, 0.24);
+  color: #ffffff;
+  display: inline-flex;
+  flex: 0 0 auto;
+  font-weight: 950;
+  justify-content: center;
+  letter-spacing: 0;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.65);
+}
+
+.teamCrest-sm {
+  font-size: 0.62rem;
+  height: 34px;
+  width: 34px;
+}
+
+.teamCrest-md {
+  font-size: 0.72rem;
+  height: 44px;
+  width: 44px;
+}
+
+.teamCrest-lg {
+  font-size: 1.2rem;
+  height: 96px;
+  width: 96px;
+}
+
+.footballPanel {
+  margin-top: 18px;
+  padding: clamp(24px, 5vw, 48px);
+}
+
+.footballPanelHeader {
+  align-items: center;
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 22px;
+}
+
+.footballPanelHeader p {
+  color: #f8fbff;
+  font-size: 1.12rem;
+  font-weight: 900;
+  margin: 0;
+}
+
+.footballPanelHeader strong {
+  color: #ffc857;
+}
+
+.fixtureGrid {
+  display: grid;
+  gap: 0;
+  grid-template-columns: 1fr 1fr;
+}
+
+.fixtureRow {
+  align-items: center;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+  display: grid;
+  gap: 12px;
+  grid-template-columns: 1fr auto 1fr;
+  min-height: 64px;
+  padding: 12px 18px;
+}
+
+.fixtureRow a {
+  align-items: center;
+  color: #f8fbff;
+  display: inline-flex;
+  gap: 10px;
+  font-weight: 820;
+  justify-content: flex-end;
+  text-decoration: none;
+}
+
+.fixtureRow a:last-child {
+  justify-content: flex-start;
+}
+
+.fixtureTime {
+  align-items: center;
+  display: grid;
+  gap: 3px;
+  justify-items: center;
+}
+
+.fixtureTime span {
+  color: rgba(248, 251, 255, 0.72);
+  font-size: 0.84rem;
+  font-weight: 800;
+}
+
+.fixtureTime strong {
+  background: rgba(255, 255, 255, 0.11);
+  border-radius: 6px;
+  color: #f8fbff;
+  padding: 3px 8px;
+}
+
+.showAllButton {
+  cursor: pointer;
+  margin: 32px 0 0 auto;
+  min-width: min(100%, 280px);
+}
+
+.footballNewsGrid {
+  display: grid;
+  gap: 16px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  margin-top: 24px;
+}
+
+.footballNewsGrid.compact {
+  grid-template-columns: 1fr;
+}
+
+.footballNewsCard {
+  background: rgba(255, 255, 255, 0.045);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 8px;
+  min-height: 150px;
+  padding: 18px;
+}
+
+.footballNewsCard h3 {
+  color: #f8fbff;
+  font-size: 1.1rem;
+  line-height: 1.3;
+  margin: 12px 0 0;
+}
+
+.leagueTable {
+  display: grid;
+  margin-top: 24px;
+}
+
+.leagueTableRow {
+  align-items: center;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  color: #f8fbff;
+  display: grid;
+  gap: 12px;
+  grid-template-columns: 34px 40px minmax(150px, 1fr) minmax(110px, auto) auto;
+  min-height: 58px;
+  text-decoration: none;
+}
+
+.leagueTableRow span {
+  color: rgba(248, 251, 255, 0.58);
+  font-weight: 900;
+}
+
+.leagueTableRow small {
+  color: rgba(248, 251, 255, 0.62);
+  font-weight: 760;
+}
+
+.leagueTableRow em {
+  color: #ffc857;
+  font-style: normal;
+  font-weight: 900;
+}
+
+.teamHero {
+  grid-template-columns: auto 1fr auto;
+  text-align: left;
+}
+
+.teamHero > div {
+  justify-self: start;
+}
+
+.teamHero p:last-child {
+  margin-left: 0;
+}
+
+.teamProfileGrid {
+  display: grid;
+  gap: 18px;
+  grid-template-columns: minmax(320px, 0.8fr) 1fr;
+}
+
+.teamStatList {
+  display: grid;
+  gap: 12px;
+  margin-top: 22px;
+}
+
+.teamStatList div {
+  align-items: center;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  display: flex;
+  justify-content: space-between;
+  padding-bottom: 12px;
+}
+
+.teamStatList span {
+  color: rgba(248, 251, 255, 0.62);
+  font-weight: 800;
+}
+
+.teamStatList strong {
+  color: #f8fbff;
+}
+
+@media (max-width: 980px) {
+  .footballCompetitionGrid,
+  .competitionSplit,
+  .fixtureGrid,
+  .footballNewsGrid,
+  .teamProfileGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .competitionHero,
+  .teamHero {
+    grid-template-columns: 1fr;
+    text-align: center;
+  }
+
+  .teamHero > div {
+    justify-self: center;
+  }
+
+  .teamHero p:last-child {
+    margin-left: auto;
+  }
+}
+
+@media (max-width: 720px) {
+  .footballDetailShell {
+    padding-left: 14px;
+    padding-right: 14px;
+  }
+
+  .footballHero,
+  .competitionHero,
+  .teamHero,
+  .footballPanel,
+  .footballCountryPanel {
+    padding-left: 18px;
+    padding-right: 18px;
+  }
+
+  .fixtureRow {
+    grid-template-columns: 1fr;
+    justify-items: center;
+  }
+
+  .fixtureRow a,
+  .fixtureRow a:last-child {
+    justify-content: center;
+  }
+
+  .leagueTableRow {
+    grid-template-columns: 28px 36px minmax(120px, 1fr) auto;
+  }
+
+  .leagueTableRow small {
+    display: none;
+  }
+}
+
+.sportCard {
+  display: flex;
+  flex-direction: column;
+}
+
+.sportCardLink {
+  align-items: center;
+  border: 1px solid rgba(88, 216, 255, 0.28);
+  border-radius: 8px;
+  color: var(--ink);
+  display: inline-flex;
+  font-weight: 900;
+  justify-content: center;
+  margin-top: auto;
+  min-height: 40px;
+  padding: 9px 12px;
+  text-decoration: none;
+}
+
+.sportCardLink:hover,
+.sportCardLink:focus-visible {
+  background: rgba(88, 216, 255, 0.1);
+}
+
+.sportPageShell {
+  display: grid;
+  gap: 24px;
+}
+
+.sportPageHero {
+  display: grid;
+  gap: 24px;
+  grid-template-columns: minmax(0, 1fr) minmax(320px, 0.44fr);
+}
+
+.sportPageHeroCopy,
+.sportPageModelCard,
+.sportSignalBand,
+.sportPageBottomGrid .panel {
+  background:
+    linear-gradient(135deg, rgba(88, 216, 255, 0.08), transparent 44%),
+    rgba(255, 255, 255, 0.035);
+  border: 1px solid rgba(121, 255, 188, 0.16);
+  border-radius: 8px;
+  padding: clamp(22px, 4vw, 42px);
+}
+
+.sportPageHeroCopy h1 {
+  color: var(--ink);
+  font-size: clamp(2.35rem, 5.6vw, 5.6rem);
+  font-weight: 900;
+  letter-spacing: 0;
+  line-height: 0.96;
+  margin: 0;
+  max-width: 980px;
+}
+
+.sportPageModelCard {
+  display: grid;
+  gap: 16px;
+}
+
+.sportPageModelCard h2 {
+  color: var(--ink);
+  font-size: clamp(1.5rem, 2.8vw, 2.4rem);
+  margin: 0;
+}
+
+.sportPageModelCard p {
+  color: var(--muted-strong);
+  line-height: 1.6;
+  margin: 0;
+}
+
+.sportPagePick {
+  background: rgba(5, 10, 14, 0.62);
+  border: 1px solid rgba(255, 200, 87, 0.24);
+  border-radius: 8px;
+  display: grid;
+  gap: 4px;
+  padding: 18px;
+}
+
+.sportPagePick span {
+  color: var(--gold);
+  font-size: clamp(2rem, 5vw, 4rem);
+  font-weight: 950;
+  line-height: 1;
+}
+
+.sportPagePick small {
+  color: var(--muted-strong);
+  font-weight: 850;
+}
+
+.sportSignalBand {
+  align-items: start;
+  display: grid;
+  gap: 22px;
+  grid-template-columns: minmax(0, 0.5fr) minmax(320px, 0.72fr);
+}
+
+.sportSignalBand h2 {
+  color: var(--ink);
+  font-size: clamp(1.65rem, 3vw, 3rem);
+  margin: 0;
+}
+
+.sportSignalList {
+  display: grid;
+  gap: 10px;
+}
+
+.sportSignalRow {
+  align-items: center;
+  background: rgba(5, 10, 14, 0.54);
+  border: 1px solid rgba(88, 216, 255, 0.14);
+  border-radius: 8px;
+  display: grid;
+  gap: 10px;
+  grid-template-columns: minmax(0, 0.38fr) minmax(0, 1fr);
+  padding: 14px 16px;
+}
+
+.sportSignalRow span {
+  color: var(--muted);
+  font-size: 0.78rem;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.sportSignalRow strong {
+  color: var(--ink);
+}
+
+.sportPageBottomGrid {
+  display: grid;
+  gap: 18px;
+  grid-template-columns: minmax(0, 1fr) minmax(300px, 0.55fr);
+}
+
+.sportPageBottomGrid h2 {
+  color: var(--ink);
+  margin: 0;
+}
+
+.sportSwitchLinks {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 18px;
+}
+
+.sportSwitchLinks a {
+  background: rgba(255, 255, 255, 0.045);
+  border: 1px solid rgba(88, 216, 255, 0.2);
+  border-radius: 8px;
+  color: var(--ink);
+  font-weight: 900;
+  padding: 10px 13px;
+  text-decoration: none;
+}
+
+.sportSwitchLinks a:hover,
+.sportSwitchLinks a:focus-visible {
+  background: rgba(88, 216, 255, 0.1);
+}
+
+@media (max-width: 920px) {
+  .sportPageHero,
+  .sportSignalBand,
+  .sportPageBottomGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .sportSignalRow {
+    grid-template-columns: 1fr;
+  }
+}
+
 * {
   box-sizing: border-box;
 }
