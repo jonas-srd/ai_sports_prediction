@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { SportPageContent } from "@/app/_route-content";
+import { NflPage as NflPageContent } from "@/components/nfl-pages";
 
 export const metadata: Metadata = {
   title: "NFL Predictions | AI Sport Prediction",
@@ -7,5 +7,5 @@ export const metadata: Metadata = {
 };
 
 export default function NflPage() {
-  return <SportPageContent locale="en" sport="nfl" />;
+  return <NflPageContent locale="en" />;
 }

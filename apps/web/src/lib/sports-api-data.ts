@@ -140,7 +140,22 @@ export async function getSportApiSnapshot(sport: ApiSportId): Promise<SportApiSn
   }
 
   try {
-    const matches = await fetchMatches(sport, config, config.defaultQuery());
+    const query = config.defaultQuery();
+    const [matchesResult, teamsResult] = await Promise.allSettled([
+      fetchMatches(sport, config, query),
+      sport === "nfl" ? fetchSportTeams(config, query) : Promise.resolve([])
+    ]);
+    const matches = matchesResult.status === "fulfilled" ? matchesResult.value : [];
+    const teams = teamsResult.status === "fulfilled" ? teamsResult.value : [];
+
+    if (matchesResult.status === "rejected") {
+      console.error(matchesResult.reason);
+    }
+
+    if (teamsResult.status === "rejected") {
+      console.error(teamsResult.reason);
+    }
+
     return {
       sport,
       provider: config.provider,
@@ -148,7 +163,7 @@ export async function getSportApiSnapshot(sport: ApiSportId): Promise<SportApiSn
       message: `Live data loaded from ${config.providerName}.`,
       matches,
       standings: [],
-      teams: []
+      teams
     };
   } catch (error) {
     console.error(error);
@@ -378,6 +393,18 @@ async function fetchFootballTeams(config: SportConfig, query: Record<string, str
       id: String(item.team?.id ?? ""),
       name: getString(item.team?.name),
       logo: getString(item.team?.logo) || null
+    }))
+    .filter((team) => team.name);
+}
+
+async function fetchSportTeams(config: SportConfig, query: Record<string, string>): Promise<SportApiTeam[]> {
+  const data = await fetchApiSports<any>(config, "/teams", query);
+
+  return data
+    .map((item: any): SportApiTeam => ({
+      id: String(item.team?.id ?? item.id ?? ""),
+      name: getString(item.team?.name || item.name),
+      logo: getString(item.team?.logo || item.logo) || null
     }))
     .filter((team) => team.name);
 }

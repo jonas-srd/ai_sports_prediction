@@ -6,6 +6,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { LanguageSelect } from "@/components/language-select";
 import { TimeZoneSelect } from "@/components/time-zone-select";
 import { footballCompetitions } from "@/lib/football-data";
+import { nflTeams } from "@/lib/nfl-data";
 import { useLocale } from "@/components/locale-provider";
 import { commonText, localizePath, stripLocalePrefix } from "@/lib/i18n";
 
@@ -56,7 +57,7 @@ export function SiteNav() {
       eyebrow: competition.type === "league" ? (locale === "de" ? "Liga" : "League") : (locale === "de" ? "Pokal" : "Cup")
     }));
     const seenTeams = new Set<string>();
-    const teamItems = footballCompetitions.flatMap((competition) =>
+    const footballTeamItems = footballCompetitions.flatMap((competition) =>
       competition.teams.flatMap((team) => {
         if (seenTeams.has(team.slug)) {
           return [];
@@ -70,8 +71,13 @@ export function SiteNav() {
         }];
       })
     );
+    const nflTeamItems = nflTeams.map((team) => ({
+      href: `/nfl/team/${team.slug}`,
+      label: team.name,
+      eyebrow: "NFL Team"
+    }));
 
-    return [...baseItems, ...competitionItems, ...teamItems];
+    return [...baseItems, ...competitionItems, ...footballTeamItems, ...nflTeamItems];
   }, [locale, text.football, text.home, text.sports, text.tennis]);
 
   return (

@@ -1663,6 +1663,11 @@ a {
   padding: 0 10px;
 }
 
+.sportschauLeagueTable .nflTableRow {
+  grid-template-columns: 34px 42px minmax(210px, 1fr) minmax(48px, 58px) minmax(58px, 70px) repeat(3, minmax(36px, 44px)) minmax(72px, 86px) minmax(54px, 64px);
+  min-width: 820px;
+}
+
 .leagueTableHeader {
   background: rgba(255, 255, 255, 0.06);
   border-bottom-color: rgba(255, 255, 255, 0.18);
