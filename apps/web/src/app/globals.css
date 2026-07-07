@@ -1075,6 +1075,31 @@ a {
   transition: background 160ms ease, border-color 160ms ease, transform 160ms ease;
 }
 
+.competitionTileTop {
+  align-items: center;
+  display: flex;
+  gap: 12px;
+  justify-content: space-between;
+}
+
+.competitionLogo {
+  height: 44px;
+  object-fit: contain;
+  width: 44px;
+}
+
+.competitionLogoFallback {
+  align-items: center;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 999px;
+  color: #7df5c1;
+  display: inline-flex;
+  font-size: 0.7rem;
+  font-weight: 950;
+  justify-content: center;
+}
+
 .competitionTile:hover,
 .competitionTile:focus-visible {
   background: rgba(125, 245, 193, 0.08);
@@ -1082,7 +1107,7 @@ a {
   transform: translateY(-2px);
 }
 
-.competitionTile span,
+.competitionTileTop span,
 .footballNewsCard span {
   color: #7df5c1;
   font-size: 0.72rem;
@@ -1185,7 +1210,13 @@ a {
   padding: 18px 24px 26px;
 }
 
-.teamLogoRail a {
+.teamLogoRail a,
+.teamLogoRailItem {
+  align-items: center;
+  display: inline-flex;
+  justify-content: center;
+  min-height: 38px;
+  min-width: 38px;
   text-decoration: none;
 }
 
@@ -1330,6 +1361,11 @@ a {
   padding: 0;
 }
 
+.teamHeroLogo {
+  height: 108px;
+  width: 108px;
+}
+
 .fixtureTime {
   align-items: center;
   display: grid;
@@ -1348,6 +1384,17 @@ a {
   border-radius: 6px;
   color: #f8fbff;
   padding: 3px 8px;
+}
+
+.fixtureTime small {
+  color: rgba(248, 251, 255, 0.56);
+  font-size: 0.72rem;
+  font-weight: 800;
+  max-width: 160px;
+  overflow: hidden;
+  text-align: center;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .showAllButton {
@@ -1456,6 +1503,278 @@ a {
   color: #f8fbff;
 }
 
+.sportschauFootballPage {
+  color: #f8fbff;
+}
+
+.sportschauCompetitionHero {
+  align-items: stretch;
+  grid-template-columns: minmax(0, 1fr) minmax(260px, 360px) auto;
+  padding: clamp(30px, 5vw, 58px) 32px;
+  text-align: left;
+}
+
+.sportschauCompetitionHero .footballBackLink {
+  align-self: start;
+  justify-self: end;
+}
+
+.sportschauCompetitionTitle {
+  align-self: center;
+  justify-self: start;
+  max-width: 720px;
+}
+
+.sportschauCompetitionTitle p:last-child {
+  margin-left: 0;
+}
+
+.featuredFixtureCard {
+  align-self: center;
+  background: rgba(10, 21, 31, 0.74);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  display: grid;
+  gap: 12px;
+  min-height: 148px;
+  padding: 18px;
+}
+
+.featuredFixtureCard > span,
+.sportschauSectionTitle span,
+.cupRoundRow > span {
+  color: #ffc857;
+  font-size: 0.74rem;
+  font-weight: 950;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.featuredFixtureCard > strong {
+  font-size: 1.15rem;
+}
+
+.featuredFixtureCard small {
+  color: rgba(248, 251, 255, 0.68);
+  font-weight: 780;
+}
+
+.featuredFixtureTeams {
+  align-items: center;
+  display: grid;
+  gap: 10px;
+  grid-template-columns: 38px minmax(64px, auto) 38px;
+  justify-content: start;
+}
+
+.featuredFixtureTeams strong {
+  background: rgba(255, 255, 255, 0.12);
+  border-radius: 6px;
+  font-size: 1.05rem;
+  padding: 5px 10px;
+  text-align: center;
+}
+
+.sportschauSubTabs {
+  justify-content: flex-start;
+  padding-left: 32px;
+  padding-right: 32px;
+}
+
+.sportschauSubTabs a {
+  font-size: 1.05rem;
+}
+
+.sportschauTeamLogoRail {
+  justify-content: flex-start;
+  padding-left: 32px;
+  padding-right: 32px;
+  scroll-padding-inline: 32px;
+}
+
+.sportschauPageGrid {
+  display: grid;
+  gap: 18px;
+  grid-template-columns: minmax(0, 1fr) minmax(280px, 360px);
+  margin-top: 18px;
+}
+
+.sportschauMainColumn,
+.sportschauSideColumn {
+  display: grid;
+  gap: 18px;
+  align-content: start;
+}
+
+.sportschauPageGrid .footballPanel,
+.sportschauTeamProfileGrid .footballPanel {
+  margin-top: 0;
+}
+
+.sportschauSectionTitle {
+  display: grid;
+  gap: 8px;
+  margin-bottom: 22px;
+}
+
+.sportschauSectionTitle h2 {
+  font-size: clamp(1.8rem, 3vw, 2.65rem);
+}
+
+.sportschauFixtureList {
+  grid-template-columns: 1fr;
+}
+
+.sportschauMatchPanel .fixtureRow {
+  min-height: 72px;
+  padding-left: clamp(8px, 2vw, 22px);
+  padding-right: clamp(8px, 2vw, 22px);
+}
+
+.sportschauNewsGrid {
+  grid-template-columns: 1.25fr 1fr;
+}
+
+.sportschauLeadNews {
+  grid-row: span 2;
+  min-height: 280px;
+  position: relative;
+}
+
+.sportschauLeadNews::before {
+  background:
+    linear-gradient(135deg, rgba(88, 216, 255, 0.28), transparent 52%),
+    linear-gradient(145deg, rgba(255, 200, 87, 0.22), rgba(125, 245, 193, 0.08));
+  border-radius: 6px;
+  content: "";
+  display: block;
+  height: 138px;
+  margin-bottom: 18px;
+}
+
+.sportschauLeagueTable {
+  margin-top: 0;
+  overflow-x: auto;
+}
+
+.sportschauLeagueTable .leagueTableRow {
+  grid-template-columns: 34px 42px minmax(170px, 1fr) repeat(4, minmax(36px, 44px)) minmax(58px, 72px) minmax(44px, 58px) minmax(42px, 52px);
+  min-width: 760px;
+  padding: 0 10px;
+}
+
+.leagueTableHeader {
+  background: rgba(255, 255, 255, 0.06);
+  border-bottom-color: rgba(255, 255, 255, 0.18);
+  color: rgba(248, 251, 255, 0.72);
+  min-height: 44px;
+  text-transform: uppercase;
+}
+
+.leagueTableHeader strong,
+.leagueTableHeader small,
+.leagueTableHeader em {
+  color: rgba(248, 251, 255, 0.72);
+  font-size: 0.72rem;
+  font-style: normal;
+  font-weight: 950;
+}
+
+.cupNoTableNote {
+  color: rgba(248, 251, 255, 0.72);
+  line-height: 1.55;
+  margin: -8px 0 22px;
+}
+
+.cupRoundList {
+  display: grid;
+  gap: 10px;
+}
+
+.cupRoundRow {
+  align-items: center;
+  background: rgba(255, 255, 255, 0.045);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 8px;
+  display: grid;
+  gap: 14px;
+  grid-template-columns: 120px minmax(0, 1fr) auto;
+  min-height: 74px;
+  padding: 14px 16px;
+}
+
+.cupRoundRow div {
+  align-items: center;
+  display: grid;
+  gap: 12px;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+}
+
+.cupRoundRow strong {
+  color: #f8fbff;
+}
+
+.cupRoundRow strong:first-child {
+  text-align: right;
+}
+
+.cupRoundRow em {
+  background: rgba(255, 255, 255, 0.12);
+  border-radius: 6px;
+  color: #f8fbff;
+  font-style: normal;
+  font-weight: 950;
+  padding: 4px 10px;
+}
+
+.cupRoundRow small {
+  color: rgba(248, 251, 255, 0.66);
+  font-weight: 820;
+}
+
+.sportschauInfoPanel h2,
+.sportschauTeamsPanel h2 {
+  font-size: 1.55rem;
+  line-height: 1.1;
+}
+
+.sportschauInfoPanel .teamStatList strong {
+  max-width: 56%;
+  text-align: right;
+}
+
+.compactTeamList {
+  display: grid;
+  gap: 10px;
+  margin-top: 18px;
+}
+
+.compactTeamList a,
+.compactTeamList div {
+  align-items: center;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  color: #f8fbff;
+  display: flex;
+  gap: 12px;
+  min-height: 48px;
+  padding-bottom: 10px;
+  text-decoration: none;
+}
+
+.compactTeamList span {
+  font-weight: 850;
+}
+
+.sportschauTeamHero {
+  background:
+    linear-gradient(135deg, rgba(125, 245, 193, 0.1), transparent 42%),
+    rgba(20, 33, 45, 0.92);
+}
+
+.sportschauTeamProfileGrid {
+  margin-top: 18px;
+}
+
 @media (max-width: 980px) {
   .footballCompetitionGrid,
   .competitionBandGrid,
@@ -1486,6 +1805,34 @@ a {
 
   .sportLiveGrid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .sportschauCompetitionHero,
+  .sportschauPageGrid,
+  .sportschauTeamProfileGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .sportschauCompetitionHero,
+  .sportschauCompetitionTitle {
+    text-align: center;
+  }
+
+  .sportschauCompetitionTitle,
+  .sportschauCompetitionHero .footballBackLink {
+    justify-self: center;
+  }
+
+  .sportschauCompetitionTitle p:last-child {
+    margin-left: auto;
+  }
+
+  .sportschauNewsGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .sportschauLeadNews {
+    grid-row: auto;
   }
 }
 
@@ -1534,6 +1881,28 @@ a {
 
   .sportLiveGrid {
     grid-template-columns: 1fr;
+  }
+
+  .sportschauCompetitionHero,
+  .sportschauSubTabs,
+  .sportschauTeamLogoRail {
+    padding-left: 18px;
+    padding-right: 18px;
+  }
+
+  .featuredFixtureTeams {
+    justify-content: center;
+  }
+
+  .cupRoundRow,
+  .cupRoundRow div {
+    grid-template-columns: 1fr;
+    justify-items: center;
+    text-align: center;
+  }
+
+  .cupRoundRow strong:first-child {
+    text-align: center;
   }
 }
 

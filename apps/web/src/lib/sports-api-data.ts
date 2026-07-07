@@ -22,9 +22,22 @@ export type SportApiStanding = {
   rank: number;
   teamName: string;
   teamLogo: string | null;
+  played: number | null;
+  won: number | null;
+  drawn: number | null;
+  lost: number | null;
+  goalsFor: number | null;
+  goalsAgainst: number | null;
+  goalDiff: number | null;
   points: number | null;
   form: string | null;
   detail: string | null;
+};
+
+export type SportApiTeam = {
+  id: string;
+  name: string;
+  logo: string | null;
 };
 
 export type SportApiSnapshot = {
@@ -34,6 +47,7 @@ export type SportApiSnapshot = {
   message: string;
   matches: SportApiMatch[];
   standings: SportApiStanding[];
+  teams: SportApiTeam[];
 };
 
 type ApiSportsResponse<T> = {
@@ -120,7 +134,8 @@ export async function getSportApiSnapshot(sport: ApiSportId): Promise<SportApiSn
       status: "not_configured",
       message: getMissingKeyMessage(sport, config),
       matches: [],
-      standings: []
+      standings: [],
+      teams: []
     };
   }
 
@@ -132,7 +147,8 @@ export async function getSportApiSnapshot(sport: ApiSportId): Promise<SportApiSn
       status: "live",
       message: `Live data loaded from ${config.providerName}.`,
       matches,
-      standings: []
+      standings: [],
+      teams: []
     };
   } catch (error) {
     console.error(error);
@@ -142,7 +158,8 @@ export async function getSportApiSnapshot(sport: ApiSportId): Promise<SportApiSn
       status: "error",
       message: `${config.providerName} request failed. Showing local fallback data.`,
       matches: [],
-      standings: []
+      standings: [],
+      teams: []
     };
   }
 }
@@ -162,17 +179,20 @@ export async function getFootballCompetitionApiSnapshot(competition: FootballCom
         ? getMissingKeyMessage("football", config)
         : `No API-Football league id configured for ${competition.name}.`,
       matches: [],
-      standings: []
+      standings: [],
+      teams: []
     };
   }
 
   try {
-    const [matchesResult, standingsResult] = await Promise.allSettled([
-      fetchMatches("football", config, { league, season }),
-      competition.type === "league" ? fetchFootballStandings(config, { league, season }) : Promise.resolve([])
+    const [matchesResult, standingsResult, teamsResult] = await Promise.allSettled([
+      fetchMatches("football", config, { league, season }, getFootballMatchLimit()),
+      competition.type === "league" ? fetchFootballStandings(config, { league, season }) : Promise.resolve([]),
+      fetchFootballTeams(config, { league, season })
     ]);
     const matches = matchesResult.status === "fulfilled" ? matchesResult.value : [];
     const standings = standingsResult.status === "fulfilled" ? standingsResult.value : [];
+    const teams = teamsResult.status === "fulfilled" ? teamsResult.value : [];
 
     if (matchesResult.status === "rejected") {
       console.error(matchesResult.reason);
@@ -182,6 +202,10 @@ export async function getFootballCompetitionApiSnapshot(competition: FootballCom
       console.error(standingsResult.reason);
     }
 
+    if (teamsResult.status === "rejected") {
+      console.error(teamsResult.reason);
+    }
+
     return {
       sport: "football",
       provider: config.provider,
@@ -189,14 +213,17 @@ export async function getFootballCompetitionApiSnapshot(competition: FootballCom
       message: getFootballSnapshotMessage(
         matches.length,
         standings.length,
+        teams.length,
         competition.type,
         [
           matchesResult.status === "rejected" ? matchesResult.reason : null,
-          standingsResult.status === "rejected" ? standingsResult.reason : null
+          standingsResult.status === "rejected" ? standingsResult.reason : null,
+          teamsResult.status === "rejected" ? teamsResult.reason : null
         ]
       ),
       matches,
-      standings
+      standings,
+      teams
     };
   } catch (error) {
     console.error(error);
@@ -206,7 +233,8 @@ export async function getFootballCompetitionApiSnapshot(competition: FootballCom
       status: "error",
       message: `API-Football request failed for ${competition.name}. Showing local fallback data.`,
       matches: [],
-      standings: []
+      standings: [],
+      teams: []
     };
   }
 }
@@ -214,6 +242,7 @@ export async function getFootballCompetitionApiSnapshot(competition: FootballCom
 function getFootballSnapshotMessage(
   matchCount: number,
   standingCount: number,
+  teamCount: number,
   competitionType: FootballCompetition["type"],
   errors: unknown[] = []
 ): string {
@@ -224,6 +253,10 @@ function getFootballSnapshotMessage(
 
   if (matchCount > 0 && (standingCount > 0 || competitionType !== "league")) {
     return "Live football data loaded from API-Football.";
+  }
+
+  if (teamCount > 0) {
+    return "Live team logos loaded from API-Football. Fixtures or standings are using fallback data.";
   }
 
   if (matchCount > 0) {
@@ -282,6 +315,13 @@ export function fallbackTeamsToStandings(teams: FootballTeam[]): SportApiStandin
     rank: team.rank,
     teamName: team.name,
     teamLogo: null,
+    played: 34,
+    won: Math.max(0, Math.round((team.points ?? 0) / 3)),
+    drawn: Math.max(0, (team.points ?? 0) % 3),
+    lost: Math.max(0, 34 - Math.round((team.points ?? 0) / 3) - ((team.points ?? 0) % 3)),
+    goalsFor: null,
+    goalsAgainst: null,
+    goalDiff: null,
     points: team.points,
     form: team.form,
     detail: team.prediction
@@ -291,7 +331,8 @@ export function fallbackTeamsToStandings(teams: FootballTeam[]): SportApiStandin
 async function fetchMatches(
   sport: ApiSportId,
   config: SportConfig,
-  query: Record<string, string>
+  query: Record<string, string>,
+  limit = 8
 ): Promise<SportApiMatch[]> {
   const data = await fetchApiSports<any>(config, config.gamesPath, query);
   const normalizers: Record<ApiSportId, (item: any) => SportApiMatch> = {
@@ -301,7 +342,7 @@ async function fetchMatches(
     tennis: normalizeTennisFixture
   };
 
-  return data.map(normalizers[sport]).filter((match) => match.homeName && match.awayName).slice(0, 8);
+  return data.map(normalizers[sport]).filter((match) => match.homeName && match.awayName).slice(0, limit);
 }
 
 async function fetchFootballStandings(config: SportConfig, query: Record<string, string>): Promise<SportApiStanding[]> {
@@ -316,10 +357,29 @@ async function fetchFootballStandings(config: SportConfig, query: Record<string,
     rank: toNumber(row.rank) ?? 0,
     teamName: getString(row.team?.name),
     teamLogo: getString(row.team?.logo),
+    played: toNumber(row.all?.played),
+    won: toNumber(row.all?.win),
+    drawn: toNumber(row.all?.draw),
+    lost: toNumber(row.all?.lose),
+    goalsFor: toNumber(row.all?.goals?.for),
+    goalsAgainst: toNumber(row.all?.goals?.against),
+    goalDiff: toNumber(row.goalsDiff),
     points: toNumber(row.points),
     form: getString(row.form),
     detail: toNumber(row.goalsDiff) === null ? null : `${row.goalsDiff} GD`
   })).filter((row: SportApiStanding) => row.rank > 0 && row.teamName).slice(0, 18);
+}
+
+async function fetchFootballTeams(config: SportConfig, query: Record<string, string>): Promise<SportApiTeam[]> {
+  const data = await fetchApiSports<any>(config, "/teams", query);
+
+  return data
+    .map((item: any): SportApiTeam => ({
+      id: String(item.team?.id ?? ""),
+      name: getString(item.team?.name),
+      logo: getString(item.team?.logo) || null
+    }))
+    .filter((team) => team.name);
 }
 
 async function fetchApiSports<T>(
@@ -372,6 +432,16 @@ function normalizeFootballFixture(item: any): SportApiMatch {
     awayScore: toNumber(item.goals?.away ?? item.score?.fulltime?.away),
     status: getString(item.fixture?.status?.short || item.fixture?.status?.long) || null
   };
+}
+
+function getFootballMatchLimit() {
+  const configured = Number(process.env.API_FOOTBALL_MATCH_LIMIT ?? process.env.API_SPORTS_MATCH_LIMIT ?? 120);
+
+  if (!Number.isFinite(configured) || configured <= 0) {
+    return 120;
+  }
+
+  return configured;
 }
 
 function normalizeAmericanFootballGame(item: any): SportApiMatch {

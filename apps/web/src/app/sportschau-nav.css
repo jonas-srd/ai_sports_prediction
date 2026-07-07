@@ -92,6 +92,128 @@
   width: 32px;
 }
 
+.siteSearch {
+  justify-self: center;
+  max-width: 520px;
+  position: relative;
+  width: min(100%, 520px);
+  z-index: 70;
+}
+
+.siteSearchLabel {
+  clip: rect(0 0 0 0);
+  height: 1px;
+  overflow: hidden;
+  position: absolute;
+  white-space: nowrap;
+  width: 1px;
+}
+
+.siteSearchField {
+  align-items: center;
+  background: rgba(8, 16, 25, 0.62);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 8px;
+  display: grid;
+  gap: 8px;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  min-height: 46px;
+  padding: 0 8px 0 14px;
+}
+
+.siteSearchField:focus-within {
+  background: rgba(8, 16, 25, 0.82);
+  border-color: rgba(125, 245, 193, 0.46);
+  box-shadow: 0 0 0 3px rgba(125, 245, 193, 0.1);
+}
+
+.siteSearchField > span {
+  color: #7df5c1;
+  font-size: 1.2rem;
+  font-weight: 950;
+  line-height: 1;
+}
+
+.siteSearchField input {
+  background: transparent;
+  border: 0;
+  color: #f8fbff;
+  font: inherit;
+  font-size: 0.92rem;
+  font-weight: 800;
+  min-width: 0;
+  outline: 0;
+}
+
+.siteSearchField input::placeholder {
+  color: rgba(247, 251, 255, 0.58);
+}
+
+.siteSearchField button {
+  align-items: center;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 8px;
+  color: #f8fbff;
+  cursor: pointer;
+  display: inline-flex;
+  font-size: 1.1rem;
+  font-weight: 950;
+  height: 32px;
+  justify-content: center;
+  width: 36px;
+}
+
+.siteSearchField button:hover,
+.siteSearchField button:focus-visible {
+  background: rgba(125, 245, 193, 0.18);
+  border-color: rgba(125, 245, 193, 0.38);
+}
+
+.siteSearchResults {
+  background: #f8fbff;
+  border: 1px solid rgba(9, 28, 49, 0.14);
+  border-radius: 8px;
+  box-shadow: 0 24px 54px rgba(0, 0, 0, 0.36);
+  display: grid;
+  gap: 4px;
+  left: 0;
+  padding: 8px;
+  position: absolute;
+  right: 0;
+  top: calc(100% + 8px);
+}
+
+.siteSearchResults button {
+  background: transparent;
+  border: 0;
+  border-radius: 8px;
+  color: #0b1f36;
+  cursor: pointer;
+  display: grid;
+  gap: 2px;
+  padding: 10px 12px;
+  text-align: left;
+}
+
+.siteSearchResults button:hover,
+.siteSearchResults button:focus-visible {
+  background: rgba(9, 28, 49, 0.08);
+}
+
+.siteSearchResults span {
+  color: #50677f;
+  font-size: 0.68rem;
+  font-weight: 900;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.siteSearchResults strong {
+  font-size: 0.95rem;
+  font-weight: 950;
+}
+
 .siteMenu {
   justify-self: end;
   position: relative;
@@ -328,6 +450,12 @@
 
   .siteNavHighlight {
     display: none;
+  }
+
+  .siteSearch {
+    grid-column: 1 / -1;
+    order: 3;
+    width: 100%;
   }
 
   .siteNavLogo {

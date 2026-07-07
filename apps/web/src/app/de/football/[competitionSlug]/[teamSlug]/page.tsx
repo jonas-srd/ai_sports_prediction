@@ -1,6 +1,10 @@
 import type { Metadata } from "next";
-import { FootballTeamPage, footballTeamStaticParams } from "@/components/football-pages";
+import { redirect } from "next/navigation";
+import { footballTeamStaticParams } from "@/components/football-pages";
 import { getCompetition, getTeam } from "@/lib/football-data";
+import { localizePath } from "@/lib/i18n";
+
+export const dynamic = "force-dynamic";
 
 type PageProps = {
   params: Promise<{ competitionSlug: string; teamSlug: string }>;
@@ -24,5 +28,5 @@ export function generateStaticParams() {
 export default async function GermanTeamPage({ params }: PageProps) {
   const { competitionSlug, teamSlug } = await params;
 
-  return <FootballTeamPage competitionSlug={competitionSlug} locale="de" teamSlug={teamSlug} />;
+  redirect(`${localizePath(`/football/team/${teamSlug}`, "de")}?from=${encodeURIComponent(competitionSlug)}`);
 }
