@@ -6,6 +6,11 @@ import { TournamentTreeView } from "@/components/tournament-tree-view";
 import { getDashboardMatchesFromApi, getSpecialPredictionsFromApi } from "@/lib/dashboard-api-data";
 import { sampleMatches } from "@/lib/dashboard-types";
 import { localizePath, routeText, type Locale } from "@/lib/i18n";
+import {
+  getFallbackSportMatches,
+  getSportApiSnapshot,
+  type SportApiMatch
+} from "@/lib/sports-api-data";
 
 const homeExperience = {
   en: {
@@ -459,10 +464,12 @@ export async function HomePageContent({ locale }: { locale: Locale }) {
   );
 }
 
-export function SportPageContent({ locale, sport }: { locale: Locale; sport: SportPageId }) {
+export async function SportPageContent({ locale, sport }: { locale: Locale; sport: SportPageId }) {
   const content = sportPageContent[locale][sport];
   const sports = Object.entries(sportPageContent[locale]) as Array<[SportPageId, typeof content]>;
   const relatedSports = sports.filter(([id]) => id !== sport);
+  const apiSnapshot = await getSportApiSnapshot(sport);
+  const liveMatches = apiSnapshot.matches.length > 0 ? apiSnapshot.matches : getFallbackSportMatches(sport);
   const labels = {
     en: {
       back: "All sports",
@@ -472,7 +479,11 @@ export function SportPageContent({ locale, sport }: { locale: Locale; sport: Spo
       focus: "Prediction focus",
       signals: "Signal setup",
       roadmap: "Build roadmap",
-      switchSport: "Switch sport"
+      switchSport: "Switch sport",
+      liveGames: "Live games",
+      dataSource: "Data source",
+      apiReady: "API ready",
+      status: "Status"
     },
     de: {
       back: "Alle Sportarten",
@@ -482,7 +493,11 @@ export function SportPageContent({ locale, sport }: { locale: Locale; sport: Spo
       focus: "Prediction-Fokus",
       signals: "Signal-Setup",
       roadmap: "Build-Roadmap",
-      switchSport: "Sportart wechseln"
+      switchSport: "Sportart wechseln",
+      liveGames: "Live-Spiele",
+      dataSource: "Datenquelle",
+      apiReady: "API bereit",
+      status: "Status"
     }
   }[locale];
 
@@ -509,6 +524,36 @@ export function SportPageContent({ locale, sport }: { locale: Locale; sport: Spo
           </div>
           <p>{content.modelNote}</p>
         </aside>
+      </section>
+
+      <section className="sportLivePanel">
+        <div className="sectionHeaderRow">
+          <div>
+            <p className="sectionKicker">{labels.liveGames}</p>
+            <h2>{content.label}</h2>
+          </div>
+          <p>{labels.dataSource}: {apiSnapshot.status === "live" ? getApiProviderLabel(apiSnapshot.provider) : labels.apiReady}</p>
+        </div>
+        <div className="sportLiveGrid">
+          {liveMatches.map((match) => (
+            <article className="sportLiveMatch" key={match.id}>
+              <span>{match.competition}</span>
+              <div className="sportLiveTeams">
+                <div className="sportLiveTeam">
+                  <SportTeamLogo logo={match.homeLogo} name={match.homeName} />
+                  <strong>{match.homeName}</strong>
+                </div>
+                <em>{formatSportMatchCenter(match, locale)}</em>
+                <div className="sportLiveTeam">
+                  <SportTeamLogo logo={match.awayLogo} name={match.awayName} />
+                  <strong>{match.awayName}</strong>
+                </div>
+              </div>
+              <p>{formatSportMatchDate(match.date, locale)} · {labels.status}: {match.status ?? "preview"}</p>
+            </article>
+          ))}
+        </div>
+        <p className="apiPanelMessage">{apiSnapshot.message}</p>
       </section>
 
       <section className="sportsHubSection">
@@ -569,6 +614,53 @@ export function SportPageContent({ locale, sport }: { locale: Locale; sport: Spo
       </section>
     </main>
   );
+}
+
+function SportTeamLogo({ logo, name }: { logo: string | null; name: string }) {
+  if (logo) {
+    return <img alt="" className="sportLiveLogo" src={logo} />;
+  }
+
+  return <span className="sportLiveLogo textLogo">{getSportInitials(name)}</span>;
+}
+
+function formatSportMatchCenter(match: SportApiMatch, locale: Locale) {
+  if (match.homeScore !== null && match.awayScore !== null) {
+    return `${match.homeScore} - ${match.awayScore}`;
+  }
+
+  return locale === "de" ? "vs" : "vs";
+}
+
+function getSportInitials(name: string) {
+  return name
+    .split(/\s+/)
+    .map((part) => part[0])
+    .join("")
+    .slice(0, 3)
+    .toUpperCase();
+}
+
+function getApiProviderLabel(provider: "api-football" | "api-sports") {
+  return provider === "api-football" ? "API-Football" : "API-Sports";
+}
+
+function formatSportMatchDate(value: string | null, locale: Locale) {
+  if (!value) {
+    return locale === "de" ? "Termin offen" : "Date pending";
+  }
+
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) {
+    return value;
+  }
+
+  return new Intl.DateTimeFormat(locale === "de" ? "de-DE" : "en-GB", {
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    month: "2-digit"
+  }).format(date);
 }
 
 export async function MatchesPageContent({ locale }: { locale: Locale }) {

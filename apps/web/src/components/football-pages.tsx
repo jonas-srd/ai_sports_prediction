@@ -4,12 +4,17 @@ import type { CSSProperties } from "react";
 import {
   footballCompetitions,
   getCompetition,
-  getCompetitionGroups,
   getTeam,
   type FootballCompetition,
   type FootballTeam
 } from "@/lib/football-data";
 import { localizePath, type Locale } from "@/lib/i18n";
+import {
+  fallbackTeamsToStandings,
+  getFootballCompetitionApiSnapshot,
+  type SportApiMatch,
+  type SportApiStanding
+} from "@/lib/sports-api-data";
 
 const labels = {
   en: {
@@ -38,7 +43,12 @@ const labels = {
     city: "City",
     modelSummary: "Model summary",
     teamNews: "Team news",
-    backToCompetition: "Back to competition"
+    backToCompetition: "Back to competition",
+    liveData: "Live data",
+    apiReady: "API ready",
+    source: "Source",
+    scrollMore: "More",
+    featuredCompetitions: "Leagues and cups"
   },
   de: {
     football: "Fußball",
@@ -66,7 +76,12 @@ const labels = {
     city: "Stadt",
     modelSummary: "Modell-Zusammenfassung",
     teamNews: "Team-News",
-    backToCompetition: "Zurück zum Wettbewerb"
+    backToCompetition: "Zurück zum Wettbewerb",
+    liveData: "Live-Daten",
+    apiReady: "API bereit",
+    source: "Quelle",
+    scrollMore: "Mehr",
+    featuredCompetitions: "Ligen und Pokale"
   }
 } as const;
 
@@ -85,7 +100,8 @@ export function TeamCrest({ team, size = "md" }: { team: FootballTeam; size?: "s
 
 export function FootballOverviewPage({ locale }: { locale: Locale }) {
   const text = labels[locale];
-  const groups = getCompetitionGroups();
+  const leagues = footballCompetitions.filter((competition) => competition.type === "league");
+  const cups = footballCompetitions.filter((competition) => competition.type === "cup");
 
   return (
     <main className="shell footballShell">
@@ -95,43 +111,58 @@ export function FootballOverviewPage({ locale }: { locale: Locale }) {
         <p>{text.intro}</p>
       </section>
 
-      <section className="footballCompetitionGrid" aria-label={text.overview}>
-        {groups.map((group) => (
-          <article className="footballCountryPanel" key={group.country}>
-            <div className="footballCountryHeader">
-              <span>{group.countryCode}</span>
-              <h2>{group.country}</h2>
-            </div>
-            <div className="competitionSplit">
-              <CompetitionColumn competitions={group.competitions.filter((item) => item.type === "league")} title={text.leagues} locale={locale} />
-              <CompetitionColumn competitions={group.competitions.filter((item) => item.type === "cup")} title={text.cups} locale={locale} />
-            </div>
-          </article>
-        ))}
+      <section className="footballRailSection" aria-label={text.featuredCompetitions}>
+        <div className="footballRailHeader">
+          <h2>{text.featuredCompetitions}</h2>
+          <a aria-label={text.scrollMore} className="footballRailNext" href="#football-rail-end">›</a>
+        </div>
+        <nav className="footballCompetitionRail" aria-label={text.featuredCompetitions}>
+          {footballCompetitions.map((competition) => (
+            <Link
+              className="footballRailItem"
+              href={localizePath(`/football/${competition.slug}`, locale)}
+              key={competition.slug}
+            >
+              <span>{competition.type === "league" ? text.leagues : text.cups}</span>
+              <strong>{competition.name}</strong>
+              <small>{competition.country}</small>
+            </Link>
+          ))}
+          <span aria-hidden="true" className="footballRailEnd" id="football-rail-end" />
+        </nav>
+      </section>
+
+      <section className="footballOverviewBands" aria-label={text.overview}>
+        <CompetitionBand competitions={leagues} title={text.leagues} locale={locale} />
+        <CompetitionBand competitions={cups} title={text.cups} locale={locale} />
       </section>
     </main>
   );
 }
 
-function CompetitionColumn({ competitions, title, locale }: { competitions: FootballCompetition[]; title: string; locale: Locale }) {
+function CompetitionBand({ competitions, title, locale }: { competitions: FootballCompetition[]; title: string; locale: Locale }) {
   const text = labels[locale];
 
   return (
-    <div className="competitionColumn">
-      <p>{title}</p>
+    <section className="competitionBand">
+      <div className="competitionBandHeader">
+        <h2>{title}</h2>
+      </div>
+      <div className="competitionBandGrid">
       {competitions.map((competition) => (
         <Link className="competitionTile" href={localizePath(`/football/${competition.slug}`, locale)} key={competition.slug}>
-          <span>{competition.type === "league" ? "League" : "Cup"}</span>
+          <span>{competition.countryCode}</span>
           <strong>{competition.name}</strong>
           <small>{competition.description}</small>
           <em>{text.open}</em>
         </Link>
       ))}
-    </div>
+      </div>
+    </section>
   );
 }
 
-export function FootballCompetitionPage({ competitionSlug, locale }: { competitionSlug: string; locale: Locale }) {
+export async function FootballCompetitionPage({ competitionSlug, locale }: { competitionSlug: string; locale: Locale }) {
   const competition = getCompetition(competitionSlug);
   const text = labels[locale];
 
@@ -139,7 +170,9 @@ export function FootballCompetitionPage({ competitionSlug, locale }: { competiti
     notFound();
   }
 
-  const fixtures = buildFixtures(competition.teams);
+  const apiSnapshot = await getFootballCompetitionApiSnapshot(competition);
+  const fixtures = apiSnapshot.matches.length > 0 ? apiSnapshot.matches : buildFixtures(competition.teams);
+  const standings = apiSnapshot.standings.length > 0 ? apiSnapshot.standings : fallbackTeamsToStandings(competition.teams);
 
   return (
     <main className="footballDetailShell">
@@ -172,28 +205,37 @@ export function FootballCompetitionPage({ competitionSlug, locale }: { competiti
 
       <section className="footballPanel fixturePanel" id="matchday">
         <div className="footballPanelHeader">
-          <p>{text.fixtures}</p>
+          <div>
+            <p>{text.fixtures}</p>
+            <span className="dataProviderNote">{text.source}: {apiSnapshot.status === "live" ? "API-Football" : text.apiReady}</span>
+          </div>
           <strong>{competition.name}</strong>
         </div>
         <div className="fixtureGrid">
           {fixtures.map((fixture) => (
-            <article className="fixtureRow" key={`${fixture.home.slug}-${fixture.away.slug}`}>
-              <Link href={localizePath(`/football/${competition.slug}/${fixture.home.slug}`, locale)}>
-                {fixture.home.name}
-                <TeamCrest team={fixture.home} size="sm" />
-              </Link>
+            <article className="fixtureRow" key={fixture.id}>
+              <FixtureTeam
+                competition={competition}
+                locale={locale}
+                logo={fixture.homeLogo}
+                name={fixture.homeName}
+                align="right"
+              />
               <div className="fixtureTime">
-                <span>{fixture.date}</span>
-                <strong>{fixture.time}</strong>
+                <span>{formatFixtureDate(fixture.date, locale)}</span>
+                <strong>{formatFixtureCenter(fixture, locale)}</strong>
               </div>
-              <Link href={localizePath(`/football/${competition.slug}/${fixture.away.slug}`, locale)}>
-                <TeamCrest team={fixture.away} size="sm" />
-                {fixture.away.name}
-              </Link>
+              <FixtureTeam
+                competition={competition}
+                locale={locale}
+                logo={fixture.awayLogo}
+                name={fixture.awayName}
+                align="left"
+              />
             </article>
           ))}
         </div>
-        <button className="showAllButton" type="button">{text.showAll}</button>
+        <p className="apiPanelMessage">{apiSnapshot.message}</p>
       </section>
 
       <section className="footballPanel" id="news">
@@ -216,14 +258,8 @@ export function FootballCompetitionPage({ competitionSlug, locale }: { competiti
       <section className="footballPanel" id="table">
         <h2>{text.table}</h2>
         <div className="leagueTable">
-          {competition.teams.map((team) => (
-            <Link className="leagueTableRow" href={localizePath(`/football/${competition.slug}/${team.slug}`, locale)} key={team.slug}>
-              <span>{team.rank}</span>
-              <TeamCrest team={team} size="sm" />
-              <strong>{team.name}</strong>
-              <small>{team.form}</small>
-              <em>{team.points} {text.points}</em>
-            </Link>
+          {standings.map((team) => (
+            <StandingRow competition={competition} key={`${team.rank}-${team.teamName}`} locale={locale} standing={team} />
           ))}
         </div>
       </section>
@@ -302,16 +338,145 @@ export function footballTeamStaticParams() {
 }
 
 function buildFixtures(teams: FootballTeam[]) {
-  const fixtures = [];
+  const fixtures: SportApiMatch[] = [];
 
   for (let index = 0; index < teams.length - 1; index += 2) {
     fixtures.push({
-      home: teams[index],
-      away: teams[index + 1],
-      date: index === 0 ? "28.08." : "31.08.",
-      time: index === 0 ? "20:30" : "15:30"
+      id: `fallback:${teams[index].slug}:${teams[index + 1].slug}`,
+      competition: "Local preview",
+      date: buildFallbackFixtureDate(index),
+      homeName: teams[index].name,
+      awayName: teams[index + 1].name,
+      homeLogo: null,
+      awayLogo: null,
+      homeScore: null,
+      awayScore: null,
+      status: "preview"
     });
   }
 
   return fixtures.slice(0, 6);
+}
+
+function FixtureTeam({
+  align,
+  competition,
+  locale,
+  logo,
+  name
+}: {
+  align: "left" | "right";
+  competition: FootballCompetition;
+  locale: Locale;
+  logo: string | null;
+  name: string;
+}) {
+  const team = findCompetitionTeamByName(competition, name);
+  const content = (
+    <>
+      {align === "right" ? name : <TeamMark logo={logo} name={name} team={team} />}
+      {align === "right" ? <TeamMark logo={logo} name={name} team={team} /> : name}
+    </>
+  );
+
+  if (team) {
+    return (
+      <Link href={localizePath(`/football/${competition.slug}/${team.slug}`, locale)}>
+        {content}
+      </Link>
+    );
+  }
+
+  return <span className={`fixtureTeam fixtureTeam-${align}`}>{content}</span>;
+}
+
+function StandingRow({ competition, locale, standing }: { competition: FootballCompetition; locale: Locale; standing: SportApiStanding }) {
+  const team = findCompetitionTeamByName(competition, standing.teamName);
+  const content = (
+    <>
+      <span>{standing.rank}</span>
+      <TeamMark logo={standing.teamLogo} name={standing.teamName} team={team} />
+      <strong>{standing.teamName}</strong>
+      <small>{standing.form ?? standing.detail ?? ""}</small>
+      <em>{standing.points === null ? "-" : standing.points}</em>
+    </>
+  );
+
+  if (team) {
+    return (
+      <Link className="leagueTableRow" href={localizePath(`/football/${competition.slug}/${team.slug}`, locale)}>
+        {content}
+      </Link>
+    );
+  }
+
+  return <div className="leagueTableRow">{content}</div>;
+}
+
+function TeamMark({ logo, name, team }: { logo: string | null; name: string; team?: FootballTeam }) {
+  if (logo) {
+    return <img alt="" className="apiTeamLogo" src={logo} />;
+  }
+
+  if (team) {
+    return <TeamCrest team={team} size="sm" />;
+  }
+
+  return <span className="apiTeamLogo textLogo">{getInitials(name)}</span>;
+}
+
+function findCompetitionTeamByName(competition: FootballCompetition, name: string) {
+  const normalizedName = normalizeName(name);
+  return competition.teams.find((team) => normalizeName(team.name) === normalizedName || normalizeName(team.shortName) === normalizedName);
+}
+
+function normalizeName(value: string) {
+  return value.toLowerCase().replace(/[^a-z0-9]+/g, "");
+}
+
+function getInitials(name: string) {
+  return name.split(/\s+/).map((part) => part[0]).join("").slice(0, 3).toUpperCase();
+}
+
+function formatFixtureDate(value: string | null, locale: Locale) {
+  if (!value) {
+    return locale === "de" ? "Termin offen" : "Date pending";
+  }
+
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) {
+    return value;
+  }
+
+  return new Intl.DateTimeFormat(locale === "de" ? "de-DE" : "en-GB", {
+    day: "2-digit",
+    month: "2-digit"
+  }).format(date);
+}
+
+function formatFixtureCenter(fixture: SportApiMatch, locale: Locale) {
+  if (fixture.homeScore !== null && fixture.awayScore !== null) {
+    return `${fixture.homeScore} - ${fixture.awayScore}`;
+  }
+
+  if (!fixture.date) {
+    return fixture.status ?? (locale === "de" ? "offen" : "pending");
+  }
+
+  const date = new Date(fixture.date);
+  if (Number.isNaN(date.getTime())) {
+    return fixture.status ?? (locale === "de" ? "offen" : "pending");
+  }
+
+  return new Intl.DateTimeFormat(locale === "de" ? "de-DE" : "en-GB", {
+    hour: "2-digit",
+    minute: "2-digit"
+  }).format(date);
+}
+
+function buildFallbackFixtureDate(index: number) {
+  const date = new Date();
+  date.setUTCDate(date.getUTCDate() + Math.floor(index / 2) + 1);
+  date.setUTCHours(index === 0 ? 18 : 14, 30, 0, 0);
+  return date.toISOString();
 }

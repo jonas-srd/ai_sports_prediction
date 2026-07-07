@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import { FootballCompetitionPage, footballStaticParams } from "@/components/football-pages";
 import { getCompetition } from "@/lib/football-data";
 
+export const dynamic = "force-dynamic";
+
 type PageProps = {
   params: Promise<{ competitionSlug: string }>;
 };
