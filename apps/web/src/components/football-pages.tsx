@@ -68,7 +68,20 @@ const labels = {
     participatingTeams: "Participating teams",
     formGuide: "Form guide",
     matchCenter: "Match center",
-    competitionFacts: "Competition facts"
+    competitionFacts: "Competition facts",
+    modelPrediction: "LLM prediction",
+    liveStatus: "Live score",
+    finalStatus: "Final",
+    scheduledStatus: "Scheduled",
+    gamesShown: "games",
+    selectMatchday: "Select matchday",
+    predictionSignal: "AI prediction",
+    previousMatchday: "Previous",
+    nextMatchday: "Next",
+    confidence: "Confidence",
+    predictedScore: "Score",
+    pick: "Pick",
+    reasoning: "Reasoning"
   },
   de: {
     football: "Fußball",
@@ -120,7 +133,20 @@ const labels = {
     participatingTeams: "Teilnehmende Teams",
     formGuide: "Formkurve",
     matchCenter: "Matchcenter",
-    competitionFacts: "Wettbewerbsdaten"
+    competitionFacts: "Wettbewerbsdaten",
+    modelPrediction: "LLM-Prognose",
+    liveStatus: "Live-Stand",
+    finalStatus: "Endstand",
+    scheduledStatus: "Ansetzung",
+    gamesShown: "Spiele",
+    selectMatchday: "Spieltag auswählen",
+    predictionSignal: "KI-Prognose",
+    previousMatchday: "Zurück",
+    nextMatchday: "Weiter",
+    confidence: "Sicherheit",
+    predictedScore: "Ergebnis",
+    pick: "Tipp",
+    reasoning: "Begründung"
   }
 } as const;
 
@@ -153,6 +179,12 @@ const teamNameAliases: Record<string, string[]> = {
   "borussia-moenchengladbach": ["Borussia Mönchengladbach", "Borussia Monchengladbach", "Borussia MG"],
   "mainz-05": ["FSV Mainz 05", "1. FSV Mainz 05"],
   "fc-augsburg": ["Augsburg"],
+  "vfl-wolfsburg": ["Wolfsburg", "VfL Wolfsburg"],
+  "union-berlin": ["Union Berlin", "1. FC Union Berlin"],
+  "tsg-hoffenheim": ["Hoffenheim", "1899 Hoffenheim", "TSG Hoffenheim"],
+  "heidenheim": ["Heidenheim", "1. FC Heidenheim"],
+  "st-pauli": ["St. Pauli", "FC St. Pauli"],
+  "holstein-kiel": ["Holstein Kiel"],
   "werder-bremen": ["SV Werder Bremen"],
   "vfb-stuttgart": ["VfB Stuttgart"],
   "bayer-leverkusen": ["Bayer 04 Leverkusen"],
@@ -167,24 +199,76 @@ const teamNameAliases: Record<string, string[]> = {
   "manchester-united": ["Manchester United", "Man United", "Manchester Utd"],
   "newcastle-united": ["Newcastle", "Newcastle United"],
   "aston-villa": ["Aston Villa"],
+  "brighton": ["Brighton", "Brighton & Hove Albion", "Brighton and Hove Albion"],
+  "brentford": ["Brentford"],
+  "crystal-palace": ["Crystal Palace"],
+  "everton": ["Everton"],
+  "fulham": ["Fulham"],
+  "west-ham": ["West Ham", "West Ham United"],
+  "wolves": ["Wolves", "Wolverhampton Wanderers"],
+  "bournemouth": ["Bournemouth", "AFC Bournemouth"],
+  "nottingham-forest": ["Nottingham Forest"],
+  "leicester-city": ["Leicester", "Leicester City"],
+  "southampton": ["Southampton"],
+  "ipswich-town": ["Ipswich", "Ipswich Town"],
   "real-madrid": ["Real Madrid"],
   "barcelona": ["Barcelona", "FC Barcelona"],
   "atletico-madrid": ["Atletico Madrid", "Atlético Madrid", "Atletico"],
   "real-sociedad": ["Real Sociedad"],
   "athletic-bilbao": ["Athletic Club", "Athletic Bilbao"],
   "villarreal": ["Villarreal"],
+  "real-betis": ["Real Betis", "Betis"],
+  "celta-vigo": ["Celta Vigo", "Celta de Vigo"],
+  "rayo-vallecano": ["Rayo Vallecano"],
+  "osasuna": ["Osasuna", "CA Osasuna"],
+  "mallorca": ["Mallorca", "RCD Mallorca"],
+  "valencia": ["Valencia", "Valencia CF"],
+  "getafe": ["Getafe", "Getafe CF"],
+  "espanyol": ["Espanyol", "RCD Espanyol"],
+  "alaves": ["Alaves", "Alavés", "Deportivo Alaves"],
+  "girona": ["Girona", "Girona FC"],
+  "sevilla": ["Sevilla", "Sevilla FC"],
+  "las-palmas": ["Las Palmas", "UD Las Palmas"],
+  "leganes": ["Leganes", "Leganés", "CD Leganes"],
+  "valladolid": ["Valladolid", "Real Valladolid"],
   "psg": ["Paris Saint Germain", "Paris Saint-Germain", "PSG"],
   "marseille": ["Olympique Marseille", "Marseille"],
   "monaco": ["AS Monaco", "Monaco"],
   "lyon": ["Olympique Lyonnais", "Lyon"],
   "lille": ["Lille", "LOSC Lille"],
   "nice": ["Nice", "OGC Nice"],
+  "strasbourg": ["Strasbourg", "RC Strasbourg"],
+  "lens": ["Lens", "RC Lens"],
+  "brest": ["Brest", "Stade Brestois"],
+  "toulouse": ["Toulouse", "Toulouse FC"],
+  "auxerre": ["Auxerre", "AJ Auxerre"],
+  "rennes": ["Rennes", "Stade Rennes"],
+  "nantes": ["Nantes", "FC Nantes"],
+  "angers": ["Angers", "Angers SCO"],
+  "reims": ["Reims", "Stade Reims"],
+  "le-havre": ["Le Havre", "HAC"],
+  "saint-etienne": ["Saint-Etienne", "Saint-Étienne", "AS Saint-Etienne"],
+  "montpellier": ["Montpellier", "Montpellier HSC"],
   "inter": ["Inter", "Inter Milan", "Internazionale"],
   "juventus": ["Juventus"],
   "ac-milan": ["AC Milan", "Milan"],
   "napoli": ["Napoli", "Naples"],
   "roma": ["AS Roma", "Roma"],
-  "lazio": ["Lazio"]
+  "lazio": ["Lazio"],
+  "atalanta": ["Atalanta"],
+  "fiorentina": ["Fiorentina"],
+  "bologna": ["Bologna"],
+  "como": ["Como"],
+  "torino": ["Torino"],
+  "udinese": ["Udinese"],
+  "genoa": ["Genoa"],
+  "hellas-verona": ["Hellas Verona", "Verona"],
+  "cagliari": ["Cagliari"],
+  "parma": ["Parma"],
+  "lecce": ["Lecce"],
+  "empoli": ["Empoli"],
+  "venezia": ["Venezia", "Venezia FC"],
+  "monza": ["Monza"]
 };
 
 const competitionLogos: Record<string, string> = {
@@ -213,6 +297,12 @@ const knownTeamLogos: Record<string, string> = {
   "hamburger-sv": "https://media.api-sports.io/football/teams/175.png",
   "fc-augsburg": "https://media.api-sports.io/football/teams/170.png",
   "mainz-05": "https://media.api-sports.io/football/teams/164.png",
+  "vfl-wolfsburg": "https://media.api-sports.io/football/teams/161.png",
+  "union-berlin": "https://media.api-sports.io/football/teams/182.png",
+  "tsg-hoffenheim": "https://media.api-sports.io/football/teams/167.png",
+  "heidenheim": "https://media.api-sports.io/football/teams/180.png",
+  "st-pauli": "https://media.api-sports.io/football/teams/186.png",
+  "holstein-kiel": "https://media.api-sports.io/football/teams/191.png",
   "manchester-city": "https://media.api-sports.io/football/teams/50.png",
   "arsenal": "https://media.api-sports.io/football/teams/42.png",
   "liverpool": "https://media.api-sports.io/football/teams/40.png",
@@ -221,24 +311,76 @@ const knownTeamLogos: Record<string, string> = {
   "manchester-united": "https://media.api-sports.io/football/teams/33.png",
   "newcastle-united": "https://media.api-sports.io/football/teams/34.png",
   "aston-villa": "https://media.api-sports.io/football/teams/66.png",
+  "brighton": "https://media.api-sports.io/football/teams/51.png",
+  "brentford": "https://media.api-sports.io/football/teams/55.png",
+  "crystal-palace": "https://media.api-sports.io/football/teams/52.png",
+  "everton": "https://media.api-sports.io/football/teams/45.png",
+  "fulham": "https://media.api-sports.io/football/teams/36.png",
+  "west-ham": "https://media.api-sports.io/football/teams/48.png",
+  "wolves": "https://media.api-sports.io/football/teams/39.png",
+  "bournemouth": "https://media.api-sports.io/football/teams/35.png",
+  "nottingham-forest": "https://media.api-sports.io/football/teams/65.png",
+  "leicester-city": "https://media.api-sports.io/football/teams/46.png",
+  "southampton": "https://media.api-sports.io/football/teams/41.png",
+  "ipswich-town": "https://media.api-sports.io/football/teams/57.png",
   "real-madrid": "https://media.api-sports.io/football/teams/541.png",
   "barcelona": "https://media.api-sports.io/football/teams/529.png",
   "atletico-madrid": "https://media.api-sports.io/football/teams/530.png",
   "real-sociedad": "https://media.api-sports.io/football/teams/548.png",
   "athletic-bilbao": "https://media.api-sports.io/football/teams/531.png",
   "villarreal": "https://media.api-sports.io/football/teams/533.png",
+  "real-betis": "https://media.api-sports.io/football/teams/543.png",
+  "celta-vigo": "https://media.api-sports.io/football/teams/538.png",
+  "rayo-vallecano": "https://media.api-sports.io/football/teams/728.png",
+  "osasuna": "https://media.api-sports.io/football/teams/727.png",
+  "mallorca": "https://media.api-sports.io/football/teams/798.png",
+  "valencia": "https://media.api-sports.io/football/teams/532.png",
+  "getafe": "https://media.api-sports.io/football/teams/546.png",
+  "espanyol": "https://media.api-sports.io/football/teams/540.png",
+  "alaves": "https://media.api-sports.io/football/teams/542.png",
+  "girona": "https://media.api-sports.io/football/teams/547.png",
+  "sevilla": "https://media.api-sports.io/football/teams/536.png",
+  "las-palmas": "https://media.api-sports.io/football/teams/534.png",
+  "leganes": "https://media.api-sports.io/football/teams/797.png",
+  "valladolid": "https://media.api-sports.io/football/teams/720.png",
   "psg": "https://media.api-sports.io/football/teams/85.png",
   "marseille": "https://media.api-sports.io/football/teams/81.png",
   "monaco": "https://media.api-sports.io/football/teams/91.png",
   "lyon": "https://media.api-sports.io/football/teams/80.png",
   "lille": "https://media.api-sports.io/football/teams/79.png",
   "nice": "https://media.api-sports.io/football/teams/84.png",
+  "strasbourg": "https://media.api-sports.io/football/teams/95.png",
+  "lens": "https://media.api-sports.io/football/teams/116.png",
+  "brest": "https://media.api-sports.io/football/teams/106.png",
+  "toulouse": "https://media.api-sports.io/football/teams/96.png",
+  "auxerre": "https://media.api-sports.io/football/teams/108.png",
+  "rennes": "https://media.api-sports.io/football/teams/94.png",
+  "nantes": "https://media.api-sports.io/football/teams/83.png",
+  "angers": "https://media.api-sports.io/football/teams/77.png",
+  "reims": "https://media.api-sports.io/football/teams/93.png",
+  "le-havre": "https://media.api-sports.io/football/teams/111.png",
+  "saint-etienne": "https://media.api-sports.io/football/teams/1063.png",
+  "montpellier": "https://media.api-sports.io/football/teams/82.png",
   "inter": "https://media.api-sports.io/football/teams/505.png",
   "juventus": "https://media.api-sports.io/football/teams/496.png",
   "ac-milan": "https://media.api-sports.io/football/teams/489.png",
   "napoli": "https://media.api-sports.io/football/teams/492.png",
   "roma": "https://media.api-sports.io/football/teams/497.png",
-  "lazio": "https://media.api-sports.io/football/teams/487.png"
+  "lazio": "https://media.api-sports.io/football/teams/487.png",
+  "atalanta": "https://media.api-sports.io/football/teams/499.png",
+  "fiorentina": "https://media.api-sports.io/football/teams/502.png",
+  "bologna": "https://media.api-sports.io/football/teams/500.png",
+  "como": "https://media.api-sports.io/football/teams/895.png",
+  "torino": "https://media.api-sports.io/football/teams/503.png",
+  "udinese": "https://media.api-sports.io/football/teams/494.png",
+  "genoa": "https://media.api-sports.io/football/teams/495.png",
+  "hellas-verona": "https://media.api-sports.io/football/teams/504.png",
+  "cagliari": "https://media.api-sports.io/football/teams/490.png",
+  "parma": "https://media.api-sports.io/football/teams/523.png",
+  "lecce": "https://media.api-sports.io/football/teams/867.png",
+  "empoli": "https://media.api-sports.io/football/teams/511.png",
+  "venezia": "https://media.api-sports.io/football/teams/517.png",
+  "monza": "https://media.api-sports.io/football/teams/1579.png"
 };
 
 export function FootballOverviewPage({ locale }: { locale: Locale }) {
@@ -300,10 +442,12 @@ function CompetitionLogo({ competition }: { competition: FootballCompetition }) 
 export async function FootballCompetitionPage({
   competitionSlug,
   locale,
+  selectedMatchday,
   tab = "news"
 }: {
   competitionSlug: string;
   locale: Locale;
+  selectedMatchday?: string;
   tab?: CompetitionTab;
 }) {
   const competition = getCompetition(competitionSlug);
@@ -314,11 +458,15 @@ export async function FootballCompetitionPage({
   }
 
   const apiSnapshot = await getFootballCompetitionApiSnapshot(competition);
-  const fixtures = apiSnapshot.matches.length > 0 ? apiSnapshot.matches : buildFixtures(competition.teams);
+  const apiFixtures = apiSnapshot.matches;
+  const baseFixtures = apiFixtures.length > 0 ? apiFixtures : buildFixtures(competition.teams);
   const standings = apiSnapshot.standings.length > 0 ? apiSnapshot.standings : fallbackTeamsToStandings(competition.teams);
-  const displayTeams = buildDisplayTeams(competition, apiSnapshot.teams, standings, fixtures);
+  const displayTeams = buildDisplayTeams(competition, apiSnapshot.teams, standings, baseFixtures);
+  const fixtures = apiFixtures.length > 0 ? apiFixtures : buildDisplayTeamFixtures(displayTeams, competition);
+  const featuredFixture = getFeaturedFixture(competition, fixtures, locale);
   const isLeague = competition.type === "league";
   const activeTab = normalizeCompetitionTab(tab, isLeague);
+  const hasSideColumn = activeTab !== "teams" && activeTab !== "stats" && activeTab !== "matchday" && activeTab !== "table";
   const tabItems = [
     { href: getCompetitionTabHref(competition.slug, locale, "news"), label: text.news, tab: "news" as const },
     { href: getCompetitionTabHref(competition.slug, locale, "matchday"), label: text.matchday, tab: "matchday" as const },
@@ -339,7 +487,7 @@ export async function FootballCompetitionPage({
           <h1>{competition.name}</h1>
           <p>{competition.description}</p>
         </div>
-        <FeaturedFixtureCard competition={competition} fixture={fixtures[0]} locale={locale} />
+        <FeaturedFixtureCard competition={competition} fixture={featuredFixture} locale={locale} />
         <Link className="footballBackLink" href={localizePath("/football", locale)}>
           {text.allCompetitions}
         </Link>
@@ -359,10 +507,15 @@ export async function FootballCompetitionPage({
         ))}
       </section>
 
-      <div className="sportschauPageGrid">
+      <div className={`sportschauPageGrid ${hasSideColumn ? "" : "isSingleColumn"}`}>
         <div className="sportschauMainColumn">
           {activeTab === "matchday" ? (
-            <MatchdaySection apiSnapshot={apiSnapshot} competition={competition} fixtures={fixtures} locale={locale} />
+            <MatchdaySection
+              competition={competition}
+              fixtures={fixtures}
+              locale={locale}
+              selectedMatchday={selectedMatchday}
+            />
           ) : null}
 
           {activeTab === "news" ? (
@@ -386,7 +539,7 @@ export async function FootballCompetitionPage({
           ) : null}
         </div>
 
-        {activeTab !== "teams" && activeTab !== "stats" ? (
+        {hasSideColumn ? (
           <aside className="sportschauSideColumn" id="stats">
             <CompetitionStatsSection apiSnapshot={apiSnapshot} competition={competition} displayTeams={displayTeams} locale={locale} compact />
             <TeamsCompactList competition={competition} displayTeams={displayTeams} locale={locale} />
@@ -544,40 +697,67 @@ function TeamProfileLogo({ logo, team }: { logo: string | null; team: FootballTe
 }
 
 function MatchdaySection({
-  apiSnapshot,
   competition,
   fixtures,
-  locale
+  locale,
+  selectedMatchday
 }: {
-  apiSnapshot: { status: string; message: string };
   competition: FootballCompetition;
   fixtures: SportApiMatch[];
   locale: Locale;
+  selectedMatchday?: string;
 }) {
   const text = labels[locale];
+  const matchdayGroups = buildMatchdayGroups(fixtures, competition, locale);
+  const activeMatchdayIndex = getActiveMatchdayIndex(selectedMatchday, matchdayGroups.length);
+  const activeGroup = matchdayGroups[activeMatchdayIndex] ?? matchdayGroups[0];
+  const visibleFixtures = activeGroup?.fixtures ?? fixtures;
+  const hasMultipleGroups = matchdayGroups.length > 1;
+  const previousMatchday = hasMultipleGroups ? ((activeMatchdayIndex - 1 + matchdayGroups.length) % matchdayGroups.length) + 1 : 1;
+  const nextMatchday = hasMultipleGroups ? ((activeMatchdayIndex + 1) % matchdayGroups.length) + 1 : 1;
 
   return (
     <section className="footballPanel fixturePanel sportschauMatchPanel" id="matchday">
       <div className="footballPanelHeader">
         <div>
           <p>{text.fixturesAndResults}</p>
-          <span className="dataProviderNote">{text.source}: {apiSnapshot.status === "live" ? "API-Football" : text.apiReady}</span>
         </div>
-        <strong>{competition.name}</strong>
+        <strong>{activeGroup?.label ?? competition.name}</strong>
       </div>
+      {hasMultipleGroups ? (
+        <nav className="matchdayStepper" aria-label={text.selectMatchday}>
+          <Link className="matchdayStepButton" href={getMatchdayHref(competition.slug, locale, previousMatchday)} aria-label={text.previousMatchday}>
+            <span aria-hidden="true">‹</span>
+          </Link>
+          <div className="matchdayStepCurrent">
+            <span>{text.selectMatchday}</span>
+            <strong>{activeGroup?.label}</strong>
+            <small>{activeMatchdayIndex + 1} / {matchdayGroups.length}</small>
+          </div>
+          <Link className="matchdayStepButton" href={getMatchdayHref(competition.slug, locale, nextMatchday)} aria-label={text.nextMatchday}>
+            <span aria-hidden="true">›</span>
+          </Link>
+        </nav>
+      ) : null}
       <div className="fixtureGrid sportschauFixtureList">
-        {fixtures.map((fixture) => (
+        {visibleFixtures.map((fixture) => (
           <article className="fixtureRow" key={fixture.id}>
-            <FixtureTeam competition={competition} locale={locale} logo={fixture.homeLogo} name={fixture.homeName} align="right" />
-            <div className="fixtureTime">
-              <span>{formatFixtureDate(fixture.date, locale)}</span>
-              <strong>{formatFixtureCenter(fixture, locale)}</strong>
+            <div className="fixtureMatchLine">
+              <FixtureTeam competition={competition} locale={locale} logo={fixture.homeLogo} name={fixture.homeName} align="right" />
+              <div className="fixtureTime">
+                <span>{formatFixtureDate(fixture.date, locale)}</span>
+                <strong>{formatFixtureCenter(fixture, locale)}</strong>
+                <small>{fixture.competition || competition.name}</small>
+              </div>
+              <FixtureTeam competition={competition} locale={locale} logo={fixture.awayLogo} name={fixture.awayName} align="left" />
             </div>
-            <FixtureTeam competition={competition} locale={locale} logo={fixture.awayLogo} name={fixture.awayName} align="left" />
+            <div className="fixturePrediction">
+              <FixturePredictionCard competition={competition} fixture={fixture} locale={locale} />
+              <FixtureStatusPill fixture={fixture} locale={locale} />
+            </div>
           </article>
         ))}
       </div>
-      <p className="apiPanelMessage">{apiSnapshot.message}</p>
     </section>
   );
 }
@@ -792,9 +972,15 @@ function CupRoundsSection({
           <article className="cupRoundRow" key={fixture.id}>
             <span>{text.rounds} {index + 1}</span>
             <div>
-              <strong>{fixture.homeName}</strong>
+              <span className="cupRoundTeam cupRoundTeamHome">
+                <TeamMark logo={fixture.homeLogo} name={fixture.homeName} team={findCompetitionTeamByName(competition, fixture.homeName)} />
+                <strong>{fixture.homeName}</strong>
+              </span>
               <em>{formatFixtureCenter(fixture, locale)}</em>
-              <strong>{fixture.awayName}</strong>
+              <span className="cupRoundTeam cupRoundTeamAway">
+                <TeamMark logo={fixture.awayLogo} name={fixture.awayName} team={findCompetitionTeamByName(competition, fixture.awayName)} />
+                <strong>{fixture.awayName}</strong>
+              </span>
             </div>
             <small>{formatFixtureDate(fixture.date, locale)}</small>
           </article>
@@ -910,6 +1096,13 @@ function getCompetitionTabHref(competitionSlug: string, locale: Locale, tab: Com
   return localizePath(suffix ? `${base}/${suffix}` : base, locale);
 }
 
+function getMatchdayHref(competitionSlug: string, locale: Locale, matchday: number) {
+  const base = getCompetitionTabHref(competitionSlug, locale, "matchday");
+  const key = locale === "de" ? "spieltag" : "matchday";
+
+  return `${base}?${key}=${matchday}`;
+}
+
 function getTeamHref(teamSlug: string, locale: Locale, fromCompetitionSlug?: string) {
   const href = localizePath(`/football/team/${teamSlug}`, locale);
 
@@ -989,6 +1182,7 @@ function buildFixtures(teams: FootballTeam[]) {
     fixtures.push({
       id: `fallback:${teams[index].slug}:${teams[index + 1].slug}`,
       competition: "Local preview",
+      round: "matchday:1",
       date: buildFallbackFixtureDate(index),
       homeName: teams[index].name,
       awayName: teams[index + 1].name,
@@ -1000,7 +1194,126 @@ function buildFixtures(teams: FootballTeam[]) {
     });
   }
 
-  return fixtures.slice(0, 6);
+  return fixtures;
+}
+
+function buildDisplayTeamFixtures(displayTeams: DisplayTeam[], competition: FootballCompetition) {
+  if (competition.type === "league") {
+    return buildLeagueSeasonFixtures(displayTeams, competition.name);
+  }
+
+  return buildCupRoundFixtures(displayTeams, competition.name);
+}
+
+function buildCupRoundFixtures(displayTeams: DisplayTeam[], competitionName: string) {
+  const fixtures: SportApiMatch[] = [];
+  let currentTeams = [...displayTeams];
+  let roundIndex = 0;
+
+  while (currentTeams.length > 1) {
+    const winners: DisplayTeam[] = [];
+
+    for (let index = 0; index < currentTeams.length - 1; index += 2) {
+      const home = currentTeams[index];
+      const away = currentTeams[index + 1];
+
+      fixtures.push({
+        id: `fallback:cup:${roundIndex + 1}:${home.key}:${away.key}`,
+        competition: competitionName,
+        round: `round:${roundIndex + 1}`,
+        date: buildFallbackCupFixtureDate(roundIndex, index / 2),
+        homeName: home.name,
+        awayName: away.name,
+        homeLogo: home.logo,
+        awayLogo: away.logo,
+        homeScore: null,
+        awayScore: null,
+        status: "preview"
+      });
+
+      winners.push(getDisplayTeamStrength(home, true) >= getDisplayTeamStrength(away, false) ? home : away);
+    }
+
+    if (currentTeams.length % 2 === 1) {
+      winners.push(currentTeams[currentTeams.length - 1]);
+    }
+
+    currentTeams = winners;
+    roundIndex += 1;
+  }
+
+  return fixtures;
+}
+
+function buildLeagueSeasonFixtures(displayTeams: DisplayTeam[], competitionName: string) {
+  const teams = [...displayTeams];
+  const fixtures: SportApiMatch[] = [];
+
+  if (teams.length % 2 !== 0) {
+    teams.push({ key: "bye", name: "Bye", logo: null });
+  }
+
+  const roundsPerLeg = teams.length - 1;
+  const gamesPerRound = teams.length / 2;
+  const rotating = teams.slice(1);
+
+  for (let roundIndex = 0; roundIndex < roundsPerLeg; roundIndex += 1) {
+    const roundTeams = [teams[0], ...rotating];
+
+    for (let gameIndex = 0; gameIndex < gamesPerRound; gameIndex += 1) {
+      const first = roundTeams[gameIndex];
+      const second = roundTeams[roundTeams.length - 1 - gameIndex];
+
+      if (!first || !second || first.key === "bye" || second.key === "bye") {
+        continue;
+      }
+
+      const flip = (roundIndex + gameIndex) % 2 === 1;
+      const firstLegHome = flip ? second : first;
+      const firstLegAway = flip ? first : second;
+      const returnRound = roundIndex + roundsPerLeg;
+
+      fixtures.push(buildDisplayFixture(firstLegHome, firstLegAway, competitionName, roundIndex, gameIndex));
+      fixtures.push(buildDisplayFixture(firstLegAway, firstLegHome, competitionName, returnRound, gameIndex));
+    }
+
+    rotating.unshift(rotating.pop()!);
+  }
+
+  return fixtures.sort((a, b) => {
+    const roundA = getRoundNumber(a.round) ?? 0;
+    const roundB = getRoundNumber(b.round) ?? 0;
+
+    if (roundA !== roundB) {
+      return roundA - roundB;
+    }
+
+    return (a.date ?? "").localeCompare(b.date ?? "");
+  });
+}
+
+function buildDisplayFixture(home: DisplayTeam, away: DisplayTeam, competitionName: string, roundIndex: number, gameIndex: number): SportApiMatch {
+  return {
+    id: `fallback:${roundIndex + 1}:${home.key}:${away.key}`,
+    competition: competitionName,
+    round: `matchday:${roundIndex + 1}`,
+    date: buildFallbackRoundFixtureDate(roundIndex, gameIndex),
+    homeName: home.name,
+    awayName: away.name,
+    homeLogo: home.logo,
+    awayLogo: away.logo,
+    homeScore: null,
+    awayScore: null,
+    status: "preview"
+  };
+}
+
+function getDisplayTeamStrength(team: DisplayTeam, isHome: boolean) {
+  if (!team.localTeam) {
+    return isHome ? 0.2 : 0;
+  }
+
+  return getTeamStrength(team.localTeam, isHome);
 }
 
 function buildTeamFixtures(teams: FootballTeam[], team: FootballTeam) {
@@ -1010,6 +1323,7 @@ function buildTeamFixtures(teams: FootballTeam[], team: FootballTeam) {
     .map((opponent, index): SportApiMatch => ({
       id: `fallback:${team.slug}:${opponent.slug}`,
       competition: "Local preview",
+      round: "matchday:1",
       date: buildFallbackFixtureDate(index),
       homeName: index % 2 === 0 ? team.name : opponent.name,
       awayName: index % 2 === 0 ? opponent.name : team.name,
@@ -1019,6 +1333,123 @@ function buildTeamFixtures(teams: FootballTeam[], team: FootballTeam) {
       awayScore: null,
       status: "preview"
     }));
+}
+
+function buildMatchdayGroups(fixtures: SportApiMatch[], competition: FootballCompetition, locale: Locale) {
+  const grouped = new Map<string, SportApiMatch[]>();
+
+  fixtures.forEach((fixture, index) => {
+    const key = getFixtureRoundKey(fixture, index, competition);
+    const list = grouped.get(key) ?? [];
+    list.push(fixture);
+    grouped.set(key, list);
+  });
+
+  return Array.from(grouped.entries())
+    .sort(([roundA], [roundB]) => {
+      const numberA = getRoundNumber(roundA) ?? Number.MAX_SAFE_INTEGER;
+      const numberB = getRoundNumber(roundB) ?? Number.MAX_SAFE_INTEGER;
+
+      if (numberA !== numberB) {
+        return numberA - numberB;
+      }
+
+      return roundA.localeCompare(roundB);
+    })
+    .map(([key, group], index) => {
+      const roundNumber = getRoundNumber(key) ?? index + 1;
+      const label = formatRoundLabel(key, roundNumber, competition, locale);
+
+      return {
+        fixtures: group.sort((a, b) => (a.date ?? "").localeCompare(b.date ?? "")),
+        key,
+        label,
+        shortLabel: String(roundNumber)
+      };
+    });
+}
+
+function getFeaturedFixture(competition: FootballCompetition, fixtures: SportApiMatch[], locale: Locale) {
+  const groups = buildMatchdayGroups(fixtures, competition, locale);
+  const nextGroup = groups[0];
+  const candidates = nextGroup?.fixtures ?? fixtures;
+
+  return [...candidates].sort((a, b) => getFixtureTopGameScore(b, competition) - getFixtureTopGameScore(a, competition))[0];
+}
+
+function getFixtureTopGameScore(fixture: SportApiMatch, competition: FootballCompetition) {
+  const homeTeam = findCompetitionTeamByName(competition, fixture.homeName);
+  const awayTeam = findCompetitionTeamByName(competition, fixture.awayName);
+  const homeStrength = homeTeam ? getTeamStrength(homeTeam, true) : 0;
+  const awayStrength = awayTeam ? getTeamStrength(awayTeam, false) : 0;
+  const balanceBonus = 8 - Math.min(8, Math.abs(homeStrength - awayStrength));
+  const starPower = Math.max(homeStrength, awayStrength) * 2.5;
+
+  return starPower + homeStrength + awayStrength + (balanceBonus * 0.35);
+}
+
+function getFixtureRoundKey(fixture: SportApiMatch, index: number, competition: FootballCompetition) {
+  if (fixture.round) {
+    return fixture.round;
+  }
+
+  const gamesPerRound = Math.max(1, Math.floor(competition.teams.length / 2));
+  const inferredRound = Math.floor(index / gamesPerRound) + 1;
+
+  return competition.type === "league" ? `matchday:${inferredRound}` : `round:${inferredRound}`;
+}
+
+function getActiveMatchdayIndex(selectedMatchday: string | undefined, groupCount: number) {
+  if (groupCount <= 0) {
+    return 0;
+  }
+
+  const parsed = Number(selectedMatchday);
+
+  if (!Number.isFinite(parsed) || parsed < 1) {
+    return 0;
+  }
+
+  return Math.min(groupCount - 1, Math.max(0, Math.floor(parsed) - 1));
+}
+
+function formatRoundLabel(key: string, roundNumber: number, competition: FootballCompetition, locale: Locale) {
+  const normalizedKey = key.toLowerCase();
+  const isNumberedRound = key.startsWith("matchday:") ||
+    key.startsWith("round:") ||
+    normalizedKey.includes("regular season") ||
+    normalizedKey.includes("matchday") ||
+    normalizedKey.includes("runde") ||
+    normalizedKey.includes("round");
+
+  if (!isNumberedRound) {
+    return key;
+  }
+
+  if (competition.type === "league") {
+    return locale === "de" ? `Spieltag ${roundNumber}` : `Matchday ${roundNumber}`;
+  }
+
+  return locale === "de" ? `Runde ${roundNumber}` : `Round ${roundNumber}`;
+}
+
+function getRoundNumber(round: string | null | undefined) {
+  if (!round) {
+    return null;
+  }
+
+  const direct = round.match(/^(?:matchday|round):(\d+)$/i);
+  if (direct) {
+    return Number(direct[1]);
+  }
+
+  const apiRound = round.match(/(?:matchday|regular season|round|runde)[^\d]*(\d+)/i);
+  if (apiRound) {
+    return Number(apiRound[1]);
+  }
+
+  const trailingNumber = round.match(/(\d+)\s*$/);
+  return trailingNumber ? Number(trailingNumber[1]) : null;
 }
 
 function buildDisplayTeams(
@@ -1091,7 +1522,11 @@ function getTeamLogoKey(logo: string) {
 }
 
 function getApiTeamsForDisplay(competition: FootballCompetition, apiTeams: SportApiTeam[]) {
-  return apiTeams.filter((team) => competition.type === "league" || team.logo);
+  if (competition.type === "league") {
+    return apiTeams;
+  }
+
+  return apiTeams.filter((team) => Boolean(team.logo) && Boolean(findCompetitionTeamByName(competition, team.name)));
 }
 
 function findDisplayTeamByLocalTeam(displayTeams: DisplayTeam[], team: FootballTeam) {
@@ -1128,20 +1563,59 @@ function FixtureTeam({
   const team = findCompetitionTeamByName(competition, name);
   const content = (
     <>
-      {align === "right" ? name : <TeamMark logo={logo} name={name} team={team} />}
-      {align === "right" ? <TeamMark logo={logo} name={name} team={team} /> : name}
+      {align === "right" ? <span className="fixtureTeamName">{name}</span> : <TeamMark logo={logo} name={name} team={team} />}
+      {align === "right" ? <TeamMark logo={logo} name={name} team={team} /> : <span className="fixtureTeamName">{name}</span>}
     </>
   );
 
   if (team) {
     return (
-      <Link href={getTeamHref(team.slug, locale, competition.slug)}>
+      <Link className={`fixtureTeam fixtureTeam-${align}`} href={getTeamHref(team.slug, locale, competition.slug)}>
         {content}
       </Link>
     );
   }
 
   return <span className={`fixtureTeam fixtureTeam-${align}`}>{content}</span>;
+}
+
+function FixturePredictionCard({ competition, fixture, locale }: { competition: FootballCompetition; fixture: SportApiMatch; locale: Locale }) {
+  const text = labels[locale];
+  const prediction = buildFixturePrediction(fixture, competition, locale);
+
+  return (
+    <div className="fixturePredictionMain">
+      <span>{text.predictionSignal}</span>
+      <div className="predictionMetrics">
+        <div>
+          <small>{text.pick}</small>
+          <strong>{prediction.pick}</strong>
+        </div>
+        <div>
+          <small>{text.predictedScore}</small>
+          <strong>{prediction.score}</strong>
+        </div>
+        <div>
+          <small>{text.confidence}</small>
+          <strong>{prediction.confidence}</strong>
+        </div>
+      </div>
+      <p className="predictionReasoning">
+        <span>{text.reasoning}</span>
+        {prediction.reasoning}
+      </p>
+    </div>
+  );
+}
+
+function FixtureStatusPill({ fixture, locale }: { fixture: SportApiMatch; locale: Locale }) {
+  const status = formatFixtureStatus(fixture, locale);
+
+  if (!status) {
+    return null;
+  }
+
+  return <span className={isLiveFixture(fixture) ? "fixtureMetaPill isLive" : "fixtureMetaPill"}>{status}</span>;
 }
 
 function StandingRow({ competition, locale, standing }: { competition: FootballCompetition; locale: Locale; standing: SportApiStanding }) {
@@ -1266,9 +1740,154 @@ function formatFixtureCenter(fixture: SportApiMatch, locale: Locale) {
   }).format(date);
 }
 
+function formatFixtureStatus(fixture: SportApiMatch, locale: Locale) {
+  const text = labels[locale];
+  const score = fixture.homeScore !== null && fixture.awayScore !== null
+    ? `${fixture.homeScore} - ${fixture.awayScore}`
+    : null;
+  const status = (fixture.status ?? "").toLowerCase();
+
+  if (isLiveFixture(fixture)) {
+    return score ? `${text.liveStatus}: ${score}` : text.liveStatus;
+  }
+
+  if (isFinalFixture(fixture) && score) {
+    return `${text.finalStatus}: ${score}`;
+  }
+
+  if (score) {
+    return `${fixture.status ?? text.finalStatus}: ${score}`;
+  }
+
+  if (!fixture.status || ["ns", "tbd", "preview", "not started"].includes(status)) {
+    return null;
+  }
+
+  return fixture.status ?? null;
+}
+
+function isLiveFixture(fixture: SportApiMatch) {
+  const status = (fixture.status ?? "").toLowerCase();
+
+  return ["1h", "2h", "ht", "et", "bt", "p"].includes(status) || status.includes("live") || status.includes("in play");
+}
+
+function isFinalFixture(fixture: SportApiMatch) {
+  const status = (fixture.status ?? "").toLowerCase();
+
+  return ["ft", "aet", "pen", "match finished"].some((value) => status.includes(value));
+}
+
+function buildFixturePrediction(fixture: SportApiMatch, competition: FootballCompetition, locale: Locale) {
+  const homeTeam = findCompetitionTeamByName(competition, fixture.homeName);
+  const awayTeam = findCompetitionTeamByName(competition, fixture.awayName);
+
+  if (!homeTeam || !awayTeam) {
+    return {
+      confidence: "52%",
+      pick: locale === "de" ? "Knappes Spiel" : "Tight game",
+      reasoning: locale === "de"
+        ? "Ohne vollständiges Teamprofil sieht das Modell nur einen leichten Ausschlag und bewertet die Partie eng."
+        : "With only a partial team profile, the model sees a limited edge and keeps the matchup tight.",
+      score: "1:1"
+    };
+  }
+
+  const homeStrength = getTeamStrength(homeTeam, true);
+  const awayStrength = getTeamStrength(awayTeam, false);
+  const edge = homeStrength - awayStrength;
+  const confidence = Math.min(74, Math.max(52, Math.round(54 + Math.abs(edge) * 7)));
+  const favorite = edge >= 0 ? homeTeam : awayTeam;
+  const underdog = edge >= 0 ? awayTeam : homeTeam;
+  const favoriteContext = buildFixtureReasoning(favorite, underdog, edge >= 0, Math.abs(edge), locale);
+
+  if (Math.abs(edge) < 0.28) {
+    return {
+      confidence: `${confidence}%`,
+      pick: locale === "de" ? "Remis" : "Draw",
+      reasoning: locale === "de"
+        ? `Die Profile liegen nah beieinander: ${homeTeam.name} hat Heimvorteil, ${awayTeam.name} hält mit Form- und Punktesignal dagegen.`
+        : `The profiles are close: ${homeTeam.name} has the home edge, while ${awayTeam.name} counters with form and points signal.`,
+      score: "1:1"
+    };
+  }
+
+  if (edge > 0) {
+    const score = edge > 1.4 ? "2:0" : "2:1";
+    return {
+      confidence: `${confidence}%`,
+      pick: homeTeam.name,
+      reasoning: favoriteContext,
+      score
+    };
+  }
+
+  const score = edge < -1.4 ? "0:2" : "1:2";
+  return {
+    confidence: `${confidence}%`,
+    pick: awayTeam.name,
+    reasoning: favoriteContext,
+    score
+  };
+}
+
+function buildFixtureReasoning(
+  favorite: FootballTeam,
+  underdog: FootballTeam,
+  favoriteIsHome: boolean,
+  edge: number,
+  locale: Locale
+) {
+  const isStrongEdge = edge > 1.4;
+
+  if (locale === "de") {
+    const homeNote = favoriteIsHome ? "Dazu kommt der Heimvorteil." : "Trotz Auswärtsspiel bleibt der Modellvorteil sichtbar.";
+    const edgeNote = isStrongEdge ? "Der Strength-Score ist klar vorne." : "Der Vorteil ist knapp, aber messbar.";
+
+    return `${favorite.name} liegt vor ${underdog.name}: Rang ${favorite.rank}, ${favorite.points} Punkte und Form ${favorite.form} wiegen stärker. ${homeNote} ${edgeNote}`;
+  }
+
+  const homeNote = favoriteIsHome ? "The home edge adds to that." : "The model edge remains visible even away from home.";
+  const edgeNote = isStrongEdge ? "The strength score is clearly ahead." : "The edge is narrow, but measurable.";
+
+  return `${favorite.name} rates ahead of ${underdog.name}: rank ${favorite.rank}, ${favorite.points} points and form ${favorite.form} grade stronger. ${homeNote} ${edgeNote}`;
+}
+
+function getTeamStrength(team: FootballTeam, isHome: boolean) {
+  const pointsComponent = team.points / 14;
+  const rankComponent = Math.max(0, 22 - team.rank) / 3;
+  const formComponent = team.form.split(/\s+/).reduce((sum, result) => {
+    if (result === "W") {
+      return sum + 0.25;
+    }
+
+    if (result === "D") {
+      return sum + 0.08;
+    }
+
+    return sum - 0.08;
+  }, 0);
+
+  return pointsComponent + rankComponent + formComponent + (isHome ? 0.35 : 0);
+}
+
 function buildFallbackFixtureDate(index: number) {
   const date = new Date();
   date.setUTCDate(date.getUTCDate() + Math.floor(index / 2) + 1);
   date.setUTCHours(index === 0 ? 18 : 14, 30, 0, 0);
+  return date.toISOString();
+}
+
+function buildFallbackRoundFixtureDate(roundIndex: number, gameIndex: number) {
+  const date = new Date();
+  date.setUTCDate(date.getUTCDate() + (roundIndex * 7) + 1);
+  date.setUTCHours(14 + (gameIndex % 4) * 2, gameIndex % 2 === 0 ? 30 : 0, 0, 0);
+  return date.toISOString();
+}
+
+function buildFallbackCupFixtureDate(roundIndex: number, gameIndex: number) {
+  const date = new Date();
+  date.setUTCDate(date.getUTCDate() + (roundIndex * 14) + 1);
+  date.setUTCHours(18 + (gameIndex % 2), gameIndex % 2 === 0 ? 30 : 0, 0, 0);
   return date.toISOString();
 }

@@ -8,6 +8,7 @@ export type ApiSportId = "football" | "nfl" | "nba" | "tennis";
 export type SportApiMatch = {
   id: string;
   competition: string;
+  round?: string | null;
   date: string | null;
   homeName: string;
   awayName: string;
@@ -450,6 +451,7 @@ function normalizeFootballFixture(item: any): SportApiMatch {
   return {
     id: String(item.fixture?.id ?? ""),
     competition: getString(item.league?.name) || "Football",
+    round: getString(item.league?.round) || null,
     date: getString(item.fixture?.date) || null,
     homeName: getString(item.teams?.home?.name),
     awayName: getString(item.teams?.away?.name),
@@ -462,10 +464,10 @@ function normalizeFootballFixture(item: any): SportApiMatch {
 }
 
 function getFootballMatchLimit() {
-  const configured = Number(process.env.API_FOOTBALL_MATCH_LIMIT ?? process.env.API_SPORTS_MATCH_LIMIT ?? 120);
+  const configured = Number(process.env.API_FOOTBALL_MATCH_LIMIT ?? process.env.API_SPORTS_MATCH_LIMIT ?? 500);
 
   if (!Number.isFinite(configured) || configured <= 0) {
-    return 120;
+    return 500;
   }
 
   return configured;

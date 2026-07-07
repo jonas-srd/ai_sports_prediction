@@ -33,7 +33,13 @@ const bundesligaTeams: FootballTeam[] = [
   { slug: "werder-bremen", name: "Werder Bremen", shortName: "SVW", city: "Bremen", colors: ["#1d9053", "#ffffff"], rank: 9, points: 40, form: "L W D D W", prediction: "Mid-table stable" },
   { slug: "hamburger-sv", name: "Hamburger SV", shortName: "HSV", city: "Hamburg", colors: ["#005ca9", "#ffffff"], rank: 10, points: 38, form: "W L L D W", prediction: "Momentum watch" },
   { slug: "fc-augsburg", name: "FC Augsburg", shortName: "FCA", city: "Augsburg", colors: ["#ba3733", "#ffffff"], rank: 11, points: 35, form: "D L W D L", prediction: "Home-form dependent" },
-  { slug: "mainz-05", name: "Mainz 05", shortName: "M05", city: "Mainz", colors: ["#c3142d", "#ffffff"], rank: 12, points: 33, form: "L D W L D", prediction: "Relegation pressure" }
+  { slug: "mainz-05", name: "Mainz 05", shortName: "M05", city: "Mainz", colors: ["#c3142d", "#ffffff"], rank: 12, points: 33, form: "L D W L D", prediction: "Relegation pressure" },
+  { slug: "vfl-wolfsburg", name: "VfL Wolfsburg", shortName: "WOB", city: "Wolfsburg", colors: ["#65b32e", "#ffffff"], rank: 13, points: 32, form: "D W L D L", prediction: "Transition watch" },
+  { slug: "union-berlin", name: "Union Berlin", shortName: "FCU", city: "Berlin", colors: ["#ed1c24", "#ffffff"], rank: 14, points: 31, form: "L D W L D", prediction: "Home intensity" },
+  { slug: "tsg-hoffenheim", name: "1899 Hoffenheim", shortName: "TSG", city: "Sinsheim", colors: ["#005aaa", "#ffffff"], rank: 15, points: 30, form: "W L D L L", prediction: "Open-game risk" },
+  { slug: "heidenheim", name: "Heidenheim", shortName: "HDH", city: "Heidenheim", colors: ["#d50032", "#0050a4"], rank: 16, points: 29, form: "D L D W L", prediction: "Survival battle" },
+  { slug: "st-pauli", name: "St. Pauli", shortName: "STP", city: "Hamburg", colors: ["#6a3b1a", "#ffffff"], rank: 17, points: 27, form: "L D L W D", prediction: "Underdog pressure" },
+  { slug: "holstein-kiel", name: "Holstein Kiel", shortName: "KSV", city: "Kiel", colors: ["#005aaa", "#ffffff"], rank: 18, points: 24, form: "L L D L W", prediction: "Relegation pressure" }
 ];
 
 const premierLeagueTeams: FootballTeam[] = [
@@ -44,7 +50,19 @@ const premierLeagueTeams: FootballTeam[] = [
   { slug: "tottenham", name: "Tottenham", shortName: "TOT", city: "London", colors: ["#ffffff", "#132257"], rank: 5, points: 61, form: "L W W D L", prediction: "Transition model" },
   { slug: "manchester-united", name: "Manchester United", shortName: "MUN", city: "Manchester", colors: ["#da291c", "#fbe122"], rank: 6, points: 58, form: "D L W W D", prediction: "Volatile signal" },
   { slug: "newcastle-united", name: "Newcastle United", shortName: "NEW", city: "Newcastle", colors: ["#111111", "#ffffff"], rank: 7, points: 55, form: "W D D L W", prediction: "Home power" },
-  { slug: "aston-villa", name: "Aston Villa", shortName: "AVL", city: "Birmingham", colors: ["#95bfe5", "#670e36"], rank: 8, points: 52, form: "L W D W D", prediction: "Europe contender" }
+  { slug: "aston-villa", name: "Aston Villa", shortName: "AVL", city: "Birmingham", colors: ["#95bfe5", "#670e36"], rank: 8, points: 52, form: "L W D W D", prediction: "Europe contender" },
+  { slug: "brighton", name: "Brighton", shortName: "BHA", city: "Brighton", colors: ["#0057b8", "#ffffff"], rank: 9, points: 48, form: "W D L W D", prediction: "Possession upside" },
+  { slug: "brentford", name: "Brentford", shortName: "BRE", city: "London", colors: ["#e30613", "#ffffff"], rank: 10, points: 45, form: "D W W L D", prediction: "Set-piece pressure" },
+  { slug: "crystal-palace", name: "Crystal Palace", shortName: "CRY", city: "London", colors: ["#1b458f", "#c4122e"], rank: 11, points: 43, form: "W L D W L", prediction: "Transition threat" },
+  { slug: "everton", name: "Everton", shortName: "EVE", city: "Liverpool", colors: ["#003399", "#ffffff"], rank: 12, points: 41, form: "D L W D W", prediction: "Defensive block" },
+  { slug: "fulham", name: "Fulham", shortName: "FUL", city: "London", colors: ["#ffffff", "#111111"], rank: 13, points: 39, form: "L W D L W", prediction: "Home-form watch" },
+  { slug: "west-ham", name: "West Ham", shortName: "WHU", city: "London", colors: ["#7a263a", "#1bb1e7"], rank: 14, points: 37, form: "D L D W L", prediction: "Counter model" },
+  { slug: "wolves", name: "Wolves", shortName: "WOL", city: "Wolverhampton", colors: ["#fdb913", "#231f20"], rank: 15, points: 36, form: "L D W L D", prediction: "Low-margin profile" },
+  { slug: "bournemouth", name: "Bournemouth", shortName: "BOU", city: "Bournemouth", colors: ["#da291c", "#000000"], rank: 16, points: 35, form: "W L L D W", prediction: "Pressing variance" },
+  { slug: "nottingham-forest", name: "Nottingham Forest", shortName: "NFO", city: "Nottingham", colors: ["#dd0000", "#ffffff"], rank: 17, points: 33, form: "L D W L L", prediction: "Survival pressure" },
+  { slug: "leicester-city", name: "Leicester City", shortName: "LEI", city: "Leicester", colors: ["#003090", "#fdbe11"], rank: 18, points: 30, form: "D L L W L", prediction: "Promotion volatility" },
+  { slug: "southampton", name: "Southampton", shortName: "SOU", city: "Southampton", colors: ["#d71920", "#ffffff"], rank: 19, points: 27, form: "L L D L W", prediction: "Relegation pressure" },
+  { slug: "ipswich-town", name: "Ipswich Town", shortName: "IPS", city: "Ipswich", colors: ["#0033a0", "#ffffff"], rank: 20, points: 24, form: "L D L W L", prediction: "Underdog watch" }
 ];
 
 const laLigaTeams: FootballTeam[] = [
@@ -53,7 +71,21 @@ const laLigaTeams: FootballTeam[] = [
   { slug: "atletico-madrid", name: "Atletico Madrid", shortName: "ATM", city: "Madrid", colors: ["#cb3524", "#ffffff"], rank: 3, points: 68, form: "D W W L W", prediction: "Defensive edge" },
   { slug: "real-sociedad", name: "Real Sociedad", shortName: "RSO", city: "San Sebastian", colors: ["#0067b1", "#ffffff"], rank: 4, points: 60, form: "W D L W D", prediction: "Europe race" },
   { slug: "athletic-bilbao", name: "Athletic Bilbao", shortName: "ATH", city: "Bilbao", colors: ["#ee2523", "#ffffff"], rank: 5, points: 57, form: "L W D W W", prediction: "Cup strength" },
-  { slug: "villarreal", name: "Villarreal", shortName: "VIL", city: "Villarreal", colors: ["#fff200", "#005bac"], rank: 6, points: 53, form: "W D D L W", prediction: "Attack watch" }
+  { slug: "villarreal", name: "Villarreal", shortName: "VIL", city: "Villarreal", colors: ["#fff200", "#005bac"], rank: 6, points: 53, form: "W D D L W", prediction: "Attack watch" },
+  { slug: "real-betis", name: "Real Betis", shortName: "BET", city: "Seville", colors: ["#00954c", "#ffffff"], rank: 7, points: 50, form: "W D W L D", prediction: "Europe push" },
+  { slug: "celta-vigo", name: "Celta Vigo", shortName: "CEL", city: "Vigo", colors: ["#8ac3ee", "#ffffff"], rank: 8, points: 47, form: "D W D L W", prediction: "Possession variance" },
+  { slug: "rayo-vallecano", name: "Rayo Vallecano", shortName: "RAY", city: "Madrid", colors: ["#ffffff", "#e30613"], rank: 9, points: 44, form: "L D W D W", prediction: "Low-margin edge" },
+  { slug: "osasuna", name: "Osasuna", shortName: "OSA", city: "Pamplona", colors: ["#0a346f", "#d91a21"], rank: 10, points: 42, form: "D L W D L", prediction: "Home-form dependent" },
+  { slug: "mallorca", name: "Mallorca", shortName: "MLL", city: "Palma", colors: ["#e30613", "#111111"], rank: 11, points: 40, form: "W L D D L", prediction: "Compact block" },
+  { slug: "valencia", name: "Valencia", shortName: "VAL", city: "Valencia", colors: ["#ffffff", "#f58220"], rank: 12, points: 39, form: "D L D W L", prediction: "Volatile attack" },
+  { slug: "getafe", name: "Getafe", shortName: "GET", city: "Getafe", colors: ["#0052a5", "#ffffff"], rank: 13, points: 38, form: "L W D L D", prediction: "Defensive pressure" },
+  { slug: "espanyol", name: "Espanyol", shortName: "ESP", city: "Barcelona", colors: ["#0057b8", "#ffffff"], rank: 14, points: 36, form: "D L W L D", prediction: "Survival watch" },
+  { slug: "alaves", name: "Alaves", shortName: "ALA", city: "Vitoria-Gasteiz", colors: ["#005bac", "#ffffff"], rank: 15, points: 35, form: "L D D W L", prediction: "Low-score profile" },
+  { slug: "girona", name: "Girona", shortName: "GIR", city: "Girona", colors: ["#d71920", "#ffffff"], rank: 16, points: 34, form: "W L L D L", prediction: "Transition upside" },
+  { slug: "sevilla", name: "Sevilla", shortName: "SEV", city: "Seville", colors: ["#ffffff", "#d00027"], rank: 17, points: 33, form: "L D W L L", prediction: "Pressure profile" },
+  { slug: "las-palmas", name: "Las Palmas", shortName: "LPA", city: "Las Palmas", colors: ["#ffe500", "#0057b8"], rank: 18, points: 30, form: "D L L D W", prediction: "Relegation pressure" },
+  { slug: "leganes", name: "Leganes", shortName: "LEG", city: "Leganes", colors: ["#0057b8", "#ffffff"], rank: 19, points: 28, form: "L D L W L", prediction: "Underdog watch" },
+  { slug: "valladolid", name: "Valladolid", shortName: "VLL", city: "Valladolid", colors: ["#7b2cbf", "#ffffff"], rank: 20, points: 24, form: "L L D L D", prediction: "Survival pressure" }
 ];
 
 const ligue1Teams: FootballTeam[] = [
@@ -62,7 +94,19 @@ const ligue1Teams: FootballTeam[] = [
   { slug: "monaco", name: "Monaco", shortName: "ASM", city: "Monaco", colors: ["#ed1a3b", "#ffffff"], rank: 3, points: 62, form: "D W W D L", prediction: "Top 3 signal" },
   { slug: "lyon", name: "Lyon", shortName: "OL", city: "Lyon", colors: ["#0055a4", "#ffffff"], rank: 4, points: 56, form: "W L D W D", prediction: "Form rebound" },
   { slug: "lille", name: "Lille", shortName: "LOSC", city: "Lille", colors: ["#e01e13", "#0b1f36"], rank: 5, points: 53, form: "D W L W W", prediction: "Europe edge" },
-  { slug: "nice", name: "Nice", shortName: "OGCN", city: "Nice", colors: ["#d71920", "#111111"], rank: 6, points: 49, form: "L D W D W", prediction: "Low-score model" }
+  { slug: "nice", name: "Nice", shortName: "OGCN", city: "Nice", colors: ["#d71920", "#111111"], rank: 6, points: 49, form: "L D W D W", prediction: "Low-score model" },
+  { slug: "strasbourg", name: "Strasbourg", shortName: "RCSA", city: "Strasbourg", colors: ["#009fe3", "#ffffff"], rank: 7, points: 46, form: "W D L W D", prediction: "Youth upside" },
+  { slug: "lens", name: "Lens", shortName: "RCL", city: "Lens", colors: ["#d6001c", "#f6d000"], rank: 8, points: 45, form: "D W D L W", prediction: "Pressing edge" },
+  { slug: "brest", name: "Brest", shortName: "SB29", city: "Brest", colors: ["#e30613", "#ffffff"], rank: 9, points: 43, form: "L D W W L", prediction: "Set-piece watch" },
+  { slug: "toulouse", name: "Toulouse", shortName: "TFC", city: "Toulouse", colors: ["#4b0082", "#ffffff"], rank: 10, points: 41, form: "W L D D W", prediction: "Mid-table stable" },
+  { slug: "auxerre", name: "Auxerre", shortName: "AJA", city: "Auxerre", colors: ["#0055a4", "#ffffff"], rank: 11, points: 39, form: "D L W D L", prediction: "Home-form watch" },
+  { slug: "rennes", name: "Rennes", shortName: "SRFC", city: "Rennes", colors: ["#e30613", "#111111"], rank: 12, points: 38, form: "L W D L D", prediction: "Volatile signal" },
+  { slug: "nantes", name: "Nantes", shortName: "FCN", city: "Nantes", colors: ["#ffde00", "#00843d"], rank: 13, points: 36, form: "D L D W L", prediction: "Survival buffer" },
+  { slug: "angers", name: "Angers", shortName: "SCO", city: "Angers", colors: ["#111111", "#ffffff"], rank: 14, points: 34, form: "W L L D D", prediction: "Low-margin profile" },
+  { slug: "reims", name: "Reims", shortName: "SDR", city: "Reims", colors: ["#e30613", "#ffffff"], rank: 15, points: 33, form: "L D W L L", prediction: "Pressure watch" },
+  { slug: "le-havre", name: "Le Havre", shortName: "HAC", city: "Le Havre", colors: ["#6ec6ff", "#001f54"], rank: 16, points: 31, form: "D L L W D", prediction: "Survival battle" },
+  { slug: "saint-etienne", name: "Saint-Etienne", shortName: "ASSE", city: "Saint-Etienne", colors: ["#00843d", "#ffffff"], rank: 17, points: 29, form: "L D L W L", prediction: "Underdog pressure" },
+  { slug: "montpellier", name: "Montpellier", shortName: "MHSC", city: "Montpellier", colors: ["#f58220", "#005baa"], rank: 18, points: 25, form: "L L D L W", prediction: "Relegation pressure" }
 ];
 
 const serieATeams: FootballTeam[] = [
@@ -71,7 +115,21 @@ const serieATeams: FootballTeam[] = [
   { slug: "ac-milan", name: "AC Milan", shortName: "MIL", city: "Milan", colors: ["#fb090b", "#111111"], rank: 3, points: 67, form: "W L W W D", prediction: "Derby volatility" },
   { slug: "napoli", name: "Napoli", shortName: "NAP", city: "Naples", colors: ["#12a0d7", "#ffffff"], rank: 4, points: 61, form: "L W D W W", prediction: "Attack signal" },
   { slug: "roma", name: "Roma", shortName: "ROM", city: "Rome", colors: ["#8e1f2f", "#f0bc42"], rank: 5, points: 56, form: "D W L D W", prediction: "Europe race" },
-  { slug: "lazio", name: "Lazio", shortName: "LAZ", city: "Rome", colors: ["#87d8f7", "#ffffff"], rank: 6, points: 52, form: "W D L W L", prediction: "Cup threat" }
+  { slug: "lazio", name: "Lazio", shortName: "LAZ", city: "Rome", colors: ["#87d8f7", "#ffffff"], rank: 6, points: 52, form: "W D L W L", prediction: "Cup threat" },
+  { slug: "atalanta", name: "Atalanta", shortName: "ATA", city: "Bergamo", colors: ["#0057b8", "#111111"], rank: 7, points: 51, form: "W W D L W", prediction: "High-tempo edge" },
+  { slug: "fiorentina", name: "Fiorentina", shortName: "FIO", city: "Florence", colors: ["#5f259f", "#ffffff"], rank: 8, points: 49, form: "D W L W D", prediction: "Europe push" },
+  { slug: "bologna", name: "Bologna", shortName: "BOL", city: "Bologna", colors: ["#a71930", "#1f2a44"], rank: 9, points: 47, form: "W D D L W", prediction: "Structured attack" },
+  { slug: "como", name: "Como", shortName: "COM", city: "Como", colors: ["#005baa", "#ffffff"], rank: 10, points: 44, form: "D W L D W", prediction: "Possession upside" },
+  { slug: "torino", name: "Torino", shortName: "TOR", city: "Turin", colors: ["#7c1f2b", "#ffffff"], rank: 11, points: 42, form: "L D W D L", prediction: "Defensive block" },
+  { slug: "udinese", name: "Udinese", shortName: "UDI", city: "Udine", colors: ["#111111", "#ffffff"], rank: 12, points: 40, form: "D L D W L", prediction: "Low-score profile" },
+  { slug: "genoa", name: "Genoa", shortName: "GEN", city: "Genoa", colors: ["#b00020", "#0033a0"], rank: 13, points: 38, form: "W L D L D", prediction: "Home-form watch" },
+  { slug: "hellas-verona", name: "Hellas Verona", shortName: "VER", city: "Verona", colors: ["#ffcc00", "#0033a0"], rank: 14, points: 36, form: "L W D L D", prediction: "Survival buffer" },
+  { slug: "cagliari", name: "Cagliari", shortName: "CAG", city: "Cagliari", colors: ["#003b7a", "#b00020"], rank: 15, points: 35, form: "D L W L L", prediction: "Low-margin profile" },
+  { slug: "parma", name: "Parma", shortName: "PAR", city: "Parma", colors: ["#ffdd00", "#0055a4"], rank: 16, points: 33, form: "L D D W L", prediction: "Transition watch" },
+  { slug: "lecce", name: "Lecce", shortName: "LEC", city: "Lecce", colors: ["#ffdd00", "#d71920"], rank: 17, points: 31, form: "D L L W D", prediction: "Survival battle" },
+  { slug: "empoli", name: "Empoli", shortName: "EMP", city: "Empoli", colors: ["#0055a4", "#ffffff"], rank: 18, points: 29, form: "L D L L W", prediction: "Relegation pressure" },
+  { slug: "venezia", name: "Venezia", shortName: "VEN", city: "Venice", colors: ["#f58220", "#00843d"], rank: 19, points: 27, form: "L L D W L", prediction: "Underdog watch" },
+  { slug: "monza", name: "Monza", shortName: "MON", city: "Monza", colors: ["#e30613", "#ffffff"], rank: 20, points: 24, form: "L D L L D", prediction: "Survival pressure" }
 ];
 
 export const footballCompetitions: FootballCompetition[] = [
@@ -93,7 +151,7 @@ export const footballCompetitions: FootballCompetition[] = [
     type: "cup",
     description: "Germany's national cup with knockout paths and upset-heavy matchups.",
     modelFocus: "Rotation risk, league gap, travel and one-game knockout pressure.",
-    teams: bundesligaTeams.slice(0, 8)
+    teams: bundesligaTeams
   },
   {
     slug: "premier-league",
@@ -113,7 +171,7 @@ export const footballCompetitions: FootballCompetition[] = [
     type: "cup",
     description: "England's national cup with draw paths, rotation reads and upset alerts.",
     modelFocus: "Squad rotation, venue effects and lower-division upset probability.",
-    teams: premierLeagueTeams.slice(0, 8)
+    teams: premierLeagueTeams
   },
   {
     slug: "la-liga",
