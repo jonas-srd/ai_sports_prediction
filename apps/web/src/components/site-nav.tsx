@@ -6,7 +6,9 @@ import { usePathname, useRouter } from "next/navigation";
 import { LanguageSelect } from "@/components/language-select";
 import { TimeZoneSelect } from "@/components/time-zone-select";
 import { footballCompetitions } from "@/lib/football-data";
+import { nbaTeams } from "@/lib/nba-data";
 import { nflTeams } from "@/lib/nfl-data";
+import { tennisPlayers, tennisTournaments } from "@/lib/tennis-data";
 import { useLocale } from "@/components/locale-provider";
 import { commonText, localizePath, stripLocalePrefix } from "@/lib/i18n";
 
@@ -19,9 +21,7 @@ export function SiteNav() {
     { href: "/", label: text.home },
     { href: "/#sports", label: text.forecasts },
     { href: "/#live-results", label: text.liveResults },
-    { href: "/#signals", label: text.newsticker },
-    { href: "/tournament-tree", label: text.bracket },
-    { href: "/about", label: text.background }
+    { href: "/#signals", label: text.newsticker }
   ];
   const sportLinks = [
     { href: "/football", label: text.football },
@@ -49,7 +49,8 @@ export function SiteNav() {
       { href: "/football", label: text.football, eyebrow: text.sports },
       { href: "/nfl", label: "NFL", eyebrow: text.sports },
       { href: "/nba", label: "NBA", eyebrow: text.sports },
-      { href: "/tennis", label: text.tennis, eyebrow: text.sports }
+      { href: "/tennis", label: text.tennis, eyebrow: text.sports },
+      { href: "/impressum", label: text.legalNotice, eyebrow: text.mainNavigation }
     ];
     const competitionItems = footballCompetitions.map((competition) => ({
       href: `/football/${competition.slug}`,
@@ -76,9 +77,24 @@ export function SiteNav() {
       label: team.name,
       eyebrow: "NFL Team"
     }));
+    const nbaTeamItems = nbaTeams.map((team) => ({
+      href: `/nba/team/${team.slug}`,
+      label: team.name,
+      eyebrow: "NBA Team"
+    }));
+    const tennisPlayerItems = tennisPlayers.map((player) => ({
+      href: `/tennis/player/${player.slug}`,
+      label: player.name,
+      eyebrow: `${player.tour} ${locale === "de" ? "Spieler" : "Player"}`
+    }));
+    const tennisTournamentItems = tennisTournaments.map((tournament) => ({
+      href: locale === "de" ? `/tennis/turnier/${tournament.slug}` : `/tennis/tournament/${tournament.slug}`,
+      label: tournament.name,
+      eyebrow: tournament.category
+    }));
 
-    return [...baseItems, ...competitionItems, ...footballTeamItems, ...nflTeamItems];
-  }, [locale, text.football, text.home, text.sports, text.tennis]);
+    return [...baseItems, ...competitionItems, ...footballTeamItems, ...nflTeamItems, ...nbaTeamItems, ...tennisPlayerItems, ...tennisTournamentItems];
+  }, [locale, text.football, text.home, text.legalNotice, text.mainNavigation, text.sports, text.tennis]);
 
   return (
     <header className="siteNav">
@@ -126,27 +142,34 @@ export function SiteNav() {
         </div>
       </div>
       <div className="sportschauTopicBar">
-        <nav className="sportschauTopicInner" aria-label={text.mainNavigation}>
-          <Link className={`topicNavLink ${isActive("/") ? "isActive" : ""}`} href={localizePath("/", locale)}>
-            {text.home}
-          </Link>
+        <nav className={`sportschauTopicInner ${isFootballSection ? "isFootballCompetitionRail" : ""}`} aria-label={text.mainNavigation}>
           {isFootballSection ? (
             <>
-              <Link className={`topicNavLink ${currentPath === "/football" ? "isActive" : ""}`} href={localizePath("/football", locale)}>
-                {text.football}
-              </Link>
-              {footballCompetitions.map((competition) => (
-                <Link
-                  className={`topicNavLink ${isFootballCompetitionActive(competition.slug) ? "isActive" : ""}`}
-                  href={localizePath(`/football/${competition.slug}`, locale)}
-                  key={competition.slug}
-                >
-                  {competition.name}
+              <div className="topicNavPrimaryGroup">
+                <Link className={`topicNavLink ${isActive("/") ? "isActive" : ""}`} href={localizePath("/", locale)}>
+                  {text.home}
                 </Link>
-              ))}
+                <Link className={`topicNavLink ${currentPath === "/football" ? "isActive" : ""}`} href={localizePath("/football", locale)}>
+                  {text.football}
+                </Link>
+              </div>
+              <div className="topicNavCompetitionGroup">
+                {footballCompetitions.map((competition) => (
+                  <Link
+                    className={`topicNavLink ${isFootballCompetitionActive(competition.slug) ? "isActive" : ""}`}
+                    href={localizePath(`/football/${competition.slug}`, locale)}
+                    key={competition.slug}
+                  >
+                    {competition.name}
+                  </Link>
+                ))}
+              </div>
             </>
           ) : (
             <>
+              <Link className={`topicNavLink ${isActive("/") ? "isActive" : ""}`} href={localizePath("/", locale)}>
+                {text.home}
+              </Link>
               {sportLinks.map((link) => (
                 <Link
                   className={`topicNavLink topicNavSportLink ${isActive(link.href) ? "isActive" : ""}`}

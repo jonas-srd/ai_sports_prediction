@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { SportPageContent } from "@/app/_route-content";
+import { TennisPage } from "@/components/tennis-pages";
 
 export const metadata: Metadata = {
   title: "Tennis Prognosen | AI Sport Prediction",
@@ -7,5 +7,5 @@ export const metadata: Metadata = {
 };
 
 export default function GermanTennisPage() {
-  return <SportPageContent locale="de" sport="tennis" />;
+  return <TennisPage locale="de" />;
 }

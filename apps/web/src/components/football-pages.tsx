@@ -8,11 +8,14 @@ import {
   type FootballCompetition,
   type FootballTeam
 } from "@/lib/football-data";
+import { footballTeamProfiles } from "@/lib/football-team-profiles";
 import { localizePath, type Locale } from "@/lib/i18n";
 import {
   fallbackTeamsToStandings,
   getFootballCompetitionApiSnapshot,
+  getFootballTeamSquad,
   type SportApiMatch,
+  type SportApiSquadPlayer,
   type SportApiStanding,
   type SportApiTeam
 } from "@/lib/sports-api-data";
@@ -76,12 +79,27 @@ const labels = {
     gamesShown: "games",
     selectMatchday: "Select matchday",
     predictionSignal: "AI prediction",
+    cupPredictions: "Predictions",
     previousMatchday: "Previous",
     nextMatchday: "Next",
     confidence: "Confidence",
     predictedScore: "Score",
     pick: "Pick",
-    reasoning: "Reasoning"
+    reasoning: "Reasoning",
+    squad: "Squad",
+    info: "Info",
+    fairPlay: "Fairness",
+    running: "Running",
+    duels: "Duels",
+    squadUnavailable: "Squad data appears here as soon as API-Football provides a roster for this team.",
+    fullName: "Full name",
+    nickname: "Nickname",
+    country: "Country",
+    colors: "Colors",
+    founded: "Founded",
+    sports: "Sports",
+    stadium: "Stadium",
+    capacity: "Capacity"
   },
   de: {
     football: "Fußball",
@@ -141,12 +159,27 @@ const labels = {
     gamesShown: "Spiele",
     selectMatchday: "Spieltag auswählen",
     predictionSignal: "KI-Prognose",
+    cupPredictions: "Vorhersagen",
     previousMatchday: "Zurück",
     nextMatchday: "Weiter",
     confidence: "Sicherheit",
     predictedScore: "Ergebnis",
     pick: "Tipp",
-    reasoning: "Begründung"
+    reasoning: "Begründung",
+    squad: "Kader",
+    info: "Infos",
+    fairPlay: "Fairness",
+    running: "Laufleistung",
+    duels: "Zweikämpfe",
+    squadUnavailable: "Kaderdaten erscheinen hier, sobald API-Football einen Kader für dieses Team liefert.",
+    fullName: "vollst. Name",
+    nickname: "Spitzname",
+    country: "Land",
+    colors: "Farben",
+    founded: "Gegründet",
+    sports: "Sportarten",
+    stadium: "Stadion",
+    capacity: "Kapazität"
   }
 } as const;
 
@@ -171,7 +204,7 @@ type DisplayTeam = {
 };
 
 export type CompetitionTab = "news" | "matchday" | "table" | "rounds" | "teams" | "stats";
-export type TeamTab = "overview" | "matches" | "news" | "stats";
+export type TeamTab = "overview" | "matches" | "table" | "squad" | "scorers" | "fairness" | "running" | "duels" | "info" | "news" | "stats";
 
 const teamNameAliases: Record<string, string[]> = {
   "fc-bayern": ["Bayern München", "Bayern Munich", "FC Bayern München"],
@@ -469,12 +502,12 @@ export async function FootballCompetitionPage({
   const hasSideColumn = activeTab !== "teams" && activeTab !== "stats" && activeTab !== "matchday" && activeTab !== "table";
   const tabItems = [
     { href: getCompetitionTabHref(competition.slug, locale, "news"), label: text.news, tab: "news" as const },
-    { href: getCompetitionTabHref(competition.slug, locale, "matchday"), label: text.matchday, tab: "matchday" as const },
-    {
-      href: getCompetitionTabHref(competition.slug, locale, isLeague ? "table" : "rounds"),
-      label: isLeague ? text.table : text.rounds,
-      tab: isLeague ? "table" as const : "rounds" as const
-    },
+    { href: getCompetitionTabHref(competition.slug, locale, "matchday"), label: isLeague ? text.matchday : text.cupPredictions, tab: "matchday" as const },
+    ...(isLeague ? [{
+      href: getCompetitionTabHref(competition.slug, locale, "table"),
+      label: text.table,
+      tab: "table" as const
+    }] : []),
     { href: getCompetitionTabHref(competition.slug, locale, "teams"), label: text.teams, tab: "teams" as const },
     { href: getCompetitionTabHref(competition.slug, locale, "stats"), label: text.teamStats, tab: "stats" as const }
   ];
@@ -570,22 +603,30 @@ export async function FootballTeamPage({
     notFound();
   }
 
-  const activeTab = tab;
+  const activeTab = tab === "overview" || tab === "stats" ? "info" : tab;
   const apiSnapshot = await getFootballCompetitionApiSnapshot(competition);
   const fixtures = apiSnapshot.matches.length > 0 ? apiSnapshot.matches : buildFixtures(competition.teams);
   const standings = apiSnapshot.standings.length > 0 ? apiSnapshot.standings : fallbackTeamsToStandings(competition.teams);
   const displayTeams = buildDisplayTeams(competition, apiSnapshot.teams, standings, fixtures);
   const apiTeam = findDisplayTeamByLocalTeam(displayTeams, team);
+  const apiTeamRecord = apiSnapshot.teams.find((candidate) => teamMatchesName(team, candidate.name));
   const apiStanding = findStandingByLocalTeam(standings, team);
   const teamFixtures = getTeamFixtures(fixtures, competition.teams, team, apiTeam?.name).slice(0, 4);
+  const squad = activeTab === "squad" && apiTeamRecord?.id
+    ? await getFootballTeamSquad(apiTeamRecord.id)
+    : [];
   const rank = apiStanding?.rank ?? team.rank;
   const points = apiStanding?.points ?? team.points;
   const form = apiStanding?.form ?? team.form;
   const teamTabs = [
-    { href: getTeamTabHref(team.slug, locale, "overview", backCompetition?.slug), label: text.overviewTab, tab: "overview" as const },
     { href: getTeamTabHref(team.slug, locale, "matches", backCompetition?.slug), label: text.teamMatches, tab: "matches" as const },
-    { href: getTeamTabHref(team.slug, locale, "news", backCompetition?.slug), label: text.news, tab: "news" as const },
-    { href: getTeamTabHref(team.slug, locale, "stats", backCompetition?.slug), label: text.teamStats, tab: "stats" as const }
+    { href: getTeamTabHref(team.slug, locale, "table", backCompetition?.slug), label: text.table, tab: "table" as const },
+    { href: getTeamTabHref(team.slug, locale, "squad", backCompetition?.slug), label: text.squad, tab: "squad" as const },
+    { href: getTeamTabHref(team.slug, locale, "scorers", backCompetition?.slug), label: text.scorers, tab: "scorers" as const },
+    { href: getTeamTabHref(team.slug, locale, "fairness", backCompetition?.slug), label: text.fairPlay, tab: "fairness" as const },
+    { href: getTeamTabHref(team.slug, locale, "running", backCompetition?.slug), label: text.running, tab: "running" as const },
+    { href: getTeamTabHref(team.slug, locale, "duels", backCompetition?.slug), label: text.duels, tab: "duels" as const },
+    { href: getTeamTabHref(team.slug, locale, "info", backCompetition?.slug), label: text.info, tab: "info" as const }
   ];
 
   return (
@@ -610,11 +651,16 @@ export async function FootballTeamPage({
         ))}
       </nav>
 
-      {activeTab === "overview" || activeTab === "stats" ? (
-        <section className="teamProfileGrid sportschauTeamProfileGrid" id="overview">
-          <TeamStatsCard competition={competition} form={form} points={points} rank={rank} team={team} locale={locale} />
-          {activeTab === "overview" ? <TeamNewsCard competition={competition} form={form} team={team} locale={locale} /> : null}
-        </section>
+      {activeTab === "info" ? (
+        <TeamInfoSection
+          apiTeamLogo={apiTeam?.logo ?? null}
+          competition={competition}
+          form={form}
+          locale={locale}
+          points={points}
+          rank={rank}
+          team={team}
+        />
       ) : null}
 
       {activeTab === "news" ? (
@@ -625,28 +671,23 @@ export async function FootballTeamPage({
       ) : null}
 
       {activeTab === "matches" ? (
-        <section className="footballPanel fixturePanel sportschauMatchPanel" id="matches">
-        <div className="footballPanelHeader">
-          <div>
-            <p>{text.teamFixtures}</p>
-            <span className="dataProviderNote">{competition.name}</span>
-          </div>
-          <strong>{team.shortName}</strong>
-        </div>
-        <div className="fixtureGrid sportschauFixtureList">
-          {teamFixtures.map((fixture) => (
-            <article className="fixtureRow" key={fixture.id}>
-              <FixtureTeam competition={competition} locale={locale} logo={fixture.homeLogo} name={fixture.homeName} align="right" />
-              <div className="fixtureTime">
-                <span>{formatFixtureDate(fixture.date, locale)}</span>
-                <strong>{formatFixtureCenter(fixture, locale)}</strong>
-                <small>{fixture.competition || competition.name}</small>
-              </div>
-              <FixtureTeam competition={competition} locale={locale} logo={fixture.awayLogo} name={fixture.awayName} align="left" />
-            </article>
-          ))}
-        </div>
-      </section>
+        <TeamMatchesSection competition={competition} fixtures={teamFixtures} locale={locale} team={team} />
+      ) : null}
+
+      {activeTab === "table" ? (
+        competition.type === "league" ? (
+          <LeagueTableSection competition={competition} highlightedTeam={team} locale={locale} standings={standings} />
+        ) : (
+          <CupRoundsSection competition={competition} fixtures={fixtures} locale={locale} />
+        )
+      ) : null}
+
+      {activeTab === "squad" ? (
+        <TeamSquadSection locale={locale} players={squad} team={team} />
+      ) : null}
+
+      {activeTab === "scorers" || activeTab === "fairness" || activeTab === "running" || activeTab === "duels" ? (
+        <TeamMetricSection activeTab={activeTab} competition={competition} locale={locale} team={team} />
       ) : null}
     </main>
   );
@@ -694,6 +735,178 @@ function TeamProfileLogo({ logo, team }: { logo: string | null; team: FootballTe
   }
 
   return <TeamCrest team={team} size="lg" />;
+}
+
+function TeamMatchesSection({
+  competition,
+  fixtures,
+  locale,
+  team
+}: {
+  competition: FootballCompetition;
+  fixtures: SportApiMatch[];
+  locale: Locale;
+  team: FootballTeam;
+}) {
+  const text = labels[locale];
+
+  return (
+    <section className="footballPanel fixturePanel sportschauMatchPanel teamDetailPanel" id="matches">
+      <div className="footballPanelHeader">
+        <div>
+          <p>{text.teamFixtures}</p>
+          <span className="dataProviderNote">{competition.name}</span>
+        </div>
+        <strong>{team.shortName}</strong>
+      </div>
+      <div className="fixtureGrid sportschauFixtureList">
+        {fixtures.map((fixture) => (
+          <article className="fixtureRow" key={fixture.id}>
+            <FixtureTeam competition={competition} locale={locale} logo={fixture.homeLogo} name={fixture.homeName} align="right" />
+            <div className="fixtureTime">
+              <span>{formatFixtureDate(fixture.date, locale)}</span>
+              <strong>{formatFixtureCenter(fixture, locale)}</strong>
+              <small>{fixture.competition || competition.name}</small>
+            </div>
+            <FixtureTeam competition={competition} locale={locale} logo={fixture.awayLogo} name={fixture.awayName} align="left" />
+          </article>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+function TeamInfoSection({
+  apiTeamLogo,
+  competition,
+  form,
+  locale,
+  points,
+  rank,
+  team
+}: {
+  apiTeamLogo: string | null;
+  competition: FootballCompetition;
+  form: string | null;
+  locale: Locale;
+  points: number | null;
+  rank: number;
+  team: FootballTeam;
+}) {
+  const text = labels[locale];
+  const info = getTeamInfo(team, competition, locale);
+
+  return (
+    <section className="footballPanel teamInfoPanel" id="info">
+      <div className="teamInfoLogoWrap">
+        <TeamProfileLogo logo={apiTeamLogo} team={team} />
+      </div>
+      <dl className="teamInfoList">
+        <div><dt>{text.fullName}</dt><dd>{info.fullName}</dd></div>
+        <div><dt>{text.nickname}</dt><dd>{info.nickname}</dd></div>
+        <div><dt>{text.city}</dt><dd>{info.city}</dd></div>
+        <div><dt>{text.country}</dt><dd>{info.country}</dd></div>
+        <div><dt>{text.colors}</dt><dd>{info.colors}</dd></div>
+        <div><dt>{text.founded}</dt><dd>{info.founded}</dd></div>
+        <div><dt>{text.sports}</dt><dd>{info.sports}</dd></div>
+        <div><dt>{text.stadium}</dt><dd>{info.stadium}</dd></div>
+        <div><dt>{text.capacity}</dt><dd>{info.capacity}</dd></div>
+      </dl>
+      <div className="teamInfoCurrent">
+        <span>{competition.name}</span>
+        <strong>{competition.type === "league" ? `#${rank}` : text.cupPath}</strong>
+        <small>{competition.type === "league" ? `${points ?? "-"} ${text.points} · ${text.form}: ${form ?? "-"}` : team.prediction}</small>
+      </div>
+    </section>
+  );
+}
+
+function TeamSquadSection({
+  locale,
+  players,
+  team
+}: {
+  locale: Locale;
+  players: SportApiSquadPlayer[];
+  team: FootballTeam;
+}) {
+  const text = labels[locale];
+  const groupedPlayers = groupSquadPlayers(players);
+
+  return (
+    <section className="footballPanel teamDetailPanel" id="squad">
+      <div className="sportschauSectionTitle">
+        <span>{team.name}</span>
+        <h2>{text.squad}</h2>
+      </div>
+      {players.length > 0 ? (
+        <div className="teamSquadGrid">
+          {groupedPlayers.map((group) => (
+            <article className="teamSquadGroup" key={group.position}>
+              <h3>{group.position}</h3>
+              <div>
+                {group.players.map((player) => (
+                  <div className="teamSquadPlayer" key={player.id}>
+                    {player.photo ? <img alt="" src={player.photo} /> : <span>{getInitials(player.name)}</span>}
+                    <strong>{player.name}</strong>
+                    <small>{player.number ? `#${player.number}` : "-"} {player.age ? `· ${player.age}` : ""}</small>
+                  </div>
+                ))}
+              </div>
+            </article>
+          ))}
+        </div>
+      ) : (
+        <div className="teamEmptyState">
+          <TeamCrest team={team} size="md" />
+          <p>{text.squadUnavailable}</p>
+        </div>
+      )}
+    </section>
+  );
+}
+
+function TeamMetricSection({
+  activeTab,
+  competition,
+  locale,
+  team
+}: {
+  activeTab: TeamTab;
+  competition: FootballCompetition;
+  locale: Locale;
+  team: FootballTeam;
+}) {
+  const text = labels[locale];
+  const metric = getTeamMetric(activeTab, team, competition, locale);
+
+  return (
+    <section className="footballPanel teamDetailPanel teamMetricPanel">
+      <div className="sportschauSectionTitle">
+        <span>{team.name}</span>
+        <h2>{metric.title}</h2>
+      </div>
+      <div className="teamMetricGrid">
+        {metric.cards.map((card) => (
+          <article className="teamMetricCard" key={card.label}>
+            <span>{card.label}</span>
+            <strong>{card.value}</strong>
+            <small>{card.note}</small>
+          </article>
+        ))}
+      </div>
+      <div className="teamMetricTable">
+        {metric.rows.map((row) => (
+          <div className={row.highlight ? "isHighlighted" : ""} key={row.label}>
+            <span>{row.label}</span>
+            <strong>{row.value}</strong>
+            <small>{row.note}</small>
+          </div>
+        ))}
+      </div>
+      <p className="teamMetricNote">{text.modelSummary}: {competition.modelFocus}</p>
+    </section>
+  );
 }
 
 function MatchdaySection({
@@ -911,12 +1124,140 @@ function TeamNewsCard({
   );
 }
 
+function getTeamInfo(team: FootballTeam, competition: FootballCompetition, locale: Locale) {
+  const localizedCity = locale === "de" ? translateCity(team.city) : team.city;
+  const localizedCountry = locale === "de" ? translateCountry(competition.country) : competition.country;
+  const profile = footballTeamProfiles[team.slug];
+
+  if (profile) {
+    return {
+      fullName: profile.fullName,
+      nickname: profile.nickname,
+      city: localizedCity,
+      country: localizedCountry,
+      colors: locale === "de" ? profile.colors.de : profile.colors.en,
+      founded: profile.founded,
+      sports: profile.sports ? profile.sports[locale] : labels[locale].football,
+      stadium: profile.stadium,
+      capacity: profile.capacity
+    };
+  }
+
+  const fallback = {
+    fullName: team.name,
+    nickname: team.prediction,
+    city: localizedCity,
+    country: localizedCountry,
+    colors: getTeamColorName(team.colors[0], locale),
+    founded: "-",
+    sports: labels[locale].football,
+    stadium: `${localizedCity} Arena`,
+    capacity: "-"
+  };
+
+  return fallback;
+}
+
+function groupSquadPlayers(players: SportApiSquadPlayer[]) {
+  const groups = new Map<string, SportApiSquadPlayer[]>();
+
+  players.forEach((player) => {
+    const key = player.position || "Squad";
+    groups.set(key, [...(groups.get(key) ?? []), player]);
+  });
+
+  return Array.from(groups.entries()).map(([position, groupPlayers]) => ({
+    position,
+    players: groupPlayers.sort((a, b) => (a.number ?? 99) - (b.number ?? 99) || a.name.localeCompare(b.name))
+  }));
+}
+
+function getTeamMetric(activeTab: TeamTab, team: FootballTeam, competition: FootballCompetition, locale: Locale) {
+  const text = labels[locale];
+  const strength = Math.max(48, 92 - (team.rank * 2));
+  const discipline = Math.max(42, 88 - team.rank);
+  const running = 104 + Math.max(0, 18 - team.rank) * 0.9;
+  const duelRate = Math.max(44, 62 - Math.floor(team.rank / 2));
+  const cards = {
+    scorers: [
+      { label: locale === "de" ? "Top-Signal" : "Top signal", value: team.prediction, note: competition.name },
+      { label: locale === "de" ? "Offensivwert" : "Attack index", value: `${strength}`, note: locale === "de" ? "modelliert" : "modelled" },
+      { label: text.form, value: team.form, note: locale === "de" ? "letzte Spiele" : "recent matches" }
+    ],
+    fairness: [
+      { label: text.fairPlay, value: `${discipline}`, note: locale === "de" ? "höher ist sauberer" : "higher is cleaner" },
+      { label: locale === "de" ? "Risiko" : "Risk", value: team.rank > 12 ? "hoch" : "normal", note: competition.name },
+      { label: text.form, value: team.form, note: locale === "de" ? "Disziplin-Kontext" : "discipline context" }
+    ],
+    running: [
+      { label: text.running, value: `${running.toFixed(1)} km`, note: locale === "de" ? "Team-Schnitt" : "team average" },
+      { label: locale === "de" ? "Intensität" : "Intensity", value: `${Math.round(strength)}%`, note: competition.modelFocus },
+      { label: text.form, value: team.form, note: locale === "de" ? "Trend" : "trend" }
+    ],
+    duels: [
+      { label: text.duels, value: `${duelRate}%`, note: locale === "de" ? "gewonnene Zweikämpfe" : "duels won" },
+      { label: locale === "de" ? "Pressing" : "Pressing", value: `${Math.round(strength - 4)}%`, note: competition.name },
+      { label: text.form, value: team.form, note: locale === "de" ? "Trend" : "trend" }
+    ]
+  };
+  const tabKey = activeTab === "fairness" || activeTab === "running" || activeTab === "duels" ? activeTab : "scorers";
+  const titles = {
+    scorers: text.scorers,
+    fairness: text.fairPlay,
+    running: text.running,
+    duels: text.duels
+  };
+
+  return {
+    title: titles[tabKey],
+    cards: cards[tabKey],
+    rows: [
+      { label: team.name, value: tabKey === "running" ? `${running.toFixed(1)} km` : cards[tabKey][1].value, note: team.prediction, highlight: true },
+      { label: locale === "de" ? "Liga-Rang" : "League rank", value: `#${team.rank}`, note: `${team.points} ${text.points}` },
+      { label: locale === "de" ? "Modellfokus" : "Model focus", value: competition.type === "league" ? text.table : text.cupPath, note: competition.modelFocus }
+    ]
+  };
+}
+
+function translateCity(city: string) {
+  const cities: Record<string, string> = {
+    Munich: "München",
+    Monchengladbach: "Mönchengladbach",
+    Cologne: "Köln"
+  };
+
+  return cities[city] ?? city;
+}
+
+function translateCountry(country: string) {
+  const countries: Record<string, string> = {
+    Germany: "Deutschland",
+    England: "England",
+    Spain: "Spanien",
+    France: "Frankreich",
+    Italy: "Italien"
+  };
+
+  return countries[country] ?? country;
+}
+
+function getTeamColorName(color: string, locale: Locale) {
+  const normalized = color.toLowerCase();
+  if (normalized.includes("dc") || normalized.includes("e3") || normalized.includes("red") || normalized.includes("d7")) {
+    return locale === "de" ? "rot-weiß" : "red-white";
+  }
+
+  return locale === "de" ? "Vereinsfarben" : "club colors";
+}
+
 function LeagueTableSection({
   competition,
+  highlightedTeam,
   locale,
   standings
 }: {
   competition: FootballCompetition;
+  highlightedTeam?: FootballTeam;
   locale: Locale;
   standings: SportApiStanding[];
 }) {
@@ -942,7 +1283,13 @@ function LeagueTableSection({
           <em>{text.points}</em>
         </div>
         {standings.map((team) => (
-          <StandingRow competition={competition} key={`${team.rank}-${team.teamName}`} locale={locale} standing={team} />
+          <StandingRow
+            competition={competition}
+            highlightedTeam={highlightedTeam}
+            key={`${team.rank}-${team.teamName}`}
+            locale={locale}
+            standing={team}
+          />
         ))}
       </div>
     </section>
@@ -1115,12 +1462,26 @@ function getTeamTabHref(teamSlug: string, locale: Locale, tab: TeamTab, fromComp
     en: {
       overview: "",
       matches: "matches",
+      table: "table",
+      squad: "squad",
+      scorers: "scorers",
+      fairness: "fairness",
+      running: "running",
+      duels: "duels",
+      info: "info",
       news: "news",
       stats: "team-stats"
     },
     de: {
       overview: "",
       matches: "spieltag",
+      table: "tabelle",
+      squad: "kader",
+      scorers: "torjaeger",
+      fairness: "fairness",
+      running: "laufleistung",
+      duels: "zweikaempfe",
+      info: "infos",
       news: "news",
       stats: "teamstatistik"
     }
@@ -1136,8 +1497,8 @@ function normalizeCompetitionTab(tab: CompetitionTab, isLeague: boolean): Compet
     return "table";
   }
 
-  if (!isLeague && tab === "table") {
-    return "rounds";
+  if (!isLeague && (tab === "table" || tab === "rounds")) {
+    return "matchday";
   }
 
   return tab;
@@ -1618,8 +1979,20 @@ function FixtureStatusPill({ fixture, locale }: { fixture: SportApiMatch; locale
   return <span className={isLiveFixture(fixture) ? "fixtureMetaPill isLive" : "fixtureMetaPill"}>{status}</span>;
 }
 
-function StandingRow({ competition, locale, standing }: { competition: FootballCompetition; locale: Locale; standing: SportApiStanding }) {
+function StandingRow({
+  competition,
+  highlightedTeam,
+  locale,
+  standing
+}: {
+  competition: FootballCompetition;
+  highlightedTeam?: FootballTeam;
+  locale: Locale;
+  standing: SportApiStanding;
+}) {
   const team = findCompetitionTeamByName(competition, standing.teamName);
+  const isHighlighted = Boolean(highlightedTeam && team && team.slug === highlightedTeam.slug);
+  const className = isHighlighted ? "leagueTableRow isHighlightedTeam" : "leagueTableRow";
   const content = (
     <>
       <span>{standing.rank}</span>
@@ -1637,13 +2010,13 @@ function StandingRow({ competition, locale, standing }: { competition: FootballC
 
   if (team) {
     return (
-      <Link className="leagueTableRow" href={getTeamHref(team.slug, locale, competition.slug)}>
+      <Link className={className} href={getTeamHref(team.slug, locale, competition.slug)}>
         {content}
       </Link>
     );
   }
 
-  return <div className="leagueTableRow">{content}</div>;
+  return <div className={className}>{content}</div>;
 }
 
 function formatStandingNumber(value: number | null) {

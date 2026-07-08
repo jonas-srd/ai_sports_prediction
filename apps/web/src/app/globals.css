@@ -1635,6 +1635,30 @@ a {
   margin-top: 24px;
 }
 
+.leagueStandingsGroups {
+  display: grid;
+  gap: 22px;
+  margin-top: 24px;
+}
+
+.leagueStandingGroup {
+  display: grid;
+  gap: 10px;
+}
+
+.leagueStandingGroup h3 {
+  color: #ffc857;
+  font-size: 0.84rem;
+  font-weight: 950;
+  letter-spacing: 0.12em;
+  margin: 0;
+  text-transform: uppercase;
+}
+
+.leagueStandingGroup .leagueTable {
+  margin-top: 0;
+}
+
 .leagueTableRow {
   align-items: center;
   border-bottom: 1px solid rgba(255, 255, 255, 0.1);
@@ -1877,14 +1901,50 @@ a {
 }
 
 .sportschauLeagueTable .leagueTableRow {
-  grid-template-columns: 34px 42px minmax(170px, 1fr) repeat(4, minmax(36px, 44px)) minmax(58px, 72px) minmax(44px, 58px) minmax(42px, 52px);
-  min-width: 760px;
-  padding: 0 10px;
+  padding: 0 12px;
 }
 
+.sportschauLeagueTable .nbaTableRow,
 .sportschauLeagueTable .nflTableRow {
-  grid-template-columns: 34px 42px minmax(210px, 1fr) minmax(48px, 58px) minmax(58px, 70px) repeat(3, minmax(36px, 44px)) minmax(72px, 86px) minmax(54px, 64px);
+  grid-template-columns: 34px 42px minmax(230px, 1fr) repeat(8, minmax(52px, 68px));
+  min-width: 900px;
+}
+
+.sportschauLeagueTable .nbaTableRow > small,
+.sportschauLeagueTable .nbaTableRow > em,
+.sportschauLeagueTable .nflTableRow > small,
+.sportschauLeagueTable .nflTableRow > em {
+  justify-self: end;
+  text-align: right;
+}
+
+.sportschauLeagueTable .nbaTableRow > strong,
+.sportschauLeagueTable .nflTableRow > strong {
+  min-width: 0;
+}
+
+.sportschauLeagueTable .tennisRankRow {
+  grid-template-columns: 34px 42px minmax(230px, 1fr) repeat(5, minmax(54px, 68px)) minmax(92px, 112px);
   min-width: 820px;
+  padding: 0 12px;
+}
+
+.sportschauLeagueTable .tennisOfficialRankRow {
+  grid-template-columns: 46px 52px minmax(220px, 1fr) 64px minmax(118px, 132px) 72px 88px 92px 92px;
+  min-width: 980px;
+  padding: 0 12px;
+}
+
+.sportschauLeagueTable .tennisRankRow > small,
+.sportschauLeagueTable .tennisRankRow > em,
+.sportschauLeagueTable .tennisOfficialRankRow > small,
+.sportschauLeagueTable .tennisOfficialRankRow > em {
+  justify-self: end;
+  text-align: right;
+}
+
+.sportschauLeagueTable .tennisOfficialRankRow > strong {
+  min-width: 0;
 }
 
 .leagueTableHeader {
@@ -2020,6 +2080,719 @@ a {
   margin-top: 18px;
 }
 
+.teamDetailPanel {
+  margin-top: 18px;
+}
+
+.teamInfoPanel {
+  display: grid;
+  gap: clamp(24px, 4vw, 42px);
+  justify-items: center;
+  margin-top: 18px;
+  padding-top: clamp(32px, 5vw, 56px);
+  text-align: center;
+}
+
+.teamInfoLogoWrap .teamHeroLogo,
+.teamInfoLogoWrap .teamCrest-lg {
+  height: clamp(86px, 12vw, 128px);
+  width: clamp(86px, 12vw, 128px);
+}
+
+.teamInfoList {
+  display: grid;
+  gap: 16px;
+  margin: 0;
+  max-width: 860px;
+  width: min(100%, 860px);
+}
+
+.teamInfoList div {
+  align-items: baseline;
+  display: grid;
+  gap: 18px;
+  grid-template-columns: minmax(160px, 0.65fr) minmax(0, 1fr);
+}
+
+.teamInfoList dt,
+.teamInfoList dd {
+  margin: 0;
+}
+
+.teamInfoList dt {
+  color: rgba(248, 251, 255, 0.72);
+  font-weight: 850;
+  text-align: left;
+}
+
+.teamInfoList dd {
+  color: rgba(248, 251, 255, 0.86);
+  font-weight: 850;
+  text-align: right;
+}
+
+.teamInfoCurrent {
+  background: rgba(255, 255, 255, 0.045);
+  border: 1px solid rgba(125, 245, 193, 0.16);
+  border-radius: 8px;
+  display: grid;
+  gap: 6px;
+  max-width: 460px;
+  padding: 16px 18px;
+  width: min(100%, 460px);
+}
+
+.teamInfoCurrent span {
+  color: #ffc857;
+  font-size: 0.78rem;
+  font-weight: 950;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.teamInfoCurrent strong {
+  color: #f8fbff;
+  font-size: 1.55rem;
+}
+
+.teamInfoCurrent small {
+  color: rgba(248, 251, 255, 0.66);
+  font-weight: 800;
+}
+
+.teamSquadGrid {
+  display: grid;
+  gap: 14px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.teamSquadGroup {
+  background: rgba(255, 255, 255, 0.035);
+  border: 1px solid rgba(255, 255, 255, 0.095);
+  border-radius: 8px;
+  display: grid;
+  gap: 12px;
+  padding: 16px;
+}
+
+.teamSquadGroup h3 {
+  color: #ffc857;
+  font-size: 0.86rem;
+  letter-spacing: 0.12em;
+  margin: 0;
+  text-transform: uppercase;
+}
+
+.teamSquadGroup > div {
+  display: grid;
+  gap: 8px;
+}
+
+.teamSquadPlayer {
+  align-items: center;
+  display: grid;
+  gap: 10px;
+  grid-template-columns: 42px minmax(0, 1fr) auto;
+  min-height: 48px;
+}
+
+.teamSquadPlayer img,
+.teamSquadPlayer > span {
+  background: rgba(255, 255, 255, 0.07);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 999px;
+  height: 42px;
+  width: 42px;
+}
+
+.teamSquadPlayer img {
+  object-fit: cover;
+}
+
+.teamSquadPlayer > span {
+  align-items: center;
+  color: #7df5c1;
+  display: inline-flex;
+  font-size: 0.78rem;
+  font-weight: 950;
+  justify-content: center;
+}
+
+.teamSquadPlayer strong {
+  color: #f8fbff;
+  font-size: 0.98rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.teamSquadPlayer small {
+  color: rgba(248, 251, 255, 0.62);
+  font-weight: 850;
+}
+
+.teamEmptyState {
+  align-items: center;
+  background: rgba(255, 255, 255, 0.035);
+  border: 1px solid rgba(255, 255, 255, 0.095);
+  border-radius: 8px;
+  display: grid;
+  gap: 16px;
+  justify-items: center;
+  min-height: 0;
+  padding: 14px 16px;
+  text-align: center;
+}
+
+.teamEmptyState p {
+  color: rgba(248, 251, 255, 0.72);
+  font-weight: 850;
+  line-height: 1.5;
+  margin: 0;
+  max-width: 560px;
+}
+
+.teamMetricPanel {
+  display: grid;
+  gap: 18px;
+}
+
+.teamMetricGrid {
+  display: grid;
+  gap: 12px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.teamMetricCard,
+.teamMetricTable div {
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.095);
+  border-radius: 8px;
+}
+
+.teamMetricCard {
+  display: grid;
+  gap: 8px;
+  min-height: 120px;
+  padding: 16px;
+}
+
+.teamMetricCard span,
+.teamMetricTable span {
+  color: rgba(125, 245, 193, 0.82);
+  font-size: 0.72rem;
+  font-weight: 950;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.teamMetricCard strong {
+  color: #f8fbff;
+  font-size: clamp(1.35rem, 2.5vw, 2rem);
+  line-height: 1.05;
+}
+
+.teamMetricCard small,
+.teamMetricTable small,
+.teamMetricNote {
+  color: rgba(248, 251, 255, 0.64);
+  font-weight: 780;
+  line-height: 1.45;
+}
+
+.teamMetricTable {
+  display: grid;
+  gap: 10px;
+}
+
+.teamMetricTable div {
+  align-items: center;
+  display: grid;
+  gap: 14px;
+  grid-template-columns: minmax(150px, 0.65fr) minmax(90px, 0.35fr) minmax(0, 1fr);
+  min-height: 58px;
+  padding: 12px 14px;
+}
+
+.teamMetricTable div.isHighlighted {
+  background: linear-gradient(90deg, rgba(125, 245, 193, 0.16), rgba(255, 255, 255, 0.04));
+  border-color: rgba(125, 245, 193, 0.32);
+}
+
+.teamMetricTable strong {
+  color: #f8fbff;
+  font-size: 1.1rem;
+}
+
+.teamMetricNote {
+  margin: 0;
+}
+
+.sportschauLeagueTable .leagueTableRow.isHighlightedTeam {
+  background: linear-gradient(90deg, rgba(125, 245, 193, 0.18), rgba(255, 200, 87, 0.08));
+  border-color: rgba(125, 245, 193, 0.32);
+}
+
+.sportschauLeagueTable .leagueTableRow.isHighlightedTeam strong,
+.sportschauLeagueTable .leagueTableRow.isHighlightedTeam em {
+  color: #ffffff;
+}
+
+.tennisPage .sportschauCompetitionHero {
+  background:
+    radial-gradient(circle at 78% 20%, rgba(255, 200, 87, 0.16), transparent 34%),
+    radial-gradient(circle at 24% 72%, rgba(125, 245, 193, 0.14), transparent 36%),
+    linear-gradient(135deg, rgba(18, 43, 58, 0.95), rgba(10, 25, 36, 0.96));
+}
+
+.tennisAvatar {
+  background: linear-gradient(145deg, rgba(125, 245, 193, 0.2), rgba(255, 200, 87, 0.12));
+  border-color: rgba(125, 245, 193, 0.28);
+  display: inline-grid;
+  overflow: hidden;
+  place-items: center;
+  position: relative;
+}
+
+.tennisAvatar img {
+  height: 100%;
+  inset: 0;
+  object-fit: cover;
+  opacity: 0.42;
+  position: absolute;
+  width: 100%;
+}
+
+.tennisAvatar strong {
+  color: #f8fbff;
+  font-size: 0.68rem;
+  font-weight: 950;
+  letter-spacing: 0.02em;
+  position: relative;
+  text-shadow: 0 1px 6px rgba(0, 0, 0, 0.55);
+  z-index: 1;
+}
+
+.tennisNameMark {
+  display: inline-flex;
+}
+
+.tennisPlayerRail {
+  gap: 18px;
+}
+
+.tennisPlayerRailItem {
+  display: inline-flex;
+}
+
+.tennisFeaturedCard .featuredFixtureTeams {
+  grid-template-columns: 42px auto 42px;
+}
+
+.tennisFixtureRow {
+  gap: 18px;
+}
+
+.tennisPredictionMain {
+  margin-inline: auto;
+  width: min(100%, 1040px);
+}
+
+.tennisTournamentGroups {
+  display: grid;
+  gap: 24px;
+}
+
+.tennisTournamentGroup {
+  display: grid;
+  gap: 12px;
+}
+
+.tennisTournamentGroup h3 {
+  color: #ffc857;
+  font-size: 0.84rem;
+  font-weight: 950;
+  letter-spacing: 0.12em;
+  margin: 0;
+  text-transform: uppercase;
+}
+
+.tennisTournamentGrid {
+  display: grid;
+  gap: 12px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.tennisTournamentCard {
+  align-items: center;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.095);
+  border-radius: 8px;
+  color: inherit;
+  display: grid;
+  gap: 14px;
+  grid-template-columns: 82px minmax(0, 1fr);
+  min-height: 132px;
+  padding: 16px;
+  text-decoration: none;
+  transition: background 160ms ease, border-color 160ms ease, transform 160ms ease;
+}
+
+.tennisTournamentCard:hover {
+  background: rgba(125, 245, 193, 0.075);
+  border-color: rgba(125, 245, 193, 0.24);
+  transform: translateY(-1px);
+}
+
+.tennisTournamentMark {
+  align-items: center;
+  aspect-ratio: 1;
+  background: radial-gradient(circle at 35% 30%, rgba(255, 200, 87, 0.32), rgba(125, 245, 193, 0.1) 56%, rgba(255, 255, 255, 0.04));
+  border: 1px solid rgba(125, 245, 193, 0.22);
+  border-radius: 8px;
+  display: flex;
+  justify-content: center;
+  padding: 10px;
+  text-align: center;
+}
+
+.tennisTournamentMark span {
+  color: #f8fbff;
+  font-size: 0.72rem;
+  font-weight: 950;
+  letter-spacing: 0.08em;
+  line-height: 1.15;
+  text-transform: uppercase;
+}
+
+.tennisTournamentCard strong {
+  color: #f8fbff;
+  display: block;
+  font-size: 1.08rem;
+  margin-bottom: 4px;
+}
+
+.tennisTournamentCard small {
+  color: rgba(248, 251, 255, 0.64);
+  font-weight: 800;
+}
+
+.tennisTournamentCard dl {
+  grid-column: 1 / -1;
+  margin: 0;
+}
+
+.tennisTournamentCard dl div {
+  align-items: center;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  display: flex;
+  justify-content: space-between;
+  padding: 8px 0 0;
+}
+
+.tennisTournamentCard dt,
+.tennisTournamentCard dd {
+  color: rgba(248, 251, 255, 0.68);
+  font-weight: 850;
+  margin: 0;
+}
+
+.tennisPlayerDirectory .tennisAvatar {
+  flex: 0 0 auto;
+}
+
+.tennisInfoPanel .tennisAvatar.teamHeroLogo {
+  height: clamp(92px, 12vw, 132px);
+  width: clamp(92px, 12vw, 132px);
+}
+
+.tennisStrengthList {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.tennisStrengthList span {
+  background: rgba(125, 245, 193, 0.1);
+  border: 1px solid rgba(125, 245, 193, 0.2);
+  border-radius: 999px;
+  color: #7df5c1;
+  font-size: 0.78rem;
+  font-weight: 950;
+  letter-spacing: 0.08em;
+  padding: 8px 10px;
+  text-transform: uppercase;
+}
+
+.tennisTournamentResults {
+  display: grid;
+  gap: 18px;
+}
+
+.tennisOfficialRankingPanel {
+  display: grid;
+  gap: 22px;
+}
+
+.tennisRankingControls {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: -6px;
+}
+
+.tennisRankingToggle,
+.tennisRankingStatus {
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 8px;
+  color: #f8fbff;
+  display: inline-flex;
+  font-size: 0.84rem;
+  font-weight: 850;
+  min-height: 42px;
+  padding: 0 14px;
+  align-items: center;
+}
+
+.tennisRankingDropdown {
+  position: relative;
+}
+
+.tennisRankingDropdown[open] {
+  z-index: 6;
+}
+
+.tennisRankingSelect {
+  align-items: center;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 8px;
+  color: #f8fbff;
+  cursor: pointer;
+  display: inline-flex;
+  font-size: 0.84rem;
+  font-weight: 850;
+  gap: 10px;
+  list-style: none;
+  min-height: 42px;
+  padding: 0 16px;
+}
+
+.tennisRankingSelect::-webkit-details-marker {
+  display: none;
+}
+
+.tennisRankingSelect::after {
+  border-bottom: 2px solid rgba(248, 251, 255, 0.72);
+  border-right: 2px solid rgba(248, 251, 255, 0.72);
+  content: "";
+  display: block;
+  height: 7px;
+  margin-top: -3px;
+  transform: rotate(45deg);
+  width: 7px;
+}
+
+.tennisRankingDropdown[open] .tennisRankingSelect::after {
+  margin-top: 2px;
+  transform: rotate(-135deg);
+}
+
+.tennisRankingMenu {
+  background: #111c2a;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  box-shadow: 0 18px 48px rgba(0, 0, 0, 0.34);
+  display: grid;
+  gap: 8px;
+  left: 0;
+  margin-top: 8px;
+  min-width: 180px;
+  padding: 12px;
+  position: absolute;
+  top: 100%;
+}
+
+.tennisRankingCountryMenu {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  min-width: 320px;
+}
+
+.tennisRankingMenu a {
+  align-items: center;
+  background: rgba(255, 255, 255, 0.035);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 8px;
+  color: rgba(248, 251, 255, 0.88);
+  display: inline-flex;
+  font-size: 0.84rem;
+  font-weight: 750;
+  min-height: 38px;
+  padding: 0 12px;
+  text-decoration: none;
+  transition: border-color 0.18s ease, color 0.18s ease, transform 0.18s ease;
+}
+
+.tennisRankingMenu a:hover,
+.tennisRankingMenu a:focus-visible,
+.tennisRankingSelect:hover,
+.tennisRankingSelect:focus-visible {
+  border-color: rgba(125, 245, 193, 0.34);
+  color: #ffffff;
+  outline: none;
+}
+
+.tennisRankingMenu a:hover,
+.tennisRankingMenu a:focus-visible {
+  transform: translateY(-1px);
+}
+
+.tennisRankingMenu a.isActive {
+  background: rgba(125, 245, 193, 0.14);
+  border-color: rgba(125, 245, 193, 0.26);
+  color: #7df5c1;
+}
+
+.tennisRankingToggle {
+  background: rgba(125, 245, 193, 0.12);
+  border-color: rgba(125, 245, 193, 0.26);
+  color: #7df5c1;
+}
+
+.tennisRankingStatus.is-live {
+  background: rgba(255, 200, 87, 0.12);
+  border-color: rgba(255, 200, 87, 0.24);
+  color: #ffc857;
+  margin-left: auto;
+}
+
+.tennisRankingStatus.is-snapshot {
+  background: rgba(125, 245, 193, 0.1);
+  border-color: rgba(125, 245, 193, 0.2);
+  color: #7df5c1;
+  margin-left: auto;
+}
+
+.tennisRankingStatus.is-fallback {
+  background: rgba(255, 255, 255, 0.05);
+  color: rgba(248, 251, 255, 0.72);
+  margin-left: auto;
+}
+
+@media (max-width: 760px) {
+  .tennisRankingStatus.is-live,
+  .tennisRankingStatus.is-snapshot,
+  .tennisRankingStatus.is-fallback {
+    margin-left: 0;
+  }
+
+  .tennisRankingCountryMenu {
+    grid-template-columns: minmax(0, 1fr);
+    min-width: 220px;
+  }
+}
+
+.tennisStandingGroup {
+  display: grid;
+  gap: 12px;
+}
+
+.tennisSecondaryRanking {
+  margin-top: 8px;
+}
+
+.tennisOfficialRankRow small.isPositive {
+  color: #7df5c1;
+}
+
+.tennisOfficialRankRow small.isNegative {
+  color: #ff7d7d;
+}
+
+.tennisResultList {
+  display: grid;
+  gap: 10px;
+}
+
+.tennisResultRow {
+  align-items: center;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.095);
+  border-radius: 8px;
+  display: grid;
+  gap: 14px;
+  grid-template-columns: minmax(132px, 0.55fr) minmax(210px, 1fr) minmax(70px, auto) minmax(210px, 1fr);
+  min-height: 64px;
+  padding: 12px 14px;
+}
+
+.tennisResultRow span {
+  color: #ffc857;
+  font-size: 0.74rem;
+  font-weight: 950;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.tennisResultRow strong,
+.tennisResultRow small {
+  color: #f8fbff;
+  font-size: 1rem;
+  font-weight: 900;
+}
+
+.tennisResultRow em {
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 6px;
+  color: #f8fbff;
+  font-style: normal;
+  font-weight: 950;
+  justify-self: center;
+  padding: 6px 10px;
+}
+
+.tennisResultRow small {
+  color: rgba(248, 251, 255, 0.74);
+  text-align: right;
+}
+
+.tennisTournamentInfoPanel {
+  display: grid;
+  gap: 20px;
+}
+
+.tennisInfoGrid {
+  display: grid;
+  gap: 12px;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.tennisInfoGrid article {
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.095);
+  border-radius: 8px;
+  display: grid;
+  gap: 8px;
+  min-height: 112px;
+  padding: 16px;
+}
+
+.tennisInfoGrid span {
+  color: rgba(125, 245, 193, 0.82);
+  font-size: 0.72rem;
+  font-weight: 950;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.tennisInfoGrid strong {
+  color: #f8fbff;
+  font-size: clamp(1rem, 1.8vw, 1.35rem);
+  line-height: 1.1;
+}
+
 @media (max-width: 980px) {
   .footballCompetitionGrid,
   .competitionBandGrid,
@@ -2055,6 +2828,25 @@ a {
   .sportschauCompetitionHero,
   .sportschauPageGrid,
   .sportschauTeamProfileGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .teamSquadGrid,
+  .teamMetricGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .teamInfoList div {
+    gap: 6px;
+    grid-template-columns: 1fr;
+  }
+
+  .teamInfoList dt,
+  .teamInfoList dd {
+    text-align: center;
+  }
+
+  .teamMetricTable div {
     grid-template-columns: 1fr;
   }
 
@@ -2193,9 +2985,29 @@ a {
   }
 
   .sportschauLeagueTable .leagueTableRow,
-  .sportschauLeagueTable .nflTableRow {
+  .sportschauLeagueTable .nbaTableRow,
+  .sportschauLeagueTable .nflTableRow,
+  .sportschauLeagueTable .tennisRankRow,
+  .sportschauLeagueTable .tennisOfficialRankRow {
     grid-template-columns: 28px 36px minmax(0, 1fr) minmax(44px, auto);
     min-width: 0;
+  }
+
+  .tennisTournamentGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .tennisInfoGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .tennisResultRow {
+    grid-template-columns: 1fr;
+    text-align: center;
+  }
+
+  .tennisResultRow small {
+    text-align: center;
   }
 
   .competitionBandGrid {
@@ -6087,6 +6899,74 @@ h2 {
 .legalBlock strong,
 .legalBlock a {
   color: var(--ink);
+}
+
+.legalPageShell {
+  max-width: 1180px;
+}
+
+.legalHero {
+  align-items: center;
+  grid-template-columns: minmax(0, 1fr);
+  min-height: 280px;
+  padding: clamp(36px, 6vw, 72px) 32px;
+  text-align: left;
+}
+
+.legalHero .sportschauCompetitionTitle {
+  max-width: 760px;
+}
+
+.legalPagePanel {
+  display: grid;
+  gap: 0;
+  margin-top: 18px;
+}
+
+.legalPageBlock {
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  display: grid;
+  gap: 10px;
+  padding: 22px 0;
+}
+
+.sportschauSectionTitle + .legalPageBlock {
+  border-top: 0;
+  padding-top: 0;
+}
+
+.legalPageBlock:last-child {
+  padding-bottom: 0;
+}
+
+.legalPageBlock h2 {
+  color: #ffc857;
+  font-size: 0.78rem;
+  font-weight: 950;
+  letter-spacing: 0.14em;
+  margin: 0;
+  text-transform: uppercase;
+}
+
+.legalPageBlock p {
+  color: rgba(248, 251, 255, 0.66);
+  font-size: 1rem;
+  font-weight: 700;
+  line-height: 1.6;
+  margin: 0;
+  max-width: 760px;
+}
+
+.legalPagePanel .obfuscatedEmail {
+  background: transparent;
+  border: 0;
+  border-bottom: 1px solid rgba(248, 251, 255, 0.24);
+  border-radius: 0;
+  color: rgba(248, 251, 255, 0.76);
+  font-family: inherit;
+  font-size: 1em;
+  font-weight: 750;
+  padding: 0 0 1px;
 }
 
 .aboutShell {

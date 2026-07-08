@@ -41,6 +41,15 @@ export type SportApiTeam = {
   logo: string | null;
 };
 
+export type SportApiSquadPlayer = {
+  id: string;
+  name: string;
+  age: number | null;
+  number: number | null;
+  position: string;
+  photo: string | null;
+};
+
 export type SportApiSnapshot = {
   sport: ApiSportId;
   provider: "api-football" | "api-sports";
@@ -63,6 +72,7 @@ type SportConfig = {
   providerName: string;
   defaultQuery: () => Record<string, string>;
   gamesPath: string;
+  cacheSeconds?: () => number;
 };
 
 const FOOTBALL_LEAGUE_IDS: Record<string, string> = {
@@ -119,8 +129,9 @@ const configs: Record<ApiSportId, SportConfig> = {
     providerName: "API-Sports Tennis",
     gamesPath: "/fixtures",
     defaultQuery: () => ({
-      next: process.env.API_TENNIS_MATCH_LIMIT ?? process.env.API_SPORTS_MATCH_LIMIT ?? "8"
-    })
+      next: process.env.API_TENNIS_MATCH_LIMIT ?? "24"
+    }),
+    cacheSeconds: () => Number(process.env.API_TENNIS_CACHE_SECONDS ?? 60)
   }
 };
 
@@ -149,14 +160,6 @@ export async function getSportApiSnapshot(sport: ApiSportId): Promise<SportApiSn
     const matches = matchesResult.status === "fulfilled" ? matchesResult.value : [];
     const teams = teamsResult.status === "fulfilled" ? teamsResult.value : [];
 
-    if (matchesResult.status === "rejected") {
-      console.error(matchesResult.reason);
-    }
-
-    if (teamsResult.status === "rejected") {
-      console.error(teamsResult.reason);
-    }
-
     return {
       sport,
       provider: config.provider,
@@ -166,8 +169,7 @@ export async function getSportApiSnapshot(sport: ApiSportId): Promise<SportApiSn
       standings: [],
       teams
     };
-  } catch (error) {
-    console.error(error);
+  } catch {
     return {
       sport,
       provider: config.provider,
@@ -210,18 +212,6 @@ export async function getFootballCompetitionApiSnapshot(competition: FootballCom
     const standings = standingsResult.status === "fulfilled" ? standingsResult.value : [];
     const teams = teamsResult.status === "fulfilled" ? teamsResult.value : [];
 
-    if (matchesResult.status === "rejected") {
-      console.error(matchesResult.reason);
-    }
-
-    if (standingsResult.status === "rejected") {
-      console.error(standingsResult.reason);
-    }
-
-    if (teamsResult.status === "rejected") {
-      console.error(teamsResult.reason);
-    }
-
     return {
       sport: "football",
       provider: config.provider,
@@ -241,8 +231,7 @@ export async function getFootballCompetitionApiSnapshot(competition: FootballCom
       standings,
       teams
     };
-  } catch (error) {
-    console.error(error);
+  } catch {
     return {
       sport: "football",
       provider: config.provider,
@@ -255,6 +244,35 @@ export async function getFootballCompetitionApiSnapshot(competition: FootballCom
   }
 }
 
+export async function getFootballTeamSquad(teamId: string): Promise<SportApiSquadPlayer[]> {
+  const config = configs.football;
+  const apiKey = getFirstEnv(config.keyEnv);
+
+  if (!apiKey || !teamId) {
+    return [];
+  }
+
+  try {
+    const data = await fetchApiSports<any>(config, "/players/squads", { team: teamId });
+    const players = data[0]?.players;
+
+    if (!Array.isArray(players)) {
+      return [];
+    }
+
+    return players.map((player: any) => ({
+      id: getString(player.id) || getString(player.name),
+      name: getString(player.name),
+      age: toNumber(player.age),
+      number: toNumber(player.number),
+      position: getString(player.position) || "Squad",
+      photo: getString(player.photo) || null
+    })).filter((player: SportApiSquadPlayer) => player.id && player.name);
+  } catch {
+    return [];
+  }
+}
+
 function getFootballSnapshotMessage(
   matchCount: number,
   standingCount: number,
@@ -263,6 +281,11 @@ function getFootballSnapshotMessage(
   errors: unknown[] = []
 ): string {
   const planError = errors.map(getErrorMessage).find((message) => message.toLowerCase().includes("free plans"));
+  const limitError = errors.map(getErrorMessage).find((message) => message.toLowerCase().includes("request limit"));
+  if (limitError && matchCount === 0 && standingCount === 0 && teamCount === 0) {
+    return "API-Football daily request limit reached. Showing local fallback data.";
+  }
+
   if (planError && matchCount === 0 && standingCount === 0) {
     return `API-Football key is active, but the current plan blocks this request: ${planError}`;
   }
@@ -432,16 +455,16 @@ async function fetchApiSports<T>(
       "x-apisports-key": apiKey,
       accept: "application/json"
     },
-    next: { revalidate: Number(process.env.API_SPORTS_CACHE_SECONDS ?? 300) }
-  });
+    next: { revalidate: config.cacheSeconds?.() ?? Number(process.env.API_SPORTS_CACHE_SECONDS ?? 300) }
+  }).catch(() => null);
 
-  if (!response.ok) {
-    throw new Error(`${config.providerName} request failed ${response.status}: ${url.origin}${url.pathname}`);
+  if (!response?.ok) {
+    return [];
   }
 
   const payload = await response.json() as ApiSportsResponse<T>;
   if (hasApiSportsErrors(payload.errors)) {
-    throw new Error(`${config.providerName} returned errors: ${formatApiSportsErrors(payload.errors)} for ${url.origin}${url.pathname}`);
+    return [];
   }
 
   return Array.isArray(payload.response) ? payload.response : [];

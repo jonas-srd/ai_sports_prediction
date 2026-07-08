@@ -7,5 +7,5 @@ export function generateStaticParams() {
 export default async function NflTeamNewsRoute({ params }: { params: Promise<{ teamSlug: string }> }) {
   const { teamSlug } = await params;
 
-  return <NflTeamPage locale="en" tab="news" teamSlug={teamSlug} />;
+  return <NflTeamPage locale="en" tab="info" teamSlug={teamSlug} />;
 }

@@ -38,7 +38,7 @@ export default function RootLayout({ children }: Readonly<{ children: ReactNode 
   const googleAnalyticsMeasurementId = process.env.NEXT_PUBLIC_GOOGLE_ANALYTICS_ID ?? "G-YVTSCGG16P";
 
   return (
-    <html lang="en">
+    <html data-scroll-behavior="smooth" lang="en">
       <head>
         <GoogleAnalytics measurementId={googleAnalyticsMeasurementId} />
       </head>

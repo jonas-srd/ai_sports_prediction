@@ -6,135 +6,66 @@ export const metadata: Metadata = {
   description: "Impressum und Anbieterinformationen für AI Sport Prediction."
 };
 
+const contactEmail = <ObfuscatedEmail reversedDomain="moc.kooltuo" reversedLocalPart="noitciderp-trops-ia" />;
+
 export default function GermanLegalNoticePage() {
   return (
-    <main className="shell legalShell">
-      <section className="hero compactHero">
-        <p className="eyebrow">Rechtliches</p>
-        <h1>Impressum</h1>
-        <p className="heroText">
-          Informationen gemäß § 5 Digitale-Dienste-Gesetz (DDG) und § 18 Abs. 2 Medienstaatsvertrag (MStV).
-        </p>
+    <main className="footballDetailShell sportschauFootballPage legalPageShell">
+      <section className="competitionHero legalHero">
+        <div className="sportschauCompetitionTitle">
+          <p className="footballEyebrow">Rechtliches</p>
+          <h1>Impressum</h1>
+          <p>Kontakt- und Anbieterinformationen für AI Sport Prediction.</p>
+        </div>
       </section>
 
-      <section className="panel legalPanel">
-        <div className="legalBlock">
-          <p className="sectionKicker">Anbieterinformationen</p>
-          <h2>Diensteanbieter</h2>
+      <section className="footballPanel legalPagePanel" aria-labelledby="legal-title">
+        <div className="sportschauSectionTitle">
+          <span>AI Sport Prediction</span>
+          <h2 id="legal-title">Impressum</h2>
+        </div>
+
+        <div className="legalPageBlock">
+          <h2>Angaben gemäß § 5 DDG</h2>
           <p>
-            <strong>Ludwig-Maximilians-Universität München</strong>
+            Jonas Schröder
             <br />
-            Geschwister-Scholl-Platz 1
+            AI Sport Prediction
             <br />
-            80539 München
+            80469 München
             <br />
             Deutschland
-          </p>
-          <p>
-            Die Ludwig-Maximilians-Universität München ist eine staatliche Einrichtung des Freistaates Bayern und eine
-            rechtsfähige Personalkörperschaft des öffentlichen Rechts. Sie wird gesetzlich vertreten durch den Präsidenten
-            Universitätsprofessor Dr. med. Dr. h.c. Matthias H. Tschöp.
+            <br />
+            Postanschrift auf Anfrage: {contactEmail}
           </p>
         </div>
 
-        <div className="legalBlock">
-          <h2>Projekt und technische Betreuung</h2>
-          <p>
-            <strong>Institute of Artificial Intelligence (AI) in Management</strong>
-            <br />
-            Prof. Stefan Feuerriegel
-            <br />
-            Ludwigstr. 28 / RG
-            <br />
-            80539 München
-            <br />
-            Deutschland
-          </p>
-        </div>
-
-        <div className="legalBlock">
+        <div className="legalPageBlock">
           <h2>Kontakt</h2>
+          <p>E-Mail: {contactEmail}</p>
+        </div>
+
+        <div className="legalPageBlock">
+          <h2>Verantwortlich für den Inhalt nach § 18 Abs. 2 MStV</h2>
+          <p>Jonas Schröder (Anschrift wie oben)</p>
+        </div>
+
+        <div className="legalPageBlock">
+          <h2>EU-Streitschlichtung</h2>
           <p>
-            Telefon: +49 89 2180-0
-            <br />
-            E-Mail: <ObfuscatedEmail reversedDomain="ed.nehcneum-inu.gnutlawrev" reversedLocalPart="elletstsop" />
-            <br />
-            Projektkontakt: <ObfuscatedEmail reversedDomain="ed.uml" reversedLocalPart="legeirreuef" />
-          </p>
-          <p>
-            Für verschlüsselte Nachrichten stellt die LMU Informationen zur S/MIME-verschlüsselten Kommunikation und
-            zum besonderen elektronischen Behördenpostfach bereit. Bitte nutzen Sie hierfür die Hinweise im zentralen
-            LMU-Impressum.
+            Die Europäische Kommission stellt keine Plattform zur Online-Streitbeilegung mehr bereit.
+            Wir sind nicht bereit oder verpflichtet, an Streitbeilegungsverfahren vor einer
+            Verbraucherschlichtungsstelle teilzunehmen.
           </p>
         </div>
 
-        <div className="legalBlock">
-          <h2>Zuständige Aufsichtsbehörde</h2>
-          <p>
-            Bayerisches Staatsministerium für Wissenschaft und Kunst
-            <br />
-            Salvatorstraße 2
-            <br />
-            80327 München
-            <br />
-            Website: <a href="https://www.stmwk.bayern.de" rel="noreferrer" target="_blank">www.stmwk.bayern.de</a>
-          </p>
-        </div>
-
-        <div className="legalBlock">
-          <h2>Umsatzsteuer-Identifikationsnummer</h2>
-          <p>Umsatzsteuer-Identifikationsnummer gemäß § 27a UStG: DE811205325</p>
-        </div>
-
-        <div className="legalBlock">
-          <h2>Inhaltlich verantwortlich gemäß § 18 Abs. 2 MStV</h2>
-          <p>
-            Ludwig-Maximilians-Universität München
-            <br />
-            Herr Dr. Christoph Mülke, Vizepräsident für den Bereich der Wirtschafts- und Personalverwaltung
-            <br />
-            Geschwister-Scholl-Platz 1
-            <br />
-            80539 München
-            <br />
-            Deutschland
-          </p>
-          <p>
-            Für projektbezogene Inhalte: Prof. Stefan Feuerriegel, Institute of Artificial Intelligence (AI) in Management,
-            Ludwigstr. 28 / RG, 80539 München.
-          </p>
-        </div>
-
-        <div className="legalBlock">
+        <div className="legalPageBlock">
           <h2>Haftung für Inhalte</h2>
           <p>
-            Die Inhalte dieser Website wurden mit angemessener Sorgfalt erstellt.
-            Es wird jedoch keine Gewähr für Richtigkeit, Vollständigkeit oder Aktualität der Informationen übernommen.
-          </p>
-        </div>
-
-        <div className="legalBlock">
-          <h2>Verbraucherstreitbeilegung und OS-Plattform</h2>
-          <p>
-            Über dieses Webangebot werden keine Online-Kaufverträge oder Online-Dienstleistungsverträge mit Verbraucherinnen
-            und Verbrauchern geschlossen. Die frühere EU-Online-Streitbeilegungsplattform wurde zum 20.07.2025 eingestellt;
-            dieses Webangebot verweist daher nicht auf eine OS-Plattform.
-          </p>
-          <p>
-            Wir werden nicht an einem Streitbeilegungsverfahren vor einer Verbraucherschlichtungsstelle teilnehmen und
-            sind hierzu auch nicht verpflichtet.
-          </p>
-        </div>
-
-        <div className="legalBlock">
-          <h2>Weitere Hinweise</h2>
-          <p>
-            AI Sport Prediction ist ein experimentelles Benchmark- und Analyseprojekt.
-            Die angezeigten Prognosen sind automatisch generierte Modellvorhersagen
-            und stellen keine Wett-, Finanz- oder sonstige professionelle Beratung dar.
-          </p>
-          <p>
-            Ergänzend gelten die Angaben im zentralen <a href="https://www.lmu.de/de/footer/impressum/index.html" rel="noreferrer" target="_blank">Impressum der LMU München</a>.
+            Als Diensteanbieter sind wir gemäß § 7 Abs. 1 DDG für eigene Inhalte auf diesen Seiten
+            nach den allgemeinen Gesetzen verantwortlich. Nach §§ 8 bis 10 DDG sind wir als
+            Diensteanbieter jedoch nicht verpflichtet, übermittelte oder gespeicherte fremde
+            Informationen zu überwachen.
           </p>
         </div>
       </section>

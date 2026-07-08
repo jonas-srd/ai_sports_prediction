@@ -171,38 +171,63 @@
 }
 
 .siteSearchResults {
-  background: #f8fbff;
-  border: 1px solid rgba(9, 28, 49, 0.14);
+  background:
+    linear-gradient(135deg, rgba(125, 245, 193, 0.08), transparent 38%),
+    #101f2e;
+  border: 1px solid rgba(125, 245, 193, 0.2);
   border-radius: 8px;
   box-shadow: 0 24px 54px rgba(0, 0, 0, 0.36);
   display: grid;
-  gap: 4px;
+  gap: 6px;
   left: 0;
-  padding: 8px;
+  overflow: hidden;
+  padding: 10px;
   position: absolute;
   right: 0;
   top: calc(100% + 8px);
 }
 
 .siteSearchResults button {
-  background: transparent;
-  border: 0;
+  background: rgba(255, 255, 255, 0.045);
+  border: 1px solid rgba(255, 255, 255, 0.075);
   border-radius: 8px;
-  color: #0b1f36;
+  color: rgba(248, 251, 255, 0.92);
   cursor: pointer;
   display: grid;
-  gap: 2px;
+  gap: 2px 10px;
+  grid-template-columns: 12px minmax(0, 1fr);
+  min-height: 52px;
   padding: 10px 12px;
+  position: relative;
   text-align: left;
+  transition: background 160ms ease, border-color 160ms ease, color 160ms ease, transform 160ms ease;
+}
+
+.siteSearchResults button::before {
+  align-self: center;
+  background: rgba(125, 245, 193, 0.45);
+  border-radius: 999px;
+  content: "";
+  grid-row: 1 / span 2;
+  height: 7px;
+  width: 7px;
 }
 
 .siteSearchResults button:hover,
 .siteSearchResults button:focus-visible {
-  background: rgba(9, 28, 49, 0.08);
+  background: rgba(125, 245, 193, 0.12);
+  border-color: rgba(125, 245, 193, 0.22);
+  color: #ffffff;
+  transform: translateX(2px);
+}
+
+.siteSearchResults button:hover::before,
+.siteSearchResults button:focus-visible::before {
+  background: #ffc857;
 }
 
 .siteSearchResults span {
-  color: #50677f;
+  color: rgba(125, 245, 193, 0.82);
   font-size: 0.68rem;
   font-weight: 900;
   letter-spacing: 0.1em;
@@ -210,8 +235,13 @@
 }
 
 .siteSearchResults strong {
+  color: inherit;
   font-size: 0.95rem;
   font-weight: 950;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .siteMenu {
@@ -230,8 +260,8 @@
 
 .siteNavMenuLink {
   align-items: center;
-  background: transparent;
-  border: 1px solid transparent;
+  background: rgba(255, 255, 255, 0.055);
+  border: 1px solid rgba(255, 255, 255, 0.11);
   border-radius: 8px;
   color: #f7fbff;
   cursor: pointer;
@@ -243,13 +273,16 @@
   min-height: 52px;
   min-width: 58px;
   padding: 0;
+  position: relative;
   text-decoration: none;
+  transition: background 160ms ease, border-color 160ms ease, transform 160ms ease;
   white-space: nowrap;
 }
 
 .siteNavMenuLink span:first-child {
-  font-size: 2.25rem;
+  font-size: 2rem;
   line-height: 1;
+  transform: translateY(-1px);
 }
 
 .siteNavMenuLink span:last-child {
@@ -264,30 +297,34 @@
 .siteNavMenuLink:hover,
 .siteNavMenuLink:focus-visible,
 .siteMenu[open] .siteNavMenuLink {
-  background: rgba(255, 255, 255, 0.07);
-  border-color: rgba(255, 255, 255, 0.12);
+  background: rgba(125, 245, 193, 0.12);
+  border-color: rgba(125, 245, 193, 0.36);
+  transform: translateY(-1px);
 }
 
 .siteMenuPanel {
-  background: #f8fbff;
-  border: 1px solid rgba(9, 28, 49, 0.14);
+  background:
+    linear-gradient(135deg, rgba(125, 245, 193, 0.08), transparent 34%),
+    #101f2e;
+  border: 1px solid rgba(125, 245, 193, 0.2);
   border-radius: 8px;
-  box-shadow: 0 24px 54px rgba(0, 0, 0, 0.36);
+  box-shadow: 0 28px 70px rgba(0, 0, 0, 0.42);
   display: grid;
-  gap: 18px;
-  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+  grid-template-columns: 0.82fr 1.18fr;
   max-width: calc(100vw - 32px);
   min-width: min(640px, calc(100vw - 32px));
-  padding: 22px;
+  overflow: hidden;
+  padding: 14px;
   position: absolute;
   right: 0;
   top: calc(100% + 10px);
 }
 
 .siteMenuPanel::before {
-  background: #f8fbff;
-  border-left: 1px solid rgba(9, 28, 49, 0.14);
-  border-top: 1px solid rgba(9, 28, 49, 0.14);
+  background: #101f2e;
+  border-left: 1px solid rgba(125, 245, 193, 0.2);
+  border-top: 1px solid rgba(125, 245, 193, 0.2);
   content: "";
   height: 14px;
   position: absolute;
@@ -298,31 +335,57 @@
 }
 
 .siteMenuColumn {
+  background: rgba(255, 255, 255, 0.045);
+  border: 1px solid rgba(255, 255, 255, 0.075);
+  border-radius: 8px;
   display: grid;
-  gap: 6px;
+  gap: 4px;
+  padding: 12px;
 }
 
 .siteMenuColumn p {
-  color: #50677f;
+  color: rgba(125, 245, 193, 0.82);
   font-size: 0.72rem;
-  font-weight: 900;
+  font-weight: 950;
   letter-spacing: 0.12em;
-  margin: 0 0 7px;
+  margin: 0 0 8px;
   text-transform: uppercase;
 }
 
 .siteMenuColumn a {
+  align-items: center;
   border-radius: 8px;
-  color: #0b1f36;
+  color: rgba(248, 251, 255, 0.9);
+  display: grid;
   font-size: 1rem;
+  gap: 10px;
+  grid-template-columns: 12px minmax(0, 1fr);
   font-weight: 900;
-  padding: 11px 12px;
+  min-height: 44px;
+  padding: 9px 10px;
+  position: relative;
   text-decoration: none;
+  transition: background 160ms ease, color 160ms ease, transform 160ms ease;
+}
+
+.siteMenuColumn a::before {
+  background: rgba(125, 245, 193, 0.45);
+  border-radius: 999px;
+  content: "";
+  height: 7px;
+  width: 7px;
 }
 
 .siteMenuColumn a:hover,
 .siteMenuColumn a:focus-visible {
-  background: rgba(9, 28, 49, 0.08);
+  background: rgba(125, 245, 193, 0.12);
+  color: #ffffff;
+  transform: translateX(2px);
+}
+
+.siteMenuColumn a:hover::before,
+.siteMenuColumn a:focus-visible::before {
+  background: #ffc857;
 }
 
 .siteNavControls {
@@ -376,10 +439,44 @@
   display: flex;
   gap: 8px;
   margin: 0 auto;
-  max-width: 1280px;
+  max-width: 1440px;
   min-height: 48px;
   overflow-x: auto;
   padding: 0 28px;
+}
+
+.sportschauTopicInner.isFootballCompetitionRail {
+  display: grid;
+  gap: 18px;
+  grid-template-columns: auto minmax(0, 1fr);
+  overflow-x: visible;
+  padding-bottom: 0;
+  padding-top: 0;
+}
+
+.topicNavPrimaryGroup,
+.topicNavCompetitionGroup {
+  align-items: center;
+  display: flex;
+  min-width: 0;
+}
+
+.topicNavPrimaryGroup {
+  border-right: 1px solid rgba(255, 255, 255, 0.1);
+  gap: 10px;
+  padding-right: 18px;
+}
+
+.topicNavCompetitionGroup {
+  gap: clamp(10px, 1vw, 18px);
+  justify-content: space-between;
+}
+
+.topicNavCompetitionGroup .topicNavLink {
+  font-size: clamp(0.78rem, 0.72vw, 0.88rem);
+  min-height: 48px;
+  padding-left: 2px;
+  padding-right: 2px;
 }
 
 .topicNavLink {
@@ -434,8 +531,24 @@
     display: none;
   }
 
-  .siteMenuPanel {
+  .sportschauTopicInner.isFootballCompetitionRail {
+    gap: 0;
     grid-template-columns: 1fr;
+  }
+
+  .topicNavPrimaryGroup {
+    border-right: 0;
+    justify-content: center;
+    padding-right: 0;
+  }
+
+  .topicNavCompetitionGroup {
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+
+  .topicNavCompetitionGroup .topicNavLink {
+    min-height: 34px;
   }
 }
 
@@ -481,10 +594,21 @@
     padding-right: 14px;
   }
 
+  .sportschauTopicInner.isFootballCompetitionRail {
+    padding-bottom: 6px;
+    padding-top: 6px;
+  }
+
   .topicNavLink {
     font-size: 0.82rem;
     padding-left: 8px;
     padding-right: 8px;
+  }
+
+  .sportschauTopicInner.isFootballCompetitionRail .topicNavLink {
+    font-size: 0.78rem;
+    padding-left: 6px;
+    padding-right: 6px;
   }
 
   .topicNavSportLink {
@@ -494,6 +618,7 @@
   }
 
   .siteMenuPanel {
+    grid-template-columns: 1fr;
     min-width: min(340px, calc(100vw - 28px));
   }
 }
