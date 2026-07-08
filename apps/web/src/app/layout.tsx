@@ -34,7 +34,9 @@ export const metadata: Metadata = {
 };
 
 export default function RootLayout({ children }: Readonly<{ children: ReactNode }>) {
-  const showFullSite = process.env.NEXT_PUBLIC_SHOW_FULL_SITE === "1";
+  const showFullSite =
+    process.env.NEXT_PUBLIC_SHOW_FULL_SITE === "1" ||
+    (process.env.NODE_ENV !== "production" && process.env.NEXT_PUBLIC_SHOW_FULL_SITE !== "0");
   const googleAnalyticsMeasurementId = process.env.NEXT_PUBLIC_GOOGLE_ANALYTICS_ID ?? "G-YVTSCGG16P";
 
   return (

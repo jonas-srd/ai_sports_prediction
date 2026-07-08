@@ -132,6 +132,77 @@ const serieATeams: FootballTeam[] = [
   { slug: "monza", name: "Monza", shortName: "MON", city: "Monza", colors: ["#e30613", "#ffffff"], rank: 20, points: 24, form: "L D L L D", prediction: "Survival pressure" }
 ];
 
+const europeanExtraTeams: FootballTeam[] = [
+  { slug: "benfica", name: "Benfica", shortName: "SLB", city: "Lisbon", colors: ["#e30613", "#ffffff"], rank: 9, points: 55, form: "W W D L W", prediction: "High-possession European profile" },
+  { slug: "porto", name: "FC Porto", shortName: "FCP", city: "Porto", colors: ["#005aa7", "#ffffff"], rank: 10, points: 54, form: "W D W W L", prediction: "Knockout experience" },
+  { slug: "sporting-cp", name: "Sporting CP", shortName: "SCP", city: "Lisbon", colors: ["#00843d", "#ffffff"], rank: 11, points: 53, form: "W W W D L", prediction: "Pressing and wide overloads" },
+  { slug: "psv", name: "PSV Eindhoven", shortName: "PSV", city: "Eindhoven", colors: ["#ff0000", "#ffffff"], rank: 12, points: 52, form: "W D W W W", prediction: "Transition scoring threat" },
+  { slug: "ajax", name: "Ajax", shortName: "AJA", city: "Amsterdam", colors: ["#d2122e", "#ffffff"], rank: 13, points: 50, form: "D W L W W", prediction: "Possession rebuild" },
+  { slug: "feyenoord", name: "Feyenoord", shortName: "FEY", city: "Rotterdam", colors: ["#d71920", "#ffffff"], rank: 14, points: 49, form: "W L W D W", prediction: "Intense home pressure" },
+  { slug: "club-brugge", name: "Club Brugge", shortName: "BRU", city: "Bruges", colors: ["#0055a4", "#111111"], rank: 15, points: 48, form: "W D D W L", prediction: "Compact European matchup" },
+  { slug: "anderlecht", name: "Anderlecht", shortName: "AND", city: "Brussels", colors: ["#4b0082", "#ffffff"], rank: 16, points: 47, form: "D W W L D", prediction: "Technical midfield control" },
+  { slug: "union-saint-gilloise", name: "Union Saint-Gilloise", shortName: "USG", city: "Brussels", colors: ["#f5c400", "#0033a0"], rank: 17, points: 46, form: "W W L D W", prediction: "Underdog pressing edge" },
+  { slug: "celtic", name: "Celtic", shortName: "CEL", city: "Glasgow", colors: ["#018749", "#ffffff"], rank: 18, points: 45, form: "W D W L W", prediction: "Home atmosphere signal" },
+  { slug: "rangers", name: "Rangers", shortName: "RAN", city: "Glasgow", colors: ["#0033a0", "#ffffff"], rank: 19, points: 44, form: "D W L W D", prediction: "Set-piece leverage" },
+  { slug: "galatasaray", name: "Galatasaray", shortName: "GAL", city: "Istanbul", colors: ["#a90432", "#fdb912"], rank: 20, points: 43, form: "W W D W L", prediction: "High-volatility attack" },
+  { slug: "fenerbahce", name: "Fenerbahce", shortName: "FEN", city: "Istanbul", colors: ["#002f6c", "#ffed00"], rank: 21, points: 42, form: "W L W D W", prediction: "Wide chance creation" },
+  { slug: "shakhtar-donetsk", name: "Shakhtar Donetsk", shortName: "SHA", city: "Donetsk", colors: ["#f47920", "#111111"], rank: 22, points: 41, form: "D W L D W", prediction: "Technical counter model" },
+  { slug: "dynamo-kyiv", name: "Dynamo Kyiv", shortName: "DKY", city: "Kyiv", colors: ["#0057b8", "#ffffff"], rank: 23, points: 40, form: "W D L W L", prediction: "European resilience" },
+  { slug: "red-bull-salzburg", name: "Red Bull Salzburg", shortName: "RBS", city: "Salzburg", colors: ["#ffffff", "#d50032"], rank: 24, points: 39, form: "L W W D L", prediction: "Youth and pressing profile" },
+  { slug: "sturm-graz", name: "Sturm Graz", shortName: "STU", city: "Graz", colors: ["#111111", "#ffffff"], rank: 25, points: 38, form: "W L D W L", prediction: "Direct vertical pressure" },
+  { slug: "young-boys", name: "Young Boys", shortName: "YB", city: "Bern", colors: ["#ffdd00", "#111111"], rank: 26, points: 37, form: "D W L D W", prediction: "Synthetic-turf home edge" },
+  { slug: "olympiacos", name: "Olympiacos", shortName: "OLY", city: "Piraeus", colors: ["#e30613", "#ffffff"], rank: 27, points: 36, form: "W D L W D", prediction: "Knockout pressure profile" },
+  { slug: "panathinaikos", name: "Panathinaikos", shortName: "PAO", city: "Athens", colors: ["#007a3d", "#ffffff"], rank: 28, points: 35, form: "D L W D W", prediction: "Compact defensive block" },
+  { slug: "slavia-prague", name: "Slavia Prague", shortName: "SLA", city: "Prague", colors: ["#e30613", "#ffffff"], rank: 29, points: 34, form: "W W D L D", prediction: "Pressing rhythm" },
+  { slug: "sparta-prague", name: "Sparta Prague", shortName: "SPA", city: "Prague", colors: ["#7a263a", "#f5c400"], rank: 30, points: 33, form: "D W L W L", prediction: "Set-piece and tempo mix" },
+  { slug: "copenhagen", name: "FC Copenhagen", shortName: "FCK", city: "Copenhagen", colors: ["#ffffff", "#0057b8"], rank: 31, points: 32, form: "L W D W D", prediction: "Disciplined low block" },
+  { slug: "bodo-glimt", name: "Bodo/Glimt", shortName: "BOD", city: "Bodo", colors: ["#ffdd00", "#111111"], rank: 32, points: 31, form: "W L W D L", prediction: "High-tempo underdog" },
+  { slug: "qarabag", name: "Qarabag", shortName: "QAR", city: "Agdam", colors: ["#111111", "#ffffff"], rank: 33, points: 30, form: "D W L D L", prediction: "Travel-adjusted risk" },
+  { slug: "dinamo-zagreb", name: "Dinamo Zagreb", shortName: "DIN", city: "Zagreb", colors: ["#0057b8", "#ffffff"], rank: 34, points: 29, form: "W D L W L", prediction: "European qualifier profile" },
+  { slug: "paok", name: "PAOK", shortName: "PAOK", city: "Thessaloniki", colors: ["#111111", "#ffffff"], rank: 35, points: 28, form: "L W D L W", prediction: "Home pressure and duels" },
+  { slug: "fcsb", name: "FCSB", shortName: "FCSB", city: "Bucharest", colors: ["#0057b8", "#e30613"], rank: 36, points: 27, form: "D L W D L", prediction: "Qualifying upset profile" }
+];
+
+const championsLeagueTeams = dedupeFootballTeams([
+  ...bundesligaTeams.slice(0, 6),
+  ...premierLeagueTeams.slice(0, 8),
+  ...laLigaTeams.slice(0, 8),
+  ...serieATeams.slice(0, 8),
+  ...ligue1Teams.slice(0, 6),
+  ...europeanExtraTeams.slice(0, 16)
+]).slice(0, 36);
+
+const europaLeagueTeams = dedupeFootballTeams([
+  ...premierLeagueTeams.slice(5, 16),
+  ...bundesligaTeams.slice(4, 15),
+  ...laLigaTeams.slice(4, 16),
+  ...serieATeams.slice(4, 16),
+  ...ligue1Teams.slice(3, 15),
+  ...europeanExtraTeams.slice(0, 24)
+]).slice(0, 36);
+
+const conferenceLeagueTeams = dedupeFootballTeams([
+  ...premierLeagueTeams.slice(8),
+  ...bundesligaTeams.slice(8),
+  ...laLigaTeams.slice(8),
+  ...serieATeams.slice(8),
+  ...ligue1Teams.slice(8),
+  ...europeanExtraTeams.slice(6)
+]).slice(0, 36);
+
+function dedupeFootballTeams(teams: FootballTeam[]) {
+  const seen = new Set<string>();
+
+  return teams.filter((team) => {
+    if (seen.has(team.slug)) {
+      return false;
+    }
+
+    seen.add(team.slug);
+    return true;
+  });
+}
+
 export const footballCompetitions: FootballCompetition[] = [
   {
     slug: "bundesliga",
@@ -232,6 +303,36 @@ export const footballCompetitions: FootballCompetition[] = [
     description: "Italy's national cup with knockout paths and tactical matchup forecasts.",
     modelFocus: "Rotation, tactical pace and cup-specific upset probability.",
     teams: serieATeams
+  },
+  {
+    slug: "champions-league",
+    country: "Europe",
+    countryCode: "UEFA",
+    name: "Champions League",
+    type: "league",
+    description: "Europe's top club competition with league-phase table, knockout pressure and elite matchup signals.",
+    modelFocus: "League-phase points, opponent strength, travel load, squad depth and knockout-path volatility.",
+    teams: championsLeagueTeams
+  },
+  {
+    slug: "europa-league",
+    country: "Europe",
+    countryCode: "UEFA",
+    name: "Europa League",
+    type: "league",
+    description: "Europe's second UEFA competition with league-phase standings and high-variance knockout paths.",
+    modelFocus: "Rotation strength, league gap, away travel and two-leg knockout probability.",
+    teams: europaLeagueTeams
+  },
+  {
+    slug: "conference-league",
+    country: "Europe",
+    countryCode: "UEFA",
+    name: "Conference League",
+    type: "league",
+    description: "UEFA's broad European competition with league-phase table and underdog-heavy forecast paths.",
+    modelFocus: "Travel, squad depth, coefficient gap and set-piece upset signals.",
+    teams: conferenceLeagueTeams
   }
 ];
 

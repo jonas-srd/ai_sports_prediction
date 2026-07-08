@@ -10,7 +10,10 @@ export type SportApiMatch = {
   competition: string;
   round?: string | null;
   date: string | null;
+  venue?: string | null;
+  homeId?: string | null;
   homeName: string;
+  awayId?: string | null;
   awayName: string;
   homeLogo: string | null;
   awayLogo: string | null;
@@ -60,6 +63,20 @@ export type SportApiSnapshot = {
   teams: SportApiTeam[];
 };
 
+export type SportApiStatRow = {
+  label: string;
+  home: string | number | null;
+  away: string | number | null;
+};
+
+export type SportApiAnalysisSnapshot = {
+  status: "live" | "not_configured" | "error";
+  message: string;
+  stats: SportApiStatRow[];
+  h2h: SportApiMatch[];
+  source: string;
+};
+
 type ApiSportsResponse<T> = {
   errors?: unknown;
   response?: T[];
@@ -85,7 +102,10 @@ const FOOTBALL_LEAGUE_IDS: Record<string, string> = {
   "ligue-1": "61",
   "coupe-de-france": "66",
   "serie-a": "135",
-  "coppa-italia": "137"
+  "coppa-italia": "137",
+  "champions-league": "2",
+  "europa-league": "3",
+  "conference-league": "848"
 };
 
 const configs: Record<ApiSportId, SportConfig> = {
@@ -124,7 +144,7 @@ const configs: Record<ApiSportId, SportConfig> = {
   },
   tennis: {
     host: process.env.API_TENNIS_HOST ?? "https://v1.tennis.api-sports.io",
-    keyEnv: ["API_TENNIS_KEY"],
+    keyEnv: ["API_TENNIS_KEY", "API_SPORTS_TENNIS_KEY", "API_SPORTS_KEY"],
     provider: "api-sports",
     providerName: "API-Sports Tennis",
     gamesPath: "/fixtures",
@@ -152,13 +172,10 @@ export async function getSportApiSnapshot(sport: ApiSportId): Promise<SportApiSn
   }
 
   try {
-    const query = config.defaultQuery();
-    const [matchesResult, teamsResult] = await Promise.allSettled([
-      fetchMatches(sport, config, query),
-      sport === "nfl" ? fetchSportTeams(config, query) : Promise.resolve([])
-    ]);
-    const matches = matchesResult.status === "fulfilled" ? matchesResult.value : [];
-    const teams = teamsResult.status === "fulfilled" ? teamsResult.value : [];
+    const { matches, query } = await fetchBestSportMatches(sport, config);
+    const teams = sport === "nfl" || sport === "nba"
+      ? await fetchSportTeams(config, query).catch(() => [])
+      : [];
 
     return {
       sport,
@@ -273,6 +290,56 @@ export async function getFootballTeamSquad(teamId: string): Promise<SportApiSqua
   }
 }
 
+export async function getSportMatchAnalysis({
+  competition,
+  match,
+  sport
+}: {
+  competition?: FootballCompetition;
+  match: SportApiMatch;
+  sport: ApiSportId;
+}): Promise<SportApiAnalysisSnapshot> {
+  const config = configs[sport];
+  const apiKey = getFirstEnv(config.keyEnv);
+
+  if (!apiKey) {
+    return {
+      status: "not_configured",
+      message: getMissingKeyMessage(sport, config),
+      stats: [],
+      h2h: [],
+      source: config.providerName
+    };
+  }
+
+  try {
+    const [statsResult, h2hResult] = await Promise.allSettled([
+      fetchMatchStatistics(sport, config, match, competition),
+      fetchHeadToHead(sport, config, match, competition)
+    ]);
+    const stats = statsResult.status === "fulfilled" ? statsResult.value : [];
+    const h2h = h2hResult.status === "fulfilled" ? h2hResult.value : [];
+
+    return {
+      status: "live",
+      message: stats.length > 0 || h2h.length > 0
+        ? `Match analysis loaded from ${config.providerName}.`
+        : `${config.providerName} returned the fixture but no detailed comparison rows yet.`,
+      stats,
+      h2h,
+      source: config.providerName
+    };
+  } catch {
+    return {
+      status: "error",
+      message: `${config.providerName} match analysis request failed. Showing model comparison fallback.`,
+      stats: [],
+      h2h: [],
+      source: config.providerName
+    };
+  }
+}
+
 function getFootballSnapshotMessage(
   matchCount: number,
   standingCount: number,
@@ -313,42 +380,6 @@ function getErrorMessage(error: unknown): string {
   return error instanceof Error ? error.message : String(error ?? "");
 }
 
-export function getFallbackSportMatches(sport: ApiSportId): SportApiMatch[] {
-  const now = new Date();
-  const day = 24 * 60 * 60 * 1000;
-  const matchRows: Record<ApiSportId, Array<[string, string, string]>> = {
-    football: [
-      ["Premier League", "Arsenal", "Chelsea"],
-      ["Bundesliga", "FC Bayern", "Borussia Dortmund"]
-    ],
-    nfl: [
-      ["NFL", "Chiefs", "Bills"],
-      ["NFL", "Eagles", "49ers"]
-    ],
-    nba: [
-      ["NBA", "Celtics", "Knicks"],
-      ["NBA", "Lakers", "Warriors"]
-    ],
-    tennis: [
-      ["ATP Tour", "Sinner", "Alcaraz"],
-      ["WTA Tour", "Swiatek", "Sabalenka"]
-    ]
-  };
-
-  return matchRows[sport].map(([competition, homeName, awayName], index) => ({
-    id: `fallback:${sport}:${index}`,
-    competition,
-    date: new Date(now.getTime() + (index + 1) * day).toISOString(),
-    homeName,
-    awayName,
-    homeLogo: null,
-    awayLogo: null,
-    homeScore: null,
-    awayScore: null,
-    status: "preview"
-  }));
-}
-
 export function fallbackTeamsToStandings(teams: FootballTeam[]): SportApiStanding[] {
   return teams.map((team) => ({
     rank: team.rank,
@@ -384,6 +415,77 @@ async function fetchMatches(
   return data.map(normalizers[sport]).filter((match) => match.homeName && match.awayName).slice(0, limit);
 }
 
+async function fetchBestSportMatches(sport: ApiSportId, config: SportConfig): Promise<{ matches: SportApiMatch[]; query: Record<string, string> }> {
+  const queries = getSportSnapshotQueries(sport, config);
+
+  if (sport === "nba" || sport === "nfl") {
+    const results = await Promise.all(
+      queries.map((query) =>
+        fetchMatches(sport, config, query, getSportMatchLimit(sport))
+          .then((matches) => ({ matches, query }))
+          .catch(() => ({ matches: [] as SportApiMatch[], query }))
+      )
+    );
+    const best = results.find((result) => result.matches.length > 0);
+
+    return best ?? { matches: [], query: queries[0] ?? config.defaultQuery() };
+  }
+
+  for (const query of queries) {
+    const matches = await fetchMatches(sport, config, query, getSportMatchLimit(sport)).catch(() => []);
+
+    if (matches.length > 0) {
+      return { matches, query };
+    }
+  }
+
+  return { matches: [], query: queries[0] ?? config.defaultQuery() };
+}
+
+function getSportSnapshotQueries(sport: ApiSportId, config: SportConfig) {
+  const defaultQuery = config.defaultQuery();
+
+  if (sport === "tennis") {
+    const limit = process.env.API_TENNIS_MATCH_LIMIT ?? process.env.API_SPORTS_MATCH_LIMIT ?? "24";
+    return [
+      { next: limit },
+      { last: limit }
+    ];
+  }
+
+  if (sport === "nba" || sport === "nfl") {
+    const currentSeason = getCurrentUsSportSeason();
+    const configuredSeason = sport === "nba" ? process.env.API_NBA_SEASON : process.env.API_NFL_SEASON;
+    const seasonCandidates = uniqueStrings([
+      String(currentSeason),
+      String(currentSeason + 1),
+      configuredSeason,
+      String(currentSeason - 1)
+    ]);
+
+    return seasonCandidates.map((season) => ({
+      ...defaultQuery,
+      season
+    }));
+  }
+
+  return [defaultQuery];
+}
+
+function getSportMatchLimit(sport: ApiSportId) {
+  const configured = Number(
+    sport === "tennis"
+      ? process.env.API_TENNIS_MATCH_LIMIT ?? process.env.API_SPORTS_MATCH_LIMIT
+      : process.env.API_SPORTS_MATCH_LIMIT
+  );
+
+  if (Number.isFinite(configured) && configured > 0) {
+    return configured;
+  }
+
+  return sport === "tennis" ? 24 : 80;
+}
+
 async function fetchFootballStandings(config: SportConfig, query: Record<string, string>): Promise<SportApiStanding[]> {
   const data = await fetchApiSports<any>(config, "/standings", query);
   const rows = data[0]?.league?.standings?.[0];
@@ -406,7 +508,7 @@ async function fetchFootballStandings(config: SportConfig, query: Record<string,
     points: toNumber(row.points),
     form: getString(row.form),
     detail: toNumber(row.goalsDiff) === null ? null : `${row.goalsDiff} GD`
-  })).filter((row: SportApiStanding) => row.rank > 0 && row.teamName).slice(0, 18);
+  })).filter((row: SportApiStanding) => row.rank > 0 && row.teamName);
 }
 
 async function fetchFootballTeams(config: SportConfig, query: Record<string, string>): Promise<SportApiTeam[]> {
@@ -450,13 +552,18 @@ async function fetchApiSports<T>(
     }
   }
 
+  const controller = new AbortController();
+  const timeoutMs = Number(process.env.API_SPORTS_FETCH_TIMEOUT_MS ?? 6000);
+  const timeout = setTimeout(() => controller.abort(), Number.isFinite(timeoutMs) ? timeoutMs : 6000);
+
   const response = await fetch(url, {
     headers: {
       "x-apisports-key": apiKey,
       accept: "application/json"
     },
+    signal: controller.signal,
     next: { revalidate: config.cacheSeconds?.() ?? Number(process.env.API_SPORTS_CACHE_SECONDS ?? 300) }
-  }).catch(() => null);
+  }).catch(() => null).finally(() => clearTimeout(timeout));
 
   if (!response?.ok) {
     return [];
@@ -476,7 +583,10 @@ function normalizeFootballFixture(item: any): SportApiMatch {
     competition: getString(item.league?.name) || "Football",
     round: getString(item.league?.round) || null,
     date: getString(item.fixture?.date) || null,
+    venue: getString(item.fixture?.venue?.name || item.fixture?.venue?.city) || null,
+    homeId: getString(item.teams?.home?.id),
     homeName: getString(item.teams?.home?.name),
+    awayId: getString(item.teams?.away?.id),
     awayName: getString(item.teams?.away?.name),
     homeLogo: getString(item.teams?.home?.logo) || null,
     awayLogo: getString(item.teams?.away?.logo) || null,
@@ -503,7 +613,10 @@ function normalizeAmericanFootballGame(item: any): SportApiMatch {
     id: String(item.game?.id ?? item.id ?? ""),
     competition: getString(item.league?.name) || "NFL",
     date: gameDate || null,
+    venue: getString(item.game?.venue?.name || item.venue?.name) || null,
+    homeId: getString(item.teams?.home?.id || item.home?.id),
     homeName: getString(item.teams?.home?.name || item.home?.name),
+    awayId: getString(item.teams?.away?.id || item.away?.id),
     awayName: getString(item.teams?.away?.name || item.away?.name),
     homeLogo: getString(item.teams?.home?.logo || item.home?.logo) || null,
     awayLogo: getString(item.teams?.away?.logo || item.away?.logo) || null,
@@ -518,7 +631,10 @@ function normalizeNbaGame(item: any): SportApiMatch {
     id: String(item.id ?? ""),
     competition: getString(item.league) || "NBA",
     date: getString(item.date?.start || item.date) || null,
+    venue: getString(item.arena?.name || item.venue?.name) || null,
+    homeId: getString(item.teams?.home?.id),
     homeName: getString(item.teams?.home?.name),
+    awayId: getString(item.teams?.visitors?.id || item.teams?.away?.id),
     awayName: getString(item.teams?.visitors?.name || item.teams?.away?.name),
     homeLogo: getString(item.teams?.home?.logo) || null,
     awayLogo: getString(item.teams?.visitors?.logo || item.teams?.away?.logo) || null,
@@ -533,7 +649,10 @@ function normalizeTennisFixture(item: any): SportApiMatch {
     id: String(item.id ?? item.fixture?.id ?? ""),
     competition: getString(item.tournament?.name || item.league?.name) || "Tennis",
     date: getString(item.date || item.fixture?.date) || null,
+    venue: getString(item.tournament?.city || item.venue?.name) || null,
+    homeId: getString(item.players?.first?.id || item.player?.first?.id),
     homeName: getString(item.players?.first?.name || item.player?.first?.name || item.home?.name),
+    awayId: getString(item.players?.second?.id || item.player?.second?.id),
     awayName: getString(item.players?.second?.name || item.player?.second?.name || item.away?.name),
     homeLogo: getString(item.players?.first?.logo || item.player?.first?.logo) || null,
     awayLogo: getString(item.players?.second?.logo || item.player?.second?.logo) || null,
@@ -541,6 +660,421 @@ function normalizeTennisFixture(item: any): SportApiMatch {
     awayScore: toNumber(item.scores?.away || item.score?.away),
     status: getString(item.status?.short || item.status?.long || item.status) || null
   };
+}
+
+async function fetchMatchStatistics(
+  sport: ApiSportId,
+  config: SportConfig,
+  match: SportApiMatch,
+  competition?: FootballCompetition
+): Promise<SportApiStatRow[]> {
+  if (sport === "football") {
+    if (!match.id || match.id.startsWith("fallback:")) {
+      return fetchFootballTeamComparisonStats(config, match, competition);
+    }
+
+    const data = await fetchApiSports<any>(config, "/fixtures/statistics", { fixture: match.id });
+    const fixtureStats = normalizePairedStatRows(data, match);
+
+    return fixtureStats.length > 0 ? fixtureStats : fetchFootballTeamComparisonStats(config, match, competition);
+  }
+
+  if (sport === "nba") {
+    const gameStats = match.id && !match.id.startsWith("fallback:")
+      ? await fetchApiSports<any>(config, "/games/statistics", { id: match.id }).then((data) => normalizeNbaStatRows(data, match))
+      : [];
+
+    return gameStats.length > 0 ? gameStats : fetchNbaTeamComparisonStats(config, match);
+  }
+
+  if (sport === "nfl") {
+    const gameStats = match.id && !match.id.startsWith("fallback:")
+      ? await fetchFirstNonEmpty([
+          () => fetchApiSports<any>(config, "/games/statistics", { game: match.id }).then((data) => normalizeAmericanFootballStatRows(data, match)),
+          () => fetchApiSports<any>(config, "/games/statistics", { id: match.id }).then((data) => normalizeAmericanFootballStatRows(data, match))
+        ])
+      : [];
+
+    return gameStats.length > 0 ? gameStats : fetchNflTeamComparisonStats(config, match);
+  }
+
+  if (!match.id || match.id.startsWith("fallback:")) {
+    return [];
+  }
+
+  const data = await fetchApiSports<any>(config, "/fixtures/statistics", { fixture: match.id });
+  return normalizePairedStatRows(data, match);
+}
+
+async function fetchHeadToHead(
+  sport: ApiSportId,
+  config: SportConfig,
+  match: SportApiMatch,
+  competition?: FootballCompetition
+): Promise<SportApiMatch[]> {
+  if (!match.homeId || !match.awayId || match.id.startsWith("fallback:")) {
+    return [];
+  }
+
+  if (sport === "football") {
+    return fetchMatches("football", config, { h2h: `${match.homeId}-${match.awayId}` }, 5);
+  }
+
+  if (sport === "nba") {
+    return fetchMatches("nba", config, { h2h: `${match.homeId}-${match.awayId}` }, 5);
+  }
+
+  if (sport === "nfl") {
+    const season = process.env.API_NFL_SEASON ?? getCurrentSeason();
+    return fetchMatches("nfl", config, { team: match.homeId, season }, 8)
+      .then((rows) => rows.filter((entry) => entry.homeId === match.awayId || entry.awayId === match.awayId).slice(0, 5));
+  }
+
+  const rows = await fetchMatches("tennis", config, { h2h: `${match.homeId}-${match.awayId}` }, 5);
+  return rows.length > 0 ? rows : competition ? [] : [];
+}
+
+function normalizePairedStatRows(data: any[], match: SportApiMatch): SportApiStatRow[] {
+  const home = data.find((entry) => namesMatch(getString(entry.team?.name), match.homeName)) ?? data[0];
+  const away = data.find((entry) => namesMatch(getString(entry.team?.name), match.awayName)) ?? data[1];
+  const homeStats = arrayToStatMap(home?.statistics);
+  const awayStats = arrayToStatMap(away?.statistics);
+  const labels = [...new Set([...homeStats.keys(), ...awayStats.keys()])];
+
+  return labels.map((label) => ({
+    label,
+    home: homeStats.get(label) ?? null,
+    away: awayStats.get(label) ?? null
+  })).filter((row) => row.home !== null || row.away !== null);
+}
+
+function normalizeNbaStatRows(data: any[], match: SportApiMatch): SportApiStatRow[] {
+  const home = data.find((entry) => namesMatch(getString(entry.team?.name), match.homeName)) ?? data[0];
+  const away = data.find((entry) => namesMatch(getString(entry.team?.name), match.awayName)) ?? data[1];
+  const homeStats = getNestedStatObject(home);
+  const awayStats = getNestedStatObject(away);
+  const fields = [
+    ["Points", "points"],
+    ["Field goals", "fgm", "fga"],
+    ["FG%", "fgp"],
+    ["3PT", "tpm", "tpa"],
+    ["3PT%", "tpp"],
+    ["Free throws", "ftm", "fta"],
+    ["Rebounds", "totReb"],
+    ["Assists", "assists"],
+    ["Steals", "steals"],
+    ["Blocks", "blocks"],
+    ["Turnovers", "turnovers"]
+  ] as const;
+
+  return fields.map(([label, primary, secondary]) => ({
+    label,
+    home: formatStatPair(readStatValue(homeStats, primary), secondary ? readStatValue(homeStats, secondary) : undefined),
+    away: formatStatPair(readStatValue(awayStats, primary), secondary ? readStatValue(awayStats, secondary) : undefined)
+  })).filter((row) => row.home !== null || row.away !== null);
+}
+
+function normalizeAmericanFootballStatRows(data: any[], match: SportApiMatch): SportApiStatRow[] {
+  const rows = normalizePairedStatRows(data, match);
+
+  if (rows.length > 0) {
+    return rows;
+  }
+
+  const home = getNestedStatObject(data.find((entry) => namesMatch(getString(entry.team?.name), match.homeName)) ?? data[0]);
+  const away = getNestedStatObject(data.find((entry) => namesMatch(getString(entry.team?.name), match.awayName)) ?? data[1]);
+  const fields = [
+    ["First Downs", "first_downs", "firstDowns"],
+    ["Total Yards", "total_yards", "totalYards", "yards.total"],
+    ["Passing Yards", "passing_yards", "passingYards", "yards.passing"],
+    ["Rushing Yards", "rushing_yards", "rushingYards", "yards.rushing"],
+    ["Turnovers", "turnovers", "turnover"],
+    ["Possession Time", "possession_time", "possessionTime"],
+    ["Penalties", "penalties"]
+  ] as const;
+
+  return fields.map(([label, ...keys]) => ({
+    label,
+    home: firstStatValue(home, keys),
+    away: firstStatValue(away, keys)
+  })).filter((row) => row.home !== null || row.away !== null);
+}
+
+async function fetchFootballTeamComparisonStats(
+  config: SportConfig,
+  match: SportApiMatch,
+  competition?: FootballCompetition
+): Promise<SportApiStatRow[]> {
+  const homeId = match.homeId ?? extractApiSportsIdFromLogo(match.homeLogo);
+  const awayId = match.awayId ?? extractApiSportsIdFromLogo(match.awayLogo);
+
+  if (!homeId || !awayId) {
+    return [];
+  }
+
+  const primaryLeague = competition
+    ? process.env[`API_FOOTBALL_${toEnvKey(competition.slug)}_LEAGUE_ID`] ?? FOOTBALL_LEAGUE_IDS[competition.slug]
+    : process.env.API_FOOTBALL_LEAGUE_ID ?? "39";
+  const season = process.env.API_FOOTBALL_SEASON ?? getCurrentSeason();
+  const [homeRows, awayRows] = await Promise.all([
+    fetchFootballTeamStatsWithLeagueFallback(config, homeId, primaryLeague, season),
+    fetchFootballTeamStatsWithLeagueFallback(config, awayId, primaryLeague, season)
+  ]);
+  const home = homeRows[0] ?? {};
+  const away = awayRows[0] ?? {};
+  const fields = [
+    ["Goals For", "goals.for.total.total", "goals.for.average.total"],
+    ["Goals Against", "goals.against.total.total", "goals.against.average.total"],
+    ["Clean Sheets", "clean_sheet.total"],
+    ["Failed To Score", "failed_to_score.total"],
+    ["Penalties Scored", "penalty.scored.total"],
+    ["Cards Yellow", "cards.yellow.total.total"],
+    ["Cards Red", "cards.red.total.total"]
+  ] as const;
+
+  return fields.map(([label, ...keys]) => ({
+    label,
+    home: firstStatValue(home, keys),
+    away: firstStatValue(away, keys)
+  })).filter((row) => row.home !== null || row.away !== null);
+}
+
+function extractApiSportsIdFromLogo(logo: string | null) {
+  return logo?.match(/\/teams\/(\d+)\.png(?:\?|$)/)?.[1] ?? null;
+}
+
+async function fetchFootballTeamStatsWithLeagueFallback(
+  config: SportConfig,
+  teamId: string,
+  primaryLeague: string | undefined,
+  primarySeason: string
+) {
+  const currentSeason = Number(getCurrentSeason());
+  const seasons = uniqueStrings([
+    primarySeason,
+    String(currentSeason),
+    String(currentSeason - 1),
+    String(currentSeason - 2)
+  ]);
+  const leagues = uniqueStrings([
+    primaryLeague,
+    FOOTBALL_LEAGUE_IDS["bundesliga"],
+    FOOTBALL_LEAGUE_IDS["premier-league"],
+    FOOTBALL_LEAGUE_IDS["la-liga"],
+    FOOTBALL_LEAGUE_IDS["ligue-1"],
+    FOOTBALL_LEAGUE_IDS["serie-a"],
+    FOOTBALL_LEAGUE_IDS["champions-league"],
+    FOOTBALL_LEAGUE_IDS["europa-league"],
+    FOOTBALL_LEAGUE_IDS["conference-league"]
+  ]);
+
+  for (const season of seasons) {
+    for (const league of leagues) {
+      const rows = await fetchApiSports<any>(config, "/teams/statistics", { league, season, team: teamId }).catch(() => []);
+
+      if (rows.length > 0) {
+        return rows;
+      }
+    }
+  }
+
+  return [];
+}
+
+async function fetchNbaTeamComparisonStats(config: SportConfig, match: SportApiMatch): Promise<SportApiStatRow[]> {
+  const [homeId, awayId] = await resolveMatchTeamIds(config, match);
+
+  if (!homeId || !awayId) {
+    return [];
+  }
+
+  const season = getSeasonFromMatch(match, process.env.API_NBA_SEASON ?? getCurrentUsSportSeason());
+  const [homeRows, awayRows] = await Promise.all([
+    fetchApiSports<any>(config, "/teams/statistics", { id: homeId, season, league: process.env.API_NBA_LEAGUE ?? "standard" }),
+    fetchApiSports<any>(config, "/teams/statistics", { id: awayId, season, league: process.env.API_NBA_LEAGUE ?? "standard" })
+  ]);
+
+  return normalizeNbaStatRows([{ team: { name: match.homeName }, statistics: homeRows }, { team: { name: match.awayName }, statistics: awayRows }], match);
+}
+
+async function fetchNflTeamComparisonStats(config: SportConfig, match: SportApiMatch): Promise<SportApiStatRow[]> {
+  const [homeId, awayId] = await resolveMatchTeamIds(config, match);
+
+  if (!homeId || !awayId) {
+    return [];
+  }
+
+  const season = getSeasonFromMatch(match, process.env.API_NFL_SEASON ?? getCurrentUsSportSeason());
+  const [homeRows, awayRows] = await Promise.all([
+    fetchFirstNonEmpty([
+      () => fetchApiSports<any>(config, "/teams/statistics", { team: homeId, season, league: process.env.API_NFL_LEAGUE_ID ?? "1" }),
+      () => fetchApiSports<any>(config, "/teams/statistics", { team: homeId, season }),
+      () => fetchApiSports<any>(config, "/teams/statistics", { id: homeId, season, league: process.env.API_NFL_LEAGUE_ID ?? "1" }),
+      () => fetchApiSports<any>(config, "/teams/statistics", { id: homeId, season })
+    ]),
+    fetchFirstNonEmpty([
+      () => fetchApiSports<any>(config, "/teams/statistics", { team: awayId, season, league: process.env.API_NFL_LEAGUE_ID ?? "1" }),
+      () => fetchApiSports<any>(config, "/teams/statistics", { team: awayId, season }),
+      () => fetchApiSports<any>(config, "/teams/statistics", { id: awayId, season, league: process.env.API_NFL_LEAGUE_ID ?? "1" }),
+      () => fetchApiSports<any>(config, "/teams/statistics", { id: awayId, season })
+    ])
+  ]);
+
+  return normalizeAmericanFootballStatRows([{ team: { name: match.homeName }, statistics: homeRows }, { team: { name: match.awayName }, statistics: awayRows }], match);
+}
+
+async function fetchFirstNonEmpty<T>(attempts: Array<() => Promise<T[]>>): Promise<T[]> {
+  for (const attempt of attempts) {
+    const rows = await attempt().catch(() => []);
+
+    if (rows.length > 0) {
+      return rows;
+    }
+  }
+
+  return [];
+}
+
+async function resolveMatchTeamIds(config: SportConfig, match: SportApiMatch): Promise<[string | null, string | null]> {
+  if (match.homeId && match.awayId) {
+    return [match.homeId, match.awayId];
+  }
+
+  const teams = await fetchSportTeams(config, config.defaultQuery()).catch(() => []);
+  const home = match.homeId ?? teams.find((team) => namesMatch(team.name, match.homeName))?.id ?? null;
+  const away = match.awayId ?? teams.find((team) => namesMatch(team.name, match.awayName))?.id ?? null;
+
+  return [home, away];
+}
+
+function getNestedStatObject(entry: any): any {
+  if (!entry) {
+    return {};
+  }
+
+  if (Array.isArray(entry.statistics)) {
+    return entry.statistics[0] ?? {};
+  }
+
+  if (entry.statistics && typeof entry.statistics === "object") {
+    return entry.statistics;
+  }
+
+  if (Array.isArray(entry.stats)) {
+    return entry.stats[0] ?? {};
+  }
+
+  if (entry.stats && typeof entry.stats === "object") {
+    return entry.stats;
+  }
+
+  return entry;
+}
+
+function readStatValue(source: any, key: string): string | number | null {
+  const direct = getPathValue(source, key);
+
+  if (direct !== null) {
+    return direct;
+  }
+
+  const snake = key.replace(/[A-Z]/g, (letter) => `_${letter.toLowerCase()}`);
+  const compact = key.replace(/[_\s-]+/g, "").toLowerCase();
+  const entries = flattenObject(source);
+  const found = entries.find(([entryKey]) => {
+    const normalized = entryKey.replace(/[_\s.-]+/g, "").toLowerCase();
+    return normalized === compact || normalized.endsWith(compact) || normalized === snake.replace(/_/g, "");
+  });
+
+  return found?.[1] ?? null;
+}
+
+function firstStatValue(source: any, keys: readonly string[]): string | number | null {
+  for (const key of keys) {
+    const value = readStatValue(source, key);
+
+    if (value !== null && value !== "") {
+      return value;
+    }
+  }
+
+  return null;
+}
+
+function getPathValue(source: any, path: string): string | number | null {
+  const value = path.split(".").reduce<any>((current, key) => current?.[key], source);
+
+  if (value === null || value === undefined || value === "") {
+    return null;
+  }
+
+  if (typeof value === "string" || typeof value === "number") {
+    return value;
+  }
+
+  return null;
+}
+
+function flattenObject(source: any, prefix = ""): Array<[string, string | number]> {
+  if (!source || typeof source !== "object") {
+    return [];
+  }
+
+  return Object.entries(source).flatMap(([key, value]) => {
+    const nextKey = prefix ? `${prefix}.${key}` : key;
+
+    if (typeof value === "string" || typeof value === "number") {
+      return [[nextKey, value] as [string, string | number]];
+    }
+
+    if (value && typeof value === "object" && !Array.isArray(value)) {
+      return flattenObject(value, nextKey);
+    }
+
+    return [];
+  });
+}
+
+function getSeasonFromMatch(match: SportApiMatch, fallback: string | number) {
+  if (!match.date) {
+    return String(fallback);
+  }
+
+  const date = new Date(match.date);
+
+  if (Number.isNaN(date.getTime())) {
+    return String(fallback);
+  }
+
+  return String(date.getUTCFullYear());
+}
+
+function arrayToStatMap(value: unknown) {
+  const map = new Map<string, string | number | null>();
+
+  if (!Array.isArray(value)) {
+    return map;
+  }
+
+  for (const item of value) {
+    const label = getString(item?.type || item?.name);
+    if (label) {
+      map.set(label, item?.value ?? null);
+    }
+  }
+
+  return map;
+}
+
+function formatStatPair(primary: unknown, secondary?: unknown) {
+  const main = primary === null || primary === undefined || primary === "" ? null : primary;
+  const extra = secondary === null || secondary === undefined || secondary === "" ? null : secondary;
+
+  if (main === null) {
+    return null;
+  }
+
+  return extra === null ? String(main) : `${main}/${extra}`;
 }
 
 function getFirstEnv(keys: string[]): string | null {
@@ -602,8 +1136,28 @@ function getCurrentSeason(): string {
   return String(new Date().getUTCFullYear());
 }
 
+function getCurrentUsSportSeason(): number {
+  const now = new Date();
+  const year = now.getUTCFullYear();
+  const month = now.getUTCMonth();
+
+  return month >= 8 ? year : year - 1;
+}
+
+function uniqueStrings(values: Array<string | null | undefined>) {
+  return Array.from(new Set(values.filter((value): value is string => Boolean(value))));
+}
+
 function getString(value: unknown): string {
-  return typeof value === "string" ? value : "";
+  if (typeof value === "string") {
+    return value;
+  }
+
+  if (typeof value === "number" && Number.isFinite(value)) {
+    return String(value);
+  }
+
+  return "";
 }
 
 function toNumber(value: unknown): number | null {
@@ -617,4 +1171,20 @@ function toNumber(value: unknown): number | null {
 
 function toEnvKey(value: string): string {
   return value.replace(/[^a-z0-9]+/gi, "_").replace(/^_+|_+$/g, "").toUpperCase();
+}
+
+function namesMatch(left: string, right: string) {
+  const a = normalizeName(left);
+  const b = normalizeName(right);
+
+  return a === b || a.includes(b) || b.includes(a);
+}
+
+function normalizeName(value: string) {
+  return value
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-zA-Z0-9]+/g, " ")
+    .trim()
+    .toLowerCase();
 }

@@ -1,7 +1,10 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { localizePath, type Locale } from "@/lib/i18n";
-import { getFallbackSportMatches, getSportApiSnapshot, type ApiSportId, type SportApiMatch, type SportApiTeam } from "@/lib/sports-api-data";
+import { getSportsNewsLinks } from "@/lib/sports-news";
+import { getSportApiSnapshot, type ApiSportId, type SportApiMatch, type SportApiTeam } from "@/lib/sports-api-data";
+import { getSportMatchHref } from "@/components/match-detail-page";
+import { SportsNewsCards } from "@/components/sports-news-cards";
 
 type LeagueTeam = {
   slug: string;
@@ -69,13 +72,14 @@ const labels = {
     allSports: "All sports",
     predictionHub: "Prediction hub",
     news: "News",
-    matches: "Matches",
+    matches: "Game predictions",
     table: "Table",
     teams: "Teams",
     stats: "Team stats",
     matchCenter: "Match center",
-    fixturesAndResults: "Games & results",
+    fixturesAndResults: "Predictions & games",
     latestSignals: "Latest signals",
+    upcomingPredictions: "Next 5 predictions",
     source: "Source",
     standings: "Standings",
     rank: "#",
@@ -94,7 +98,7 @@ const labels = {
     net: "Net",
     streak: "Strk",
     participatingTeams: "Teams",
-    competitionFacts: "League facts",
+    competitionFacts: "Team stats",
     modelSummary: "Model summary",
     backToLeague: "Back to league",
     teamProfile: "Team profile",
@@ -123,19 +127,23 @@ const labels = {
     squadUnavailable: "Core roster roles are shown here; full live roster sync can be connected next.",
     live: "Live",
     final: "Final",
-    scheduled: "Scheduled"
+    scheduled: "Scheduled",
+    details: "Open analysis",
+    noLiveMatchesTitle: "No scheduled games from the API",
+    noLiveMatchesText: "As soon as the API returns real fixtures, this area fills automatically. Demo pairings are hidden."
   },
   de: {
     allSports: "Alle Sportarten",
     predictionHub: "Prediction Hub",
     news: "News",
-    matches: "Spiele",
+    matches: "Spiel-Prognosen",
     table: "Tabelle",
     teams: "Teams",
     stats: "Teamstatistik",
     matchCenter: "Matchcenter",
-    fixturesAndResults: "Spiele & Ergebnisse",
+    fixturesAndResults: "Prognosen & Spiele",
     latestSignals: "Aktuelle Signale",
+    upcomingPredictions: "Nächste 5 Prognosen",
     source: "Quelle",
     standings: "Tabelle",
     rank: "#",
@@ -154,7 +162,7 @@ const labels = {
     net: "Net",
     streak: "Serie",
     participatingTeams: "Teams",
-    competitionFacts: "Liga-Daten",
+    competitionFacts: "Teamstatistik",
     modelSummary: "Modell-Zusammenfassung",
     backToLeague: "Zurück zur Liga",
     teamProfile: "Teamprofil",
@@ -183,7 +191,10 @@ const labels = {
     squadUnavailable: "Hier stehen Kaderkern und Rollen; vollständige Live-Roster können als nächster Schritt angebunden werden.",
     live: "Live",
     final: "Final",
-    scheduled: "Geplant"
+    scheduled: "Geplant",
+    details: "Analyse öffnen",
+    noLiveMatchesTitle: "Keine echten API-Spiele terminiert",
+    noLiveMatchesText: "Sobald die API echte Spiele zurückgibt, füllt sich dieser Bereich automatisch. Demo-Paarungen werden ausgeblendet."
   }
 } as const;
 
@@ -233,10 +244,11 @@ export async function LeagueSportPage<TTeam extends LeagueTeam>({
 }) {
   const text = labels[locale];
   const apiSnapshot = await getSportApiSnapshot(config.apiSport);
-  const matches = apiSnapshot.matches.length > 0 ? hydrateApiMatches(apiSnapshot.matches, config.teams) : buildFallbackMatches(config);
+  const apiMatches = apiSnapshot.matches.length > 0 ? hydrateApiMatches(apiSnapshot.matches, config.teams) : [];
+  const matches = getUpcomingLeagueMatches(apiMatches);
   const displayTeams = buildDisplayTeams(config.teams, apiSnapshot.teams);
   const tabItems = getLeagueTabs(config, locale);
-  const hasSideColumn = tab !== "matches" && tab !== "table" && tab !== "teams" && tab !== "stats";
+  const hasSideColumn = false;
 
   return (
     <main className="footballDetailShell sportschauFootballPage nflPage">
@@ -246,7 +258,7 @@ export async function LeagueSportPage<TTeam extends LeagueTeam>({
           <h1>{config.title}</h1>
           <p>{config.subtitle[locale]}</p>
         </div>
-        <FeaturedGame config={config} match={matches[0]} />
+        {matches[0] ? <FeaturedGame config={config} match={matches[0]} /> : null}
         <Link className="footballBackLink" href={localizePath("/#sports", locale)}>
           {text.allSports}
         </Link>
@@ -270,7 +282,7 @@ export async function LeagueSportPage<TTeam extends LeagueTeam>({
 
       <div className={`sportschauPageGrid ${hasSideColumn ? "" : "isSingleColumn"}`}>
         <div className="sportschauMainColumn">
-          {tab === "news" ? <LeagueNewsSection config={config} locale={locale} /> : null}
+          {tab === "news" ? <LeagueNewsSection config={config} locale={locale} matches={matches} /> : null}
           {tab === "matches" ? <LeagueMatchesSection config={config} locale={locale} matches={matches} /> : null}
           {tab === "table" ? <LeagueStandingsSection config={config} locale={locale} teams={displayTeams} /> : null}
           {tab === "teams" ? <LeagueTeamsSection config={config} locale={locale} teams={displayTeams} /> : null}
@@ -308,9 +320,8 @@ export async function LeagueSportTeamPage<TTeam extends LeagueTeam>({
   const apiSnapshot = await getSportApiSnapshot(config.apiSport);
   const apiTeam = findApiTeam(apiSnapshot.teams, team);
   const displayTeam: DisplayLeagueTeam = { ...team, apiLogo: apiTeam?.logo };
-  const allMatches = apiSnapshot.matches.length > 0 ? hydrateApiMatches(apiSnapshot.matches, config.teams) : buildFallbackMatches(config);
+  const allMatches = getUpcomingLeagueMatches(apiSnapshot.matches.length > 0 ? hydrateApiMatches(apiSnapshot.matches, config.teams) : []);
   const teamMatches = allMatches.filter((match) => teamMatchesName(team, match.homeName) || teamMatchesName(team, match.awayName));
-  const visibleTeamMatches = teamMatches.length > 0 ? teamMatches : buildTeamFallbackMatches(config, team);
   const teamTabs = getLeagueTeamTabs(config, team.slug, locale);
 
   return (
@@ -336,7 +347,7 @@ export async function LeagueSportTeamPage<TTeam extends LeagueTeam>({
       </nav>
 
       {tab === "info" ? <LeagueTeamInfoSection config={config} locale={locale} team={displayTeam} /> : null}
-      {tab === "matches" ? <LeagueMatchesSection config={config} locale={locale} matches={visibleTeamMatches} title={team.shortName} /> : null}
+      {tab === "matches" ? <LeagueMatchesSection config={config} locale={locale} matches={teamMatches} title={team.shortName} /> : null}
       {tab === "table" ? <LeagueStandingsSection config={config} highlightedTeam={team} locale={locale} teams={buildDisplayTeams(config.teams, apiSnapshot.teams)} /> : null}
       {tab === "squad" ? <LeagueSquadSection config={config} locale={locale} team={displayTeam} /> : null}
       {tab === "scorers" || tab === "fairness" || tab === "running" || tab === "duels" ? (
@@ -382,25 +393,36 @@ function LeagueMatchesSection<TTeam extends LeagueTeam>({
         </div>
         <strong>{title ?? config.title}</strong>
       </div>
-      <div className="fixtureGrid sportschauFixtureList">
-        {matches.map((match) => (
-          <article className="fixtureRow" key={match.id}>
-            <div className="fixtureMatchLine">
-              <LeagueFixtureTeam align="right" config={config} locale={locale} logo={match.homeLogo} name={match.homeName} />
-              <div className="fixtureTime">
-                <span>{formatMatchDate(match.date, locale)}</span>
-                <strong>{formatMatchCenter(match)}</strong>
-                <small>{match.competition || config.title}</small>
+      {matches.length > 0 ? (
+        <div className="fixtureGrid sportschauFixtureList">
+          {matches.map((match) => (
+            <article className="fixtureRow" key={match.id}>
+              <Link
+                aria-label={`${text.details}: ${match.homeName} - ${match.awayName}`}
+                className="fixtureCardOverlay"
+                href={getSportMatchHref({ locale, match, sport: config.apiSport })}
+              />
+              <div className="fixtureMatchLine">
+                <LeagueFixtureTeam align="right" config={config} locale={locale} logo={match.homeLogo} name={match.homeName} />
+                <div className="fixtureTime">
+                  <span>{formatMatchDate(match.date, locale)}</span>
+                  <strong>{formatMatchCenter(match)}</strong>
+                  <small>{match.competition || config.title}</small>
+                </div>
+                <LeagueFixtureTeam align="left" config={config} locale={locale} logo={match.awayLogo} name={match.awayName} />
               </div>
-              <LeagueFixtureTeam align="left" config={config} locale={locale} logo={match.awayLogo} name={match.awayName} />
-            </div>
-            <div className="fixturePrediction">
-              <LeaguePredictionCard config={config} locale={locale} match={match} />
-              <LeagueStatusPill locale={locale} match={match} />
-            </div>
-          </article>
-        ))}
-      </div>
+              <div className="fixturePrediction">
+                <LeaguePredictionCard config={config} locale={locale} match={match} />
+                <div className="fixtureActionColumn">
+                  <LeagueStatusPill locale={locale} match={match} />
+                </div>
+              </div>
+            </article>
+          ))}
+        </div>
+      ) : (
+        <LeagueEmptyMatches locale={locale} />
+      )}
     </section>
   );
 }
@@ -459,36 +481,78 @@ function LeagueStatusPill({ locale, match }: { locale: Locale; match: SportApiMa
   return <span className={isLive ? "fixtureMetaPill isLive" : "fixtureMetaPill"}>{label}</span>;
 }
 
-function LeagueNewsSection<TTeam extends LeagueTeam>({ config, locale }: { config: LeagueSportConfig<TTeam>; locale: Locale }) {
+async function LeagueNewsSection<TTeam extends LeagueTeam>({
+  config,
+  locale,
+  matches
+}: {
+  config: LeagueSportConfig<TTeam>;
+  locale: Locale;
+  matches: SportApiMatch[];
+}) {
   const text = labels[locale];
-  const headlines = locale === "de"
-    ? [
-        `${config.title}-Modell bewertet Matchups nach Schedule-Update neu`,
-        `${config.title}: Teamstärke und Verfügbarkeit verändern die Prognosen`,
-        `KI-Watchlist: Form, Rest Days und Matchup-Profil im Fokus`
-      ]
-    : [
-        `${config.title} model refresh updates matchups after schedule scan`,
-        `${config.title}: team strength and availability shift projections`,
-        `AI watchlist: form, rest and matchup profile in focus`
-      ];
+  const newsItems = await getSportsNewsLinks({
+    contextName: config.title,
+    locale,
+    topic: config.apiSport === "nba" ? "nba" : "nfl"
+  });
+  const upcomingMatches = getUpcomingLeagueMatches(matches).slice(0, 5);
 
   return (
-    <section className="footballPanel sportschauNewsPanel">
-      <div className="sportschauSectionTitle">
-        <span>{text.latestSignals}</span>
-        <h2>{config.title}-News</h2>
-      </div>
-      <div className="footballNewsGrid sportschauNewsGrid">
-        {headlines.map((headline, index) => (
-          <article className={index === 0 ? "footballNewsCard sportschauLeadNews" : "footballNewsCard"} key={headline}>
-            <span>{config.title}</span>
-            <h3>{headline}</h3>
-            <p>{config.modelFocus[locale]}</p>
-          </article>
-        ))}
+    <section className="sportsNewsTabStack">
+      {upcomingMatches.length > 0 ? (
+        <div className="footballPanel sportschauNewsPanel">
+          <div className="sportschauSectionTitle">
+            <span>{text.upcomingPredictions}</span>
+            <h2>{text.fixturesAndResults}</h2>
+          </div>
+          <div className="newsPredictionList">
+            {upcomingMatches.map((match) => (
+              <article className="fixtureRow newsPredictionFixture" key={match.id}>
+                <Link
+                  aria-label={`${text.details}: ${match.homeName} - ${match.awayName}`}
+                  className="fixtureCardOverlay"
+                  href={getSportMatchHref({ locale, match, sport: config.apiSport })}
+                />
+                <div className="fixtureMatchLine">
+                  <LeagueFixtureTeam align="right" config={config} locale={locale} logo={match.homeLogo} name={match.homeName} />
+                  <div className="fixtureTime">
+                    <span>{formatMatchDate(match.date, locale)}</span>
+                    <strong>{formatMatchCenter(match)}</strong>
+                    <small>{match.competition || config.title}</small>
+                  </div>
+                  <LeagueFixtureTeam align="left" config={config} locale={locale} logo={match.awayLogo} name={match.awayName} />
+                </div>
+                <div className="fixturePrediction">
+                  <LeaguePredictionCard config={config} locale={locale} match={match} />
+                </div>
+              </article>
+            ))}
+          </div>
+        </div>
+      ) : null}
+
+      <div className="footballPanel sportschauNewsPanel">
+        <div className="sportschauSectionTitle">
+          <span>{text.latestSignals}</span>
+          <h2>{config.title}-News</h2>
+        </div>
+        <div className="footballNewsGrid sportschauNewsGrid">
+          <SportsNewsCards items={newsItems} locale={locale} />
+        </div>
       </div>
     </section>
+  );
+}
+
+function LeagueEmptyMatches({ locale }: { locale: Locale }) {
+  const text = labels[locale];
+
+  return (
+    <div className="teamEmptyState">
+      <strong>{text.noLiveMatchesTitle}</strong>
+      <p>{text.noLiveMatchesText}</p>
+    </div>
   );
 }
 
@@ -635,7 +699,6 @@ function LeagueStatsSection<TTeam extends LeagueTeam>({
           <div key={conference}><span>{conference}</span><strong>{teams.filter((team) => team.conference === conference).length}</strong></div>
         ))}
         <div><span>{text.matches}</span><strong>{matches.length}</strong></div>
-        {!compact ? <div><span>{text.source}</span><strong>{config.provider}</strong></div> : null}
       </div>
     </section>
   );
@@ -953,43 +1016,6 @@ function hydrateApiMatches<TTeam extends LeagueTeam>(matches: SportApiMatch[], t
   });
 }
 
-function buildFallbackMatches<TTeam extends LeagueTeam>(config: LeagueSportConfig<TTeam>) {
-  const fallback = getFallbackSportMatches(config.apiSport);
-  const teams = config.teams;
-
-  return fallback.map((match, index) => {
-    const home = teams[index * 2] ?? teams[0];
-    const away = teams[index * 2 + 1] ?? teams[1];
-
-    return {
-      ...match,
-      competition: config.title,
-      homeName: home.name,
-      awayName: away.name,
-      homeLogo: home.logo,
-      awayLogo: away.logo
-    };
-  });
-}
-
-function buildTeamFallbackMatches<TTeam extends LeagueTeam>(config: LeagueSportConfig<TTeam>, team: TTeam) {
-  return config.teams
-    .filter((opponent) => opponent.slug !== team.slug && opponent.conference === team.conference)
-    .slice(0, 6)
-    .map((opponent, index): SportApiMatch => ({
-      id: `${config.apiSport}-fallback:${team.slug}:${opponent.slug}`,
-      competition: config.title,
-      date: null,
-      homeName: index % 2 === 0 ? team.name : opponent.name,
-      awayName: index % 2 === 0 ? opponent.name : team.name,
-      homeLogo: index % 2 === 0 ? team.logo : opponent.logo,
-      awayLogo: index % 2 === 0 ? opponent.logo : team.logo,
-      homeScore: null,
-      awayScore: null,
-      status: "preview"
-    }));
-}
-
 function buildRoster<TTeam extends LeagueTeam>(config: LeagueSportConfig<TTeam>, team: LeagueTeam, locale: Locale): RosterGroup[] {
   const seededRoster = rosterSeeds[team.slug];
 
@@ -1193,6 +1219,32 @@ function formatMatchDate(value: string | null, locale: Locale) {
     hour: "2-digit",
     minute: "2-digit"
   }).format(date);
+}
+
+function getUpcomingLeagueMatches(matches: SportApiMatch[]) {
+  const now = Date.now();
+  const scheduled = matches
+    .filter((match) => {
+      const timestamp = getLeagueMatchTimestamp(match);
+      return timestamp !== null && timestamp >= now && !isFinishedLeagueMatch(match);
+    })
+    .sort((a, b) => (getLeagueMatchTimestamp(a) ?? Number.MAX_SAFE_INTEGER) - (getLeagueMatchTimestamp(b) ?? Number.MAX_SAFE_INTEGER));
+
+  return scheduled;
+}
+
+function getLeagueMatchTimestamp(match: SportApiMatch) {
+  if (!match.date) {
+    return null;
+  }
+
+  const timestamp = new Date(match.date).getTime();
+  return Number.isNaN(timestamp) ? null : timestamp;
+}
+
+function isFinishedLeagueMatch(match: SportApiMatch) {
+  const status = (match.status ?? "").toLowerCase();
+  return Boolean(match.homeScore !== null && match.awayScore !== null) || status.includes("ft") || status.includes("final") || status.includes("finished");
 }
 
 function formatDiff(value: number) {

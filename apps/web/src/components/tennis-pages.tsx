@@ -1,9 +1,12 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { localizePath, type Locale } from "@/lib/i18n";
+import { getSportsNewsLinks } from "@/lib/sports-news";
 import { getSportApiSnapshot, type SportApiMatch } from "@/lib/sports-api-data";
 import { getTennisPlayer, getTennisTournament, tennisPlayers, tennisTournaments, type TennisPlayer, type TennisTournament } from "@/lib/tennis-data";
 import { getAtpRankingSnapshot, type TennisRankingRow, type TennisRankingSnapshot } from "@/lib/tennis-rankings";
+import { getSportMatchHref } from "@/components/match-detail-page";
+import { SportsNewsCards } from "@/components/sports-news-cards";
 
 export type TennisTab = "news" | "matches" | "tournaments" | "rankings" | "players";
 export type TennisTournamentTab = "results" | "info" | "players";
@@ -30,7 +33,7 @@ const text = {
     allSports: "All sports",
     tennis: "Tennis",
     news: "News",
-    matches: "Predictions",
+    matches: "Match predictions",
     tournaments: "Tournaments",
     rankings: "Rankings",
     players: "Players",
@@ -50,6 +53,7 @@ const text = {
     officialLive: "Official ATP live",
     officialSnapshot: "Official ATP snapshot",
     latestSignals: "Latest signals",
+    upcomingPredictions: "Next 5 predictions",
     source: "Source",
     playerProfile: "Player profile",
     backToTennis: "Back to tennis",
@@ -83,19 +87,23 @@ const text = {
     category: "Category",
     location: "Location",
     month: "Month",
-    draw: "Draw"
+    draw: "Draw",
+    details: "Open analysis",
+    liveDataPending: "Live match data pending",
+    liveDataPendingText: "No real Tennis API fixtures are available right now. As soon as the API returns scheduled matches, this page fills automatically without demo fallback games.",
+    apiStatus: "API status"
   },
   de: {
     allSports: "Alle Sportarten",
     tennis: "Tennis",
     news: "News",
-    matches: "Vorhersagen",
+    matches: "Match-Prognosen",
     tournaments: "Turniere",
     rankings: "Ranking",
     players: "Spieler",
     matchCenter: "Matchcenter",
-    nextTournament: "Nachstes Turnier",
-    nextTopMatch: "Nachstes Topspiel",
+    nextTournament: "Nächstes Turnier",
+    nextTopMatch: "Nächstes Topspiel",
     live: "Live",
     officialPoints: "Official Points",
     movement: "+/-",
@@ -109,6 +117,7 @@ const text = {
     officialLive: "Offiziell live",
     officialSnapshot: "Offizieller ATP-Snapshot",
     latestSignals: "Aktuelle Signale",
+    upcomingPredictions: "Nächste 5 Prognosen",
     source: "Quelle",
     playerProfile: "Spielerprofil",
     backToTennis: "Zuruck zu Tennis",
@@ -142,7 +151,11 @@ const text = {
     category: "Kategorie",
     location: "Ort",
     month: "Monat",
-    draw: "Draw"
+    draw: "Draw",
+    details: "Analyse öffnen",
+    liveDataPending: "Live-Matchdaten ausstehend",
+    liveDataPendingText: "Aktuell liefert die Tennis-API keine echten terminierten Matches. Sobald echte Spiele zurückkommen, füllt sich diese Seite automatisch ohne Demo-Fallbacks.",
+    apiStatus: "API-Status"
   }
 } as const;
 
@@ -160,10 +173,7 @@ export async function TennisPage({
   const copy = text[locale];
   const apiSnapshot = await getSportApiSnapshot("tennis");
   const liveMatches = apiSnapshot.matches.length > 0 ? hydrateTennisMatches(apiSnapshot.matches) : [];
-  const fallbackMatches = buildTennisMatches();
-  const sourceMatches = liveMatches.length > 0 ? liveMatches : fallbackMatches;
-  const upcomingSourceMatches = getUpcomingTennisMatches(sourceMatches);
-  const matches = upcomingSourceMatches.length > 0 ? upcomingSourceMatches : fallbackMatches;
+  const matches = getUpcomingTennisMatches(liveMatches);
   const nextTournamentContext = getNextTennisTournamentContext(matches);
   const fallbackTournament = getUpcomingCalendarTournament();
   const atpRanking = tab === "rankings" ? await getAtpRankingSnapshot(liveMatches) : null;
@@ -171,12 +181,9 @@ export async function TennisPage({
     nextTournamentContext && nextTournamentContext.tournament
       ? nextTournamentContext
       : buildCalendarTournamentContext(fallbackTournament);
-  const featured =
-    nextTournamentContext?.featuredMatch ??
-    (fallbackTournament ? buildFallbackFeaturedMatch(fallbackTournament) : null) ??
-    matches[0];
+  const featured = nextTournamentContext?.featuredMatch ?? null;
   const tabItems = getTennisTabs(locale);
-  const hasSideColumn = tab === "news";
+  const hasSideColumn = false;
 
   return (
     <main className="footballDetailShell sportschauFootballPage tennisPage">
@@ -184,7 +191,7 @@ export async function TennisPage({
         <div className="sportschauCompetitionTitle">
           <p className="footballEyebrow">{copy.tennis}</p>
           <h1>{locale === "de" ? "Tennis" : "Tennis"}</h1>
-          <p>{locale === "de" ? "Prognosen fur Matches, Belage, Draws, Rankings und Spielerprofile." : "Predictions for matches, surfaces, draws, rankings and player profiles."}</p>
+          <p>{locale === "de" ? "Prognosen für Matches, Beläge, Draws, Rankings und Spielerprofile." : "Predictions for matches, surfaces, draws, rankings and player profiles."}</p>
         </div>
         {featured ? <TennisFeaturedMatch locale={locale} match={featured} /> : null}
         <Link className="footballBackLink" href={localizePath("/#sports", locale)}>
@@ -205,10 +212,17 @@ export async function TennisPage({
           {tab === "news" ? (
             <TennisNewsSection
               locale={locale}
+              matches={matches}
               nextTournamentContext={resolvedNewsTournamentContext}
             />
           ) : null}
-          {tab === "matches" ? <TennisMatchesSection locale={locale} matches={matches} /> : null}
+          {tab === "matches" ? (
+            matches.length > 0 ? (
+              <TennisMatchesSection locale={locale} matches={matches} />
+            ) : (
+              <TennisApiEmptySection locale={locale} status={apiSnapshot.status} message={apiSnapshot.message} />
+            )
+          ) : null}
           {tab === "tournaments" ? <TennisTournamentSection locale={locale} /> : null}
           {tab === "rankings" && atpRanking ? (
             <TennisRankingsSection
@@ -526,6 +540,11 @@ function TennisMatchesSection({ locale, matches }: { locale: Locale; matches: Sp
       <div className="fixtureGrid sportschauFixtureList">
         {matches.map((match) => (
           <article className="fixtureRow tennisFixtureRow" key={match.id}>
+            <Link
+              aria-label={`${copy.details}: ${match.homeName} - ${match.awayName}`}
+              className="fixtureCardOverlay"
+              href={getSportMatchHref({ locale, match, sport: "tennis" })}
+            />
             <div className="fixtureMatchLine">
               <TennisFixturePlayer align="right" locale={locale} name={match.homeName} />
               <div className="fixtureTime">
@@ -535,9 +554,37 @@ function TennisMatchesSection({ locale, matches }: { locale: Locale; matches: Sp
               </div>
               <TennisFixturePlayer align="left" locale={locale} name={match.awayName} />
             </div>
-            <TennisPrediction locale={locale} match={match} />
+            <div className="fixturePrediction">
+              <TennisPrediction locale={locale} match={match} />
+            </div>
           </article>
         ))}
+      </div>
+    </section>
+  );
+}
+
+function TennisApiEmptySection({
+  locale
+}: {
+  locale: Locale;
+  status: string;
+  message: string | null;
+}) {
+  const copy = text[locale];
+
+  return (
+    <section className="footballPanel fixturePanel sportschauMatchPanel" id="matches">
+      <div className="footballPanelHeader">
+        <div>
+          <p>{copy.matches}</p>
+          <h2>{copy.liveDataPending}</h2>
+        </div>
+        <strong>{copy.tennis}</strong>
+      </div>
+      <div className="teamEmptyState">
+        <h3>{copy.liveDataPending}</h3>
+        <p>{copy.liveDataPendingText}</p>
       </div>
     </section>
   );
@@ -570,25 +617,21 @@ function TennisPrediction({ locale, match }: { locale: Locale; match: SportApiMa
   );
 }
 
-function TennisNewsSection({
+async function TennisNewsSection({
   locale,
+  matches,
   nextTournamentContext
 }: {
   locale: Locale;
+  matches: SportApiMatch[];
   nextTournamentContext: TennisTournamentContext | null;
 }) {
   const copy = text[locale];
-  const headlines = locale === "de"
-    ? [
-        "Surface-Modell bewertet Grand-Slam-Favoriten neu",
-        "Draw-Kontext verandert Upset-Wahrscheinlichkeiten",
-        "Serve-Return-Profil wird fur schnelle Belage wichtiger"
-      ]
-    : [
-        "Surface model refresh changes Grand Slam favorites",
-        "Draw context shifts upset probabilities",
-        "Serve-return profile gains weight on faster courts"
-      ];
+  const newsItems = await getSportsNewsLinks({
+    locale,
+    topic: "tennis"
+  });
+  const upcomingMatches = getUpcomingTennisMatches(matches).slice(0, 5);
 
   const leadContent = (
     <>
@@ -600,7 +643,7 @@ function TennisNewsSection({
             ? `${formatTennisDate(nextTournamentContext.startDate, locale)} · ${nextTournamentContext.tournament?.location ?? "Tour-Kalender"} · ${nextTournamentContext.tournament?.surface ?? "Mixed"}`
             : `${formatTennisDate(nextTournamentContext.startDate, locale)} · ${nextTournamentContext.tournament?.location ?? "Tour calendar"} · ${nextTournamentContext.tournament?.surface ?? "Mixed"}`
           : locale === "de"
-            ? "Sobald neue Turnierdaten vorliegen, erscheint hier direkt das nachste Event."
+            ? "Sobald neue Turnierdaten vorliegen, erscheint hier direkt das nächste Event."
             : "As soon as new tournament data arrives, the next event will appear here."}
       </p>
       {nextTournamentContext?.featuredMatch ? (
@@ -610,28 +653,56 @@ function TennisNewsSection({
   );
 
   return (
-    <section className="footballPanel sportschauNewsPanel">
-      <div className="sportschauSectionTitle">
-        <span>{copy.latestSignals}</span>
-        <h2>Tennis-News</h2>
-      </div>
-      <div className="footballNewsGrid sportschauNewsGrid">
-        {nextTournamentContext?.tournament ? (
-          <Link className="footballNewsCard sportschauLeadNews tennisLeadNews" href={getTournamentHref(nextTournamentContext.tournament.slug, locale)}>
-            {leadContent}
-          </Link>
-        ) : (
-          <article className="footballNewsCard sportschauLeadNews tennisLeadNews">
-            {leadContent}
-          </article>
-        )}
-        {headlines.slice(1).map((headline) => (
-          <article className="footballNewsCard" key={headline}>
-            <span>Tennis</span>
-            <h3>{headline}</h3>
-            <p>{locale === "de" ? "Modellfokus: Belag, Form, Draw-Pfad, Aufschlagdruck und Return-Qualitat." : "Model focus: surface, form, draw path, serve pressure and return quality."}</p>
-          </article>
-        ))}
+    <section className="sportsNewsTabStack">
+      {upcomingMatches.length > 0 ? (
+        <div className="footballPanel sportschauNewsPanel">
+          <div className="sportschauSectionTitle">
+            <span>{copy.upcomingPredictions}</span>
+            <h2>{copy.matches}</h2>
+          </div>
+          <div className="newsPredictionList">
+            {upcomingMatches.map((match) => (
+              <article className="fixtureRow tennisFixtureRow newsPredictionFixture" key={match.id}>
+                <Link
+                  aria-label={`${copy.details}: ${match.homeName} - ${match.awayName}`}
+                  className="fixtureCardOverlay"
+                  href={getSportMatchHref({ locale, match, sport: "tennis" })}
+                />
+                <div className="fixtureMatchLine">
+                  <TennisFixturePlayer align="right" locale={locale} name={match.homeName} />
+                  <div className="fixtureTime">
+                    <span>{formatTennisDate(match.date, locale)}</span>
+                    <strong>{formatTennisScore(match)}</strong>
+                    <small>{match.competition}</small>
+                  </div>
+                  <TennisFixturePlayer align="left" locale={locale} name={match.awayName} />
+                </div>
+                <div className="fixturePrediction">
+                  <TennisPrediction locale={locale} match={match} />
+                </div>
+              </article>
+            ))}
+          </div>
+        </div>
+      ) : null}
+
+      <div className="footballPanel sportschauNewsPanel">
+        <div className="sportschauSectionTitle">
+          <span>{copy.latestSignals}</span>
+          <h2>Tennis-News</h2>
+        </div>
+        <div className="footballNewsGrid sportschauNewsGrid">
+          {nextTournamentContext?.tournament ? (
+            <Link className="footballNewsCard sportschauLeadNews tennisLeadNews" href={getTournamentHref(nextTournamentContext.tournament.slug, locale)}>
+              {leadContent}
+            </Link>
+          ) : (
+            <article className="footballNewsCard sportschauLeadNews tennisLeadNews">
+              {leadContent}
+            </article>
+          )}
+          <SportsNewsCards items={newsItems.slice(0, 2)} locale={locale} />
+        </div>
       </div>
     </section>
   );
@@ -850,7 +921,6 @@ function TennisFactPanel({ locale }: { locale: Locale }) {
         <div><span>Grand Slams</span><strong>4</strong></div>
         <div><span>ATP/WTA 1000</span><strong>9+</strong></div>
         <div><span>{copy.players}</span><strong>{tennisPlayers.length}</strong></div>
-        <div><span>{copy.source}</span><strong>API-Sports Tennis</strong></div>
       </div>
     </section>
   );
@@ -1002,37 +1072,6 @@ function hydrateTennisMatches(matches: SportApiMatch[]) {
   });
 }
 
-function buildTennisMatches(): SportApiMatch[] {
-  const now = new Date();
-  const upcomingTournaments = getUpcomingTennisTournaments(now).slice(0, 6);
-  const matches: SportApiMatch[] = [];
-
-  upcomingTournaments.forEach((tournament) => {
-    const players = getTournamentPreviewPlayers(tournament).slice(0, 4);
-    const startDate = new Date(buildTournamentStartDate(tournament));
-
-    for (let index = 0; index < players.length - 1; index += 2) {
-      const matchDate = new Date(startDate);
-      matchDate.setUTCDate(startDate.getUTCDate() + Math.floor(matches.length / 2));
-      matchDate.setUTCHours(index === 0 ? 13 : 17, 30, 0, 0);
-      matches.push({
-        id: `tennis-fallback-${tournament.slug}-${index}`,
-        competition: tournament.name,
-        date: matchDate.toISOString(),
-        homeName: players[index].name,
-        awayName: players[index + 1].name,
-        homeLogo: null,
-        awayLogo: null,
-        homeScore: null,
-        awayScore: null,
-        status: "preview"
-      });
-    }
-  });
-
-  return getUpcomingTennisMatches(matches);
-}
-
 function getUpcomingTennisTournaments(now = new Date()) {
   const nowTimestamp = now.getTime();
 
@@ -1103,7 +1142,7 @@ function buildCalendarTournamentContext(tournament: TennisTournament | null): Te
   }
 
   return {
-    featuredMatch: buildFallbackFeaturedMatch(tournament),
+    featuredMatch: null,
     startDate: buildTournamentStartDate(tournament),
     tournament,
     tournamentLabel: tournament.name
@@ -1112,27 +1151,6 @@ function buildCalendarTournamentContext(tournament: TennisTournament | null): Te
 
 function getUpcomingCalendarTournament(now = new Date()) {
   return getUpcomingTennisTournaments(now)[0] ?? null;
-}
-
-function buildFallbackFeaturedMatch(tournament: TennisTournament): SportApiMatch | null {
-  const players = getTournamentPreviewPlayers(tournament).slice(0, 2);
-
-  if (players.length < 2) {
-    return null;
-  }
-
-  return {
-    id: `tennis-featured:${tournament.slug}`,
-    competition: tournament.name,
-    date: buildTournamentStartDate(tournament),
-    homeName: players[0].name,
-    awayName: players[1].name,
-    homeLogo: null,
-    awayLogo: null,
-    homeScore: null,
-    awayScore: null,
-    status: "preview"
-  };
 }
 
 function buildModelRankingRows(tour: "ATP" | "WTA", matches: SportApiMatch[]): ModelRankingRow[] {

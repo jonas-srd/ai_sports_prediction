@@ -10,6 +10,8 @@ import {
 } from "@/lib/football-data";
 import { footballTeamProfiles } from "@/lib/football-team-profiles";
 import { localizePath, type Locale } from "@/lib/i18n";
+import { getSportMatchHref } from "@/components/match-detail-page";
+import { getSportsNewsLinks } from "@/lib/sports-news";
 import {
   fallbackTeamsToStandings,
   getFootballCompetitionApiSnapshot,
@@ -19,6 +21,7 @@ import {
   type SportApiStanding,
   type SportApiTeam
 } from "@/lib/sports-api-data";
+import { SportsNewsCards } from "@/components/sports-news-cards";
 
 const labels = {
   en: {
@@ -27,11 +30,12 @@ const labels = {
     intro: "Choose a league or national cup. Each competition opens its own prediction hub with teams, news, fixtures, table and model signals.",
     leagues: "Leagues",
     cups: "Cups",
+    europe: "European competitions",
     open: "Open",
     predictionHub: "Prediction hub",
     news: "News",
-    matchday: "Matchday",
-    teamMatches: "Matches",
+    matchday: "Matchday predictions",
+    teamMatches: "Match predictions",
     table: "Table",
     scorers: "Scorers",
     teamStats: "Team stats",
@@ -40,8 +44,8 @@ const labels = {
     results: "Results",
     rounds: "Rounds",
     cupPath: "Cup path",
-    fixturesAndResults: "Fixtures & results",
-    teamFixtures: "Matches",
+    fixturesAndResults: "Predictions & fixtures",
+    teamFixtures: "Match predictions",
     standings: "Standings",
     rank: "#",
     played: "P",
@@ -52,6 +56,7 @@ const labels = {
     difference: "Diff",
     allCompetitions: "All competitions",
     latestSignals: "Latest signals",
+    upcomingPredictions: "Next 5 predictions",
     fixtures: "Upcoming matchday",
     showAll: "Show all",
     points: "Pts",
@@ -64,14 +69,11 @@ const labels = {
     teamNews: "Team news",
     backToCompetition: "Back to competition",
     liveData: "Live data",
-    apiReady: "API ready",
-    source: "Source",
     featuredCompetitions: "Leagues and cups",
     noTableForCup: "Cup competitions do not use a league table. Follow the knockout path and fixtures instead.",
     participatingTeams: "Participating teams",
     formGuide: "Form guide",
     matchCenter: "Match center",
-    competitionFacts: "Competition facts",
     modelPrediction: "LLM prediction",
     liveStatus: "Live score",
     finalStatus: "Final",
@@ -79,7 +81,7 @@ const labels = {
     gamesShown: "games",
     selectMatchday: "Select matchday",
     predictionSignal: "AI prediction",
-    cupPredictions: "Predictions",
+    cupPredictions: "Cup predictions",
     previousMatchday: "Previous",
     nextMatchday: "Next",
     confidence: "Confidence",
@@ -91,7 +93,7 @@ const labels = {
     fairPlay: "Fairness",
     running: "Running",
     duels: "Duels",
-    squadUnavailable: "Squad data appears here as soon as API-Football provides a roster for this team.",
+    squadUnavailable: "Squad data appears here as soon as a live roster is available for this team.",
     fullName: "Full name",
     nickname: "Nickname",
     country: "Country",
@@ -99,7 +101,10 @@ const labels = {
     founded: "Founded",
     sports: "Sports",
     stadium: "Stadium",
-    capacity: "Capacity"
+    capacity: "Capacity",
+    details: "Open analysis",
+    noLiveMatchesTitle: "No scheduled API fixtures",
+    noLiveMatchesText: "As soon as the API returns real fixtures for this competition, predictions appear here. Demo pairings are hidden."
   },
   de: {
     football: "Fußball",
@@ -107,11 +112,12 @@ const labels = {
     intro: "Wähle eine Liga oder einen nationalen Pokal. Jeder Wettbewerb öffnet seinen eigenen Prediction Hub mit Teams, News, Spieltag, Tabelle und Modell-Signalen.",
     leagues: "Ligen",
     cups: "Pokale",
+    europe: "Europäische Wettbewerbe",
     open: "Öffnen",
     predictionHub: "Prediction Hub",
     news: "News",
-    matchday: "Spieltag",
-    teamMatches: "Spiele",
+    matchday: "Spieltag-Prognose",
+    teamMatches: "Spiel-Prognosen",
     table: "Tabelle",
     scorers: "Torschützen",
     teamStats: "Teamstatistik",
@@ -120,8 +126,8 @@ const labels = {
     results: "Ergebnisse",
     rounds: "Runden",
     cupPath: "Pokalpfad",
-    fixturesAndResults: "Spiele & Ergebnisse",
-    teamFixtures: "Spiele",
+    fixturesAndResults: "Prognosen & Spiele",
+    teamFixtures: "Spiel-Prognosen",
     standings: "Tabelle",
     rank: "#",
     played: "Sp.",
@@ -132,6 +138,7 @@ const labels = {
     difference: "Diff.",
     allCompetitions: "Alle Wettbewerbe",
     latestSignals: "Aktuelle Signale",
+    upcomingPredictions: "Nächste 5 Prognosen",
     fixtures: "Nächster Spieltag",
     showAll: "Alle anzeigen",
     points: "Pkt",
@@ -144,14 +151,11 @@ const labels = {
     teamNews: "Team-News",
     backToCompetition: "Zurück zum Wettbewerb",
     liveData: "Live-Daten",
-    apiReady: "API bereit",
-    source: "Quelle",
     featuredCompetitions: "Ligen und Pokale",
     noTableForCup: "Pokalwettbewerbe haben keine Ligatabelle. Hier zählt der K.-o.-Pfad mit Spielen und Runden.",
     participatingTeams: "Teilnehmende Teams",
     formGuide: "Formkurve",
     matchCenter: "Matchcenter",
-    competitionFacts: "Wettbewerbsdaten",
     modelPrediction: "LLM-Prognose",
     liveStatus: "Live-Stand",
     finalStatus: "Endstand",
@@ -159,7 +163,7 @@ const labels = {
     gamesShown: "Spiele",
     selectMatchday: "Spieltag auswählen",
     predictionSignal: "KI-Prognose",
-    cupPredictions: "Vorhersagen",
+    cupPredictions: "Pokal-Prognosen",
     previousMatchday: "Zurück",
     nextMatchday: "Weiter",
     confidence: "Sicherheit",
@@ -171,7 +175,7 @@ const labels = {
     fairPlay: "Fairness",
     running: "Laufleistung",
     duels: "Zweikämpfe",
-    squadUnavailable: "Kaderdaten erscheinen hier, sobald API-Football einen Kader für dieses Team liefert.",
+    squadUnavailable: "Kaderdaten erscheinen hier, sobald ein Live-Kader für dieses Team verfügbar ist.",
     fullName: "vollst. Name",
     nickname: "Spitzname",
     country: "Land",
@@ -179,7 +183,10 @@ const labels = {
     founded: "Gegründet",
     sports: "Sportarten",
     stadium: "Stadion",
-    capacity: "Kapazität"
+    capacity: "Kapazität",
+    details: "Analyse öffnen",
+    noLiveMatchesTitle: "Keine echten API-Spiele terminiert",
+    noLiveMatchesText: "Sobald die API echte Spiele für diesen Wettbewerb zurückgibt, erscheinen hier die Prognosen. Demo-Paarungen werden ausgeblendet."
   }
 } as const;
 
@@ -301,7 +308,35 @@ const teamNameAliases: Record<string, string[]> = {
   "lecce": ["Lecce"],
   "empoli": ["Empoli"],
   "venezia": ["Venezia", "Venezia FC"],
-  "monza": ["Monza"]
+  "monza": ["Monza"],
+  "benfica": ["Benfica", "SL Benfica"],
+  "porto": ["Porto", "FC Porto"],
+  "sporting-cp": ["Sporting CP", "Sporting Lisbon", "Sporting Clube de Portugal"],
+  "psv": ["PSV", "PSV Eindhoven"],
+  "ajax": ["Ajax", "Ajax Amsterdam"],
+  "feyenoord": ["Feyenoord"],
+  "club-brugge": ["Club Brugge", "Club Brugge KV"],
+  "anderlecht": ["Anderlecht", "RSC Anderlecht"],
+  "union-saint-gilloise": ["Union Saint-Gilloise", "Union SG"],
+  "celtic": ["Celtic", "Celtic FC"],
+  "rangers": ["Rangers", "Rangers FC"],
+  "galatasaray": ["Galatasaray"],
+  "fenerbahce": ["Fenerbahce", "Fenerbahçe"],
+  "shakhtar-donetsk": ["Shakhtar Donetsk", "Shakhtar"],
+  "dynamo-kyiv": ["Dynamo Kyiv", "Dynamo Kiev"],
+  "red-bull-salzburg": ["Red Bull Salzburg", "RB Salzburg", "Salzburg"],
+  "sturm-graz": ["Sturm Graz"],
+  "young-boys": ["Young Boys", "BSC Young Boys"],
+  "olympiacos": ["Olympiacos", "Olympiakos"],
+  "panathinaikos": ["Panathinaikos"],
+  "slavia-prague": ["Slavia Prague", "Slavia Praha"],
+  "sparta-prague": ["Sparta Prague", "Sparta Praha"],
+  "copenhagen": ["FC Copenhagen", "Kobenhavn", "København"],
+  "bodo-glimt": ["Bodo/Glimt", "Bodoe/Glimt", "Bodø/Glimt"],
+  "qarabag": ["Qarabag", "Qarabağ"],
+  "dinamo-zagreb": ["Dinamo Zagreb"],
+  "paok": ["PAOK"],
+  "fcsb": ["FCSB", "Steaua Bucuresti"]
 };
 
 const competitionLogos: Record<string, string> = {
@@ -314,7 +349,10 @@ const competitionLogos: Record<string, string> = {
   "ligue-1": "https://media.api-sports.io/football/leagues/61.png",
   "coupe-de-france": "https://media.api-sports.io/football/leagues/66.png",
   "serie-a": "https://media.api-sports.io/football/leagues/135.png",
-  "coppa-italia": "https://media.api-sports.io/football/leagues/137.png"
+  "coppa-italia": "https://media.api-sports.io/football/leagues/137.png",
+  "champions-league": "https://media.api-sports.io/football/leagues/2.png",
+  "europa-league": "https://media.api-sports.io/football/leagues/3.png",
+  "conference-league": "https://media.api-sports.io/football/leagues/848.png"
 };
 
 const knownTeamLogos: Record<string, string> = {
@@ -413,12 +451,41 @@ const knownTeamLogos: Record<string, string> = {
   "lecce": "https://media.api-sports.io/football/teams/867.png",
   "empoli": "https://media.api-sports.io/football/teams/511.png",
   "venezia": "https://media.api-sports.io/football/teams/517.png",
-  "monza": "https://media.api-sports.io/football/teams/1579.png"
+  "monza": "https://media.api-sports.io/football/teams/1579.png",
+  "benfica": "https://media.api-sports.io/football/teams/211.png",
+  "porto": "https://media.api-sports.io/football/teams/212.png",
+  "sporting-cp": "https://media.api-sports.io/football/teams/228.png",
+  "psv": "https://media.api-sports.io/football/teams/197.png",
+  "ajax": "https://media.api-sports.io/football/teams/194.png",
+  "feyenoord": "https://media.api-sports.io/football/teams/209.png",
+  "club-brugge": "https://media.api-sports.io/football/teams/569.png",
+  "anderlecht": "https://media.api-sports.io/football/teams/554.png",
+  "union-saint-gilloise": "https://media.api-sports.io/football/teams/1398.png",
+  "celtic": "https://media.api-sports.io/football/teams/247.png",
+  "rangers": "https://media.api-sports.io/football/teams/257.png",
+  "galatasaray": "https://media.api-sports.io/football/teams/645.png",
+  "fenerbahce": "https://media.api-sports.io/football/teams/611.png",
+  "shakhtar-donetsk": "https://media.api-sports.io/football/teams/550.png",
+  "dynamo-kyiv": "https://media.api-sports.io/football/teams/5505.png",
+  "red-bull-salzburg": "https://media.api-sports.io/football/teams/571.png",
+  "sturm-graz": "https://media.api-sports.io/football/teams/637.png",
+  "young-boys": "https://media.api-sports.io/football/teams/552.png",
+  "olympiacos": "https://media.api-sports.io/football/teams/553.png",
+  "panathinaikos": "https://media.api-sports.io/football/teams/617.png",
+  "slavia-prague": "https://media.api-sports.io/football/teams/560.png",
+  "sparta-prague": "https://media.api-sports.io/football/teams/628.png",
+  "copenhagen": "https://media.api-sports.io/football/teams/400.png",
+  "bodo-glimt": "https://media.api-sports.io/football/teams/327.png",
+  "qarabag": "https://media.api-sports.io/football/teams/556.png",
+  "dinamo-zagreb": "https://media.api-sports.io/football/teams/596.png",
+  "paok": "https://media.api-sports.io/football/teams/619.png",
+  "fcsb": "https://media.api-sports.io/football/teams/559.png"
 };
 
 export function FootballOverviewPage({ locale }: { locale: Locale }) {
   const text = labels[locale];
-  const leagues = footballCompetitions.filter((competition) => competition.type === "league");
+  const leagues = footballCompetitions.filter((competition) => competition.type === "league" && competition.country !== "Europe");
+  const europeanCompetitions = footballCompetitions.filter((competition) => competition.country === "Europe");
   const cups = footballCompetitions.filter((competition) => competition.type === "cup");
 
   return (
@@ -430,6 +497,7 @@ export function FootballOverviewPage({ locale }: { locale: Locale }) {
       </section>
 
       <section className="footballOverviewBands" aria-label={text.overview}>
+        <CompetitionBand competitions={europeanCompetitions} title={text.europe} locale={locale} />
         <CompetitionBand competitions={leagues} title={text.leagues} locale={locale} />
         <CompetitionBand competitions={cups} title={text.cups} locale={locale} />
       </section>
@@ -492,14 +560,14 @@ export async function FootballCompetitionPage({
 
   const apiSnapshot = await getFootballCompetitionApiSnapshot(competition);
   const apiFixtures = apiSnapshot.matches;
-  const baseFixtures = apiFixtures.length > 0 ? apiFixtures : buildFixtures(competition.teams);
+  const baseFixtures = apiFixtures;
   const standings = apiSnapshot.standings.length > 0 ? apiSnapshot.standings : fallbackTeamsToStandings(competition.teams);
   const displayTeams = buildDisplayTeams(competition, apiSnapshot.teams, standings, baseFixtures);
-  const fixtures = apiFixtures.length > 0 ? apiFixtures : buildDisplayTeamFixtures(displayTeams, competition);
+  const fixtures = getUpcomingFixtures(apiFixtures);
   const featuredFixture = getFeaturedFixture(competition, fixtures, locale);
   const isLeague = competition.type === "league";
   const activeTab = normalizeCompetitionTab(tab, isLeague);
-  const hasSideColumn = activeTab !== "teams" && activeTab !== "stats" && activeTab !== "matchday" && activeTab !== "table";
+  const hasSideColumn = false;
   const tabItems = [
     { href: getCompetitionTabHref(competition.slug, locale, "news"), label: text.news, tab: "news" as const },
     { href: getCompetitionTabHref(competition.slug, locale, "matchday"), label: isLeague ? text.matchday : text.cupPredictions, tab: "matchday" as const },
@@ -552,7 +620,7 @@ export async function FootballCompetitionPage({
           ) : null}
 
           {activeTab === "news" ? (
-            <CompetitionNewsSection competition={competition} locale={locale} />
+            <CompetitionNewsSection competition={competition} fixtures={fixtures} locale={locale} />
           ) : null}
 
           {activeTab === "table" && isLeague ? (
@@ -605,13 +673,13 @@ export async function FootballTeamPage({
 
   const activeTab = tab === "overview" || tab === "stats" ? "info" : tab;
   const apiSnapshot = await getFootballCompetitionApiSnapshot(competition);
-  const fixtures = apiSnapshot.matches.length > 0 ? apiSnapshot.matches : buildFixtures(competition.teams);
+  const fixtures = getUpcomingFixtures(apiSnapshot.matches);
   const standings = apiSnapshot.standings.length > 0 ? apiSnapshot.standings : fallbackTeamsToStandings(competition.teams);
   const displayTeams = buildDisplayTeams(competition, apiSnapshot.teams, standings, fixtures);
   const apiTeam = findDisplayTeamByLocalTeam(displayTeams, team);
   const apiTeamRecord = apiSnapshot.teams.find((candidate) => teamMatchesName(team, candidate.name));
   const apiStanding = findStandingByLocalTeam(standings, team);
-  const teamFixtures = getTeamFixtures(fixtures, competition.teams, team, apiTeam?.name).slice(0, 4);
+  const teamFixtures = getTeamFixtures(fixtures, team, apiTeam?.name).slice(0, 4);
   const squad = activeTab === "squad" && apiTeamRecord?.id
     ? await getFootballTeamSquad(apiTeamRecord.id)
     : [];
@@ -760,17 +828,26 @@ function TeamMatchesSection({
         <strong>{team.shortName}</strong>
       </div>
       <div className="fixtureGrid sportschauFixtureList">
-        {fixtures.map((fixture) => (
-          <article className="fixtureRow" key={fixture.id}>
-            <FixtureTeam competition={competition} locale={locale} logo={fixture.homeLogo} name={fixture.homeName} align="right" />
-            <div className="fixtureTime">
-              <span>{formatFixtureDate(fixture.date, locale)}</span>
-              <strong>{formatFixtureCenter(fixture, locale)}</strong>
-              <small>{fixture.competition || competition.name}</small>
-            </div>
-            <FixtureTeam competition={competition} locale={locale} logo={fixture.awayLogo} name={fixture.awayName} align="left" />
-          </article>
-        ))}
+        {fixtures.length > 0 ? (
+          fixtures.map((fixture) => (
+            <article className="fixtureRow" key={fixture.id}>
+              <Link
+                aria-label={`${text.details}: ${fixture.homeName} - ${fixture.awayName}`}
+                className="fixtureCardOverlay"
+                href={getSportMatchHref({ competitionSlug: competition.slug, locale, match: fixture, sport: "football" })}
+              />
+              <FixtureTeam competition={competition} locale={locale} logo={fixture.homeLogo} name={fixture.homeName} align="right" />
+              <div className="fixtureTime">
+                <span>{formatFixtureDate(fixture.date, locale)}</span>
+                <strong>{formatFixtureCenter(fixture, locale)}</strong>
+                <small>{fixture.competition || competition.name}</small>
+              </div>
+              <FixtureTeam competition={competition} locale={locale} logo={fixture.awayLogo} name={fixture.awayName} align="left" />
+            </article>
+          ))
+        ) : (
+          <FootballEmptyMatches locale={locale} />
+        )}
       </div>
     </section>
   );
@@ -952,52 +1029,112 @@ function MatchdaySection({
           </Link>
         </nav>
       ) : null}
-      <div className="fixtureGrid sportschauFixtureList">
-        {visibleFixtures.map((fixture) => (
-          <article className="fixtureRow" key={fixture.id}>
-            <div className="fixtureMatchLine">
-              <FixtureTeam competition={competition} locale={locale} logo={fixture.homeLogo} name={fixture.homeName} align="right" />
-              <div className="fixtureTime">
-                <span>{formatFixtureDate(fixture.date, locale)}</span>
-                <strong>{formatFixtureCenter(fixture, locale)}</strong>
-                <small>{fixture.competition || competition.name}</small>
+      {visibleFixtures.length > 0 ? (
+        <div className="fixtureGrid sportschauFixtureList">
+          {visibleFixtures.map((fixture) => (
+            <article className="fixtureRow" key={fixture.id}>
+              <Link
+                aria-label={`${text.details}: ${fixture.homeName} - ${fixture.awayName}`}
+                className="fixtureCardOverlay"
+                href={getSportMatchHref({ competitionSlug: competition.slug, locale, match: fixture, sport: "football" })}
+              />
+              <div className="fixtureMatchLine">
+                <FixtureTeam competition={competition} locale={locale} logo={fixture.homeLogo} name={fixture.homeName} align="right" />
+                <div className="fixtureTime">
+                  <span>{formatFixtureDate(fixture.date, locale)}</span>
+                  <strong>{formatFixtureCenter(fixture, locale)}</strong>
+                  <small>{fixture.competition || competition.name}</small>
+                </div>
+                <FixtureTeam competition={competition} locale={locale} logo={fixture.awayLogo} name={fixture.awayName} align="left" />
               </div>
-              <FixtureTeam competition={competition} locale={locale} logo={fixture.awayLogo} name={fixture.awayName} align="left" />
-            </div>
-            <div className="fixturePrediction">
-              <FixturePredictionCard competition={competition} fixture={fixture} locale={locale} />
-              <FixtureStatusPill fixture={fixture} locale={locale} />
-            </div>
-          </article>
-        ))}
+              <div className="fixturePrediction">
+                <FixturePredictionCard competition={competition} fixture={fixture} locale={locale} />
+                <div className="fixtureActionColumn">
+                  <FixtureStatusPill fixture={fixture} locale={locale} />
+                </div>
+              </div>
+            </article>
+          ))}
+        </div>
+      ) : (
+        <FootballEmptyMatches locale={locale} />
+      )}
+    </section>
+  );
+}
+
+async function CompetitionNewsSection({
+  competition,
+  fixtures,
+  locale
+}: {
+  competition: FootballCompetition;
+  fixtures: SportApiMatch[];
+  locale: Locale;
+}) {
+  const text = labels[locale];
+  const newsItems = await getSportsNewsLinks({
+    contextName: competition.name,
+    locale,
+    topic: "football"
+  });
+  const upcomingFixtures = getUpcomingFixtures(fixtures).slice(0, 5);
+
+  return (
+    <section className="sportsNewsTabStack" id="news">
+      {upcomingFixtures.length > 0 ? (
+        <div className="footballPanel sportschauNewsPanel">
+          <div className="sportschauSectionTitle">
+            <span>{text.upcomingPredictions}</span>
+            <h2>{text.fixturesAndResults}</h2>
+          </div>
+          <div className="newsPredictionList">
+            {upcomingFixtures.map((fixture) => (
+              <article className="fixtureRow newsPredictionFixture" key={fixture.id}>
+                <Link
+                  aria-label={`${text.details}: ${fixture.homeName} - ${fixture.awayName}`}
+                  className="fixtureCardOverlay"
+                  href={getSportMatchHref({ competitionSlug: competition.slug, locale, match: fixture, sport: "football" })}
+                />
+                <div className="fixtureMatchLine">
+                  <FixtureTeam competition={competition} locale={locale} logo={fixture.homeLogo} name={fixture.homeName} align="right" />
+                  <div className="fixtureTime">
+                    <span>{formatFixtureDate(fixture.date, locale)}</span>
+                    <strong>{formatFixtureCenter(fixture, locale)}</strong>
+                    <small>{fixture.competition || competition.name}</small>
+                  </div>
+                  <FixtureTeam competition={competition} locale={locale} logo={fixture.awayLogo} name={fixture.awayName} align="left" />
+                </div>
+                <div className="fixturePrediction">
+                  <FixturePredictionCard competition={competition} fixture={fixture} locale={locale} />
+                </div>
+              </article>
+            ))}
+          </div>
+        </div>
+      ) : null}
+
+      <div className="footballPanel sportschauNewsPanel">
+        <div className="sportschauSectionTitle">
+          <span>{text.latestSignals}</span>
+          <h2>{competition.name}-News</h2>
+        </div>
+        <div className="footballNewsGrid sportschauNewsGrid">
+          <SportsNewsCards items={newsItems} locale={locale} />
+        </div>
       </div>
     </section>
   );
 }
 
-function CompetitionNewsSection({ competition, locale }: { competition: FootballCompetition; locale: Locale }) {
+function FootballEmptyMatches({ locale }: { locale: Locale }) {
   const text = labels[locale];
 
   return (
-    <section className="footballPanel sportschauNewsPanel" id="news">
-      <div className="sportschauSectionTitle">
-        <span>{text.latestSignals}</span>
-        <h2>{competition.name}-News</h2>
-      </div>
-      <div className="footballNewsGrid sportschauNewsGrid">
-        {[
-          `${competition.name}: model confidence moves after latest form update`,
-          `${competition.country} cup and league paths now share team strength ratings`,
-          `AI watchlist: three teams with rising upset probability`
-        ].map((headline, index) => (
-          <article className={index === 0 ? "footballNewsCard sportschauLeadNews" : "footballNewsCard"} key={headline}>
-            <span>{text.latestSignals}</span>
-            <h3>{headline}</h3>
-            <p>{competition.modelFocus}</p>
-          </article>
-        ))}
-      </div>
-    </section>
+    <div className="teamEmptyState">
+      <strong>{text.noLiveMatchesTitle}</strong>
+      <p>{text.noLiveMatchesText}</p>
+    </div>
   );
 }
 
@@ -1018,13 +1155,11 @@ function CompetitionStatsSection({
 
   return (
     <section className="footballPanel sportschauInfoPanel">
-      <p className="footballEyebrow">{text.competitionFacts}</p>
+      <p className="footballEyebrow">{text.teamStats}</p>
       <h2>{competition.name}</h2>
       <div className="teamStatList">
         <div><span>{text.league}</span><strong>{competition.type === "league" ? text.leagues : text.cups}</strong></div>
         <div><span>{text.teams}</span><strong>{displayTeams.length}</strong></div>
-        <div><span>{text.source}</span><strong>{apiSnapshot.status === "live" ? "API-Football" : text.apiReady}</strong></div>
-        <div><span>{text.modelSummary}</span><strong>{competition.modelFocus}</strong></div>
         {!compact ? <div><span>{text.prediction}</span><strong>{competition.type === "league" ? text.standings : text.cupPath}</strong></div> : null}
       </div>
     </section>
@@ -1235,7 +1370,8 @@ function translateCountry(country: string) {
     England: "England",
     Spain: "Spanien",
     France: "Frankreich",
-    Italy: "Italien"
+    Italy: "Italien",
+    Europe: "Europa"
   };
 
   return countries[country] ?? country;
@@ -1270,7 +1406,7 @@ function LeagueTableSection({
         <h2>{text.standings}</h2>
       </div>
       <div className="leagueTable sportschauLeagueTable">
-        <div className="leagueTableRow leagueTableHeader" aria-hidden="true">
+        <div className="leagueTableRow leagueTableHeader footballTableRow" aria-hidden="true">
           <span>{text.rank}</span>
           <span />
           <strong>{text.teams}</strong>
@@ -1281,6 +1417,7 @@ function LeagueTableSection({
           <small>{text.goals}</small>
           <small>{text.difference}</small>
           <em>{text.points}</em>
+          <small>{text.form}</small>
         </div>
         {standings.map((team) => (
           <StandingRow
@@ -1536,166 +1673,6 @@ function getPrimaryCompetitionForTeam(teamSlug: string) {
   return footballCompetitions.find((competition) => competition.teams.some((team) => team.slug === teamSlug));
 }
 
-function buildFixtures(teams: FootballTeam[]) {
-  const fixtures: SportApiMatch[] = [];
-
-  for (let index = 0; index < teams.length - 1; index += 2) {
-    fixtures.push({
-      id: `fallback:${teams[index].slug}:${teams[index + 1].slug}`,
-      competition: "Local preview",
-      round: "matchday:1",
-      date: buildFallbackFixtureDate(index),
-      homeName: teams[index].name,
-      awayName: teams[index + 1].name,
-      homeLogo: null,
-      awayLogo: null,
-      homeScore: null,
-      awayScore: null,
-      status: "preview"
-    });
-  }
-
-  return fixtures;
-}
-
-function buildDisplayTeamFixtures(displayTeams: DisplayTeam[], competition: FootballCompetition) {
-  if (competition.type === "league") {
-    return buildLeagueSeasonFixtures(displayTeams, competition.name);
-  }
-
-  return buildCupRoundFixtures(displayTeams, competition.name);
-}
-
-function buildCupRoundFixtures(displayTeams: DisplayTeam[], competitionName: string) {
-  const fixtures: SportApiMatch[] = [];
-  let currentTeams = [...displayTeams];
-  let roundIndex = 0;
-
-  while (currentTeams.length > 1) {
-    const winners: DisplayTeam[] = [];
-
-    for (let index = 0; index < currentTeams.length - 1; index += 2) {
-      const home = currentTeams[index];
-      const away = currentTeams[index + 1];
-
-      fixtures.push({
-        id: `fallback:cup:${roundIndex + 1}:${home.key}:${away.key}`,
-        competition: competitionName,
-        round: `round:${roundIndex + 1}`,
-        date: buildFallbackCupFixtureDate(roundIndex, index / 2),
-        homeName: home.name,
-        awayName: away.name,
-        homeLogo: home.logo,
-        awayLogo: away.logo,
-        homeScore: null,
-        awayScore: null,
-        status: "preview"
-      });
-
-      winners.push(getDisplayTeamStrength(home, true) >= getDisplayTeamStrength(away, false) ? home : away);
-    }
-
-    if (currentTeams.length % 2 === 1) {
-      winners.push(currentTeams[currentTeams.length - 1]);
-    }
-
-    currentTeams = winners;
-    roundIndex += 1;
-  }
-
-  return fixtures;
-}
-
-function buildLeagueSeasonFixtures(displayTeams: DisplayTeam[], competitionName: string) {
-  const teams = [...displayTeams];
-  const fixtures: SportApiMatch[] = [];
-
-  if (teams.length % 2 !== 0) {
-    teams.push({ key: "bye", name: "Bye", logo: null });
-  }
-
-  const roundsPerLeg = teams.length - 1;
-  const gamesPerRound = teams.length / 2;
-  const rotating = teams.slice(1);
-
-  for (let roundIndex = 0; roundIndex < roundsPerLeg; roundIndex += 1) {
-    const roundTeams = [teams[0], ...rotating];
-
-    for (let gameIndex = 0; gameIndex < gamesPerRound; gameIndex += 1) {
-      const first = roundTeams[gameIndex];
-      const second = roundTeams[roundTeams.length - 1 - gameIndex];
-
-      if (!first || !second || first.key === "bye" || second.key === "bye") {
-        continue;
-      }
-
-      const flip = (roundIndex + gameIndex) % 2 === 1;
-      const firstLegHome = flip ? second : first;
-      const firstLegAway = flip ? first : second;
-      const returnRound = roundIndex + roundsPerLeg;
-
-      fixtures.push(buildDisplayFixture(firstLegHome, firstLegAway, competitionName, roundIndex, gameIndex));
-      fixtures.push(buildDisplayFixture(firstLegAway, firstLegHome, competitionName, returnRound, gameIndex));
-    }
-
-    rotating.unshift(rotating.pop()!);
-  }
-
-  return fixtures.sort((a, b) => {
-    const roundA = getRoundNumber(a.round) ?? 0;
-    const roundB = getRoundNumber(b.round) ?? 0;
-
-    if (roundA !== roundB) {
-      return roundA - roundB;
-    }
-
-    return (a.date ?? "").localeCompare(b.date ?? "");
-  });
-}
-
-function buildDisplayFixture(home: DisplayTeam, away: DisplayTeam, competitionName: string, roundIndex: number, gameIndex: number): SportApiMatch {
-  return {
-    id: `fallback:${roundIndex + 1}:${home.key}:${away.key}`,
-    competition: competitionName,
-    round: `matchday:${roundIndex + 1}`,
-    date: buildFallbackRoundFixtureDate(roundIndex, gameIndex),
-    homeName: home.name,
-    awayName: away.name,
-    homeLogo: home.logo,
-    awayLogo: away.logo,
-    homeScore: null,
-    awayScore: null,
-    status: "preview"
-  };
-}
-
-function getDisplayTeamStrength(team: DisplayTeam, isHome: boolean) {
-  if (!team.localTeam) {
-    return isHome ? 0.2 : 0;
-  }
-
-  return getTeamStrength(team.localTeam, isHome);
-}
-
-function buildTeamFixtures(teams: FootballTeam[], team: FootballTeam) {
-  return teams
-    .filter((opponent) => opponent.slug !== team.slug)
-    .slice(0, 4)
-    .map((opponent, index): SportApiMatch => ({
-      id: `fallback:${team.slug}:${opponent.slug}`,
-      competition: "Local preview",
-      round: "matchday:1",
-      date: buildFallbackFixtureDate(index),
-      homeName: index % 2 === 0 ? team.name : opponent.name,
-      awayName: index % 2 === 0 ? opponent.name : team.name,
-      homeLogo: null,
-      awayLogo: null,
-      homeScore: null,
-      awayScore: null,
-      status: "preview"
-    }));
-}
-
 function buildMatchdayGroups(fixtures: SportApiMatch[], competition: FootballCompetition, locale: Locale) {
   const grouped = new Map<string, SportApiMatch[]>();
 
@@ -1898,14 +1875,12 @@ function findStandingByLocalTeam(standings: SportApiStanding[], team: FootballTe
   return standings.find((standing) => teamMatchesName(team, standing.teamName));
 }
 
-function getTeamFixtures(fixtures: SportApiMatch[], teams: FootballTeam[], team: FootballTeam, apiName?: string) {
-  const matches = fixtures.filter((fixture) =>
+function getTeamFixtures(fixtures: SportApiMatch[], team: FootballTeam, apiName?: string) {
+  return fixtures.filter((fixture) =>
     teamMatchesName(team, fixture.homeName) ||
     teamMatchesName(team, fixture.awayName) ||
     (apiName ? normalizeName(fixture.homeName) === normalizeName(apiName) || normalizeName(fixture.awayName) === normalizeName(apiName) : false)
   );
-
-  return matches.length > 0 ? matches : buildTeamFixtures(teams, team);
 }
 
 function FixtureTeam({
@@ -1992,7 +1967,7 @@ function StandingRow({
 }) {
   const team = findCompetitionTeamByName(competition, standing.teamName);
   const isHighlighted = Boolean(highlightedTeam && team && team.slug === highlightedTeam.slug);
-  const className = isHighlighted ? "leagueTableRow isHighlightedTeam" : "leagueTableRow";
+  const className = isHighlighted ? "leagueTableRow footballTableRow isHighlightedTeam" : "leagueTableRow footballTableRow";
   const content = (
     <>
       <span>{standing.rank}</span>
@@ -2005,6 +1980,7 @@ function StandingRow({
       <small>{formatGoals(standing)}</small>
       <small>{formatGoalDiff(standing.goalDiff)}</small>
       <em>{standing.points === null ? "-" : standing.points}</em>
+      <small className="standingForm">{standing.form ?? "-"}</small>
     </>
   );
 
@@ -2091,6 +2067,32 @@ function formatFixtureDate(value: string | null, locale: Locale) {
     day: "2-digit",
     month: "2-digit"
   }).format(date);
+}
+
+function getUpcomingFixtures(fixtures: SportApiMatch[]) {
+  const now = Date.now();
+  const scheduled = fixtures
+    .filter((fixture) => {
+      const timestamp = getFixtureTimestamp(fixture);
+      return timestamp !== null && timestamp >= now && !isFinishedFixture(fixture);
+    })
+    .sort((a, b) => (getFixtureTimestamp(a) ?? Number.MAX_SAFE_INTEGER) - (getFixtureTimestamp(b) ?? Number.MAX_SAFE_INTEGER));
+
+  return scheduled;
+}
+
+function getFixtureTimestamp(fixture: SportApiMatch) {
+  if (!fixture.date) {
+    return null;
+  }
+
+  const timestamp = new Date(fixture.date).getTime();
+  return Number.isNaN(timestamp) ? null : timestamp;
+}
+
+function isFinishedFixture(fixture: SportApiMatch) {
+  const status = (fixture.status ?? "").toLowerCase();
+  return Boolean(fixture.homeScore !== null && fixture.awayScore !== null) || status.includes("ft") || status.includes("final") || status.includes("finished");
 }
 
 function formatFixtureCenter(fixture: SportApiMatch, locale: Locale) {
@@ -2242,25 +2244,4 @@ function getTeamStrength(team: FootballTeam, isHome: boolean) {
   }, 0);
 
   return pointsComponent + rankComponent + formComponent + (isHome ? 0.35 : 0);
-}
-
-function buildFallbackFixtureDate(index: number) {
-  const date = new Date();
-  date.setUTCDate(date.getUTCDate() + Math.floor(index / 2) + 1);
-  date.setUTCHours(index === 0 ? 18 : 14, 30, 0, 0);
-  return date.toISOString();
-}
-
-function buildFallbackRoundFixtureDate(roundIndex: number, gameIndex: number) {
-  const date = new Date();
-  date.setUTCDate(date.getUTCDate() + (roundIndex * 7) + 1);
-  date.setUTCHours(14 + (gameIndex % 4) * 2, gameIndex % 2 === 0 ? 30 : 0, 0, 0);
-  return date.toISOString();
-}
-
-function buildFallbackCupFixtureDate(roundIndex: number, gameIndex: number) {
-  const date = new Date();
-  date.setUTCDate(date.getUTCDate() + (roundIndex * 14) + 1);
-  date.setUTCHours(18 + (gameIndex % 2), gameIndex % 2 === 0 ? 30 : 0, 0, 0);
-  return date.toISOString();
 }
