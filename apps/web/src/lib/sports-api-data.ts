@@ -2,7 +2,7 @@
  * Purpose: Server-only TheSportsDB data adapter for football, NFL, NBA and tennis.
  */
 import type { FootballCompetition, FootballTeam } from "@/lib/football-data";
-import { tennisPlayers } from "@/lib/tennis-data";
+import { findTennisPlayerByName, getTennisFlagUrl } from "@/lib/tennis-data";
 
 export type ApiSportId = "football" | "nfl" | "nba" | "tennis";
 
@@ -390,7 +390,7 @@ async function fetchTheSportsDbSnapshot(
     fetchTheSportsDbTeams(league).catch(() => []),
     fetchTheSportsDbLeagueEvents(sport, league).catch(() => [])
   ]);
-  const matches = hydrateTheSportsDbEventLogos(events, teams);
+  const matches = hydrateTheSportsDbEventLogos(sport, events, teams);
   const standings = sport === "football"
     ? await fetchTheSportsDbStandings(league, teams, matches).catch(() => [])
     : [];
@@ -876,38 +876,32 @@ function cleanTheSportsDbTennisParticipantName(value: string) {
     return name;
   }
 
-  const normalized = normalizeName(name);
-  const knownPlayer = tennisPlayers.find((player) => {
-    const fullName = normalizeName(player.name);
-    const shortName = normalizeName(player.shortName);
-
-    return normalized === fullName ||
-      normalized === shortName ||
-      normalized.endsWith(fullName) ||
-      normalized.endsWith(shortName);
-  });
+  const cleanedName = name
+    .replace(tennisTournamentPrefixPattern, "")
+    .replace(/\s+/g, " ")
+    .trim();
+  const knownPlayer = findTennisPlayerByName(cleanedName) ?? findTennisPlayerByName(name);
 
   if (knownPlayer) {
     return knownPlayer.name;
   }
 
-  return name
-    .replace(tennisTournamentPrefixPattern, "")
-    .replace(/\s+/g, " ")
-    .trim();
+  return cleanedName;
 }
 
 const tennisTournamentPrefixPattern = /^(?:atp|wta|itf|challenger)?\s*(?:wimbledon|us open|u\.s\. open|australian open|roland[-\s]garros|french open|canadian open|cincinnati|monte carlo|madrid open|italian open|rome|paris masters|shanghai masters|miami open|indian wells|atp finals|wta finals|dubai tennis championships|qatar open|halle open|queen'?s club|stuttgart open|vienna open|basel|rotterdam|doha|tokyo|beijing|berlin open)\s+/i;
 
-function hydrateTheSportsDbEventLogos(matches: SportApiMatch[], teams: SportApiTeam[]) {
+function hydrateTheSportsDbEventLogos(sport: ApiSportId, matches: SportApiMatch[], teams: SportApiTeam[]) {
   return matches.map((match) => {
     const home = teams.find((team) => team.id === match.homeId || namesMatch(team.name, match.homeName));
     const away = teams.find((team) => team.id === match.awayId || namesMatch(team.name, match.awayName));
+    const homePlayer = sport === "tennis" ? findTennisPlayerByName(match.homeName) : null;
+    const awayPlayer = sport === "tennis" ? findTennisPlayerByName(match.awayName) : null;
 
     return {
       ...match,
-      homeLogo: match.homeLogo ?? home?.logo ?? null,
-      awayLogo: match.awayLogo ?? away?.logo ?? null
+      homeLogo: match.homeLogo ?? home?.logo ?? getTennisFlagUrl(homePlayer?.countryCode) ?? null,
+      awayLogo: match.awayLogo ?? away?.logo ?? getTennisFlagUrl(awayPlayer?.countryCode) ?? null
     };
   });
 }

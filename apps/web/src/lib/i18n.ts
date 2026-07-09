@@ -146,7 +146,7 @@ export const commonText = {
 export const routeText = {
   en: {
     home: {
-      eyebrow: "AI Sport Prediction",
+      eyebrow: "AI Sports Prediction",
       title: "AI predictions for football, NFL, NBA and tennis.",
       description: "A dark, fast sports intelligence hub for model forecasts, live form signals, upset alerts and transparent result checks across the biggest sports.",
       cta: "Explore sports"
@@ -164,7 +164,7 @@ export const routeText = {
   },
   de: {
     home: {
-      eyebrow: "AI Sport Prediction",
+      eyebrow: "AI Sports Prediction",
       title: "KI-Prognosen für Fußball, NFL, NBA und Tennis.",
       description: "Ein dunkles, schnelles Sport-Intelligence-Dashboard für Modellprognosen, Formsignale, Upset-Alerts und transparente Ergebnischecks.",
       cta: "Sportarten entdecken"

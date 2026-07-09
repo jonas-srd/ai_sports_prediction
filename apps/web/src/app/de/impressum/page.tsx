@@ -2,8 +2,8 @@ import type { Metadata } from "next";
 import { ObfuscatedEmail } from "@/components/obfuscated-email";
 
 export const metadata: Metadata = {
-  title: "Impressum | AI Sport Prediction",
-  description: "Impressum und Anbieterinformationen für AI Sport Prediction."
+  title: "Impressum | AI Sports Prediction",
+  description: "Impressum und Anbieterinformationen für AI Sports Prediction."
 };
 
 const contactEmail = <ObfuscatedEmail reversedDomain="moc.kooltuo" reversedLocalPart="noitciderp-trops-ia" />;
@@ -15,13 +15,13 @@ export default function GermanLegalNoticePage() {
         <div className="sportschauCompetitionTitle">
           <p className="footballEyebrow">Rechtliches</p>
           <h1>Impressum</h1>
-          <p>Kontakt- und Anbieterinformationen für AI Sport Prediction.</p>
+          <p>Kontakt- und Anbieterinformationen für AI Sports Prediction.</p>
         </div>
       </section>
 
       <section className="footballPanel legalPagePanel" aria-labelledby="legal-title">
         <div className="sportschauSectionTitle">
-          <span>AI Sport Prediction</span>
+          <span>AI Sports Prediction</span>
           <h2 id="legal-title">Impressum</h2>
         </div>
 
@@ -30,7 +30,7 @@ export default function GermanLegalNoticePage() {
           <p>
             Jonas Schröder
             <br />
-            AI Sport Prediction
+            AI Sports Prediction
             <br />
             80469 München
             <br />

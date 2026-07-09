@@ -13,7 +13,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   const competition = getCompetition(competitionSlug);
 
   return {
-    title: `${competition?.name ?? "Football"} | AI Sport Prediction`,
+    title: `${competition?.name ?? "Football"} | AI Sports Prediction`,
     description: competition?.description ?? "Football prediction hub."
   };
 }

@@ -1,5 +1,5 @@
 /**
- * Purpose: Main AI Sport Prediction frontend.
+ * Purpose: Main AI Sports Prediction frontend.
  * Reads production data through the dedicated API and falls back to sample data locally.
  */
 import { HomePageContent } from "@/app/_route-content";

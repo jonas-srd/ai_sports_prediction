@@ -115,7 +115,7 @@ export function SiteNav() {
             <span className="siteNavLogoMark" aria-hidden="true">
               <img src="/site-icon.png" alt="" />
             </span>
-            <span>AI Sport Prediction</span>
+            <span>AI Sports Prediction</span>
           </Link>
           <SiteSearch
             items={searchItems.map((item) => ({ ...item, href: localizePath(item.href, locale) }))}
@@ -160,9 +160,15 @@ export function SiteNav() {
                 <Link className={`topicNavLink ${isActive("/") ? "isActive" : ""}`} href={localizePath("/", locale)}>
                   {text.home}
                 </Link>
-                <Link className={`topicNavLink ${currentPath === "/football" ? "isActive" : ""}`} href={localizePath("/football", locale)}>
-                  {text.football}
-                </Link>
+                {sportLinks.map((link) => (
+                  <Link
+                    className={`topicNavLink topicNavSportLink ${link.href === "/football" ? "isActive" : isActive(link.href) ? "isActive" : ""}`}
+                    href={anchorAwarePath(link.href)}
+                    key={link.href}
+                  >
+                    {link.label}
+                  </Link>
+                ))}
               </div>
               <div className="topicNavCompetitionDropdowns">
                 {footballCompetitionGroups.map((group) => {

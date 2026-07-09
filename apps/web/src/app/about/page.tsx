@@ -1,8 +1,8 @@
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "About | AI Sport Prediction",
-  description: "About the AI Sport Prediction platform for football, NFL, NBA and tennis forecasts."
+  title: "About | AI Sports Prediction",
+  description: "About the AI Sports Prediction platform for football, NFL, NBA and tennis forecasts."
 };
 
 const sports = [
@@ -55,7 +55,7 @@ export default function AboutPage() {
     <main className="shell aboutShell">
       <section className="hero compactHero heroCentered">
         <p className="eyebrow">About the platform</p>
-        <h1>AI Sport Prediction</h1>
+        <h1>AI Sports Prediction</h1>
         <p className="heroText">
           A multi-sport AI prediction platform for football, NFL, NBA and tennis. The goal is to make
           model forecasts understandable, comparable and verifiable.
@@ -69,7 +69,7 @@ export default function AboutPage() {
             <h2>Four sports, one prediction layer</h2>
           </div>
           <p>
-            AI Sport Prediction starts with football and expands into the sports where model signals,
+            AI Sports Prediction starts with football and expands into the sports where model signals,
             schedules and result validation can create a useful daily product.
           </p>
         </div>

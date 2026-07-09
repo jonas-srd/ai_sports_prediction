@@ -70,9 +70,8 @@ ai-sports-prediction/admin-api-token
 In the Cloudflare tunnel settings, add public hostnames:
 
 ```text
-ai-sport-prediction.com       -> HTTP -> http://127.0.0.1:3000
-www.ai-sport-prediction.com   -> HTTP -> http://127.0.0.1:3000
-api.ai-sport-prediction.com   -> HTTP -> http://127.0.0.1:3001
+www.ai-sports-prediction.net  -> HTTP -> http://127.0.0.1:3000
+api.ai-sports-prediction.net  -> HTTP -> http://127.0.0.1:3001
 ```
 
 Do not expose admin backup endpoints as a public hostname.
@@ -94,7 +93,7 @@ Website HTML:
 ```text
 Name: Cache public website pages
 When incoming requests match:
-  Hostname equals ai-sport-prediction.com OR www.ai-sport-prediction.com
+  Hostname equals www.ai-sports-prediction.net
   URI Path does not start with /api/
 Then:
   Eligible for cache: true
@@ -106,7 +105,7 @@ Public API reads:
 ```text
 Name: Cache public API reads
 When incoming requests match:
-  Hostname equals api.ai-sport-prediction.com
+  Hostname equals api.ai-sports-prediction.net
   URI Path starts with /v1/
 Then:
   Eligible for cache: true
@@ -176,15 +175,14 @@ Networks -> Tunnels -> ai-sports-prediction -> Status: Healthy
 Check the app:
 
 ```bash
-curl -I https://ai-sport-prediction.com
-curl -I https://www.ai-sport-prediction.com
-curl -I https://api.ai-sport-prediction.com/health
+curl -I https://www.ai-sports-prediction.net
+curl -I https://api.ai-sports-prediction.net/health
 ```
 
 For cache verification:
 
 ```bash
-npm run load:test -- --url https://api.ai-sport-prediction.com/v1/matches --requests 100 --concurrency 10
+npm run load:test -- --url https://api.ai-sports-prediction.net/v1/matches --requests 100 --concurrency 10
 ```
 
 Expected after warmup:

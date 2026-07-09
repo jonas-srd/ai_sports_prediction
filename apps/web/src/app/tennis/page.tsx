@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { TennisPage } from "@/components/tennis-pages";
 
 export const metadata: Metadata = {
-  title: "Tennis Predictions | AI Sport Prediction",
+  title: "Tennis Predictions | AI Sports Prediction",
   description: "Tennis forecasts for match winners, set scores, surfaces, serve-return splits and draw paths."
 };
 

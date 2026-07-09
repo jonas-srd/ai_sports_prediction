@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Info | AI Sport Prediction",
+  title: "Info | AI Sports Prediction",
   description: "Über die AI-Sport-Prediction-Plattform für Fußball, NFL, NBA und Tennis."
 };
 
@@ -55,7 +55,7 @@ export default function GermanAboutPage() {
     <main className="shell aboutShell">
       <section className="hero compactHero heroCentered">
         <p className="eyebrow">Über die Plattform</p>
-        <h1>AI Sport Prediction</h1>
+        <h1>AI Sports Prediction</h1>
         <p className="heroText">
           Eine Multi-Sport-KI-Plattform für Fußball, NFL, NBA und Tennis. Ziel ist, Modellprognosen
           verständlich, vergleichbar und überprüfbar zu machen.
@@ -69,7 +69,7 @@ export default function GermanAboutPage() {
             <h2>Vier Sportarten, eine Prediction-Schicht</h2>
           </div>
           <p>
-            AI Sport Prediction startet mit Fußball und wird um die Sportarten erweitert, bei denen
+            AI Sports Prediction startet mit Fußball und wird um die Sportarten erweitert, bei denen
             Modellsignale, Spielpläne und Ergebnisvalidierung ein nützliches Daily Product ergeben.
           </p>
         </div>

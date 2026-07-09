@@ -1,5 +1,5 @@
 import type { SportApiMatch } from "@/lib/sports-api-data";
-import { tennisPlayers } from "@/lib/tennis-data";
+import { findTennisPlayerByName } from "@/lib/tennis-data";
 
 export type TennisRankingRow = {
   age: number | null;
@@ -163,8 +163,7 @@ function htmlToText(html: string) {
 }
 
 function findLocalPlayer(name: string) {
-  const normalized = normalize(name);
-  return tennisPlayers.find((player) => normalize(player.name) === normalized || normalize(player.shortName) === normalized);
+  return findTennisPlayerByName(name);
 }
 
 function formatRankingDate(date: Date) {

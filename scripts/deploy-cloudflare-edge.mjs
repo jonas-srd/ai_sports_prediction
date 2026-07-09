@@ -85,7 +85,7 @@ const taskDefinition = {
           name: "DATABASE_SSL_CA_FILE",
           value: env("DATABASE_SSL_CA_FILE", "/etc/ssl/certs/aws-rds-global-bundle.pem")
         },
-        { name: "API_CORS_ORIGIN", value: env("API_CORS_ORIGIN", "https://www.ai-sport-prediction.com") },
+        { name: "API_CORS_ORIGIN", value: env("API_CORS_ORIGIN", "https://www.ai-sports-prediction.net") },
         { name: "API_CACHE_ENABLED", value: env("API_CACHE_ENABLED", "1") },
         { name: "API_CACHE_MATCHES_TTL_SECONDS", value: env("API_CACHE_MATCHES_TTL_SECONDS", "300") },
         { name: "API_CACHE_BENCHMARK_TTL_SECONDS", value: env("API_CACHE_BENCHMARK_TTL_SECONDS", "300") },

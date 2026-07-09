@@ -16,7 +16,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   const team = getTeam(competitionSlug, teamSlug);
 
   return {
-    title: `${team?.name ?? "Team"} | ${competition?.name ?? "Football"} | AI Sport Prediction`,
+    title: `${team?.name ?? "Team"} | ${competition?.name ?? "Football"} | AI Sports Prediction`,
     description: team ? `${team.name} team profile, model signals, form and prediction view.` : "Football team prediction profile."
   };
 }

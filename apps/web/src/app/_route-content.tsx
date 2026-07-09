@@ -475,7 +475,7 @@ type HomeSportNews = {
 function getHomeStartCopy(locale: Locale) {
   return {
     en: {
-      eyebrow: "AI Sport Prediction",
+      eyebrow: "AI Sports Prediction",
       title: "Know the pick before the game starts.",
       description: "AI predictions for football, NFL, NBA and tennis with winner, score idea, confidence and reasoning in one card.",
       primaryCta: "Show top games",
@@ -492,7 +492,7 @@ function getHomeStartCopy(locale: Locale) {
       reason: "Reasoning"
     },
     de: {
-      eyebrow: "AI Sport Prediction",
+      eyebrow: "AI Sports Prediction",
       title: "Wisse den Tipp, bevor das Spiel beginnt.",
       description: "KI-Prognosen für Fußball, NFL, NBA und Tennis mit Sieger, Ergebnisidee, Sicherheit und Begründung in einer Karte.",
       primaryCta: "Topspiele anzeigen",

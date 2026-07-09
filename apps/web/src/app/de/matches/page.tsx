@@ -4,8 +4,8 @@ import { MatchesPageContent } from "@/app/_route-content";
 export const revalidate = 60;
 
 export const metadata: Metadata = {
-  title: "Spiele & Scores | AI Sport Prediction",
-  description: "Match Center mit Spielplan, Scores und Modelltipps für AI Sport Prediction."
+  title: "Spiele & Scores | AI Sports Prediction",
+  description: "Match Center mit Spielplan, Scores und Modelltipps für AI Sports Prediction."
 };
 
 export default function GermanMatchesPage() {

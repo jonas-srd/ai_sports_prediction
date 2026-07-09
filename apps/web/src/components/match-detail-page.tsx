@@ -19,7 +19,7 @@ import {
   type ApiSportId,
   type SportApiMatch
 } from "@/lib/sports-api-data";
-import { tennisPlayers } from "@/lib/tennis-data";
+import { findTennisPlayerByName, getTennisFlagUrl } from "@/lib/tennis-data";
 import { SportsNewsCards } from "@/components/sports-news-cards";
 
 export type MatchDetailTab = "overview" | "comparison" | "stats" | "signal";
@@ -507,9 +507,7 @@ function findParticipantLogo(sport: ApiSportId, name: string) {
   }
 
   if (sport === "tennis") {
-    const player = tennisPlayers.find((entry) => namesMatch(entry.name, name) || namesMatch(entry.shortName, name));
-    const code = player?.countryCode;
-    return code && code !== "un" && code !== "xx" ? `https://flagcdn.com/w80/${code}.png` : null;
+    return getTennisFlagUrl(findTennisPlayerByName(name)?.countryCode);
   }
 
   void name;
@@ -955,7 +953,7 @@ function getParticipantStrength(sport: ApiSportId, name: string) {
 }
 
 function findTennisPlayer(name: string) {
-  return tennisPlayers.find((entry) => namesMatch(entry.name, name) || namesMatch(entry.shortName, name));
+  return findTennisPlayerByName(name);
 }
 
 function findFootballTeam(name: string): FootballTeam | undefined {
@@ -1008,7 +1006,7 @@ function getParticipantHref(context: MatchContext, name: string) {
     return team ? localizePath(`/nba/team/${team.slug}`, context.locale) : null;
   }
 
-  const player = tennisPlayers.find((entry) => namesMatch(entry.name, name) || namesMatch(entry.shortName, name));
+  const player = findTennisPlayer(name);
   return player ? localizePath(`/tennis/player/${player.slug}`, context.locale) : null;
 }
 

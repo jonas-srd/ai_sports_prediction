@@ -3,7 +3,7 @@ import { notFound } from "next/navigation";
 import { localizePath, type Locale } from "@/lib/i18n";
 import { getSportsNewsLinks } from "@/lib/sports-news";
 import { getSportApiSnapshot, type SportApiMatch } from "@/lib/sports-api-data";
-import { getTennisPlayer, getTennisTournament, tennisPlayers, tennisTournaments, type TennisPlayer, type TennisTournament } from "@/lib/tennis-data";
+import { findTennisPlayerByName, getTennisFlagUrl, getTennisPlayer, getTennisTournament, tennisPlayers, tennisTournaments, type TennisPlayer, type TennisTournament } from "@/lib/tennis-data";
 import { getAtpRankingSnapshot, type TennisRankingRow, type TennisRankingSnapshot } from "@/lib/tennis-rankings";
 import { getSportMatchHref } from "@/components/match-detail-page";
 import { SportsNewsCards } from "@/components/sports-news-cards";
@@ -546,13 +546,13 @@ function TennisMatchesSection({ locale, matches }: { locale: Locale; matches: Sp
               href={getSportMatchHref({ locale, match, sport: "tennis" })}
             />
             <div className="fixtureMatchLine">
-              <TennisFixturePlayer align="right" locale={locale} name={match.homeName} />
+              <TennisFixturePlayer align="right" locale={locale} logo={match.homeLogo} name={match.homeName} />
               <div className="fixtureTime">
                 <span>{formatTennisDate(match.date, locale)}</span>
                 <strong>{formatTennisScore(match)}</strong>
                 <small>{match.competition}</small>
               </div>
-              <TennisFixturePlayer align="left" locale={locale} name={match.awayName} />
+              <TennisFixturePlayer align="left" locale={locale} logo={match.awayLogo} name={match.awayName} />
             </div>
             <div className="fixturePrediction">
               <TennisPrediction locale={locale} match={match} />
@@ -926,9 +926,9 @@ function TennisFactPanel({ locale }: { locale: Locale }) {
   );
 }
 
-function TennisFixturePlayer({ align, locale, name }: { align: "left" | "right"; locale: Locale; name: string }) {
+function TennisFixturePlayer({ align, locale, logo, name }: { align: "left" | "right"; locale: Locale; logo?: null | string; name: string }) {
   const player = findPlayer(name);
-  const mark = player ? <TennisPlayerAvatar player={player} /> : <TennisNameMark name={name} />;
+  const mark = player ? <TennisPlayerAvatar player={player} /> : <TennisNameMark logo={logo} name={name} />;
   const content = align === "right" ? <>{name}{mark}</> : <>{mark}{name}</>;
 
   if (player) {
@@ -939,7 +939,7 @@ function TennisFixturePlayer({ align, locale, name }: { align: "left" | "right";
 }
 
 function TennisPlayerAvatar({ className = "", player }: { className?: string; player: TennisPlayer }) {
-  const flag = getFlagUrl(player.countryCode);
+  const flag = getTennisFlagUrl(player.countryCode);
 
   return (
     <span className={`apiTeamLogo tennisAvatar ${className}`.trim()} title={player.name}>
@@ -949,7 +949,16 @@ function TennisPlayerAvatar({ className = "", player }: { className?: string; pl
   );
 }
 
-function TennisNameMark({ name }: { name: string }) {
+function TennisNameMark({ logo, name }: { logo?: null | string; name: string }) {
+  if (logo) {
+    return (
+      <span className="apiTeamLogo tennisAvatar tennisNameMark" title={name}>
+        <img alt="" src={logo} />
+        <strong>{getInitials(name)}</strong>
+      </span>
+    );
+  }
+
   return <span className="apiTeamLogo textLogo tennisNameMark">{getInitials(name)}</span>;
 }
 
@@ -1066,7 +1075,9 @@ function hydrateTennisMatches(matches: SportApiMatch[]) {
 
     return {
       ...match,
+      homeLogo: match.homeLogo ?? getTennisFlagUrl(home?.countryCode),
       homeName: home?.name ?? match.homeName,
+      awayLogo: match.awayLogo ?? getTennisFlagUrl(away?.countryCode),
       awayName: away?.name ?? match.awayName
     };
   });
@@ -1432,8 +1443,7 @@ function getMovementClassName(movement: number | null) {
 }
 
 function findPlayer(name: string) {
-  const normalized = normalize(name);
-  return tennisPlayers.find((player) => [player.name, player.shortName].some((candidate) => normalize(candidate) === normalized || normalized.includes(normalize(candidate))));
+  return findTennisPlayerByName(name);
 }
 
 function formatTennisScore(match: SportApiMatch) {
@@ -1465,14 +1475,6 @@ function formatTennisDate(value: string | null, locale: Locale) {
     day: "2-digit",
     month: "2-digit"
   }).format(date);
-}
-
-function getFlagUrl(countryCode: string) {
-  if (countryCode === "un" || countryCode === "xx") {
-    return null;
-  }
-
-  return `https://flagcdn.com/w80/${countryCode}.png`;
 }
 
 function getInitials(name: string) {

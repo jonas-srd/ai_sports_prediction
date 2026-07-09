@@ -52,6 +52,7 @@ export const tennisPlayers: TennisPlayer[] = [
   { slug: "tommy-paul", name: "Tommy Paul", shortName: "Paul", tour: "ATP", country: "United States", countryCode: "us", rank: 14, age: 28, hand: "Right-handed", height: "1.85 m", turnedPro: "2015", residence: "Boca Raton", coach: "Brad Stine", titles: 4, grandSlams: 0, hard: 83, clay: 76, grass: 82, indoor: 78, form: "W W L W L", prediction: "Athletic defense and transition speed create strong best-of-three value.", strengths: ["Transition speed", "Defense", "Return games"] },
   { slug: "frances-tiafoe", name: "Frances Tiafoe", shortName: "Tiafoe", tour: "ATP", country: "United States", countryCode: "us", rank: 15, age: 28, hand: "Right-handed", height: "1.88 m", turnedPro: "2015", residence: "Orlando", coach: "Team Tiafoe", titles: 3, grandSlams: 0, hard: 82, clay: 72, grass: 80, indoor: 79, form: "L W W L W", prediction: "Explosive forehand and crowd-energy profile lift his upset chance.", strengths: ["Forehand pace", "Fast courts", "Big-match energy"] },
   { slug: "grigor-dimitrov", name: "Grigor Dimitrov", shortName: "Dimitrov", tour: "ATP", country: "Bulgaria", countryCode: "bg", rank: 16, age: 35, hand: "Right-handed", height: "1.91 m", turnedPro: "2008", residence: "Monte Carlo", coach: "Team Dimitrov", titles: 9, grandSlams: 0, hard: 82, clay: 76, grass: 84, indoor: 83, form: "W L W W L", prediction: "Variety, slice and serve patterns rate well on grass and indoor hard.", strengths: ["Slice variety", "All-court play", "Indoor rhythm"] },
+  { slug: "arthur-fery", name: "Arthur Fery", shortName: "Fery", tour: "ATP", country: "Great Britain", countryCode: "gb", rank: 114, age: 23, hand: "Right-handed", height: "1.75 m", turnedPro: "2023", residence: "Wimbledon", coach: "Team Fery", titles: 0, grandSlams: 0, hard: 74, clay: 68, grass: 82, indoor: 72, form: "W W L W W", prediction: "Grass-court timing and compact all-court patterns make him a live underdog on fast surfaces.", strengths: ["Grass timing", "All-court variety", "Return composure"] },
   { slug: "iga-swiatek", name: "Iga Swiatek", shortName: "Swiatek", tour: "WTA", country: "Poland", countryCode: "pl", rank: 1, age: 25, hand: "Right-handed", height: "1.76 m", turnedPro: "2016", residence: "Raszyn", coach: "Team Swiatek", titles: 22, grandSlams: 5, hard: 91, clay: 98, grass: 76, indoor: 84, form: "W W W W L", prediction: "Clay dominance and return pressure make her the strongest surface-specific profile.", strengths: ["Clay movement", "Return depth", "Forehand patterns"] },
   { slug: "aryna-sabalenka", name: "Aryna Sabalenka", shortName: "Sabalenka", tour: "WTA", country: "Neutral", countryCode: "un", rank: 2, age: 28, hand: "Right-handed", height: "1.82 m", turnedPro: "2015", residence: "Miami", coach: "Anton Dubrov", titles: 18, grandSlams: 2, hard: 94, clay: 84, grass: 79, indoor: 87, form: "W L W W W", prediction: "Power on serve and first strike tennis create high confidence in fast conditions.", strengths: ["First strike", "Serve power", "Hard-court offense"] },
   { slug: "coco-gauff", name: "Coco Gauff", shortName: "Gauff", tour: "WTA", country: "United States", countryCode: "us", rank: 3, age: 22, hand: "Right-handed", height: "1.75 m", turnedPro: "2018", residence: "Delray Beach", coach: "Team Gauff", titles: 9, grandSlams: 1, hard: 88, clay: 83, grass: 78, indoor: 80, form: "W W L W L", prediction: "Defense, athleticism and improving serve patterns create a strong week-to-week floor.", strengths: ["Court coverage", "Backhand defense", "Return games"] },
@@ -104,6 +105,78 @@ export function getTennisPlayer(slug: string) {
   return tennisPlayers.find((player) => player.slug === slug);
 }
 
+export function findTennisPlayerByName(name: string) {
+  const normalized = normalizeTennisPlayerName(name);
+  const tokens = getTennisNameTokens(name);
+
+  if (!normalized || tokens.length === 0) {
+    return undefined;
+  }
+
+  const exactFullName = tennisPlayers.find((player) => normalizeTennisPlayerName(player.name) === normalized);
+
+  if (exactFullName) {
+    return exactFullName;
+  }
+
+  const exactShortNameMatches = tennisPlayers.filter((player) => normalizeTennisPlayerName(player.shortName) === normalized);
+
+  if (exactShortNameMatches.length === 1) {
+    return exactShortNameMatches[0];
+  }
+
+  if (exactShortNameMatches.length > 1) {
+    return undefined;
+  }
+
+  const matches = tennisPlayers.filter((player) => tennisPlayerMatchesTokens(player, tokens));
+  return matches.length === 1 ? matches[0] : undefined;
+}
+
+export function getTennisFlagUrl(countryCode: null | string | undefined) {
+  const normalized = countryCode?.trim().toLowerCase();
+
+  if (!normalized || normalized === "un" || normalized === "xx") {
+    return null;
+  }
+
+  return `https://flagcdn.com/w80/${normalized}.png`;
+}
+
 export function getTennisTournament(slug: string) {
   return tennisTournaments.find((tournament) => tournament.slug === slug);
+}
+
+function tennisPlayerMatchesTokens(player: TennisPlayer, tokens: string[]) {
+  const fullTokens = getTennisNameTokens(player.name);
+  const shortTokens = getTennisNameTokens(player.shortName);
+  const firstName = fullTokens[0];
+  const lastName = fullTokens[fullTokens.length - 1];
+
+  if (!lastName) {
+    return false;
+  }
+
+  if (tokens.length === 1) {
+    return tokens[0] === lastName || shortTokens.includes(tokens[0]);
+  }
+
+  if (fullTokens.every((token) => tokens.includes(token)) || (shortTokens.length > 1 && shortTokens.every((token) => tokens.includes(token)))) {
+    return true;
+  }
+
+  return tokens.includes(lastName) && Boolean(firstName) && tokens.some((token) => token === firstName || token === firstName[0]);
+}
+
+function getTennisNameTokens(value: string) {
+  return normalizeTennisPlayerName(value).split(" ").filter(Boolean);
+}
+
+function normalizeTennisPlayerName(value: string) {
+  return value
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-zA-Z0-9]+/g, " ")
+    .trim()
+    .toLowerCase();
 }

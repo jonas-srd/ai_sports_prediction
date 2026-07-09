@@ -467,6 +467,15 @@
   padding-right: 18px;
 }
 
+.sportschauTopicInner.isFootballCompetitionRail .topicNavPrimaryGroup {
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.sportschauTopicInner.isFootballCompetitionRail .topicNavPrimaryGroup::-webkit-scrollbar {
+  display: none;
+}
+
 .topicNavCompetitionGroup {
   gap: clamp(10px, 1vw, 18px);
   justify-content: space-between;
@@ -623,8 +632,9 @@
 
   .topicNavPrimaryGroup {
     border-right: 0;
-    justify-content: center;
+    justify-content: flex-start;
     padding-right: 0;
+    width: 100%;
   }
 
   .topicNavCompetitionGroup {
