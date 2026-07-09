@@ -2,6 +2,7 @@
  * Purpose: Server-only TheSportsDB data adapter for football, NFL, NBA and tennis.
  */
 import type { FootballCompetition, FootballTeam } from "@/lib/football-data";
+import { tennisPlayers } from "@/lib/tennis-data";
 
 export type ApiSportId = "football" | "nfl" | "nba" | "tennis";
 
@@ -708,6 +709,9 @@ function normalizeTheSportsDbEvent(event: any): SportApiMatch {
     ? eventName.split(" vs ").map((value) => value.trim())
     : ["", ""];
   const date = getTheSportsDbEventDate(event);
+  const isTennis = isTheSportsDbTennisEvent(event);
+  const homeName = getString(event.strHomeTeam || event.homeTeam || event.home_team || event.home?.name) || parsedHome;
+  const awayName = getString(event.strAwayTeam || event.awayTeam || event.away_team || event.away?.name) || parsedAway;
 
   return {
     id: `tsdb:${getString(event.idEvent || event.id || event.eventId)}`,
@@ -716,9 +720,9 @@ function normalizeTheSportsDbEvent(event: any): SportApiMatch {
     date,
     venue: getString(event.strVenue || event.venue) || null,
     homeId: getString(event.idHomeTeam || event.homeTeamId || event.home_id) || null,
-    homeName: getString(event.strHomeTeam || event.homeTeam || event.home_team || event.home?.name) || parsedHome,
+    homeName: isTennis ? cleanTheSportsDbTennisParticipantName(homeName) : homeName,
     awayId: getString(event.idAwayTeam || event.awayTeamId || event.away_id) || null,
-    awayName: getString(event.strAwayTeam || event.awayTeam || event.away_team || event.away?.name) || parsedAway,
+    awayName: isTennis ? cleanTheSportsDbTennisParticipantName(awayName) : awayName,
     homeLogo: getString(event.strHomeTeamBadge || event.strHomeBadge || event.homeBadge || event.homeLogo || event.home?.badge || event.home?.logo) || null,
     awayLogo: getString(event.strAwayTeamBadge || event.strAwayBadge || event.awayBadge || event.awayLogo || event.away?.badge || event.away?.logo) || null,
     homeScore: toNumber(event.intHomeScore ?? event.homeScore ?? event.home_score ?? event.home?.score),
@@ -726,6 +730,46 @@ function normalizeTheSportsDbEvent(event: any): SportApiMatch {
     status: getString(event.strStatus || event.strProgress || event.strResult) || null
   };
 }
+
+function isTheSportsDbTennisEvent(event: any) {
+  const sport = getString(event.strSport || event.sport);
+  const league = getString(event.strLeague || event.league || event.leagueName);
+
+  return namesMatch(sport, "Tennis") ||
+    namesMatch(league, "ATP") ||
+    namesMatch(league, "WTA") ||
+    tennisTournamentPrefixPattern.test(getString(event.strEvent || event.event || event.name));
+}
+
+function cleanTheSportsDbTennisParticipantName(value: string) {
+  const name = value.trim();
+
+  if (!name) {
+    return name;
+  }
+
+  const normalized = normalizeName(name);
+  const knownPlayer = tennisPlayers.find((player) => {
+    const fullName = normalizeName(player.name);
+    const shortName = normalizeName(player.shortName);
+
+    return normalized === fullName ||
+      normalized === shortName ||
+      normalized.endsWith(fullName) ||
+      normalized.endsWith(shortName);
+  });
+
+  if (knownPlayer) {
+    return knownPlayer.name;
+  }
+
+  return name
+    .replace(tennisTournamentPrefixPattern, "")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+const tennisTournamentPrefixPattern = /^(?:atp|wta|itf|challenger)?\s*(?:wimbledon|us open|u\.s\. open|australian open|roland[-\s]garros|french open|canadian open|cincinnati|monte carlo|madrid open|italian open|rome|paris masters|shanghai masters|miami open|indian wells|atp finals|wta finals|dubai tennis championships|qatar open|halle open|queen'?s club|stuttgart open|vienna open|basel|rotterdam|doha|tokyo|beijing|berlin open)\s+/i;
 
 function hydrateTheSportsDbEventLogos(matches: SportApiMatch[], teams: SportApiTeam[]) {
   return matches.map((match) => {
