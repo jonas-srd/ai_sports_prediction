@@ -6,7 +6,7 @@
  */
 import { readFileSync } from "node:fs";
 import { spawn } from "node:child_process";
-import { dirname, resolve } from "node:path";
+import { delimiter, dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..");
@@ -20,10 +20,18 @@ if (!command) {
   process.exit(1);
 }
 
-const child = spawn(command, args, {
-  stdio: "inherit",
-  env: process.env
-});
+const childEnv = { ...process.env };
+prependPathEntry(childEnv, resolve(repoRoot, "node_modules", ".bin"));
+
+const child = process.platform === "win32" && shouldUseWindowsCommandProcessor(command)
+  ? spawn("cmd.exe", ["/d", "/s", "/c", command, ...args], {
+      stdio: "inherit",
+      env: childEnv
+    })
+  : spawn(command, args, {
+      stdio: "inherit",
+      env: childEnv
+    });
 
 child.on("exit", (code, signal) => {
   if (signal) {
@@ -71,4 +79,14 @@ function unquoteEnvValue(value) {
     return value.slice(1, -1);
   }
   return value;
+}
+
+function prependPathEntry(env, entry) {
+  const pathKey = Object.keys(env).find((key) => key.toLowerCase() === "path") ?? "PATH";
+  const currentPath = env[pathKey] ?? "";
+  env[pathKey] = currentPath ? `${entry}${delimiter}${currentPath}` : entry;
+}
+
+function shouldUseWindowsCommandProcessor(command) {
+  return !/(\.exe|node)$/i.test(command);
 }
