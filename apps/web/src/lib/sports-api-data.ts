@@ -55,7 +55,7 @@ export type SportApiSquadPlayer = {
 
 export type SportApiSnapshot = {
   sport: ApiSportId;
-  provider: "api-football" | "api-sports";
+  provider: "api-football" | "api-sports" | "thesportsdb" | "combined";
   status: "live" | "not_configured" | "error";
   message: string;
   matches: SportApiMatch[];
@@ -92,6 +92,12 @@ type SportConfig = {
   cacheSeconds?: () => number;
 };
 
+type TheSportsDbLeagueRef = {
+  id?: string;
+  name: string;
+  aliases?: string[];
+};
+
 const FOOTBALL_LEAGUE_IDS: Record<string, string> = {
   "bundesliga": "78",
   "dfb-pokal": "81",
@@ -107,6 +113,45 @@ const FOOTBALL_LEAGUE_IDS: Record<string, string> = {
   "europa-league": "3",
   "conference-league": "848"
 };
+
+const THE_SPORTS_DB_LEAGUES: Record<ApiSportId, TheSportsDbLeagueRef> = {
+  football: { id: "4328", name: "English Premier League" },
+  nfl: { id: "4391", name: "NFL" },
+  nba: { id: "4387", name: "NBA" },
+  tennis: { id: "4464", name: "ATP" }
+};
+
+const THE_SPORTS_DB_SPORT_PATHS: Record<ApiSportId, string[]> = {
+  football: ["soccer"],
+  nfl: ["american-football", "nfl"],
+  nba: ["basketball"],
+  tennis: ["tennis"]
+};
+
+const THE_SPORTS_DB_V1_SPORT_NAMES: Record<ApiSportId, string> = {
+  football: "Soccer",
+  nfl: "American Football",
+  nba: "Basketball",
+  tennis: "Tennis"
+};
+
+const THE_SPORTS_DB_FOOTBALL_LEAGUES: Record<string, TheSportsDbLeagueRef> = {
+  "bundesliga": { id: "4331", name: "German Bundesliga" },
+  "dfb-pokal": { id: "4470", name: "DFB-Pokal" },
+  "premier-league": { id: "4328", name: "English Premier League" },
+  "fa-cup": { id: "4482", name: "FA Cup" },
+  "la-liga": { id: "4335", name: "Spanish La Liga" },
+  "copa-del-rey": { id: "4483", name: "Copa del Rey" },
+  "ligue-1": { id: "4334", name: "French Ligue 1" },
+  "coupe-de-france": { id: "4484", name: "Coupe de France" },
+  "serie-a": { id: "4332", name: "Italian Serie A" },
+  "coppa-italia": { id: "4485", name: "Coppa Italia" },
+  "champions-league": { id: "4480", name: "UEFA Champions League" },
+  "europa-league": { id: "4481", name: "UEFA Europa League" },
+  "conference-league": { id: "5366", name: "UEFA Conference League", aliases: ["UEFA Europa Conference League", "Europa Conference League"] }
+};
+
+let theSportsDbLeagueRowsPromise: Promise<any[]> | null = null;
 
 const configs: Record<ApiSportId, SportConfig> = {
   football: {
@@ -158,13 +203,19 @@ const configs: Record<ApiSportId, SportConfig> = {
 export async function getSportApiSnapshot(sport: ApiSportId): Promise<SportApiSnapshot> {
   const config = configs[sport];
   const apiKey = getFirstEnv(config.keyEnv);
+  const sportsDbLeague = THE_SPORTS_DB_LEAGUES[sport];
 
   if (!apiKey) {
+    const sportsDbSnapshot = await fetchTheSportsDbSnapshot(sport, sportsDbLeague).catch(() => null);
+    if (sportsDbSnapshot && (sportsDbSnapshot.matches.length > 0 || sportsDbSnapshot.teams.length > 0)) {
+      return sportsDbSnapshot;
+    }
+
     return {
       sport,
       provider: config.provider,
       status: "not_configured",
-      message: getMissingKeyMessage(sport, config),
+      message: `${getMissingKeyMessage(sport, config)} TheSportsDB is also not configured or returned no rows.`,
       matches: [],
       standings: [],
       teams: []
@@ -173,25 +224,37 @@ export async function getSportApiSnapshot(sport: ApiSportId): Promise<SportApiSn
 
   try {
     const { matches, query } = await fetchBestSportMatches(sport, config);
-    const teams = sport === "nfl" || sport === "nba"
+    const apiTeams = sport === "nfl" || sport === "nba"
       ? await fetchSportTeams(config, query).catch(() => [])
       : [];
+    const sportsDbSnapshot = await fetchTheSportsDbSnapshot(sport, sportsDbLeague).catch(() => null);
+    const matchesWithFallback = mergeMatches(matches, sportsDbSnapshot?.matches ?? []);
+    const teams = mergeTeams(apiTeams, sportsDbSnapshot?.teams ?? []);
 
     return {
       sport,
-      provider: config.provider,
+      provider: sportsDbSnapshot && (sportsDbSnapshot.matches.length > 0 || sportsDbSnapshot.teams.length > 0)
+        ? "combined"
+        : config.provider,
       status: "live",
-      message: `Live data loaded from ${config.providerName}.`,
-      matches,
+      message: sportsDbSnapshot && (sportsDbSnapshot.matches.length > 0 || sportsDbSnapshot.teams.length > 0)
+        ? `Live data loaded from ${config.providerName} and TheSportsDB Premium.`
+        : `Live data loaded from ${config.providerName}.`,
+      matches: matchesWithFallback,
       standings: [],
       teams
     };
   } catch {
+    const sportsDbSnapshot = await fetchTheSportsDbSnapshot(sport, sportsDbLeague).catch(() => null);
+    if (sportsDbSnapshot && (sportsDbSnapshot.matches.length > 0 || sportsDbSnapshot.teams.length > 0)) {
+      return sportsDbSnapshot;
+    }
+
     return {
       sport,
       provider: config.provider,
       status: "error",
-      message: `${config.providerName} request failed. Showing local fallback data.`,
+      message: `${config.providerName} and TheSportsDB requests failed or returned no usable rows.`,
       matches: [],
       standings: [],
       teams: []
@@ -204,8 +267,17 @@ export async function getFootballCompetitionApiSnapshot(competition: FootballCom
   const apiKey = getFirstEnv(config.keyEnv);
   const league = process.env[`API_FOOTBALL_${toEnvKey(competition.slug)}_LEAGUE_ID`] ?? FOOTBALL_LEAGUE_IDS[competition.slug];
   const season = process.env.API_FOOTBALL_SEASON ?? getCurrentSeason();
+  const sportsDbLeague = THE_SPORTS_DB_FOOTBALL_LEAGUES[competition.slug] ?? {
+    id: "",
+    name: competition.name
+  };
 
   if (!apiKey || !league) {
+    const sportsDbSnapshot = await fetchTheSportsDbSnapshot("football", sportsDbLeague).catch(() => null);
+    if (sportsDbSnapshot && (sportsDbSnapshot.matches.length > 0 || sportsDbSnapshot.teams.length > 0)) {
+      return sportsDbSnapshot;
+    }
+
     return {
       sport: "football",
       provider: config.provider,
@@ -227,14 +299,19 @@ export async function getFootballCompetitionApiSnapshot(competition: FootballCom
     ]);
     const matches = matchesResult.status === "fulfilled" ? matchesResult.value : [];
     const standings = standingsResult.status === "fulfilled" ? standingsResult.value : [];
-    const teams = teamsResult.status === "fulfilled" ? teamsResult.value : [];
+    const apiTeams = teamsResult.status === "fulfilled" ? teamsResult.value : [];
+    const sportsDbSnapshot = await fetchTheSportsDbSnapshot("football", sportsDbLeague).catch(() => null);
+    const mergedMatches = mergeMatches(matches, sportsDbSnapshot?.matches ?? []);
+    const teams = mergeTeams(apiTeams, sportsDbSnapshot?.teams ?? []);
 
     return {
       sport: "football",
-      provider: config.provider,
+      provider: sportsDbSnapshot && (sportsDbSnapshot.matches.length > 0 || sportsDbSnapshot.teams.length > 0)
+        ? "combined"
+        : config.provider,
       status: "live",
       message: getFootballSnapshotMessage(
-        matches.length,
+        mergedMatches.length,
         standings.length,
         teams.length,
         competition.type,
@@ -244,11 +321,16 @@ export async function getFootballCompetitionApiSnapshot(competition: FootballCom
           teamsResult.status === "rejected" ? teamsResult.reason : null
         ]
       ),
-      matches,
+      matches: mergedMatches,
       standings,
       teams
     };
   } catch {
+    const sportsDbSnapshot = await fetchTheSportsDbSnapshot("football", sportsDbLeague).catch(() => null);
+    if (sportsDbSnapshot && (sportsDbSnapshot.matches.length > 0 || sportsDbSnapshot.teams.length > 0)) {
+      return sportsDbSnapshot;
+    }
+
     return {
       sport: "football",
       provider: config.provider,
@@ -533,6 +615,522 @@ async function fetchSportTeams(config: SportConfig, query: Record<string, string
       logo: getString(item.team?.logo || item.logo) || null
     }))
     .filter((team) => team.name);
+}
+
+async function fetchTheSportsDbSnapshot(
+  sport: ApiSportId,
+  league: TheSportsDbLeagueRef
+): Promise<SportApiSnapshot | null> {
+  const apiKey = getTheSportsDbKey();
+  if (!apiKey) {
+    return null;
+  }
+
+  const [teams, events] = await Promise.all([
+    fetchTheSportsDbTeams(league).catch(() => []),
+    fetchTheSportsDbLeagueEvents(sport, league).catch(() => [])
+  ]);
+  const matches = hydrateTheSportsDbEventLogos(events, teams);
+
+  return {
+    sport,
+    provider: "thesportsdb",
+    status: "live",
+    message: `Live data loaded from TheSportsDB Premium for ${league.name}.`,
+    matches,
+    standings: [],
+    teams
+  };
+}
+
+async function fetchTheSportsDbLeagueEvents(sport: ApiSportId, league: TheSportsDbLeagueRef): Promise<SportApiMatch[]> {
+  const leagueId = await resolveTheSportsDbLeagueId(league);
+  if (!leagueId) {
+    return [];
+  }
+
+  const seasons = getTheSportsDbSeasonCandidates();
+  const [v2NextEvents, v2PastEvents, v2SeasonEvents, v2LiveEvents, v2SportLiveEvents, nextEvents, pastEvents, seasonEvents] = await Promise.all([
+    fetchTheSportsDbV2Events(`schedule/next/league/${leagueId}`),
+    fetchTheSportsDbV2Events(`schedule/previous/league/${leagueId}`),
+    fetchTheSportsDbV2SeasonEvents(leagueId, seasons),
+    fetchTheSportsDbV2Events(`livescore/${leagueId}`),
+    fetchTheSportsDbSportLiveEvents(sport, leagueId, league.name),
+    fetchTheSportsDbList<any>("eventsnextleague.php", { id: leagueId }, "events"),
+    fetchTheSportsDbList<any>("eventspastleague.php", { id: leagueId }, "events"),
+    fetchTheSportsDbSeasonEvents(leagueId, seasons)
+  ]);
+  const limit = getTheSportsDbMatchLimit();
+
+  const merged = mergeMatches([
+    ...v2SeasonEvents.map(normalizeTheSportsDbEvent),
+    ...v2NextEvents.map(normalizeTheSportsDbEvent),
+    ...v2PastEvents.map(normalizeTheSportsDbEvent),
+    ...v2LiveEvents.map(normalizeTheSportsDbEvent),
+    ...v2SportLiveEvents.map(normalizeTheSportsDbEvent),
+    ...seasonEvents.map(normalizeTheSportsDbEvent),
+    ...nextEvents.map(normalizeTheSportsDbEvent),
+    ...pastEvents.map(normalizeTheSportsDbEvent)
+  ], [])
+    .filter((match) => match.homeName && match.awayName);
+
+  if (merged.length > 0) {
+    return limitMatchesWithUpcomingPriority(merged, limit);
+  }
+
+  const dayEvents = await fetchTheSportsDbUpcomingDayEvents(sport, leagueId, league.name);
+  const dayMatches = mergeMatches(dayEvents.map(normalizeTheSportsDbEvent), [])
+    .filter((match) => match.homeName && match.awayName);
+
+  return limitMatchesWithUpcomingPriority(dayMatches, limit);
+}
+
+async function fetchTheSportsDbTeams(league: TheSportsDbLeagueRef): Promise<SportApiTeam[]> {
+  const rows = await fetchTheSportsDbList<any>("search_all_teams.php", { l: league.name }, "teams");
+
+  return rows
+    .map((team: any): SportApiTeam => ({
+      id: getString(team.idTeam),
+      name: getString(team.strTeam),
+      logo: getString(team.strBadge || team.strTeamBadge || team.strLogo || team.strTeamLogo) || null
+    }))
+    .filter((team) => team.name);
+}
+
+async function fetchTheSportsDbList<T>(
+  path: string,
+  query: Record<string, string>,
+  key: "events" | "teams"
+): Promise<T[]> {
+  const payload = await fetchTheSportsDb<Record<string, unknown>>(path, query);
+  return findTheSportsDbRows<T>(payload, key);
+}
+
+async function fetchTheSportsDb<T>(path: string, query: Record<string, string>): Promise<T | null> {
+  const apiKey = getTheSportsDbKey();
+  if (!apiKey) {
+    return null;
+  }
+
+  const url = new URL(`https://www.thesportsdb.com/api/v1/json/${apiKey}/${path}`);
+  for (const [key, value] of Object.entries(query)) {
+    if (value) {
+      url.searchParams.set(key, value);
+    }
+  }
+
+  const controller = new AbortController();
+  const timeoutMs = Number(process.env.THE_SPORTS_DB_FETCH_TIMEOUT_MS ?? 6000);
+  const timeout = setTimeout(() => controller.abort(), Number.isFinite(timeoutMs) ? timeoutMs : 6000);
+
+  const response = await fetch(url, {
+    headers: { accept: "application/json" },
+    signal: controller.signal,
+    next: { revalidate: Number(process.env.THE_SPORTS_DB_CACHE_SECONDS ?? 300) }
+  }).catch(() => null).finally(() => clearTimeout(timeout));
+
+  if (!response?.ok) {
+    return null;
+  }
+
+  return response.json() as Promise<T>;
+}
+
+async function fetchTheSportsDbV2Events(path: string): Promise<any[]> {
+  const payload = await fetchTheSportsDbV2<Record<string, unknown>>(path);
+  return findTheSportsDbRows<any>(payload, "events");
+}
+
+async function fetchTheSportsDbV2SeasonEvents(leagueId: string, seasons: string[]) {
+  const results = await Promise.all(
+    seasons.map((season) => fetchTheSportsDbV2Events(`schedule/league/${leagueId}/${encodeURIComponent(season)}`).catch(() => []))
+  );
+
+  return results.flat();
+}
+
+async function fetchTheSportsDbV2<T>(path: string): Promise<T | null> {
+  const apiKey = getTheSportsDbKey();
+  if (!apiKey) {
+    return null;
+  }
+
+  const cleanedPath = path.replace(/^\/+/, "");
+  const url = new URL(`https://www.thesportsdb.com/api/v2/json/${cleanedPath}`);
+  const controller = new AbortController();
+  const timeoutMs = Number(process.env.THE_SPORTS_DB_FETCH_TIMEOUT_MS ?? 6000);
+  const timeout = setTimeout(() => controller.abort(), Number.isFinite(timeoutMs) ? timeoutMs : 6000);
+
+  const response = await fetch(url, {
+    headers: {
+      "X-API-KEY": apiKey,
+      accept: "application/json"
+    },
+    signal: controller.signal,
+    next: { revalidate: Number(process.env.THE_SPORTS_DB_CACHE_SECONDS ?? 300) }
+  }).catch(() => null).finally(() => clearTimeout(timeout));
+
+  if (!response?.ok) {
+    return null;
+  }
+
+  return response.json() as Promise<T>;
+}
+
+function findTheSportsDbRows<T>(payload: unknown, preferredKey: "events" | "teams"): T[] {
+  if (!payload || typeof payload !== "object") {
+    return [];
+  }
+
+  const direct = (payload as Record<string, unknown>)[preferredKey];
+  if (Array.isArray(direct)) {
+    return direct as T[];
+  }
+
+  const candidates = findArrays(payload);
+  const preferred = candidates.find((rows) => rows.some((row) => rowLooksLikeTheSportsDbRow(row, preferredKey)));
+
+  return (preferred ?? []) as T[];
+}
+
+function findArrays(value: unknown): unknown[][] {
+  if (Array.isArray(value)) {
+    return [value, ...value.flatMap(findArrays)];
+  }
+
+  if (!value || typeof value !== "object") {
+    return [];
+  }
+
+  return Object.values(value).flatMap(findArrays);
+}
+
+function rowLooksLikeTheSportsDbRow(row: unknown, preferredKey: "events" | "teams") {
+  if (!row || typeof row !== "object") {
+    return false;
+  }
+
+  const value = row as Record<string, unknown>;
+  if (preferredKey === "teams") {
+    return Boolean(value.idTeam || value.strTeam || value.team || value.name);
+  }
+
+  return Boolean(
+    value.idEvent ||
+    value.strEvent ||
+    value.strHomeTeam ||
+    value.strAwayTeam ||
+    value.homeTeam ||
+    value.awayTeam ||
+    value.home_team ||
+    value.away_team
+  );
+}
+
+function normalizeTheSportsDbEvent(event: any): SportApiMatch {
+  const eventName = getString(event.strEvent || event.event || event.name);
+  const [parsedHome, parsedAway] = eventName.includes(" vs ")
+    ? eventName.split(" vs ").map((value) => value.trim())
+    : ["", ""];
+  const date = getTheSportsDbEventDate(event);
+
+  return {
+    id: `tsdb:${getString(event.idEvent || event.id || event.eventId)}`,
+    competition: getString(event.strLeague || event.league || event.leagueName) || "TheSportsDB",
+    round: getString(event.intRound || event.strRound || event.round) || null,
+    date,
+    venue: getString(event.strVenue || event.venue) || null,
+    homeId: getString(event.idHomeTeam || event.homeTeamId || event.home_id) || null,
+    homeName: getString(event.strHomeTeam || event.homeTeam || event.home_team || event.home?.name) || parsedHome,
+    awayId: getString(event.idAwayTeam || event.awayTeamId || event.away_id) || null,
+    awayName: getString(event.strAwayTeam || event.awayTeam || event.away_team || event.away?.name) || parsedAway,
+    homeLogo: getString(event.strHomeTeamBadge || event.strHomeBadge || event.homeBadge || event.homeLogo || event.home?.badge || event.home?.logo) || null,
+    awayLogo: getString(event.strAwayTeamBadge || event.strAwayBadge || event.awayBadge || event.awayLogo || event.away?.badge || event.away?.logo) || null,
+    homeScore: toNumber(event.intHomeScore ?? event.homeScore ?? event.home_score ?? event.home?.score),
+    awayScore: toNumber(event.intAwayScore ?? event.awayScore ?? event.away_score ?? event.away?.score),
+    status: getString(event.strStatus || event.strProgress || event.strResult) || null
+  };
+}
+
+function hydrateTheSportsDbEventLogos(matches: SportApiMatch[], teams: SportApiTeam[]) {
+  return matches.map((match) => {
+    const home = teams.find((team) => team.id === match.homeId || namesMatch(team.name, match.homeName));
+    const away = teams.find((team) => team.id === match.awayId || namesMatch(team.name, match.awayName));
+
+    return {
+      ...match,
+      homeLogo: match.homeLogo ?? home?.logo ?? null,
+      awayLogo: match.awayLogo ?? away?.logo ?? null
+    };
+  });
+}
+
+function mergeMatches(primary: SportApiMatch[], secondary: SportApiMatch[]): SportApiMatch[] {
+  const seen = new Set<string>();
+  const merged: SportApiMatch[] = [];
+
+  for (const match of [...primary, ...secondary]) {
+    const key = getMatchDedupeKey(match);
+    if (!key || seen.has(key)) {
+      continue;
+    }
+
+    seen.add(key);
+    merged.push(match);
+  }
+
+  return merged.sort(sortMatchesByDate);
+}
+
+function mergeTeams(primary: SportApiTeam[], secondary: SportApiTeam[]): SportApiTeam[] {
+  const merged = new Map<string, SportApiTeam>();
+
+  for (const team of [...primary, ...secondary]) {
+    const key = normalizeName(team.name);
+    const existing = merged.get(key);
+    if (!existing) {
+      merged.set(key, team);
+      continue;
+    }
+
+    merged.set(key, {
+      id: existing.id || team.id,
+      name: existing.name || team.name,
+      logo: existing.logo || team.logo
+    });
+  }
+
+  return Array.from(merged.values());
+}
+
+function getMatchDedupeKey(match: SportApiMatch) {
+  const dateKey = match.date ? match.date.slice(0, 10) : "";
+  const teamKey = `${normalizeName(match.homeName)}:${normalizeName(match.awayName)}`;
+
+  return `${dateKey}:${teamKey}:${normalizeName(match.competition)}`;
+}
+
+function sortMatchesByDate(left: SportApiMatch, right: SportApiMatch) {
+  const leftTime = left.date ? new Date(left.date).getTime() : Number.MAX_SAFE_INTEGER;
+  const rightTime = right.date ? new Date(right.date).getTime() : Number.MAX_SAFE_INTEGER;
+
+  return (Number.isFinite(leftTime) ? leftTime : Number.MAX_SAFE_INTEGER) -
+    (Number.isFinite(rightTime) ? rightTime : Number.MAX_SAFE_INTEGER);
+}
+
+function limitMatchesWithUpcomingPriority(matches: SportApiMatch[], limit: number) {
+  const now = Date.now();
+  const upcoming = matches
+    .filter((match) => {
+      const timestamp = getSportApiMatchTimestamp(match);
+      return timestamp !== null && timestamp >= now && !isCompletedSportApiMatch(match);
+    })
+    .sort(sortMatchesByDate);
+  const pastOrUnscheduled = matches
+    .filter((match) => !upcoming.includes(match))
+    .sort((left, right) => sortMatchesByDate(right, left));
+
+  return [...upcoming, ...pastOrUnscheduled].slice(0, limit);
+}
+
+function getSportApiMatchTimestamp(match: SportApiMatch) {
+  if (!match.date) {
+    return null;
+  }
+
+  const timestamp = new Date(match.date).getTime();
+  return Number.isNaN(timestamp) ? null : timestamp;
+}
+
+function isCompletedSportApiMatch(match: SportApiMatch) {
+  const status = (match.status ?? "").toLowerCase();
+  return Boolean(match.homeScore !== null && match.awayScore !== null) ||
+    status.includes("ft") ||
+    status.includes("final") ||
+    status.includes("finished");
+}
+
+function getTheSportsDbKey() {
+  return getFirstEnv(["THE_SPORTS_DB_API_KEY", "THE_SPORTSDB_API_KEY", "THESPORTSDB_API_KEY"]);
+}
+
+function getTheSportsDbLeagueId(league: TheSportsDbLeagueRef) {
+  const override = process.env[`THE_SPORTS_DB_${toEnvKey(league.name)}_LEAGUE_ID`];
+  return override ?? league.id ?? "";
+}
+
+async function resolveTheSportsDbLeagueId(league: TheSportsDbLeagueRef) {
+  const configured = getTheSportsDbLeagueId(league);
+  const lookupNames = getTheSportsDbLeagueLookupNames(league);
+  const rows = await getTheSportsDbLeagueRowsCached();
+  const match = rows.find((row) => {
+    const rowName = getTheSportsDbLeagueName(row);
+    return lookupNames.some((lookupName) => namesMatch(rowName, lookupName));
+  });
+
+  const resolved = getString(match?.idLeague || match?.id || match?.leagueId);
+  if (resolved) {
+    return resolved;
+  }
+
+  if (configured) {
+    return configured;
+  }
+
+  return "";
+}
+
+function getTheSportsDbLeagueRowsCached() {
+  theSportsDbLeagueRowsPromise ??= Promise.all([
+    fetchTheSportsDbV2LeagueRows().catch(() => []),
+    fetchTheSportsDbLeagueRows().catch(() => [])
+  ]).then((results) => results.flat());
+
+  return theSportsDbLeagueRowsPromise;
+}
+
+async function fetchTheSportsDbLeagueRows() {
+  const payload = await fetchTheSportsDb<Record<string, unknown>>("all_leagues.php", {});
+  return findTheSportsDbLeagueRows(payload);
+}
+
+async function fetchTheSportsDbV2LeagueRows() {
+  const payload = await fetchTheSportsDbV2<Record<string, unknown>>("all/leagues");
+  return findTheSportsDbLeagueRows(payload);
+}
+
+function findTheSportsDbLeagueRows(payload: unknown): any[] {
+  if (!payload || typeof payload !== "object") {
+    return [];
+  }
+
+  const direct = (payload as Record<string, unknown>).leagues;
+  if (Array.isArray(direct)) {
+    return direct;
+  }
+
+  return findArrays(payload)
+    .find((rows) => rows.some((row) => {
+      if (!row || typeof row !== "object") {
+        return false;
+      }
+
+      const value = row as Record<string, unknown>;
+      return Boolean(value.idLeague || value.strLeague || value.leagueName || value.name);
+    })) ?? [];
+}
+
+function getTheSportsDbLeagueName(row: any) {
+  return getString(row.strLeague || row.leagueName || row.name || row.league);
+}
+
+function getTheSportsDbLeagueLookupNames(league: TheSportsDbLeagueRef) {
+  return uniqueStrings([league.name, ...(league.aliases ?? [])]);
+}
+
+async function fetchTheSportsDbSportLiveEvents(sport: ApiSportId, leagueId: string, leagueName: string): Promise<any[]> {
+  const results = await Promise.all(
+    THE_SPORTS_DB_SPORT_PATHS[sport].map((path) =>
+      fetchTheSportsDbV2Events(`livescore/${path}`)
+        .then((rows) => filterTheSportsDbRowsForLeague(rows, leagueId, leagueName))
+        .catch(() => [])
+    )
+  );
+
+  return results.flat();
+}
+
+async function fetchTheSportsDbUpcomingDayEvents(sport: ApiSportId, leagueId: string, leagueName: string): Promise<any[]> {
+  const days = getUpcomingIsoDates(Number(process.env.THE_SPORTS_DB_DAY_SCAN_DAYS ?? 28));
+  const leagueParam = leagueName.replace(/\s+/g, "_");
+  const sportName = THE_SPORTS_DB_V1_SPORT_NAMES[sport];
+  const results = await Promise.all(
+    days.flatMap((date) => [
+      fetchTheSportsDbV2Events(`schedule/day/${date}/league/${leagueId}`).catch(() => []),
+      fetchTheSportsDbV2Events(`schedule/league/${leagueId}/day/${date}`).catch(() => []),
+      fetchTheSportsDbV2Events(`schedule/day/${date}`).then((rows) => filterTheSportsDbRowsForLeague(rows, leagueId, leagueName)).catch(() => []),
+      ...THE_SPORTS_DB_SPORT_PATHS[sport].flatMap((path) => [
+        fetchTheSportsDbV2Events(`schedule/day/${date}/${path}`).then((rows) => filterTheSportsDbRowsForLeague(rows, leagueId, leagueName)).catch(() => []),
+        fetchTheSportsDbV2Events(`schedule/${path}/day/${date}`).then((rows) => filterTheSportsDbRowsForLeague(rows, leagueId, leagueName)).catch(() => [])
+      ]),
+      fetchTheSportsDbList<any>("eventsday.php", { d: date, l: leagueParam }, "events").catch(() => []),
+      fetchTheSportsDbList<any>("eventsday.php", { d: date, l: leagueName }, "events").catch(() => []),
+      fetchTheSportsDbList<any>("eventsday.php", { d: date, s: sportName }, "events").then((rows) => filterTheSportsDbRowsForLeague(rows, leagueId, leagueName)).catch(() => [])
+    ])
+  );
+
+  return results.flat();
+}
+
+function filterTheSportsDbRowsForLeague(rows: any[], leagueId: string, leagueName: string) {
+  return rows.filter((row) => {
+    const rowLeagueId = getString(row.idLeague || row.leagueId || row.league_id);
+    const rowLeagueName = getTheSportsDbLeagueName(row);
+
+    return rowLeagueId === leagueId || namesMatch(rowLeagueName, leagueName);
+  });
+}
+
+function getUpcomingIsoDates(dayCount: number) {
+  const safeDayCount = Number.isFinite(dayCount) && dayCount > 0 ? Math.min(dayCount, 90) : 28;
+  const today = new Date();
+
+  return Array.from({ length: safeDayCount }, (_, index) => {
+    const date = new Date(Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), today.getUTCDate() + index));
+    return date.toISOString().slice(0, 10);
+  });
+}
+
+async function fetchTheSportsDbSeasonEvents(leagueId: string, seasons: string[]) {
+  const results = await Promise.all(
+    seasons.map((season) =>
+      fetchTheSportsDbList<any>("eventsseason.php", { id: leagueId, s: season }, "events").catch(() => [])
+    )
+  );
+
+  return results.flat();
+}
+
+function getTheSportsDbSeasonCandidates() {
+  const now = new Date();
+  const year = now.getUTCFullYear();
+  const configured = process.env.THE_SPORTS_DB_SEASON ?? process.env.API_FOOTBALL_SEASON;
+
+  return uniqueStrings([
+    configured,
+    `${year}-${year + 1}`,
+    `${year - 1}-${year}`,
+    String(year),
+    String(year - 1)
+  ]);
+}
+
+function getTheSportsDbMatchLimit() {
+  const configured = Number(process.env.THE_SPORTS_DB_MATCH_LIMIT ?? 1500);
+
+  if (!Number.isFinite(configured) || configured <= 0) {
+    return 1500;
+  }
+
+  return Math.max(configured, 1500);
+}
+
+function getTheSportsDbEventDate(event: any) {
+  const timestamp = getString(event.strTimestamp);
+  if (timestamp) {
+    return new Date(timestamp).toISOString();
+  }
+
+  const date = getString(event.dateEvent || event.dateEventLocal);
+  if (!date) {
+    return null;
+  }
+
+  const time = getString(event.strTime || event.strTimeLocal).replace(/\+00:00$/, "");
+  const raw = time ? `${date}T${time}` : `${date}T00:00:00`;
+  const parsed = new Date(raw.endsWith("Z") ? raw : `${raw}Z`);
+
+  return Number.isNaN(parsed.getTime()) ? date : parsed.toISOString();
 }
 
 async function fetchApiSports<T>(

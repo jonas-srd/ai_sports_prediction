@@ -6,8 +6,13 @@
  */
 import { readFileSync } from "node:fs";
 import { spawn } from "node:child_process";
+import { dirname, resolve } from "node:path";
+import { fileURLToPath } from "node:url";
 
-loadDotEnvIfPresent(".env");
+const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..");
+
+loadDotEnvIfPresent(resolve(repoRoot, ".env"));
+loadDotEnvIfPresent(resolve(process.cwd(), ".env"));
 
 const [, , command, ...args] = process.argv;
 if (!command) {

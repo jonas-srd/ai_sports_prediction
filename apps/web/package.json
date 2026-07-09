@@ -4,7 +4,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "next dev",
+    "dev": "node ../../scripts/run-with-env.mjs next dev",
     "build": "next build",
     "start": "next start -H 0.0.0.0",
     "typecheck": "tsc -p tsconfig.json --noEmit"
