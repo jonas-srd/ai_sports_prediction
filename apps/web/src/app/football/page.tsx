@@ -6,6 +6,8 @@ export const metadata: Metadata = {
   description: "Football competitions, league hubs, team pages and AI prediction signals."
 };
 
+export const dynamic = "force-dynamic";
+
 export default function FootballPage() {
   return <FootballOverviewPage locale="en" />;
 }

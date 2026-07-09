@@ -10,7 +10,7 @@ const nbaConfig = {
     en: "Nightly matchups, pace, rest, rotations and playoff series signals.",
     de: "Nightly Matchups, Pace, Rest, Rotationen und Playoff-Series-Signale."
   },
-  provider: "API-Sports NBA",
+  provider: "TheSportsDB",
   teams: nbaTeams,
   pointsLabel: "PTS",
   scoreStep: 80,

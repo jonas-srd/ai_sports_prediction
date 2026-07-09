@@ -10,7 +10,7 @@ const nflConfig = {
     en: "Weekly slate, team strength, playoff paths and model signals.",
     de: "Weekly Slate, Teamstärke, Playoff-Pfade und Modell-Signale."
   },
-  provider: "API-Sports NFL",
+  provider: "TheSportsDB",
   teams: nflTeams,
   pointsLabel: "PF",
   scoreStep: 3,

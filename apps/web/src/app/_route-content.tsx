@@ -634,14 +634,8 @@ function findTennisPlayerFlag(name: string) {
 }
 
 function findFootballTeamLogo(name: string) {
-  const normalized = normalizeParticipantName(name);
-  const teamId = FOOTBALL_HOME_TEAM_LOGOS[normalized];
-
-  if (!teamId) {
-    return null;
-  }
-
-  return `https://media.api-sports.io/football/teams/${teamId}.png`;
+  void name;
+  return null;
 }
 
 function isSameParticipant(left: string, right: string) {
@@ -663,79 +657,6 @@ function normalizeParticipantName(value: string) {
     .toLowerCase();
 }
 
-const FOOTBALL_HOME_TEAM_LOGOS: Record<string, number> = {
-  "1 fc koln": 192,
-  "1 fc nurnberg": 1726,
-  "1 fc union berlin": 182,
-  "1 fsv mainz 05": 164,
-  "1899 hoffenheim": 167,
-  "ac milan": 489,
-  "arsenal": 42,
-  "aston villa": 66,
-  "atalanta": 499,
-  "athletic bilbao": 531,
-  "atletico madrid": 530,
-  "barcelona": 529,
-  "bayer leverkusen": 168,
-  "bayern munchen": 157,
-  "bayern munich": 157,
-  "bochum": 176,
-  "borussia dortmund": 165,
-  "borussia m gladbach": 163,
-  "borussia monchengladbach": 163,
-  "brentford": 55,
-  "brighton": 51,
-  "burnley": 44,
-  "chelsea": 49,
-  "crystal palace": 52,
-  "eintracht frankfurt": 169,
-  "everton": 45,
-  "fc augsburg": 170,
-  "fc bayern": 157,
-  "fc barcelona": 529,
-  "fc st pauli": 186,
-  "freiburg": 160,
-  "fulham": 36,
-  "getafe": 546,
-  "hamburger sv": 175,
-  "heidenheim": 180,
-  "holstein kiel": 191,
-  "inter": 505,
-  "ipswich": 57,
-  "juventus": 496,
-  "las palmas": 534,
-  "leeds": 63,
-  "leicester": 46,
-  "liverpool": 40,
-  "mainz": 164,
-  "manchester city": 50,
-  "manchester united": 33,
-  "monaco": 91,
-  "napoli": 492,
-  "newcastle": 34,
-  "newcastle united": 34,
-  "nottingham forest": 65,
-  "osasuna": 727,
-  "psg": 85,
-  "rayo vallecano": 728,
-  "rb leipzig": 173,
-  "real betis": 543,
-  "real madrid": 541,
-  "real sociedad": 548,
-  "roma": 497,
-  "sc freiburg": 160,
-  "sevilla": 536,
-  "southampton": 41,
-  "stuttgart": 172,
-  "torino": 503,
-  "tottenham": 47,
-  "tottenham hotspur": 47,
-  "valencia": 532,
-  "vfb stuttgart": 172,
-  "vfl wolfsburg": 161,
-  "werder bremen": 162,
-  "west ham": 48
-};
 
 function compareSportMatchesByDate(left: SportApiMatch, right: SportApiMatch) {
   const leftTime = left.date ? new Date(left.date).getTime() : Number.MAX_SAFE_INTEGER;

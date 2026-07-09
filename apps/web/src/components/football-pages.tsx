@@ -14,6 +14,7 @@ import { getSportMatchHref } from "@/components/match-detail-page";
 import { getSportsNewsLinks } from "@/lib/sports-news";
 import {
   fallbackTeamsToStandings,
+  getFootballCompetitionLogos,
   getFootballCompetitionApiSnapshot,
   getFootballTeamSquad,
   type SportApiMatch,
@@ -217,7 +218,7 @@ const teamNameAliases: Record<string, string[]> = {
   "fc-bayern": ["Bayern München", "Bayern Munich", "FC Bayern München"],
   "borussia-dortmund": ["Dortmund"],
   "borussia-moenchengladbach": ["Borussia Mönchengladbach", "Borussia Monchengladbach", "Borussia MG"],
-  "mainz-05": ["FSV Mainz 05", "1. FSV Mainz 05"],
+  "mainz-05": ["Mainz", "FSV Mainz 05", "1. FSV Mainz 05"],
   "fc-augsburg": ["Augsburg"],
   "vfl-wolfsburg": ["Wolfsburg", "VfL Wolfsburg"],
   "union-berlin": ["Union Berlin", "1. FC Union Berlin"],
@@ -226,10 +227,10 @@ const teamNameAliases: Record<string, string[]> = {
   "st-pauli": ["St. Pauli", "FC St. Pauli"],
   "holstein-kiel": ["Holstein Kiel"],
   "werder-bremen": ["SV Werder Bremen"],
-  "vfb-stuttgart": ["VfB Stuttgart"],
+  "vfb-stuttgart": ["Stuttgart", "VfB Stuttgart"],
   "bayer-leverkusen": ["Bayer 04 Leverkusen"],
   "eintracht-frankfurt": ["Eintracht Frankfurt"],
-  "sc-freiburg": ["SC Freiburg"],
+  "sc-freiburg": ["Freiburg", "SC Freiburg"],
   "rb-leipzig": ["RB Leipzig"],
   "manchester-city": ["Manchester City"],
   "arsenal": ["Arsenal"],
@@ -339,154 +340,14 @@ const teamNameAliases: Record<string, string[]> = {
   "fcsb": ["FCSB", "Steaua Bucuresti"]
 };
 
-const competitionLogos: Record<string, string> = {
-  "bundesliga": "https://media.api-sports.io/football/leagues/78.png",
-  "dfb-pokal": "https://media.api-sports.io/football/leagues/81.png",
-  "premier-league": "https://media.api-sports.io/football/leagues/39.png",
-  "fa-cup": "https://media.api-sports.io/football/leagues/45.png",
-  "la-liga": "https://media.api-sports.io/football/leagues/140.png",
-  "copa-del-rey": "https://media.api-sports.io/football/leagues/143.png",
-  "ligue-1": "https://media.api-sports.io/football/leagues/61.png",
-  "coupe-de-france": "https://media.api-sports.io/football/leagues/66.png",
-  "serie-a": "https://media.api-sports.io/football/leagues/135.png",
-  "coppa-italia": "https://media.api-sports.io/football/leagues/137.png",
-  "champions-league": "https://media.api-sports.io/football/leagues/2.png",
-  "europa-league": "https://media.api-sports.io/football/leagues/3.png",
-  "conference-league": "https://media.api-sports.io/football/leagues/848.png"
-};
+const knownTeamLogos: Record<string, string> = {};
 
-const knownTeamLogos: Record<string, string> = {
-  "fc-bayern": "https://media.api-sports.io/football/teams/157.png",
-  "borussia-dortmund": "https://media.api-sports.io/football/teams/165.png",
-  "rb-leipzig": "https://media.api-sports.io/football/teams/173.png",
-  "bayer-leverkusen": "https://media.api-sports.io/football/teams/168.png",
-  "eintracht-frankfurt": "https://media.api-sports.io/football/teams/169.png",
-  "vfb-stuttgart": "https://media.api-sports.io/football/teams/172.png",
-  "borussia-moenchengladbach": "https://media.api-sports.io/football/teams/163.png",
-  "sc-freiburg": "https://media.api-sports.io/football/teams/160.png",
-  "werder-bremen": "https://media.api-sports.io/football/teams/162.png",
-  "hamburger-sv": "https://media.api-sports.io/football/teams/175.png",
-  "fc-augsburg": "https://media.api-sports.io/football/teams/170.png",
-  "mainz-05": "https://media.api-sports.io/football/teams/164.png",
-  "vfl-wolfsburg": "https://media.api-sports.io/football/teams/161.png",
-  "union-berlin": "https://media.api-sports.io/football/teams/182.png",
-  "tsg-hoffenheim": "https://media.api-sports.io/football/teams/167.png",
-  "heidenheim": "https://media.api-sports.io/football/teams/180.png",
-  "st-pauli": "https://media.api-sports.io/football/teams/186.png",
-  "holstein-kiel": "https://media.api-sports.io/football/teams/191.png",
-  "manchester-city": "https://media.api-sports.io/football/teams/50.png",
-  "arsenal": "https://media.api-sports.io/football/teams/42.png",
-  "liverpool": "https://media.api-sports.io/football/teams/40.png",
-  "chelsea": "https://media.api-sports.io/football/teams/49.png",
-  "tottenham": "https://media.api-sports.io/football/teams/47.png",
-  "manchester-united": "https://media.api-sports.io/football/teams/33.png",
-  "newcastle-united": "https://media.api-sports.io/football/teams/34.png",
-  "aston-villa": "https://media.api-sports.io/football/teams/66.png",
-  "brighton": "https://media.api-sports.io/football/teams/51.png",
-  "brentford": "https://media.api-sports.io/football/teams/55.png",
-  "crystal-palace": "https://media.api-sports.io/football/teams/52.png",
-  "everton": "https://media.api-sports.io/football/teams/45.png",
-  "fulham": "https://media.api-sports.io/football/teams/36.png",
-  "west-ham": "https://media.api-sports.io/football/teams/48.png",
-  "wolves": "https://media.api-sports.io/football/teams/39.png",
-  "bournemouth": "https://media.api-sports.io/football/teams/35.png",
-  "nottingham-forest": "https://media.api-sports.io/football/teams/65.png",
-  "leicester-city": "https://media.api-sports.io/football/teams/46.png",
-  "southampton": "https://media.api-sports.io/football/teams/41.png",
-  "ipswich-town": "https://media.api-sports.io/football/teams/57.png",
-  "real-madrid": "https://media.api-sports.io/football/teams/541.png",
-  "barcelona": "https://media.api-sports.io/football/teams/529.png",
-  "atletico-madrid": "https://media.api-sports.io/football/teams/530.png",
-  "real-sociedad": "https://media.api-sports.io/football/teams/548.png",
-  "athletic-bilbao": "https://media.api-sports.io/football/teams/531.png",
-  "villarreal": "https://media.api-sports.io/football/teams/533.png",
-  "real-betis": "https://media.api-sports.io/football/teams/543.png",
-  "celta-vigo": "https://media.api-sports.io/football/teams/538.png",
-  "rayo-vallecano": "https://media.api-sports.io/football/teams/728.png",
-  "osasuna": "https://media.api-sports.io/football/teams/727.png",
-  "mallorca": "https://media.api-sports.io/football/teams/798.png",
-  "valencia": "https://media.api-sports.io/football/teams/532.png",
-  "getafe": "https://media.api-sports.io/football/teams/546.png",
-  "espanyol": "https://media.api-sports.io/football/teams/540.png",
-  "alaves": "https://media.api-sports.io/football/teams/542.png",
-  "girona": "https://media.api-sports.io/football/teams/547.png",
-  "sevilla": "https://media.api-sports.io/football/teams/536.png",
-  "las-palmas": "https://media.api-sports.io/football/teams/534.png",
-  "leganes": "https://media.api-sports.io/football/teams/797.png",
-  "valladolid": "https://media.api-sports.io/football/teams/720.png",
-  "psg": "https://media.api-sports.io/football/teams/85.png",
-  "marseille": "https://media.api-sports.io/football/teams/81.png",
-  "monaco": "https://media.api-sports.io/football/teams/91.png",
-  "lyon": "https://media.api-sports.io/football/teams/80.png",
-  "lille": "https://media.api-sports.io/football/teams/79.png",
-  "nice": "https://media.api-sports.io/football/teams/84.png",
-  "strasbourg": "https://media.api-sports.io/football/teams/95.png",
-  "lens": "https://media.api-sports.io/football/teams/116.png",
-  "brest": "https://media.api-sports.io/football/teams/106.png",
-  "toulouse": "https://media.api-sports.io/football/teams/96.png",
-  "auxerre": "https://media.api-sports.io/football/teams/108.png",
-  "rennes": "https://media.api-sports.io/football/teams/94.png",
-  "nantes": "https://media.api-sports.io/football/teams/83.png",
-  "angers": "https://media.api-sports.io/football/teams/77.png",
-  "reims": "https://media.api-sports.io/football/teams/93.png",
-  "le-havre": "https://media.api-sports.io/football/teams/111.png",
-  "saint-etienne": "https://media.api-sports.io/football/teams/1063.png",
-  "montpellier": "https://media.api-sports.io/football/teams/82.png",
-  "inter": "https://media.api-sports.io/football/teams/505.png",
-  "juventus": "https://media.api-sports.io/football/teams/496.png",
-  "ac-milan": "https://media.api-sports.io/football/teams/489.png",
-  "napoli": "https://media.api-sports.io/football/teams/492.png",
-  "roma": "https://media.api-sports.io/football/teams/497.png",
-  "lazio": "https://media.api-sports.io/football/teams/487.png",
-  "atalanta": "https://media.api-sports.io/football/teams/499.png",
-  "fiorentina": "https://media.api-sports.io/football/teams/502.png",
-  "bologna": "https://media.api-sports.io/football/teams/500.png",
-  "como": "https://media.api-sports.io/football/teams/895.png",
-  "torino": "https://media.api-sports.io/football/teams/503.png",
-  "udinese": "https://media.api-sports.io/football/teams/494.png",
-  "genoa": "https://media.api-sports.io/football/teams/495.png",
-  "hellas-verona": "https://media.api-sports.io/football/teams/504.png",
-  "cagliari": "https://media.api-sports.io/football/teams/490.png",
-  "parma": "https://media.api-sports.io/football/teams/523.png",
-  "lecce": "https://media.api-sports.io/football/teams/867.png",
-  "empoli": "https://media.api-sports.io/football/teams/511.png",
-  "venezia": "https://media.api-sports.io/football/teams/517.png",
-  "monza": "https://media.api-sports.io/football/teams/1579.png",
-  "benfica": "https://media.api-sports.io/football/teams/211.png",
-  "porto": "https://media.api-sports.io/football/teams/212.png",
-  "sporting-cp": "https://media.api-sports.io/football/teams/228.png",
-  "psv": "https://media.api-sports.io/football/teams/197.png",
-  "ajax": "https://media.api-sports.io/football/teams/194.png",
-  "feyenoord": "https://media.api-sports.io/football/teams/209.png",
-  "club-brugge": "https://media.api-sports.io/football/teams/569.png",
-  "anderlecht": "https://media.api-sports.io/football/teams/554.png",
-  "union-saint-gilloise": "https://media.api-sports.io/football/teams/1398.png",
-  "celtic": "https://media.api-sports.io/football/teams/247.png",
-  "rangers": "https://media.api-sports.io/football/teams/257.png",
-  "galatasaray": "https://media.api-sports.io/football/teams/645.png",
-  "fenerbahce": "https://media.api-sports.io/football/teams/611.png",
-  "shakhtar-donetsk": "https://media.api-sports.io/football/teams/550.png",
-  "dynamo-kyiv": "https://media.api-sports.io/football/teams/5505.png",
-  "red-bull-salzburg": "https://media.api-sports.io/football/teams/571.png",
-  "sturm-graz": "https://media.api-sports.io/football/teams/637.png",
-  "young-boys": "https://media.api-sports.io/football/teams/552.png",
-  "olympiacos": "https://media.api-sports.io/football/teams/553.png",
-  "panathinaikos": "https://media.api-sports.io/football/teams/617.png",
-  "slavia-prague": "https://media.api-sports.io/football/teams/560.png",
-  "sparta-prague": "https://media.api-sports.io/football/teams/628.png",
-  "copenhagen": "https://media.api-sports.io/football/teams/400.png",
-  "bodo-glimt": "https://media.api-sports.io/football/teams/327.png",
-  "qarabag": "https://media.api-sports.io/football/teams/556.png",
-  "dinamo-zagreb": "https://media.api-sports.io/football/teams/596.png",
-  "paok": "https://media.api-sports.io/football/teams/619.png",
-  "fcsb": "https://media.api-sports.io/football/teams/559.png"
-};
-
-export function FootballOverviewPage({ locale }: { locale: Locale }) {
+export async function FootballOverviewPage({ locale }: { locale: Locale }) {
   const text = labels[locale];
   const leagues = footballCompetitions.filter((competition) => competition.type === "league" && competition.country !== "Europe");
   const europeanCompetitions = footballCompetitions.filter((competition) => competition.country === "Europe");
   const cups = footballCompetitions.filter((competition) => competition.type === "cup");
+  const competitionLogos = await getFootballCompetitionLogos();
 
   return (
     <main className="shell footballShell">
@@ -497,15 +358,25 @@ export function FootballOverviewPage({ locale }: { locale: Locale }) {
       </section>
 
       <section className="footballOverviewBands" aria-label={text.overview}>
-        <CompetitionBand competitions={europeanCompetitions} title={text.europe} locale={locale} />
-        <CompetitionBand competitions={leagues} title={text.leagues} locale={locale} />
-        <CompetitionBand competitions={cups} title={text.cups} locale={locale} />
+        <CompetitionBand competitions={europeanCompetitions} competitionLogos={competitionLogos} title={text.europe} locale={locale} />
+        <CompetitionBand competitions={leagues} competitionLogos={competitionLogos} title={text.leagues} locale={locale} />
+        <CompetitionBand competitions={cups} competitionLogos={competitionLogos} title={text.cups} locale={locale} />
       </section>
     </main>
   );
 }
 
-function CompetitionBand({ competitions, title, locale }: { competitions: FootballCompetition[]; title: string; locale: Locale }) {
+function CompetitionBand({
+  competitionLogos,
+  competitions,
+  locale,
+  title
+}: {
+  competitionLogos: Record<string, string>;
+  competitions: FootballCompetition[];
+  locale: Locale;
+  title: string;
+}) {
   const text = labels[locale];
 
   return (
@@ -517,7 +388,7 @@ function CompetitionBand({ competitions, title, locale }: { competitions: Footba
       {competitions.map((competition) => (
         <Link className="competitionTile" href={localizePath(`/football/${competition.slug}`, locale)} key={competition.slug}>
           <div className="competitionTileTop">
-            <CompetitionLogo competition={competition} />
+            <CompetitionLogo competition={competition} competitionLogos={competitionLogos} />
             <span>{competition.countryCode}</span>
           </div>
           <strong>{competition.name}</strong>
@@ -530,14 +401,62 @@ function CompetitionBand({ competitions, title, locale }: { competitions: Footba
   );
 }
 
-function CompetitionLogo({ competition }: { competition: FootballCompetition }) {
+function CompetitionLogo({
+  competition,
+  competitionLogos
+}: {
+  competition: FootballCompetition;
+  competitionLogos: Record<string, string>;
+}) {
   const logo = competitionLogos[competition.slug];
 
   if (logo) {
     return <img alt="" className="competitionLogo" src={logo} />;
   }
 
-  return <span className="competitionLogo competitionLogoFallback">{competition.countryCode}</span>;
+  return <img alt="" className="competitionLogo" src={getCompetitionFallbackLogo(competition)} />;
+}
+
+function getCompetitionFallbackLogo(competition: FootballCompetition) {
+  const label = getCompetitionLogoLabel(competition);
+  const accent = competition.country === "Europe" ? "#7df5c1" : competition.teams[0]?.colors[0] ?? "#7df5c1";
+  const secondary = competition.country === "Europe" ? "#d9e7ff" : competition.teams[1]?.colors[0] ?? "#d9e7ff";
+  const svg = `
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 88 88">
+      <defs>
+        <linearGradient id="g" x1="0" x2="1" y1="0" y2="1">
+          <stop offset="0" stop-color="${accent}"/>
+          <stop offset="1" stop-color="${secondary}"/>
+        </linearGradient>
+      </defs>
+      <rect width="88" height="88" rx="20" fill="#0b1724"/>
+      <path d="M18 16h52l8 16-34 42L10 32z" fill="url(#g)" opacity=".24"/>
+      <path d="M24 22h40l6 10-26 32-26-32z" fill="none" stroke="url(#g)" stroke-width="4"/>
+      <text x="44" y="49" text-anchor="middle" dominant-baseline="middle" font-family="Arial, Helvetica, sans-serif" font-size="${label.length > 4 ? 13 : 17}" font-weight="900" fill="#f8fbff">${label}</text>
+    </svg>
+  `.replace(/\s+/g, " ").trim();
+
+  return `data:image/svg+xml,${encodeURIComponent(svg)}`;
+}
+
+function getCompetitionLogoLabel(competition: FootballCompetition) {
+  const labelsBySlug: Record<string, string> = {
+    "bundesliga": "BL",
+    "dfb-pokal": "DFB",
+    "premier-league": "PL",
+    "fa-cup": "FA",
+    "la-liga": "LL",
+    "copa-del-rey": "CDR",
+    "ligue-1": "L1",
+    "coupe-de-france": "CDF",
+    "serie-a": "SA",
+    "coppa-italia": "CI",
+    "champions-league": "UCL",
+    "europa-league": "UEL",
+    "conference-league": "UECL"
+  };
+
+  return labelsBySlug[competition.slug] ?? competition.countryCode;
 }
 
 export async function FootballCompetitionPage({
@@ -562,7 +481,7 @@ export async function FootballCompetitionPage({
   const apiFixtures = apiSnapshot.matches;
   const baseFixtures = apiFixtures;
   const standings = apiSnapshot.standings.length > 0 ? apiSnapshot.standings : fallbackTeamsToStandings(competition.teams);
-  const displayTeams = buildDisplayTeams(competition, apiSnapshot.teams, standings, baseFixtures);
+  const displayTeams = buildDisplayTeams(competition, apiSnapshot.teams, apiSnapshot.standings, baseFixtures);
   const fixtures = getUpcomingFixtures(apiFixtures);
   const featuredFixture = getFeaturedFixture(competition, fixtures, locale);
   const isLeague = competition.type === "league";
@@ -675,7 +594,7 @@ export async function FootballTeamPage({
   const apiSnapshot = await getFootballCompetitionApiSnapshot(competition);
   const fixtures = getUpcomingFixtures(apiSnapshot.matches);
   const standings = apiSnapshot.standings.length > 0 ? apiSnapshot.standings : fallbackTeamsToStandings(competition.teams);
-  const displayTeams = buildDisplayTeams(competition, apiSnapshot.teams, standings, fixtures);
+  const displayTeams = buildDisplayTeams(competition, apiSnapshot.teams, apiSnapshot.standings, fixtures);
   const apiTeam = findDisplayTeamByLocalTeam(displayTeams, team);
   const apiTeamRecord = apiSnapshot.teams.find((candidate) => teamMatchesName(team, candidate.name));
   const apiStanding = findStandingByLocalTeam(standings, team);
@@ -1797,7 +1716,11 @@ function buildDisplayTeams(
   fixtures: SportApiMatch[]
 ): DisplayTeam[] {
   const teams = new Map<string, DisplayTeam>();
-  const apiTeamsForDisplay = getApiTeamsForDisplay(competition, apiTeams);
+  const fixtureSource = getUpcomingFixtures(fixtures);
+  const relevantFixtures = fixtureSource;
+  const standingsSource = relevantFixtures.length > 0 ? [] : standings;
+  const hasCurrentTeamSource = standingsSource.length > 0 || relevantFixtures.length > 0;
+  const apiTeamsForDisplay = getApiTeamsForDisplay(competition, apiTeams, standingsSource, relevantFixtures);
 
   const upsertTeam = (name: string, logo: string | null) => {
     const normalized = normalizeName(name);
@@ -1810,10 +1733,17 @@ function buildDisplayTeams(
     const existingLogoEntry = logoKey
       ? Array.from(teams.values()).find((team) => team.logo && getTeamLogoKey(team.logo) === logoKey)
       : undefined;
-    const key = localTeam ? `local:${localTeam.slug}` : existingLogoEntry?.key ?? normalized;
+    const existingNameEntry = Array.from(teams.values()).find((team) =>
+      team.localTeam
+        ? teamMatchesName(team.localTeam, name)
+        : namesRepresentSameTeam(team.name, name)
+    );
+    const key = localTeam
+      ? `local:${localTeam.slug}`
+      : existingLogoEntry?.key ?? existingNameEntry?.key ?? normalized;
     const existing = teams.get(key);
     const resolvedLogo = logo ?? getKnownTeamLogo(localTeam);
-    const displayName = localTeam?.name ?? existingLogoEntry?.name ?? name;
+    const displayName = localTeam?.name ?? existingLogoEntry?.name ?? existingNameEntry?.name ?? name;
 
     if (existing) {
       teams.set(key, {
@@ -1825,6 +1755,14 @@ function buildDisplayTeams(
       return;
     }
 
+    if (existingLogoEntry && existingLogoEntry.key !== key) {
+      teams.delete(existingLogoEntry.key);
+    }
+
+    if (existingNameEntry && existingNameEntry.key !== key) {
+      teams.delete(existingNameEntry.key);
+    }
+
     teams.set(key, {
       key,
       name: displayName,
@@ -1833,15 +1771,20 @@ function buildDisplayTeams(
     });
   };
 
-  competition.teams.forEach((team) => upsertTeam(team.name, null));
-  apiTeamsForDisplay.forEach((team) => upsertTeam(team.name, team.logo));
-  standings.forEach((standing) => upsertTeam(standing.teamName, standing.teamLogo));
-  if (competition.type === "league") {
-    fixtures.forEach((fixture) => {
-      upsertTeam(fixture.homeName, fixture.homeLogo);
-      upsertTeam(fixture.awayName, fixture.awayLogo);
-    });
+  standingsSource.forEach((standing) => upsertTeam(standing.teamName, standing.teamLogo));
+  relevantFixtures.forEach((fixture) => {
+    upsertTeam(fixture.homeName, fixture.homeLogo);
+    upsertTeam(fixture.awayName, fixture.awayLogo);
+  });
+
+  if (!hasCurrentTeamSource) {
+    competition.teams.forEach((team) => upsertTeam(team.name, null));
+  } else {
+    competition.teams
+      .filter((team) => teamAppearsInCurrentSources(team, standingsSource, relevantFixtures))
+      .forEach((team) => upsertTeam(team.name, null));
   }
+  apiTeamsForDisplay.forEach((team) => upsertTeam(team.name, team.logo));
 
   return Array.from(teams.values()).sort((a, b) => {
     const localRankA = a.localTeam?.rank ?? Number.MAX_SAFE_INTEGER;
@@ -1859,12 +1802,53 @@ function getTeamLogoKey(logo: string) {
   return logo.replace(/^https?:\/\/[^/]+\/football\/teams\//, "").replace(/\?.*$/, "");
 }
 
-function getApiTeamsForDisplay(competition: FootballCompetition, apiTeams: SportApiTeam[]) {
-  if (competition.type === "league") {
-    return apiTeams;
+function getApiTeamsForDisplay(
+  competition: FootballCompetition,
+  apiTeams: SportApiTeam[],
+  standings: SportApiStanding[],
+  fixtures: SportApiMatch[]
+) {
+  const relevantNames = [
+    ...standings.map((standing) => standing.teamName),
+    ...fixtures.flatMap((fixture) => [fixture.homeName, fixture.awayName])
+  ];
+
+  return apiTeams.filter((team) => {
+    if (!team.logo) {
+      return false;
+    }
+
+    const localTeam = findCompetitionTeamByName(competition, team.name);
+    if (localTeam && teamAppearsInCurrentSources(localTeam, standings, fixtures)) {
+      return true;
+    }
+
+    return relevantNames.some((name) => namesRepresentSameTeam(name, team.name));
+  });
+}
+
+function teamAppearsInCurrentSources(team: FootballTeam, standings: SportApiStanding[], fixtures: SportApiMatch[]) {
+  return standings.some((standing) => teamMatchesName(team, standing.teamName)) ||
+    fixtures.some((fixture) => teamMatchesName(team, fixture.homeName) || teamMatchesName(team, fixture.awayName));
+}
+
+function namesRepresentSameTeam(left: string, right: string) {
+  const normalizedLeft = normalizeName(left);
+  const normalizedRight = normalizeName(right);
+
+  if (!normalizedLeft || !normalizedRight) {
+    return false;
   }
 
-  return apiTeams.filter((team) => Boolean(team.logo) && Boolean(findCompetitionTeamByName(competition, team.name)));
+  if (normalizedLeft === normalizedRight) {
+    return true;
+  }
+
+  const [shorter, longer] = normalizedLeft.length < normalizedRight.length
+    ? [normalizedLeft, normalizedRight]
+    : [normalizedRight, normalizedLeft];
+
+  return shorter.length >= 6 && longer.includes(shorter);
 }
 
 function findDisplayTeamByLocalTeam(displayTeams: DisplayTeam[], team: FootballTeam) {
@@ -2046,7 +2030,11 @@ function teamMatchesName(team: FootballTeam, name: string) {
 }
 
 function normalizeName(value: string) {
-  return value.toLowerCase().replace(/[^a-z0-9]+/g, "");
+  return value
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "");
 }
 
 function getInitials(name: string) {

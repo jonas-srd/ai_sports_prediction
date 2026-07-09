@@ -475,8 +475,8 @@ function findParticipantLogo(sport: ApiSportId, name: string) {
     return code && code !== "un" && code !== "xx" ? `https://flagcdn.com/w80/${code}.png` : null;
   }
 
-  const teamId = FOOTBALL_TEAM_LOGO_IDS[normalizeName(name)];
-  return teamId ? `https://media.api-sports.io/football/teams/${teamId}.png` : null;
+  void name;
+  return null;
 }
 
 function buildPrediction(context: MatchContext): Prediction {
@@ -1116,34 +1116,3 @@ function toNullableNumber(value: string | null) {
   return Number.isFinite(parsed) ? parsed : null;
 }
 
-const FOOTBALL_TEAM_LOGO_IDS: Record<string, number> = {
-  "arsenal": 42,
-  "aston villa": 66,
-  "barcelona": 529,
-  "bayer leverkusen": 168,
-  "bayern munchen": 157,
-  "bayern munich": 157,
-  "borussia dortmund": 165,
-  "borussia monchengladbach": 163,
-  "chelsea": 49,
-  "eintracht frankfurt": 169,
-  "fc bayern": 157,
-  "fc barcelona": 529,
-  "freiburg": 160,
-  "hamburger sv": 175,
-  "holstein kiel": 191,
-  "liverpool": 40,
-  "manchester city": 50,
-  "manchester united": 33,
-  "newcastle": 34,
-  "newcastle united": 34,
-  "rb leipzig": 173,
-  "real madrid": 541,
-  "real sociedad": 548,
-  "sc freiburg": 160,
-  "stuttgart": 172,
-  "tottenham": 47,
-  "vfb stuttgart": 172,
-  "vfl wolfsburg": 161,
-  "werder bremen": 162
-};

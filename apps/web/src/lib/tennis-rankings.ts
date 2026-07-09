@@ -67,7 +67,7 @@ export async function getAtpRankingSnapshot(_matches: SportApiMatch[]): Promise<
         accept: "text/html,application/xhtml+xml",
         "user-agent": "Mozilla/5.0 (compatible; AI-Sport-Prediction/1.0)"
       },
-      next: { revalidate: Number(process.env.API_TENNIS_CACHE_SECONDS ?? 60) }
+      next: { revalidate: Number(process.env.THE_SPORTS_DB_CACHE_SECONDS ?? 300) }
     }).catch(() => null);
 
     if (response?.ok) {
