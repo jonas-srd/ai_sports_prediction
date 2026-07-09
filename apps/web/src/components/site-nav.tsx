@@ -18,10 +18,7 @@ export function SiteNav() {
   const router = useRouter();
   const text = commonText[locale];
   const mainLinks = [
-    { href: "/", label: text.home },
-    { href: "/#sports", label: text.forecasts },
-    { href: "/#live-results", label: text.liveResults },
-    { href: "/#signals", label: text.newsticker }
+    { href: "/", label: text.home }
   ];
   const sportLinks = [
     { href: "/football", label: text.football },
@@ -43,6 +40,20 @@ export function SiteNav() {
     const competitionPath = `/football/${slug}`;
     return currentPath === competitionPath || currentPath.startsWith(`${competitionPath}/`);
   };
+  const footballCompetitionGroups = [
+    {
+      label: locale === "de" ? "Europa" : "Europe",
+      competitions: footballCompetitions.filter((competition) => competition.country === "Europe")
+    },
+    {
+      label: locale === "de" ? "Ligen" : "Leagues",
+      competitions: footballCompetitions.filter((competition) => competition.country !== "Europe" && competition.type === "league")
+    },
+    {
+      label: locale === "de" ? "Pokale" : "Cups",
+      competitions: footballCompetitions.filter((competition) => competition.country !== "Europe" && competition.type === "cup")
+    }
+  ];
   const searchItems = useMemo(() => {
     const baseItems = [
       { href: "/", label: text.home, eyebrow: locale === "de" ? "Start" : "Home" },
@@ -153,16 +164,30 @@ export function SiteNav() {
                   {text.football}
                 </Link>
               </div>
-              <div className="topicNavCompetitionGroup">
-                {footballCompetitions.map((competition) => (
-                  <Link
-                    className={`topicNavLink ${isFootballCompetitionActive(competition.slug) ? "isActive" : ""}`}
-                    href={localizePath(`/football/${competition.slug}`, locale)}
-                    key={competition.slug}
-                  >
-                    {competition.name}
-                  </Link>
-                ))}
+              <div className="topicNavCompetitionDropdowns">
+                {footballCompetitionGroups.map((group) => {
+                  const groupIsActive = group.competitions.some((competition) => isFootballCompetitionActive(competition.slug));
+
+                  return (
+                    <details className="topicNavDropdown" key={group.label}>
+                      <summary className={`topicNavLink ${groupIsActive ? "isActive" : ""}`}>
+                        {group.label}
+                      </summary>
+                      <div className="topicNavDropdownPanel">
+                        {group.competitions.map((competition) => (
+                          <Link
+                            className={isFootballCompetitionActive(competition.slug) ? "isActive" : ""}
+                            href={localizePath(`/football/${competition.slug}`, locale)}
+                            key={competition.slug}
+                          >
+                            <span>{competition.countryCode}</span>
+                            <strong>{competition.name}</strong>
+                          </Link>
+                        ))}
+                      </div>
+                    </details>
+                  );
+                })}
               </div>
             </>
           ) : (
@@ -173,15 +198,6 @@ export function SiteNav() {
               {sportLinks.map((link) => (
                 <Link
                   className={`topicNavLink topicNavSportLink ${isActive(link.href) ? "isActive" : ""}`}
-                  href={anchorAwarePath(link.href)}
-                  key={link.href}
-                >
-                  {link.label}
-                </Link>
-              ))}
-              {mainLinks.slice(1).map((link) => (
-                <Link
-                  className={`topicNavLink ${isActive(link.href) ? "isActive" : ""}`}
                   href={anchorAwarePath(link.href)}
                   key={link.href}
                 >
