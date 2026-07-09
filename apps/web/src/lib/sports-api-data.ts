@@ -719,7 +719,7 @@ async function fetchTheSportsDb<T>(path: string, query: Record<string, string>):
   const response = await fetch(url, {
     headers: { accept: "application/json" },
     signal: controller.signal,
-    next: { revalidate: getTheSportsDbRevalidateSeconds(path) }
+    ...getTheSportsDbCacheOptions(path)
   }).catch(() => null).finally(() => clearTimeout(timeout));
 
   if (!response?.ok) {
@@ -760,7 +760,7 @@ async function fetchTheSportsDbV2<T>(path: string): Promise<T | null> {
       accept: "application/json"
     },
     signal: controller.signal,
-    next: { revalidate: getTheSportsDbRevalidateSeconds(path) }
+    ...getTheSportsDbCacheOptions(path)
   }).catch(() => null).finally(() => clearTimeout(timeout));
 
   if (!response?.ok) {
@@ -1012,6 +1012,22 @@ function getTheSportsDbRevalidateSeconds(path: string) {
   const configured = Number(process.env[envKey] ?? process.env.THE_SPORTS_DB_CACHE_SECONDS ?? 300);
 
   return Number.isFinite(configured) && configured >= 0 ? configured : 300;
+}
+
+function getTheSportsDbCacheOptions(path: string): { cache: "no-store" } | { next: { revalidate: number } } {
+  if (isLargeTheSportsDbSchedulePath(path)) {
+    return { cache: "no-store" };
+  }
+
+  return { next: { revalidate: getTheSportsDbRevalidateSeconds(path) } };
+}
+
+function isLargeTheSportsDbSchedulePath(path: string) {
+  const normalizedPath = path.replace(/^\/+/, "").toLowerCase();
+
+  return /^schedule\/league\/[^/]+\/[^/]+$/i.test(normalizedPath) ||
+    normalizedPath === "eventsseason.php" ||
+    normalizedPath === "search_all_teams.php";
 }
 
 function getTheSportsDbKey() {
