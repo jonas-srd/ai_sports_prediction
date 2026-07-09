@@ -135,24 +135,44 @@ export async function SportMatchDetailPage({
   const metrics = buildMetrics(context);
   const backHref = getBackHref(context);
   const matchNews = activeTab === "overview" ? await getMatchNews(context) : [];
+  const metaItems = [
+    { label: locale === "de" ? "Wettbewerb" : "Competition", value: context.match.competition },
+    { label: locale === "de" ? "Runde" : "Round", value: context.match.round },
+    { label: text.venue, value: context.match.venue },
+    { label: locale === "de" ? "Termin" : "Kickoff", value: formatMatchDate(context.match.date, locale) },
+    { label: "Status", value: formatMatchStatus(context.match, locale) }
+  ].filter((item) => item.value);
 
   return (
     <main className="shell matchDetailShell">
       <section className="sportschauHero matchDetailHero">
-        <div>
+        <div className="matchDetailHeroText">
           <p className="footballEyebrow">{getSportLabel(context.sport, locale)}</p>
-          <h1>{context.match.homeName} - {context.match.awayName}</h1>
-          <p>{[context.match.competition, context.match.round, context.match.venue, formatMatchDate(context.match.date, locale), formatMatchStatus(context.match, locale)].filter(Boolean).join(" · ")}</p>
-        </div>
-        <article className="matchDetailScoreCard">
-          <span>{text.title}</span>
-          <div className="matchDetailScoreLine">
-            <ParticipantLink context={context} logo={context.match.homeLogo} name={context.match.homeName} />
-            <strong>{formatMatchCenter(context.match)}</strong>
-            <ParticipantLink context={context} logo={context.match.awayLogo} name={context.match.awayName} />
+          <h1>
+            <span>{context.match.homeName}</span>
+            <em>vs</em>
+            <span>{context.match.awayName}</span>
+          </h1>
+          <div className="matchDetailMetaPills" aria-label={locale === "de" ? "Spieldetails" : "Match details"}>
+            {metaItems.map((item) => (
+              <span key={`${item.label}:${item.value}`}>
+                <small>{item.label}</small>
+                <strong>{item.value}</strong>
+              </span>
+            ))}
           </div>
-        </article>
-        <Link className="secondaryLink" href={backHref}>{text.back}</Link>
+        </div>
+        <div className="matchDetailHeroAside">
+          <article className="matchDetailScoreCard">
+            <span>{text.title}</span>
+            <div className="matchDetailScoreLine">
+              <ParticipantLink context={context} logo={context.match.homeLogo} name={context.match.homeName} />
+              <strong>{formatMatchCenter(context.match)}</strong>
+              <ParticipantLink context={context} logo={context.match.awayLogo} name={context.match.awayName} />
+            </div>
+          </article>
+          <Link className="secondaryLink" href={backHref}>{text.back}</Link>
+        </div>
       </section>
 
       <nav className="competitionTabs sportschauSubTabs matchDetailTabs" aria-label={text.title}>
@@ -171,7 +191,7 @@ export async function SportMatchDetailPage({
       {activeTab === "overview" ? (
         <>
           <section className="footballPanel matchDetailGrid">
-            <PredictionPanel locale={locale} prediction={prediction} />
+            <PredictionPanel context={context} locale={locale} prediction={prediction} />
             <ComparisonPanel locale={locale} metrics={metrics.slice(0, 4)} />
           </section>
           <MatchNewsPanel locale={locale} newsItems={matchNews} />
@@ -193,8 +213,17 @@ export async function SportMatchDetailPage({
   );
 }
 
-function PredictionPanel({ locale, prediction }: { locale: Locale; prediction: Prediction }) {
+function PredictionPanel({
+  context,
+  locale,
+  prediction
+}: {
+  context: MatchContext;
+  locale: Locale;
+  prediction: Prediction;
+}) {
   const text = copy[locale];
+  const contextRows = getPredictionContextRows(context, locale);
 
   return (
     <article className="matchDetailPrediction">
@@ -205,6 +234,14 @@ function PredictionPanel({ locale, prediction }: { locale: Locale; prediction: P
         <div><small>{text.confidence}</small><strong>{prediction.confidence}</strong></div>
       </div>
       <p className="predictionReasoning"><span>{text.reasoning}</span>{prediction.reason}</p>
+      <div className="predictionContextGrid">
+        {contextRows.map((row) => (
+          <div key={row.label}>
+            <small>{row.label}</small>
+            <strong>{row.text}</strong>
+          </div>
+        ))}
+      </div>
     </article>
   );
 }
@@ -535,10 +572,6 @@ function buildMetrics(context: MatchContext): Metric[] {
     return apiMetrics;
   }
 
-  if (context.analysis.status === "live") {
-    return buildPendingApiMetrics(context);
-  }
-
   const labels = getMetricLabels(context.sport, context.locale);
   const seed = stringSeed(`${context.match.id}:${context.match.homeName}:${context.match.awayName}`);
   const homeStrength = getParticipantStrength(context.sport, context.match.homeName);
@@ -570,21 +603,6 @@ function buildApiMetrics(context: MatchContext): Metric[] {
     home: formatApiMetricValue(row.home),
     away: formatApiMetricValue(row.away),
     note: context.locale === "de" ? "Live-Vergleich aus der Sport-API" : "Live comparison from the sports API"
-  }));
-}
-
-function buildPendingApiMetrics(context: MatchContext): Metric[] {
-  const labels = getMetricLabels(context.sport, context.locale).slice(0, 6);
-  const note = context.locale === "de"
-    ? "Die API hat für dieses Spiel noch keine Detailzeile geliefert."
-    : "The API has not provided a detailed row for this game yet.";
-  const pending = context.locale === "de" ? "API offen" : "API pending";
-
-  return labels.map((label) => ({
-    label: label.label,
-    home: pending,
-    away: pending,
-    note
   }));
 }
 
@@ -630,6 +648,13 @@ function translateStatLabel(label: string, sport: ApiSportId, locale: Locale) {
     "free throws": "Freiwürfe",
     "goals against": "Gegentore",
     "goals for": "Tore",
+    "avg goals": "Tore im Schnitt",
+    "avg points": "Punkte im Schnitt",
+    "avg sets": "Sätze im Schnitt",
+    "draws": "Remis",
+    "h2h wins": "Direkte Siege",
+    "last meeting": "Letztes Duell",
+    "meetings": "Duelle",
     "passes %": "Passquote",
     "passing yards": "Passing Yards",
     "penalties scored": "Elfmeter verwandelt",
@@ -819,6 +844,10 @@ function getMetricLabels(sport: ApiSportId, locale: Locale): Array<{ kind: "numb
 
 function getSignalRows(context: MatchContext, prediction: Prediction, locale: Locale) {
   const isDe = locale === "de";
+  const metrics = buildMetrics(context);
+  const strongestMetric = metrics[0];
+  const secondaryMetric = metrics[1];
+
   return [
     {
       label: isDe ? "Tipp" : "Pick",
@@ -829,7 +858,7 @@ function getSignalRows(context: MatchContext, prediction: Prediction, locale: Lo
       text: prediction.reason
     },
     {
-      label: isDe ? "Datenbasis" : "Data basis",
+      label: isDe ? "Datenbasis" : "Data used",
       text: context.analysis.stats.length > 0
         ? (isDe
             ? `${context.analysis.source}: ${context.analysis.stats.length} Live-Statistiken plus Team-/Spielerprofile.`
@@ -838,17 +867,71 @@ function getSignalRows(context: MatchContext, prediction: Prediction, locale: Lo
           ? (isDe
               ? `${context.analysis.source}: ${context.analysis.h2h.length} direkte Duelle plus Team-/Spielerprofile.`
               : `${context.analysis.source}: ${context.analysis.h2h.length} head-to-head games plus team/player profiles.`)
-        : (isDe
-            ? `${context.match.competition}, API-Termin, Team-/Spielerprofile und sportartspezifische Vergleichsmetriken.`
-            : `${context.match.competition}, API schedule, team/player profiles and sport-specific comparison metrics.`)
+          : getProfileBasisText(context, isDe)
     },
     {
-      label: isDe ? "Live-Update" : "Live update",
-      text: isDe
-        ? "Wenn die API neue Spielstände oder Termine liefert, aktualisiert dieselbe URL die Vergleichsseite automatisch."
-        : "When the API provides new scores or fixtures, the same URL updates the comparison page automatically."
+      label: isDe ? "Worauf achten" : "What to watch",
+      text: strongestMetric && secondaryMetric
+        ? (isDe
+            ? `${strongestMetric.label}: ${strongestMetric.home} zu ${strongestMetric.away}. ${secondaryMetric.label}: ${secondaryMetric.home} zu ${secondaryMetric.away}.`
+            : `${strongestMetric.label}: ${strongestMetric.home} to ${strongestMetric.away}. ${secondaryMetric.label}: ${secondaryMetric.home} to ${secondaryMetric.away}.`)
+        : (isDe
+            ? "Die nächsten API-Updates verändern Spielstand, H2H und Vergleichswerte auf dieser Seite."
+            : "The next API updates adjust score, H2H and comparison values on this page.")
     }
   ];
+}
+
+function getPredictionContextRows(context: MatchContext, locale: Locale) {
+  const isDe = locale === "de";
+  const metrics = buildMetrics(context);
+  const primary = metrics[0];
+  const secondary = metrics[1];
+  const basis = context.analysis.stats.length > 0
+    ? (isDe
+        ? `${context.analysis.stats.length} Live-Werte aus ${context.analysis.source}`
+        : `${context.analysis.stats.length} live values from ${context.analysis.source}`)
+    : context.analysis.h2h.length > 0
+      ? (isDe
+          ? `${context.analysis.h2h.length} direkte Duelle aus ${context.analysis.source}`
+          : `${context.analysis.h2h.length} head-to-head games from ${context.analysis.source}`)
+      : getProfileBasisText(context, isDe);
+
+  return [
+    {
+      label: isDe ? "Stärkster Vorteil" : "Strongest edge",
+      text: primary
+        ? `${primary.label}: ${primary.home} zu ${primary.away}`
+        : (isDe ? "Noch keine Vergleichswerte" : "No comparison values yet")
+    },
+    {
+      label: isDe ? "Zweites Signal" : "Second signal",
+      text: secondary
+        ? `${secondary.label}: ${secondary.home} zu ${secondary.away}`
+        : formatMatchStatus(context.match, locale)
+    },
+    {
+      label: isDe ? "Datenbasis" : "Data basis",
+      text: basis
+    }
+  ];
+}
+
+function getProfileBasisText(context: MatchContext, isDe: boolean) {
+  if (context.sport === "tennis") {
+    const home = findTennisPlayer(context.match.homeName);
+    const away = findTennisPlayer(context.match.awayName);
+    const homeText = home ? `${home.name}: #${home.rank}, ${home.hand}, ${home.form}` : context.match.homeName;
+    const awayText = away ? `${away.name}: #${away.rank}, ${away.hand}, ${away.form}` : context.match.awayName;
+
+    return isDe
+      ? `TheSportsDB-Spieltermin plus Spielerprofile: ${homeText}; ${awayText}.`
+      : `TheSportsDB fixture plus player profiles: ${homeText}; ${awayText}.`;
+  }
+
+  return isDe
+    ? `${context.match.competition}, TheSportsDB-Termin, Teamprofile und sportartspezifische Vergleichsmetriken.`
+    : `${context.match.competition}, TheSportsDB fixture, team profiles and sport-specific comparison metrics.`;
 }
 
 function getParticipantStrength(sport: ApiSportId, name: string) {
@@ -863,12 +946,16 @@ function getParticipantStrength(sport: ApiSportId, name: string) {
   }
 
   if (sport === "tennis") {
-    const player = tennisPlayers.find((entry) => namesMatch(entry.name, name) || namesMatch(entry.shortName, name));
+    const player = findTennisPlayer(name);
     return player ? 95 - player.rank + player.hard * 0.25 + player.clay * 0.18 + player.grass * 0.18 : 50;
   }
 
   const team = findFootballTeam(name);
   return team ? 75 - team.rank + (team.points ?? 40) * 0.45 : 50;
+}
+
+function findTennisPlayer(name: string) {
+  return tennisPlayers.find((entry) => namesMatch(entry.name, name) || namesMatch(entry.shortName, name));
 }
 
 function findFootballTeam(name: string): FootballTeam | undefined {
@@ -1115,4 +1202,3 @@ function toNullableNumber(value: string | null) {
   const parsed = Number(value);
   return Number.isFinite(parsed) ? parsed : null;
 }
-

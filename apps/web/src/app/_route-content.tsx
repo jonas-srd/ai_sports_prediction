@@ -10,12 +10,15 @@ import { footballCompetitions } from "@/lib/football-data";
 import { localizePath, routeText, type Locale } from "@/lib/i18n";
 import { nbaTeams } from "@/lib/nba-data";
 import { nflTeams } from "@/lib/nfl-data";
+import { getSportMatchHref } from "@/components/match-detail-page";
+import { SportsNewsCards } from "@/components/sports-news-cards";
 import {
   getFootballCompetitionApiSnapshot,
   getSportApiSnapshot,
   type ApiSportId,
   type SportApiMatch
 } from "@/lib/sports-api-data";
+import { getSportsNewsLinks, type SportsNewsItem } from "@/lib/sports-news";
 import { tennisPlayers } from "@/lib/tennis-data";
 
 const homeExperience = {
@@ -354,7 +357,10 @@ const sportPageContent: Record<Locale, Record<SportPageId, {
 export async function HomePageContent({ locale }: { locale: Locale }) {
   const content = homeExperience[locale];
   const homeCopy = getHomeStartCopy(locale);
-  const highlights = await getHomeMatchHighlights(locale);
+  const [matchSections, sportNews] = await Promise.all([
+    getHomeMatchSections(locale),
+    getHomeSportNews(locale)
+  ]);
 
   return (
     <main className="shell homeStartShell">
@@ -366,17 +372,52 @@ export async function HomePageContent({ locale }: { locale: Locale }) {
         </div>
       </section>
 
+      {matchSections.live.length > 0 ? (
+        <section className="homeTopGames homeLiveGames" id="live">
+          <div className="homeSectionHeader">
+            <div>
+              <p className="sectionKicker">{homeCopy.liveGamesEyebrow}</p>
+              <h2>{homeCopy.liveGamesTitle}</h2>
+            </div>
+          </div>
+          <div className="homeHighlightGrid">
+            {matchSections.live.map((highlight) => (
+              <HomeHighlightCard highlight={highlight} key={`live-${highlight.sport}-${highlight.match.id}`} locale={locale} />
+            ))}
+          </div>
+        </section>
+      ) : null}
+
       <section className="homeTopGames" id="topspiele">
         <div className="homeSectionHeader">
           <div>
             <p className="sectionKicker">{homeCopy.topGamesEyebrow}</p>
             <h2>{homeCopy.topGamesTitle}</h2>
           </div>
-          <p>{homeCopy.topGamesText}</p>
         </div>
         <div className="homeHighlightGrid">
-          {highlights.map((highlight) => (
+          {matchSections.top.map((highlight) => (
             <HomeHighlightCard highlight={highlight} key={`${highlight.sport}-${highlight.match.id}`} locale={locale} />
+          ))}
+        </div>
+      </section>
+
+      <section className="homeTopGames homeSportNews" id="sport-news">
+        <div className="homeSectionHeader">
+          <div>
+            <p className="sectionKicker">{homeCopy.newsEyebrow}</p>
+            <h2>{homeCopy.newsTitle}</h2>
+          </div>
+          <p>{homeCopy.newsText}</p>
+        </div>
+        <div className="homeSportNewsGrid">
+          {sportNews.map((entry) => (
+            <article className="homeSportNewsColumn" key={entry.sport} style={{ "--accent": entry.accent } as CSSProperties}>
+              <div className="homeSportNewsColumnHeader">
+                <span>{entry.label}</span>
+              </div>
+              <SportsNewsCards items={entry.items} locale={locale} />
+            </article>
           ))}
         </div>
       </section>
@@ -424,30 +465,45 @@ type HomeMatchHighlight = {
   sportLabel: string;
 };
 
+type HomeSportNews = {
+  accent: string;
+  items: SportsNewsItem[];
+  label: string;
+  sport: ApiSportId;
+};
+
 function getHomeStartCopy(locale: Locale) {
   return {
     en: {
       eyebrow: "AI Sport Prediction",
-      title: "AI predictions for the next football, NFL, NBA and tennis games.",
-      description: "Know the model's pick, score idea and reasoning before everyone else starts guessing.",
+      title: "Know the pick before the game starts.",
+      description: "AI predictions for football, NFL, NBA and tennis with winner, score idea, confidence and reasoning in one card.",
       primaryCta: "Show top games",
       secondaryCta: "Jump to sport",
-      topGamesEyebrow: "Upcoming top games",
-      topGamesTitle: "Next games with AI predictions",
-      topGamesText: "Each card shows the matchup, team logos, predicted result, confidence and the model's short reasoning.",
+      liveGamesEyebrow: "Live now",
+      liveGamesTitle: "Live games",
+      newsEyebrow: "Top news",
+      newsText: "Sporting stories only: teams, players, form, injuries and tournament context. The feed refreshes regularly.",
+      newsTitle: "What matters before the next games",
+      topGamesEyebrow: "Next AI predictions",
+      topGamesTitle: "One top game per sport",
       prediction: "AI prediction",
       confidence: "Confidence",
       reason: "Reasoning"
     },
     de: {
       eyebrow: "AI Sport Prediction",
-      title: "KI-Prognosen für die nächsten Fußball-, NFL-, NBA- und Tennis-Spiele.",
-      description: "Sieh den Modell-Tipp, die Ergebnisidee und die Begründung, bevor alle anderen nur raten.",
+      title: "Wisse den Tipp, bevor das Spiel beginnt.",
+      description: "KI-Prognosen für Fußball, NFL, NBA und Tennis mit Sieger, Ergebnisidee, Sicherheit und Begründung in einer Karte.",
       primaryCta: "Topspiele anzeigen",
       secondaryCta: "Zur Sportart springen",
-      topGamesEyebrow: "Anstehende Topspiele",
-      topGamesTitle: "Nächste Spiele mit KI-Prognose",
-      topGamesText: "Jede Karte zeigt Matchup, Teamlogos, prognostiziertes Ergebnis, Sicherheit und die kurze Modell-Begründung.",
+      liveGamesEyebrow: "Jetzt live",
+      liveGamesTitle: "Live-Spiele",
+      newsEyebrow: "Topnews",
+      newsText: "Nur sportliche Themen: Teams, Spieler, Form, Verletzungen und Turnierkontext. Der Feed aktualisiert sich regelmäßig.",
+      newsTitle: "Was vor den nächsten Spielen wichtig ist",
+      topGamesEyebrow: "Next AI Predictions",
+      topGamesTitle: "Ein Topspiel pro Sportart",
       prediction: "KI-Prognose",
       confidence: "Sicherheit",
       reason: "Begründung"
@@ -455,10 +511,12 @@ function getHomeStartCopy(locale: Locale) {
   }[locale];
 }
 
-async function getHomeMatchHighlights(locale: Locale): Promise<HomeMatchHighlight[]> {
-  const bundesliga = footballCompetitions.find((competition) => competition.slug === "bundesliga") ?? footballCompetitions[0];
-  const [footballSnapshot, nflSnapshot, nbaSnapshot, tennisSnapshot] = await Promise.all([
-    getFootballCompetitionApiSnapshot(bundesliga),
+async function getHomeMatchSections(locale: Locale): Promise<{ live: HomeMatchHighlight[]; top: HomeMatchHighlight[] }> {
+  const [footballSnapshots, nflSnapshot, nbaSnapshot, tennisSnapshot] = await Promise.all([
+    Promise.all(footballCompetitions.map(async (competition) => ({
+      competitionSlug: competition.slug,
+      snapshot: await getFootballCompetitionApiSnapshot(competition)
+    }))),
     getSportApiSnapshot("nfl"),
     getSportApiSnapshot("nba"),
     getSportApiSnapshot("tennis")
@@ -466,83 +524,139 @@ async function getHomeMatchHighlights(locale: Locale): Promise<HomeMatchHighligh
 
   const rows: Array<{
     accent: string;
-    href: string;
+    competitionSlug?: string;
     matches: SportApiMatch[];
     sport: ApiSportId;
     sportLabel: string;
   }> = [
-    {
+    ...footballSnapshots.map(({ competitionSlug, snapshot }) => ({
       accent: "#7df5c1",
-      href: localizePath(locale === "de" ? "/football/bundesliga/spieltag" : "/football/bundesliga/matchday", locale),
-      matches: footballSnapshot.matches,
-      sport: "football",
-      sportLabel: locale === "de" ? "Fußball" : "Football"
-    },
+      competitionSlug,
+      matches: snapshot.matches,
+      sport: "football" as const,
+      sportLabel: snapshot.matches[0]?.competition || footballCompetitions.find((competition) => competition.slug === competitionSlug)?.name || (locale === "de" ? "Fußball" : "Football")
+    })),
     {
       accent: "#58d8ff",
-      href: localizePath(locale === "de" ? "/nfl/spieltag" : "/nfl/matches", locale),
       matches: nflSnapshot.matches,
       sport: "nfl",
       sportLabel: "NFL"
     },
     {
       accent: "#ffc857",
-      href: localizePath(locale === "de" ? "/nba/spieltag" : "/nba/matches", locale),
       matches: nbaSnapshot.matches,
       sport: "nba",
       sportLabel: "NBA"
     },
     {
       accent: "#ff7a90",
-      href: localizePath(locale === "de" ? "/tennis/vorhersagen" : "/tennis/matches", locale),
       matches: tennisSnapshot.matches,
       sport: "tennis",
       sportLabel: "Tennis"
     }
   ];
 
-  return rows.flatMap((row, index) => {
-    const match = pickNextHomeMatch(row.matches);
-
-    if (!match) {
-      return [];
-    }
-
-    const hydratedMatch = hydrateHomeHighlightMatch(row.sport, match);
-
-    return [{
-      accent: row.accent,
-      href: row.sport === "football" ? getFootballHomeMatchHref(hydratedMatch, locale) : row.href,
-      match: hydratedMatch,
-      prediction: buildHomePrediction(row.sport, hydratedMatch, locale, index),
-      sport: row.sport,
-      sportLabel: row.sportLabel
-    }];
+  const live = rows.flatMap((row, index) => {
+    const match = pickLiveHomeMatch(row.matches);
+    return match ? [buildHomeHighlight(row, match, locale, index)] : [];
+  }).sort((left, right) => compareHomeHighlights(left.match, right.match)).slice(0, 8);
+  const footballTop = rows
+    .filter((row) => row.sport === "football")
+    .flatMap((row, index) => {
+      const match = pickTopHomeMatch(row.matches, live);
+      return match ? [buildHomeHighlight(row, match, locale, index)] : [];
+    })
+    .sort((left, right) => compareHomeHighlights(left.match, right.match))[0];
+  const otherTop = (["nfl", "nba", "tennis"] as ApiSportId[]).flatMap((sport, index) => {
+    const row = rows.find((entry) => entry.sport === sport);
+    const match = row ? pickTopHomeMatch(row.matches, live) : null;
+    return row && match ? [buildHomeHighlight(row, match, locale, index + 20)] : [];
   });
+
+  return {
+    live,
+    top: [footballTop, ...otherTop].filter((entry): entry is HomeMatchHighlight => Boolean(entry)).slice(0, 4)
+  };
 }
 
-function getFootballHomeMatchHref(match: SportApiMatch, locale: Locale) {
-  const normalizedCompetition = match.competition.toLowerCase();
-  const competitionSlug = footballCompetitions.find((competition) =>
-    normalizedCompetition.includes(competition.name.toLowerCase())
-    || normalizedCompetition.includes(competition.slug.replace(/-/g, " "))
-  )?.slug;
+function buildHomeHighlight(
+  row: {
+    accent: string;
+    competitionSlug?: string;
+    matches: SportApiMatch[];
+    sport: ApiSportId;
+    sportLabel: string;
+  },
+  match: SportApiMatch,
+  locale: Locale,
+  index: number
+): HomeMatchHighlight {
+  const hydratedMatch = hydrateHomeHighlightMatch(row.sport, match);
 
-  if (!competitionSlug) {
-    return localizePath("/football", locale);
-  }
-
-  const tabPath = locale === "de" ? "spieltag" : "matchday";
-  return localizePath(`/football/${competitionSlug}/${tabPath}`, locale);
+  return {
+    accent: row.accent,
+    href: getSportMatchHref({ competitionSlug: row.competitionSlug, locale, match: hydratedMatch, sport: row.sport }),
+    match: hydratedMatch,
+    prediction: buildHomePrediction(row.sport, hydratedMatch, locale, index),
+    sport: row.sport,
+    sportLabel: row.sportLabel
+  };
 }
 
-function pickNextHomeMatch(matches: SportApiMatch[]) {
+async function getHomeSportNews(locale: Locale): Promise<HomeSportNews[]> {
+  const rows: Array<{ accent: string; contextName: string; label: string; sport: ApiSportId }> = [
+    { accent: "#7df5c1", contextName: locale === "de" ? "Fußball Bundesliga Champions League Spieler Teams" : "football Premier League Champions League players teams", label: locale === "de" ? "Fußball" : "Football", sport: "football" },
+    { accent: "#58d8ff", contextName: "NFL teams quarterback injury trade form", label: "NFL", sport: "nfl" },
+    { accent: "#ffc857", contextName: "NBA teams players trade injury form", label: "NBA", sport: "nba" },
+    { accent: "#ff7a90", contextName: "ATP WTA tennis players tournaments form injury", label: "Tennis", sport: "tennis" }
+  ];
+
+  return Promise.all(rows.map(async (row) => ({
+    ...row,
+    items: await getSportsNewsLinks({
+      contextName: row.contextName,
+      limit: 2,
+      locale,
+      topic: row.sport === "football" ? "football" : row.sport
+    })
+  })));
+}
+
+async function getHomeMatchHighlights(locale: Locale): Promise<HomeMatchHighlight[]> {
+  const sections = await getHomeMatchSections(locale);
+  return [...sections.live, ...sections.top];
+}
+
+function pickLiveHomeMatch(matches: SportApiMatch[]) {
+  const now = Date.now();
+  return matches
+    .filter((match) => isLiveHomeMatch(match, now))
+    .sort(compareSportMatchesByDate)[0] ?? null;
+}
+
+function pickTopHomeMatch(matches: SportApiMatch[], liveHighlights: HomeMatchHighlight[]) {
+  const liveIds = new Set(liveHighlights.map((highlight) => highlight.match.id));
   const now = Date.now();
   const upcoming = matches
-    .filter((match) => isUpcomingHomeMatch(match, now))
+    .filter((match) => !liveIds.has(match.id) && !isLiveHomeMatch(match, now) && isUpcomingHomeMatch(match, now))
+    .sort(compareSportMatchesByDate);
+  const relevant = matches
+    .filter((match) => !liveIds.has(match.id) && !isFinishedHomeMatch(match.status))
     .sort(compareSportMatchesByDate);
 
-  return upcoming[0] ?? null;
+  return upcoming[0] ?? relevant[0] ?? null;
+}
+
+function pickRelevantHomeMatch(matches: SportApiMatch[]) {
+  const now = Date.now();
+  const live = matches
+    .filter((match) => isLiveHomeMatch(match, now))
+    .sort(compareSportMatchesByDate);
+  const upcoming = matches
+    .filter((match) => !isLiveHomeMatch(match, now) && isUpcomingHomeMatch(match, now))
+    .sort(compareSportMatchesByDate);
+
+  return live[0] ?? upcoming[0] ?? null;
 }
 
 function isUpcomingHomeMatch(match: SportApiMatch, now: number) {
@@ -561,6 +675,55 @@ function isUpcomingHomeMatch(match: SportApiMatch, now: number) {
   }
 
   return time >= now - 20 * 60 * 1000;
+}
+
+function isLiveHomeMatch(match: SportApiMatch, now: number) {
+  if (isFinishedHomeMatch(match.status)) {
+    return false;
+  }
+
+  const status = (match.status ?? "").toLowerCase();
+  const statusLooksLive = [
+    "live",
+    "in play",
+    "in progress",
+    "1h",
+    "2h",
+    "ht",
+    "q1",
+    "q2",
+    "q3",
+    "q4",
+    "period",
+    "set"
+  ].some((label) => status === label || status.includes(label));
+
+  if (statusLooksLive) {
+    return true;
+  }
+
+  if (!match.date) {
+    return false;
+  }
+
+  const time = new Date(match.date).getTime();
+  if (Number.isNaN(time)) {
+    return false;
+  }
+
+  return time <= now && time >= now - 3 * 60 * 60 * 1000;
+}
+
+function compareHomeHighlights(left: SportApiMatch, right: SportApiMatch) {
+  const now = Date.now();
+  const leftLive = isLiveHomeMatch(left, now);
+  const rightLive = isLiveHomeMatch(right, now);
+
+  if (leftLive !== rightLive) {
+    return leftLive ? -1 : 1;
+  }
+
+  return compareSportMatchesByDate(left, right);
 }
 
 function isFinishedHomeMatch(status: string | null | undefined) {
@@ -739,7 +902,7 @@ function HomeHighlightCard({ highlight, locale }: { highlight: HomeMatchHighligh
           <SportTeamLogo logo={highlight.match.homeLogo} name={highlight.match.homeName} />
           <strong>{highlight.match.homeName}</strong>
         </div>
-        <em>{highlight.prediction.score}</em>
+        <em>{formatHomeHighlightScore(highlight.match, highlight.prediction.score)}</em>
         <div>
           <SportTeamLogo logo={highlight.match.awayLogo} name={highlight.match.awayName} />
           <strong>{highlight.match.awayName}</strong>
@@ -756,6 +919,14 @@ function HomeHighlightCard({ highlight, locale }: { highlight: HomeMatchHighligh
       </div>
     </Link>
   );
+}
+
+function formatHomeHighlightScore(match: SportApiMatch, predictionScore: string) {
+  if (match.homeScore !== null && match.awayScore !== null) {
+    return `${match.homeScore}:${match.awayScore}`;
+  }
+
+  return predictionScore;
 }
 
 export async function SportPageContent({ locale, sport }: { locale: Locale; sport: SportPageId }) {

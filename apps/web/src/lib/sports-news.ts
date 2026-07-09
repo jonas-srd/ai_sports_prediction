@@ -41,10 +41,13 @@ const TOPIC_QUERIES: Record<SportsNewsTopic, Record<Locale, string>> = {
 const BLOCKED_NEWS_TERMS: Record<Locale, string[]> = {
   de: [
     "dazn",
+    "free tv",
     "fernsehen",
     "kalender",
     "kostenlos sehen",
     "live im tv",
+    "liveticker",
+    "live ticker",
     "spielplan",
     "stream",
     "streaming",
@@ -89,12 +92,12 @@ export async function getSportsNewsLinks({
         accept: "application/rss+xml, application/xml, text/xml",
         "user-agent": "Mozilla/5.0 (compatible; AI-Sport-Prediction/1.0)"
       },
-      next: { revalidate: Number(process.env.NEWS_CACHE_SECONDS ?? 900) }
+      next: { revalidate: Number(process.env.NEWS_CACHE_SECONDS ?? 600) }
     }).catch(() => null);
 
     if (response?.ok) {
       const xml = await response.text();
-      const items = filterSportsNewsItems(parseNewsRss(xml), locale).slice(0, limit);
+      const items = rankSportsNewsItems(filterSportsNewsItems(parseNewsRss(xml), locale), contextName).slice(0, limit);
 
       if (items.length > 0) {
         return fillWithFallbackItems(items, topic, locale, contextName, limit);
@@ -108,7 +111,13 @@ export async function getSportsNewsLinks({
 }
 
 function buildNewsQuery(topic: SportsNewsTopic, locale: Locale, contextName?: string) {
-  return [contextName, TOPIC_QUERIES[topic][locale], locale === "de" ? "Nachrichten" : "latest", "when:14d"].filter(Boolean).join(" ");
+  const cleanContext = contextName?.replace(/\s+/g, " ").trim();
+  const contextQuery = cleanContext ? `"${cleanContext}" OR ${cleanContext}` : "";
+  const sportingIntent = locale === "de"
+    ? "Analyse Form Verletzung Spieler Trainer Team Ergebnis"
+    : "analysis form injury player team result";
+
+  return [contextQuery, TOPIC_QUERIES[topic][locale], sportingIntent, locale === "de" ? "Nachrichten" : "latest", "when:10d"].filter(Boolean).join(" ");
 }
 
 function filterSportsNewsItems(items: SportsNewsItem[], locale: Locale) {
@@ -116,6 +125,40 @@ function filterSportsNewsItems(items: SportsNewsItem[], locale: Locale) {
     const searchable = normalizeNewsText(`${item.title} ${item.summary} ${item.source}`);
     return !BLOCKED_NEWS_TERMS[locale].some((term) => searchable.includes(normalizeNewsText(term)));
   });
+}
+
+function rankSportsNewsItems(items: SportsNewsItem[], contextName?: string) {
+  const contextTokens = getNewsContextTokens(contextName);
+
+  if (contextTokens.length === 0) {
+    return items;
+  }
+
+  return items
+    .map((item, index) => ({
+      index,
+      item,
+      score: contextTokens.reduce((score, token) => {
+        const searchable = normalizeNewsText(`${item.title} ${item.summary} ${item.source}`);
+        return searchable.includes(token) ? score + 1 : score;
+      }, 0)
+    }))
+    .filter((entry) => entry.score > 0 || contextTokens.length < 2)
+    .sort((left, right) => right.score - left.score || left.index - right.index)
+    .map((entry) => entry.item);
+}
+
+function getNewsContextTokens(contextName?: string) {
+  if (!contextName) {
+    return [];
+  }
+
+  const stopWords = new Set(["and", "der", "die", "das", "for", "league", "liga", "open", "sport", "team", "teams", "players", "spieler", "vs"]);
+
+  return normalizeNewsText(contextName)
+    .split(/[^a-z0-9]+/)
+    .filter((token) => token.length >= 4 && !stopWords.has(token))
+    .slice(0, 8);
 }
 
 function fillWithFallbackItems(

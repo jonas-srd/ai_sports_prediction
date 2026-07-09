@@ -479,6 +479,91 @@
   padding-right: 2px;
 }
 
+.topicNavCompetitionDropdowns {
+  align-items: center;
+  display: flex;
+  gap: 10px;
+  justify-content: flex-start;
+  min-width: 0;
+}
+
+.topicNavDropdown {
+  position: relative;
+}
+
+.topicNavDropdown summary {
+  cursor: pointer;
+  gap: 8px;
+  list-style: none;
+}
+
+.topicNavDropdown summary::-webkit-details-marker {
+  display: none;
+}
+
+.topicNavDropdown summary::after {
+  color: rgba(247, 251, 255, 0.58);
+  content: "⌄";
+  font-size: 0.88rem;
+  line-height: 1;
+  transition: transform 160ms ease;
+}
+
+.topicNavDropdown[open] summary::after {
+  transform: rotate(180deg);
+}
+
+.topicNavDropdownPanel {
+  background:
+    linear-gradient(145deg, rgba(22, 36, 50, 0.98), rgba(8, 16, 24, 0.98));
+  border: 1px solid rgba(125, 245, 193, 0.18);
+  border-radius: 8px;
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.36);
+  display: grid;
+  gap: 4px;
+  left: 0;
+  min-width: 260px;
+  padding: 10px;
+  position: absolute;
+  top: calc(100% + 6px);
+  z-index: 50;
+}
+
+.topicNavDropdownPanel a {
+  align-items: center;
+  border-radius: 6px;
+  color: rgba(247, 251, 255, 0.78);
+  display: grid;
+  gap: 10px;
+  grid-template-columns: 32px minmax(0, 1fr);
+  min-height: 40px;
+  padding: 8px 10px;
+  text-decoration: none;
+}
+
+.topicNavDropdownPanel a:hover,
+.topicNavDropdownPanel a:focus-visible,
+.topicNavDropdownPanel a.isActive {
+  background: rgba(125, 245, 193, 0.1);
+  color: #ffffff;
+  outline: none;
+}
+
+.topicNavDropdownPanel span {
+  color: var(--accent);
+  font-size: 0.68rem;
+  font-weight: 950;
+  letter-spacing: 0.1em;
+}
+
+.topicNavDropdownPanel strong {
+  font-size: 0.86rem;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .topicNavLink {
   align-items: center;
   border-bottom: 3px solid transparent;
@@ -547,6 +632,10 @@
     justify-content: center;
   }
 
+  .topicNavCompetitionDropdowns {
+    justify-content: center;
+  }
+
   .topicNavCompetitionGroup .topicNavLink {
     min-height: 34px;
   }
@@ -609,6 +698,23 @@
     font-size: 0.78rem;
     padding-left: 6px;
     padding-right: 6px;
+  }
+
+  .topicNavCompetitionDropdowns {
+    overflow-x: auto;
+    padding-bottom: 4px;
+    width: 100%;
+  }
+
+  .topicNavDropdown {
+    position: static;
+  }
+
+  .topicNavDropdownPanel {
+    left: 14px;
+    min-width: calc(100vw - 28px);
+    position: absolute;
+    right: 14px;
   }
 
   .topicNavSportLink {

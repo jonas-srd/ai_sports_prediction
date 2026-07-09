@@ -218,17 +218,145 @@ export async function getSportMatchAnalysis({
   match: SportApiMatch;
   sport: ApiSportId;
 }): Promise<SportApiAnalysisSnapshot> {
-  void competition;
-  void match;
+  const apiKey = getTheSportsDbKey();
+  const league = sport === "football" && competition
+    ? THE_SPORTS_DB_FOOTBALL_LEAGUES[competition.slug] ?? { id: "", name: competition.name }
+    : THE_SPORTS_DB_LEAGUES[sport];
+
+  if (!apiKey) {
+    return {
+      status: "not_configured",
+      message: "Set THE_SPORTS_DB_API_KEY to enable live match analysis.",
+      stats: [],
+      h2h: [],
+      source: "TheSportsDB"
+    };
+  }
+
+  const [snapshot, participantHistory] = await Promise.all([
+    fetchTheSportsDbSnapshot(sport, league).catch(() => null),
+    fetchTheSportsDbParticipantHistory(sport, match).catch(() => [])
+  ]);
+  const h2h = findTheSportsDbHeadToHead(mergeMatches(snapshot?.matches ?? [], participantHistory), match);
+  const stats = buildTheSportsDbH2HStats(h2h, match, sport);
+
   return {
-    status: getTheSportsDbKey() ? "live" : "not_configured",
-    message: getTheSportsDbKey()
-      ? `Match analysis is using TheSportsDB data for ${sport}.`
-      : "Set THE_SPORTS_DB_API_KEY to enable live match analysis.",
-    stats: [],
-    h2h: [],
+    status: "live",
+    message: h2h.length > 0
+      ? `Head-to-head trends loaded from TheSportsDB event history for ${league.name}.`
+      : `TheSportsDB has no previous direct matchup rows for ${match.homeName} vs ${match.awayName} in ${league.name}.`,
+    stats,
+    h2h,
     source: "TheSportsDB"
   };
+}
+
+function findTheSportsDbHeadToHead(matches: SportApiMatch[], target: SportApiMatch) {
+  return matches
+    .filter((candidate) => {
+      if (candidate.id === target.id) {
+        return false;
+      }
+
+      return isSameTheSportsDbPair(candidate, target) &&
+        candidate.homeScore !== null &&
+        candidate.awayScore !== null &&
+        isCompletedSportApiMatch(candidate);
+    })
+    .sort((left, right) => sortMatchesByDate(right, left))
+    .slice(0, 8);
+}
+
+function isSameTheSportsDbPair(candidate: SportApiMatch, target: SportApiMatch) {
+  const sameDirection = namesMatch(candidate.homeName, target.homeName) && namesMatch(candidate.awayName, target.awayName);
+  const swappedDirection = namesMatch(candidate.homeName, target.awayName) && namesMatch(candidate.awayName, target.homeName);
+
+  return sameDirection || swappedDirection;
+}
+
+function buildTheSportsDbH2HStats(matches: SportApiMatch[], target: SportApiMatch, sport: ApiSportId): SportApiStatRow[] {
+  const completed = matches.filter((match) => match.homeScore !== null && match.awayScore !== null);
+
+  if (completed.length === 0) {
+    return [];
+  }
+
+  let targetHomeWins = 0;
+  let targetAwayWins = 0;
+  let draws = 0;
+  let targetHomeScoreTotal = 0;
+  let targetAwayScoreTotal = 0;
+
+  for (const match of completed) {
+    const sameDirection = namesMatch(match.homeName, target.homeName) && namesMatch(match.awayName, target.awayName);
+    const homeScore = match.homeScore ?? 0;
+    const awayScore = match.awayScore ?? 0;
+    const targetHomeScore = sameDirection ? homeScore : awayScore;
+    const targetAwayScore = sameDirection ? awayScore : homeScore;
+
+    targetHomeScoreTotal += targetHomeScore;
+    targetAwayScoreTotal += targetAwayScore;
+
+    if (targetHomeScore > targetAwayScore) {
+      targetHomeWins += 1;
+    } else if (targetHomeScore < targetAwayScore) {
+      targetAwayWins += 1;
+    } else {
+      draws += 1;
+    }
+  }
+
+  const scoreLabel = sport === "nfl" || sport === "nba"
+    ? "Avg points"
+    : sport === "tennis"
+      ? "Avg sets"
+      : "Avg goals";
+  const rows: SportApiStatRow[] = [
+    { label: "H2H wins", home: targetHomeWins, away: targetAwayWins },
+    { label: scoreLabel, home: formatAverage(targetHomeScoreTotal / completed.length), away: formatAverage(targetAwayScoreTotal / completed.length) },
+    { label: "Meetings", home: completed.length, away: completed.length }
+  ];
+
+  if (sport === "football" && draws > 0) {
+    rows.push({ label: "Draws", home: draws, away: draws });
+  }
+
+  const lastMeeting = completed[0];
+  if (lastMeeting?.homeScore !== null && lastMeeting?.awayScore !== null) {
+    const sameDirection = namesMatch(lastMeeting.homeName, target.homeName) && namesMatch(lastMeeting.awayName, target.awayName);
+    rows.push({
+      label: "Last meeting",
+      home: sameDirection ? lastMeeting.homeScore : lastMeeting.awayScore,
+      away: sameDirection ? lastMeeting.awayScore : lastMeeting.homeScore
+    });
+  }
+
+  return rows;
+}
+
+function formatAverage(value: number) {
+  if (!Number.isFinite(value)) {
+    return null;
+  }
+
+  return Number.isInteger(value) ? value : value.toFixed(1);
+}
+
+async function fetchTheSportsDbParticipantHistory(sport: ApiSportId, match: SportApiMatch): Promise<SportApiMatch[]> {
+  const ids = [match.homeId, match.awayId].filter((id): id is string => Boolean(id));
+
+  if (ids.length === 0) {
+    return [];
+  }
+
+  const rows = await Promise.all(ids.flatMap((id) => [
+    fetchTheSportsDbList<any>("eventslast.php", { id }, "events").catch(() => []),
+    fetchTheSportsDbV2Events(`schedule/previous/team/${id}`).catch(() => [])
+  ]));
+
+  return mergeMatches(rows.flat().map(normalizeTheSportsDbEvent), [])
+    .filter((row) => row.homeName && row.awayName)
+    .map((row) => ({ ...row, competition: row.competition || match.competition || THE_SPORTS_DB_LEAGUES[sport].name }));
 }
 
 export function fallbackTeamsToStandings(teams: FootballTeam[]): SportApiStanding[] {
