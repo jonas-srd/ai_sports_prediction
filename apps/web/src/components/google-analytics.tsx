@@ -1,3 +1,5 @@
+"use client";
+
 import Script from "next/script";
 
 const GA_MEASUREMENT_ID_PATTERN = /^G-[A-Z0-9]+$/i;
@@ -22,10 +24,10 @@ export function GoogleAnalytics({ measurementId }: GoogleAnalyticsProps) {
 
   return (
     <>
-      <Script src={`https://www.googletagmanager.com/gtag/js?id=${encodeURIComponent(id)}`} strategy="beforeInteractive" />
+      <Script src={`https://www.googletagmanager.com/gtag/js?id=${encodeURIComponent(id)}`} strategy="afterInteractive" />
       <Script
         id="google-analytics"
-        strategy="beforeInteractive"
+        strategy="afterInteractive"
         dangerouslySetInnerHTML={{
           __html: `
           window.dataLayer = window.dataLayer || [];

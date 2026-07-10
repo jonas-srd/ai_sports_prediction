@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
-import { Suspense, type ReactNode } from "react";
-import { GoogleAnalytics } from "@/components/google-analytics";
-import { GoogleAnalyticsPageViews } from "@/components/google-analytics-page-views";
+import { type ReactNode } from "react";
+import { CookieConsent } from "@/components/cookie-consent";
 import { HtmlLangSync } from "@/components/html-lang-sync";
 import { LocaleProvider } from "@/components/locale-provider";
 import { SiteFooter } from "@/components/site-footer";
@@ -35,19 +34,15 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: Readonly<{ children: ReactNode }>) {
   const showFullSite =
-    process.env.NEXT_PUBLIC_SHOW_FULL_SITE === "1" ||
-    (process.env.NODE_ENV !== "production" && process.env.NEXT_PUBLIC_SHOW_FULL_SITE !== "0");
+    process.env.SHOW_FULL_SITE === "1" ||
+    (process.env.SHOW_FULL_SITE !== "0" &&
+      process.env.NODE_ENV !== "production" &&
+      process.env.NEXT_PUBLIC_SHOW_FULL_SITE !== "0");
   const googleAnalyticsMeasurementId = process.env.NEXT_PUBLIC_GOOGLE_ANALYTICS_ID ?? "G-YVTSCGG16P";
 
   return (
     <html data-scroll-behavior="smooth" lang="en">
-      <head>
-        <GoogleAnalytics measurementId={googleAnalyticsMeasurementId} />
-      </head>
       <body>
-        <Suspense fallback={null}>
-          <GoogleAnalyticsPageViews measurementId={googleAnalyticsMeasurementId} />
-        </Suspense>
         <LocaleProvider>
           <TimeZoneProvider>
             <HtmlLangSync />
@@ -60,6 +55,7 @@ export default function RootLayout({ children }: Readonly<{ children: ReactNode 
             ) : (
               children
             )}
+            <CookieConsent measurementId={googleAnalyticsMeasurementId} />
           </TimeZoneProvider>
         </LocaleProvider>
       </body>

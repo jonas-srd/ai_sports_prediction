@@ -24,11 +24,15 @@ export function proxy(request: NextRequest) {
 }
 
 function shouldShowFullSite() {
-  if (process.env.NEXT_PUBLIC_SHOW_FULL_SITE === "1") {
+  if (process.env.SHOW_FULL_SITE === "1") {
     return true;
   }
 
-  return process.env.NODE_ENV !== "production" && process.env.NEXT_PUBLIC_SHOW_FULL_SITE !== "0";
+  if (process.env.SHOW_FULL_SITE === "0" || process.env.NODE_ENV === "production") {
+    return false;
+  }
+
+  return process.env.NEXT_PUBLIC_SHOW_FULL_SITE !== "0";
 }
 
 export const config = {

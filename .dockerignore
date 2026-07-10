@@ -9,6 +9,8 @@ dist
 **/dist
 .env
 .env.*
+**/.env
+**/.env.*
 data/*.db
 data/*.db-*
 data/*.sqlite

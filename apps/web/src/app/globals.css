@@ -16,6 +16,211 @@
   --soft-shadow: 0 18px 48px rgba(0, 0, 0, 0.3);
 }
 
+.cookieConsent {
+  align-items: center;
+  background:
+    linear-gradient(135deg, rgba(125, 245, 193, 0.1), transparent 36%),
+    #101f2e;
+  border: 1px solid rgba(125, 245, 193, 0.24);
+  border-radius: 8px;
+  bottom: 18px;
+  box-shadow: 0 24px 70px rgba(0, 0, 0, 0.42);
+  color: #f7fbff;
+  display: grid;
+  gap: 16px;
+  grid-template-columns: minmax(0, 1fr) auto;
+  left: 18px;
+  max-width: min(780px, calc(100vw - 36px));
+  padding: 16px;
+  position: fixed;
+  z-index: 120;
+}
+
+.cookieConsent h2 {
+  font-size: 1rem;
+  font-weight: 950;
+  margin: 0 0 6px;
+}
+
+.cookieConsent p {
+  color: rgba(247, 251, 255, 0.76);
+  font-size: 0.88rem;
+  font-weight: 720;
+  line-height: 1.45;
+  margin: 0;
+}
+
+.cookieConsentActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: flex-end;
+}
+
+.cookieConsentPolicyLink {
+  color: #7df5c1;
+  display: inline-flex;
+  font-size: 0.82rem;
+  font-weight: 900;
+  margin-top: 8px;
+  text-decoration: none;
+}
+
+.cookieConsent button,
+.cookiePreferencePanel button {
+  border-radius: 8px;
+  cursor: pointer;
+  font: inherit;
+  font-size: 0.84rem;
+  font-weight: 900;
+  min-height: 40px;
+  padding: 10px 12px;
+}
+
+.cookieConsentPrimary {
+  background: #7df5c1;
+  border: 1px solid rgba(125, 245, 193, 0.8);
+  box-shadow: 0 12px 28px rgba(125, 245, 193, 0.18);
+  color: #07131d;
+  min-width: 170px;
+}
+
+.cookieConsentSecondary,
+.cookiePreferencePanel {
+  background: rgba(255, 255, 255, 0.07);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  color: #f7fbff;
+}
+
+.cookieConsentActions .cookieConsentSecondary {
+  color: rgba(247, 251, 255, 0.78);
+}
+
+.cookieConsentActions .cookieConsentPrimary {
+  font-size: 0.9rem;
+  order: 3;
+}
+
+.cookieConsent button:hover,
+.cookieConsent button:focus-visible,
+.cookiePreferencePanel button:hover,
+.cookiePreferencePanel button:focus-visible {
+  outline: 3px solid rgba(125, 245, 193, 0.22);
+}
+
+.cookiePreferencePanel {
+  border-radius: 8px;
+  display: grid;
+  gap: 10px;
+  padding: 12px;
+}
+
+.cookiePreferencePanel.isBanner {
+  grid-column: 1 / -1;
+}
+
+.cookiePreferencePanel > button {
+  justify-self: end;
+}
+
+.cookiePreferenceRow {
+  align-items: center;
+  background: rgba(5, 12, 20, 0.28);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 8px;
+  display: grid;
+  gap: 12px;
+  grid-template-columns: minmax(0, 1fr) auto;
+  padding: 12px;
+}
+
+.cookiePreferenceRow strong {
+  color: #f7fbff;
+  display: block;
+  font-size: 0.92rem;
+  font-weight: 950;
+  margin-bottom: 4px;
+}
+
+.cookiePreferenceRow p {
+  color: rgba(247, 251, 255, 0.7);
+  font-size: 0.82rem;
+  margin: 0;
+}
+
+.cookiePreferenceRow > span {
+  color: #7df5c1;
+  font-size: 0.72rem;
+  font-weight: 950;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.cookiePreferenceToggle {
+  cursor: pointer;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+}
+
+.cookiePreferenceToggle input {
+  accent-color: #7df5c1;
+  height: 20px;
+  width: 20px;
+}
+
+.cookieSettingsPage {
+  margin: 0 auto;
+  max-width: 920px;
+  padding: 72px 24px;
+}
+
+.cookieSettingsPanel {
+  background:
+    linear-gradient(135deg, rgba(125, 245, 193, 0.08), transparent 40%),
+    rgba(16, 31, 46, 0.94);
+  border: 1px solid rgba(125, 245, 193, 0.18);
+  border-radius: 8px;
+  box-shadow: 0 28px 80px rgba(0, 0, 0, 0.34);
+  color: #f7fbff;
+  display: grid;
+  gap: 16px;
+  padding: 24px;
+}
+
+.cookieSettingsPanel h1 {
+  font-size: clamp(2rem, 5vw, 3.4rem);
+  margin: 0;
+}
+
+.cookieSettingsPanel > p {
+  color: rgba(247, 251, 255, 0.74);
+  font-size: 1rem;
+  line-height: 1.55;
+  margin: 0;
+}
+
+@media (max-width: 720px) {
+  .cookieConsent {
+    grid-template-columns: 1fr;
+  }
+
+  .cookieConsentActions {
+    justify-content: stretch;
+  }
+
+  .cookieConsentActions button {
+    flex: 1 1 160px;
+  }
+
+  .cookiePreferenceRow,
+  .cookiePreferenceToggle {
+    grid-template-columns: 1fr;
+  }
+
+  .cookiePreferencePanel > button {
+    justify-self: stretch;
+  }
+}
+
 /* AI Sports Prediction dark frontend refresh */
 :root {
   --bg: #05070a;

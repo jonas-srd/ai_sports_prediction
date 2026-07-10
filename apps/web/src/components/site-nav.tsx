@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo, useState, type FormEvent } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { LanguageSelect } from "@/components/language-select";
 import { TimeZoneSelect } from "@/components/time-zone-select";
@@ -12,10 +12,30 @@ import { tennisPlayers, tennisTournaments } from "@/lib/tennis-data";
 import { useLocale } from "@/components/locale-provider";
 import { commonText, localizePath, stripLocalePrefix } from "@/lib/i18n";
 
+type FootballCompetitionGroup = {
+  competitions: typeof footballCompetitions;
+  id: string;
+  label: string;
+};
+
+type SportMenuLink = {
+  href: string;
+  label: string;
+};
+
+type SportMenuSection =
+  | { groups: FootballCompetitionGroup[]; href: string; kind: "football"; label: string }
+  | { href: string; kind: "links"; label: string; links: SportMenuLink[] };
+
 export function SiteNav() {
   const { locale } = useLocale();
   const pathname = usePathname();
   const router = useRouter();
+  const footballDropdownsRef = useRef<HTMLDivElement>(null);
+  const siteMenuRef = useRef<HTMLDetailsElement>(null);
+  const [openFootballDropdown, setOpenFootballDropdown] = useState<string | null>(null);
+  const [activeSiteMenuSport, setActiveSiteMenuSport] = useState<string | null>(null);
+  const [siteMenuOpen, setSiteMenuOpen] = useState(false);
   const text = commonText[locale];
   const mainLinks = [
     { href: "/", label: text.home }
@@ -40,18 +60,144 @@ export function SiteNav() {
     const competitionPath = `/football/${slug}`;
     return currentPath === competitionPath || currentPath.startsWith(`${competitionPath}/`);
   };
-  const footballCompetitionGroups = [
+  const closeFootballCompetitionDropdowns = useCallback(() => {
+    setOpenFootballDropdown(null);
+  }, []);
+  const closeSiteMenu = useCallback(() => {
+    setSiteMenuOpen(false);
+    setActiveSiteMenuSport(null);
+  }, []);
+  useEffect(() => {
+    if (!isFootballSection) return;
+
+    const closeOnOutsidePointerDown = (event: PointerEvent) => {
+      const target = event.target;
+
+      if (!(target instanceof Node) || footballDropdownsRef.current?.contains(target)) {
+        return;
+      }
+
+      closeFootballCompetitionDropdowns();
+    };
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        closeFootballCompetitionDropdowns();
+      }
+    };
+
+    document.addEventListener("pointerdown", closeOnOutsidePointerDown);
+    document.addEventListener("keydown", closeOnEscape);
+
+    return () => {
+      document.removeEventListener("pointerdown", closeOnOutsidePointerDown);
+      document.removeEventListener("keydown", closeOnEscape);
+    };
+  }, [closeFootballCompetitionDropdowns, isFootballSection]);
+  useEffect(() => {
+    if (!siteMenuOpen) return;
+
+    const closeOnOutsidePointerDown = (event: PointerEvent) => {
+      const target = event.target;
+
+      if (!(target instanceof Node) || siteMenuRef.current?.contains(target)) {
+        return;
+      }
+
+      closeSiteMenu();
+    };
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        closeSiteMenu();
+      }
+    };
+
+    document.addEventListener("pointerdown", closeOnOutsidePointerDown);
+    document.addEventListener("keydown", closeOnEscape);
+
+    return () => {
+      document.removeEventListener("pointerdown", closeOnOutsidePointerDown);
+      document.removeEventListener("keydown", closeOnEscape);
+    };
+  }, [closeSiteMenu, siteMenuOpen]);
+  const footballCompetitionGroups: FootballCompetitionGroup[] = [
     {
+      id: "europe",
       label: locale === "de" ? "Europa" : "Europe",
       competitions: footballCompetitions.filter((competition) => competition.country === "Europe")
     },
     {
+      id: "leagues",
       label: locale === "de" ? "Ligen" : "Leagues",
       competitions: footballCompetitions.filter((competition) => competition.country !== "Europe" && competition.type === "league")
     },
     {
+      id: "cups",
       label: locale === "de" ? "Pokale" : "Cups",
       competitions: footballCompetitions.filter((competition) => competition.country !== "Europe" && competition.type === "cup")
+    }
+  ];
+  const sportMenuLabels = locale === "de"
+    ? {
+        competitions: "Wettbewerbe",
+        matches: "Spiele",
+        overview: "Übersicht",
+        players: "Spieler",
+        rankings: "Ranking",
+        table: "Tabelle",
+        teamStats: "Teamstatistik",
+        teams: "Teams",
+        tournaments: "Turniere"
+      }
+    : {
+        competitions: "Competitions",
+        matches: "Matches",
+        overview: "Overview",
+        players: "Players",
+        rankings: "Rankings",
+        table: "Table",
+        teamStats: "Team stats",
+        teams: "Teams",
+        tournaments: "Tournaments"
+      };
+  const sportMenuSections: SportMenuSection[] = [
+    {
+      href: "/football",
+      kind: "football",
+      label: text.football,
+      groups: footballCompetitionGroups
+    },
+    {
+      href: "/nfl",
+      kind: "links",
+      label: "NFL",
+      links: [
+        { href: "/nfl/matches", label: sportMenuLabels.matches },
+        { href: "/nfl/table", label: sportMenuLabels.table },
+        { href: "/nfl/teams", label: sportMenuLabels.teams },
+        { href: "/nfl/team-stats", label: sportMenuLabels.teamStats }
+      ]
+    },
+    {
+      href: "/nba",
+      kind: "links",
+      label: "NBA",
+      links: [
+        { href: "/nba/matches", label: sportMenuLabels.matches },
+        { href: "/nba/table", label: sportMenuLabels.table },
+        { href: "/nba/teams", label: sportMenuLabels.teams },
+        { href: "/nba/team-stats", label: sportMenuLabels.teamStats }
+      ]
+    },
+    {
+      href: "/tennis",
+      kind: "links",
+      label: text.tennis,
+      links: [
+        { href: "/tennis/matches", label: sportMenuLabels.matches },
+        { href: "/tennis/players", label: sportMenuLabels.players },
+        { href: "/tennis/rankings", label: sportMenuLabels.rankings },
+        { href: "/tennis/tournaments", label: sportMenuLabels.tournaments }
+      ]
     }
   ];
   const searchItems = useMemo(() => {
@@ -126,27 +272,88 @@ export function SiteNav() {
             <TimeZoneSelect />
             <LanguageSelect />
           </div>
-          <details className="siteMenu">
-            <summary className="siteNavMenuLink">
+          <details className="siteMenu" open={siteMenuOpen} ref={siteMenuRef}>
+            <summary
+              className="siteNavMenuLink"
+              onClick={(event) => {
+                event.preventDefault();
+                setSiteMenuOpen((open) => {
+                  if (open) {
+                    setActiveSiteMenuSport(null);
+                  }
+
+                  return !open;
+                });
+              }}
+            >
               <span aria-hidden="true">☰</span>
               <span>{text.menu}</span>
             </summary>
             <div className="siteMenuPanel">
-              <div className="siteMenuColumn">
-                <p>{text.sports}</p>
-                {sportLinks.map((link) => (
-                  <Link href={anchorAwarePath(link.href)} key={link.href}>
+              <div className="siteMenuSection siteMenuUtilitySection">
+                <p>{text.mainNavigation}</p>
+                {mainLinks.map((link) => (
+                  <Link href={anchorAwarePath(link.href)} key={link.href} onClick={closeSiteMenu}>
                     {link.label}
                   </Link>
                 ))}
               </div>
-              <div className="siteMenuColumn">
-                <p>{text.mainNavigation}</p>
-                {mainLinks.map((link) => (
-                  <Link href={anchorAwarePath(link.href)} key={link.href}>
-                    {link.label}
-                  </Link>
-                ))}
+              <div className="siteMenuSection siteMenuSportsSection">
+                <p>{text.sports}</p>
+                <div className="siteMenuSportGrid">
+                  {sportMenuSections.map((section) => {
+                    const isSportExpanded = activeSiteMenuSport === section.href;
+
+                    return (
+                    <section className={`siteMenuSportBlock ${isSportExpanded ? "isExpanded" : ""}`} key={section.href}>
+                      <button
+                        aria-expanded={isSportExpanded}
+                        className="siteMenuSportTitle"
+                        onClick={() => setActiveSiteMenuSport((activeSport) => activeSport === section.href ? null : section.href)}
+                        type="button"
+                      >
+                        <span>{section.label}</span>
+                        <small aria-hidden="true">⌄</small>
+                      </button>
+                      {isSportExpanded && section.kind === "football" ? (
+                        <div className="siteMenuFootballGroups">
+                          <Link className="siteMenuOverviewLink" href={anchorAwarePath(section.href)} onClick={closeSiteMenu}>
+                            {sportMenuLabels.overview}
+                          </Link>
+                          {section.groups.map((group) => (
+                            <div className="siteMenuLinkGroup" key={group.id}>
+                              <span>{group.label}</span>
+                              <div className="siteMenuMiniLinks">
+                                {group.competitions.map((competition) => (
+                                  <Link
+                                    href={localizePath(`/football/${competition.slug}`, locale)}
+                                    key={competition.slug}
+                                    onClick={closeSiteMenu}
+                                  >
+                                    <em>{competition.countryCode}</em>
+                                    <strong>{competition.name}</strong>
+                                  </Link>
+                                ))}
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      ) : isSportExpanded && section.kind === "links" ? (
+                        <div className="siteMenuSubLinks">
+                          <Link href={anchorAwarePath(section.href)} onClick={closeSiteMenu}>
+                            {sportMenuLabels.overview}
+                          </Link>
+                          {section.links.map((link) => (
+                            <Link href={anchorAwarePath(link.href)} key={link.href} onClick={closeSiteMenu}>
+                              {link.label}
+                            </Link>
+                          ))}
+                        </div>
+                      ) : null}
+                    </section>
+                    );
+                  })}
+                </div>
               </div>
             </div>
           </details>
@@ -170,13 +377,19 @@ export function SiteNav() {
                   </Link>
                 ))}
               </div>
-              <div className="topicNavCompetitionDropdowns">
+              <div className="topicNavCompetitionDropdowns" ref={footballDropdownsRef}>
                 {footballCompetitionGroups.map((group) => {
                   const groupIsActive = group.competitions.some((competition) => isFootballCompetitionActive(competition.slug));
 
                   return (
-                    <details className="topicNavDropdown" key={group.label}>
-                      <summary className={`topicNavLink ${groupIsActive ? "isActive" : ""}`}>
+                    <details className="topicNavDropdown" key={group.id} open={openFootballDropdown === group.id}>
+                      <summary
+                        className={`topicNavLink ${groupIsActive ? "isActive" : ""}`}
+                        onClick={(event) => {
+                          event.preventDefault();
+                          setOpenFootballDropdown((openGroup) => openGroup === group.id ? null : group.id);
+                        }}
+                      >
                         {group.label}
                       </summary>
                       <div className="topicNavDropdownPanel">
@@ -185,6 +398,7 @@ export function SiteNav() {
                             className={isFootballCompetitionActive(competition.slug) ? "isActive" : ""}
                             href={localizePath(`/football/${competition.slug}`, locale)}
                             key={competition.slug}
+                            onClick={closeFootballCompetitionDropdowns}
                           >
                             <span>{competition.countryCode}</span>
                             <strong>{competition.name}</strong>

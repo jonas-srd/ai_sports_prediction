@@ -13,6 +13,7 @@ export function SiteFooter() {
       <div className="siteFooterInner">
         <span>AI Sports Prediction</span>
         <Link href={localizePath("/impressum", locale)}>{text.legalNotice}</Link>
+        <Link href={localizePath("/cookies", locale)}>{locale === "de" ? "Cookies" : "Cookies"}</Link>
       </div>
     </footer>
   );

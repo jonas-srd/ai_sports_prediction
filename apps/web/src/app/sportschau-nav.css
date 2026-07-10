@@ -311,14 +311,14 @@
   box-shadow: 0 28px 70px rgba(0, 0, 0, 0.42);
   display: grid;
   gap: 14px;
-  grid-template-columns: 0.82fr 1.18fr;
-  max-width: calc(100vw - 32px);
-  min-width: min(640px, calc(100vw - 32px));
-  overflow: hidden;
+  grid-template-columns: 1fr;
+  max-height: min(72vh, 760px);
+  overflow-y: auto;
   padding: 14px;
   position: absolute;
   right: 0;
   top: calc(100% + 10px);
+  width: min(720px, calc(100vw - 32px));
 }
 
 .siteMenuPanel::before {
@@ -334,57 +334,200 @@
   width: 14px;
 }
 
-.siteMenuColumn {
+.siteMenuSection {
   background: rgba(255, 255, 255, 0.045);
   border: 1px solid rgba(255, 255, 255, 0.075);
   border-radius: 8px;
   display: grid;
-  gap: 4px;
+  gap: 12px;
+  min-width: 0;
   padding: 12px;
 }
 
-.siteMenuColumn p {
+.siteMenuSection p {
   color: rgba(125, 245, 193, 0.82);
   font-size: 0.72rem;
   font-weight: 950;
   letter-spacing: 0.12em;
-  margin: 0 0 8px;
+  margin: 0;
   text-transform: uppercase;
 }
 
-.siteMenuColumn a {
+.siteMenuSportGrid {
+  display: grid;
+  gap: 10px;
+  grid-template-columns: 1fr;
+  min-width: 0;
+}
+
+.siteMenuSportBlock {
+  background: rgba(5, 12, 20, 0.24);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 8px;
+  display: grid;
+  gap: 10px;
+  min-width: 0;
+  padding: 10px;
+}
+
+.siteMenuSportBlock:first-child {
+  grid-column: auto;
+}
+
+.siteMenuSportBlock.isExpanded {
+  grid-column: auto;
+}
+
+.siteMenuSportTitle,
+.siteMenuUtilitySection a,
+.siteMenuOverviewLink,
+.siteMenuSubLinks a,
+.siteMenuMiniLinks a {
   align-items: center;
   border-radius: 8px;
+  border: 0;
   color: rgba(248, 251, 255, 0.9);
-  display: grid;
-  font-size: 1rem;
-  gap: 10px;
-  grid-template-columns: 12px minmax(0, 1fr);
-  font-weight: 900;
-  min-height: 44px;
-  padding: 9px 10px;
+  cursor: pointer;
+  display: flex;
+  font: inherit;
+  font-weight: 880;
+  gap: 8px;
+  min-width: 0;
+  padding: 8px;
   position: relative;
   text-decoration: none;
   transition: background 160ms ease, color 160ms ease, transform 160ms ease;
 }
 
-.siteMenuColumn a::before {
+.siteMenuSportTitle {
+  background: transparent;
+  justify-content: space-between;
+  min-height: 40px;
+  text-align: left;
+  width: 100%;
+}
+
+.siteMenuSportTitle span {
+  font-size: 1rem;
+  font-weight: 950;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.siteMenuSportTitle small {
+  color: rgba(125, 245, 193, 0.74);
+  font-size: 0.92rem;
+  font-weight: 950;
+  line-height: 1;
+  transition: transform 160ms ease;
+}
+
+.siteMenuSportBlock.isExpanded .siteMenuSportTitle small {
+  transform: rotate(180deg);
+}
+
+.siteMenuSubLinks {
+  display: grid;
+  gap: 4px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.siteMenuSubLinks a,
+.siteMenuOverviewLink,
+.siteMenuUtilitySection a {
+  background: rgba(255, 255, 255, 0.035);
+  font-size: 0.86rem;
+  min-height: 36px;
+}
+
+.siteMenuOverviewLink {
+  color: rgba(125, 245, 193, 0.92);
+  font-weight: 950;
+  justify-content: center;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.siteMenuFootballGroups {
+  display: grid;
+  gap: 10px;
+}
+
+.siteMenuLinkGroup {
+  display: grid;
+  gap: 6px;
+}
+
+.siteMenuLinkGroup > span {
+  color: rgba(255, 200, 87, 0.92);
+  font-size: 0.68rem;
+  font-weight: 950;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.siteMenuMiniLinks {
+  display: grid;
+  gap: 4px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.siteMenuMiniLinks a {
+  background: rgba(255, 255, 255, 0.035);
+  min-height: 34px;
+}
+
+.siteMenuMiniLinks em {
+  color: rgba(125, 245, 193, 0.82);
+  flex: 0 0 auto;
+  font-size: 0.66rem;
+  font-style: normal;
+  font-weight: 950;
+  letter-spacing: 0.08em;
+}
+
+.siteMenuMiniLinks strong {
+  font-size: 0.78rem;
+  font-weight: 880;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.siteMenuUtilitySection {
+  align-content: start;
+}
+
+.siteMenuUtilitySection a::before {
   background: rgba(125, 245, 193, 0.45);
   border-radius: 999px;
   content: "";
+  flex: 0 0 auto;
   height: 7px;
   width: 7px;
 }
 
-.siteMenuColumn a:hover,
-.siteMenuColumn a:focus-visible {
+.siteMenuSportTitle:hover,
+.siteMenuSportTitle:focus-visible,
+.siteMenuUtilitySection a:hover,
+.siteMenuUtilitySection a:focus-visible,
+.siteMenuOverviewLink:hover,
+.siteMenuOverviewLink:focus-visible,
+.siteMenuSubLinks a:hover,
+.siteMenuSubLinks a:focus-visible,
+.siteMenuMiniLinks a:hover,
+.siteMenuMiniLinks a:focus-visible {
   background: rgba(125, 245, 193, 0.12);
   color: #ffffff;
+  outline: none;
   transform: translateX(2px);
 }
 
-.siteMenuColumn a:hover::before,
-.siteMenuColumn a:focus-visible::before {
+.siteMenuUtilitySection a:hover::before,
+.siteMenuUtilitySection a:focus-visible::before {
   background: #ffc857;
 }
 
@@ -735,6 +878,14 @@
 
   .siteMenuPanel {
     grid-template-columns: 1fr;
-    min-width: min(340px, calc(100vw - 28px));
+    max-height: min(78vh, 680px);
+    right: -2px;
+    width: min(440px, calc(100vw - 28px));
+  }
+
+  .siteMenuSportGrid,
+  .siteMenuSubLinks,
+  .siteMenuMiniLinks {
+    grid-template-columns: 1fr;
   }
 }

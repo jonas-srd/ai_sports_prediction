@@ -65,6 +65,8 @@ const taskDefinition = {
         { name: "PORT", value: "3000" },
         { name: "AI_SPORTS_API_URL", value: env("WEB_API_URL", "http://127.0.0.1:3001") },
         { name: "INTERNAL_API_URL", value: env("WEB_INTERNAL_API_URL", "http://127.0.0.1:3001") },
+        { name: "SHOW_FULL_SITE", value: env("SHOW_FULL_SITE", "0") },
+        { name: "NEXT_PUBLIC_SHOW_FULL_SITE", value: env("NEXT_PUBLIC_SHOW_FULL_SITE", "0") },
         { name: "WEB_API_CACHE_SECONDS", value: env("WEB_API_CACHE_SECONDS", "60") }
       ],
       logConfiguration: awslogs("edge-web")
