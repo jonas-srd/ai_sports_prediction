@@ -3,8 +3,7 @@ import { type ReactNode } from "react";
 import { CookieConsent } from "@/components/cookie-consent";
 import { HtmlLangSync } from "@/components/html-lang-sync";
 import { LocaleProvider } from "@/components/locale-provider";
-import { SiteFooter } from "@/components/site-footer";
-import { SiteNav } from "@/components/site-nav";
+import { SiteChrome } from "@/components/site-chrome";
 import { TimeZoneProvider } from "@/components/time-zone-provider";
 import "./globals.css";
 import "./sportschau-nav.css";
@@ -33,12 +32,7 @@ export const metadata: Metadata = {
 };
 
 export default function RootLayout({ children }: Readonly<{ children: ReactNode }>) {
-  const showFullSite =
-    process.env.SHOW_FULL_SITE === "1" ||
-    (process.env.SHOW_FULL_SITE !== "0" &&
-      process.env.NODE_ENV !== "production" &&
-      process.env.NEXT_PUBLIC_SHOW_FULL_SITE !== "0");
-  const googleAnalyticsMeasurementId = process.env.NEXT_PUBLIC_GOOGLE_ANALYTICS_ID ?? "G-YVTSCGG16P";
+  const googleAnalyticsMeasurementId = process.env.NEXT_PUBLIC_GOOGLE_ANALYTICS_ID ?? "G-KSGFX9TKD8";
 
   return (
     <html data-scroll-behavior="smooth" lang="en">
@@ -46,15 +40,7 @@ export default function RootLayout({ children }: Readonly<{ children: ReactNode 
         <LocaleProvider>
           <TimeZoneProvider>
             <HtmlLangSync />
-            {showFullSite ? (
-              <>
-                <SiteNav />
-                {children}
-                <SiteFooter />
-              </>
-            ) : (
-              children
-            )}
+            <SiteChrome>{children}</SiteChrome>
             <CookieConsent measurementId={googleAnalyticsMeasurementId} />
           </TimeZoneProvider>
         </LocaleProvider>

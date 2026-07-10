@@ -5,8 +5,8 @@
   "type": "module",
   "scripts": {
     "dev": "node ../../scripts/run-with-env.mjs next dev",
-    "build": "next build",
-    "start": "next start -H 0.0.0.0",
+    "build": "node ../../scripts/run-with-env.mjs next build",
+    "start": "node ../../scripts/run-with-env.mjs next start -H 0.0.0.0",
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
   "dependencies": {

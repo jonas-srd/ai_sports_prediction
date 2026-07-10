@@ -1,6 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 
-const PUBLIC_FILE = /\.(?:avif|ico|jpg|jpeg|png|svg|webp|txt|xml|pdf|js|css|map)$/i;
+const PUBLIC_FILE = /\.(?:avif|ico|jpg|jpeg|png|svg|webp|txt|xml|pdf|html|js|css|map)$/i;
 
 export function proxy(request: NextRequest) {
   if (shouldShowFullSite()) {

@@ -37,8 +37,10 @@ export function SiteNav() {
   const [activeSiteMenuSport, setActiveSiteMenuSport] = useState<string | null>(null);
   const [siteMenuOpen, setSiteMenuOpen] = useState(false);
   const text = commonText[locale];
+  const widgetsLabel = "Widgets";
   const mainLinks = [
-    { href: "/", label: text.home }
+    { href: "/", label: text.home },
+    { href: "/widgets", label: widgetsLabel }
   ];
   const sportLinks = [
     { href: "/football", label: text.football },
@@ -203,6 +205,7 @@ export function SiteNav() {
   const searchItems = useMemo(() => {
     const baseItems = [
       { href: "/", label: text.home, eyebrow: locale === "de" ? "Start" : "Home" },
+      { href: "/widgets", label: widgetsLabel, eyebrow: text.mainNavigation },
       { href: "/football", label: text.football, eyebrow: text.sports },
       { href: "/nfl", label: "NFL", eyebrow: text.sports },
       { href: "/nba", label: "NBA", eyebrow: text.sports },
@@ -251,7 +254,7 @@ export function SiteNav() {
     }));
 
     return [...baseItems, ...competitionItems, ...footballTeamItems, ...nflTeamItems, ...nbaTeamItems, ...tennisPlayerItems, ...tennisTournamentItems];
-  }, [locale, text.football, text.home, text.legalNotice, text.mainNavigation, text.sports, text.tennis]);
+  }, [locale, text.football, text.home, text.legalNotice, text.mainNavigation, text.sports, text.tennis, widgetsLabel]);
 
   return (
     <header className="siteNav">
@@ -376,6 +379,9 @@ export function SiteNav() {
                     {link.label}
                   </Link>
                 ))}
+                <Link className={`topicNavLink ${isActive("/widgets") ? "isActive" : ""}`} href={localizePath("/widgets", locale)}>
+                  {widgetsLabel}
+                </Link>
               </div>
               <div className="topicNavCompetitionDropdowns" ref={footballDropdownsRef}>
                 {footballCompetitionGroups.map((group) => {
@@ -424,6 +430,9 @@ export function SiteNav() {
                   {link.label}
                 </Link>
               ))}
+              <Link className={`topicNavLink ${isActive("/widgets") ? "isActive" : ""}`} href={localizePath("/widgets", locale)}>
+                {widgetsLabel}
+              </Link>
             </>
           )}
         </nav>

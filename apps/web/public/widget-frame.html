@@ -1,0 +1,903 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>AI Sports Prediction Widget</title>
+    <style>
+      :root {
+        color-scheme: dark;
+        --accent: #7df5c1;
+        --background: #101f2e;
+        --text: #f7fbff;
+        --muted: rgba(247, 251, 255, 0.68);
+        --panel: rgba(255, 255, 255, 0.075);
+        --panel-strong: rgba(255, 255, 255, 0.115);
+        --line: rgba(255, 255, 255, 0.14);
+        --inset: rgba(0, 0, 0, 0.14);
+        --inset-border: rgba(255, 255, 255, 0.08);
+        --track: rgba(255, 255, 255, 0.12);
+        --glow: rgba(255, 255, 255, 0.055);
+        --shadow: rgba(0, 0, 0, 0.28);
+        --radius: 8px;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        background: transparent;
+        color: var(--text);
+        font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        margin: 0;
+      }
+
+      .widget {
+        background:
+          radial-gradient(circle at 14% 0%, color-mix(in srgb, var(--accent) 18%, transparent), transparent 34%),
+          linear-gradient(160deg, rgba(255, 255, 255, 0.055), transparent 42%),
+          var(--background);
+        border: 1px solid var(--line);
+        border-radius: var(--radius);
+        box-shadow: 0 18px 48px var(--shadow);
+        color: var(--text);
+        display: grid;
+        gap: 14px;
+        overflow: hidden;
+        padding: 18px;
+      }
+
+      .widget.light {
+        color-scheme: light;
+        --background: #ffffff;
+        --text: #101820;
+        --muted: rgba(16, 24, 32, 0.66);
+        --panel: rgba(16, 24, 32, 0.052);
+        --panel-strong: rgba(16, 24, 32, 0.082);
+        --line: rgba(16, 24, 32, 0.12);
+        --inset: rgba(16, 24, 32, 0.045);
+        --inset-border: rgba(16, 24, 32, 0.07);
+        --track: rgba(16, 24, 32, 0.12);
+        --glow: rgba(255, 255, 255, 0.36);
+        --shadow: rgba(16, 24, 32, 0.14);
+      }
+
+      .head {
+        align-items: start;
+        display: flex;
+        gap: 12px;
+        justify-content: space-between;
+      }
+
+      .eyebrow {
+        color: var(--accent);
+        font-size: 11px;
+        font-weight: 900;
+        letter-spacing: 0.12em;
+        margin: 0 0 3px;
+        text-transform: uppercase;
+      }
+
+      h1 {
+        font-size: clamp(20px, 4.5vw, 28px);
+        letter-spacing: 0;
+        line-height: 1.04;
+        margin: 0;
+      }
+
+      .badge {
+        background: color-mix(in srgb, var(--accent) 16%, transparent);
+        border: 1px solid color-mix(in srgb, var(--accent) 32%, transparent);
+        border-radius: 999px;
+        color: var(--accent);
+        flex: 0 0 auto;
+        font-size: 11px;
+        font-weight: 900;
+        line-height: 1;
+        padding: 8px 10px;
+        text-transform: uppercase;
+      }
+
+      .match,
+      .leaderboardRow {
+        background:
+          linear-gradient(135deg, var(--panel-strong), var(--panel)),
+          var(--panel);
+        border: 1px solid var(--line);
+        border-radius: max(6px, calc(var(--radius) - 2px));
+        display: grid;
+        gap: 12px;
+        padding: 14px;
+      }
+
+      .match {
+        --center-column: clamp(128px, 18%, 210px);
+        gap: 14px;
+      }
+
+      .teams {
+        align-items: center;
+        display: grid;
+        gap: 10px;
+        grid-template-columns: minmax(0, 1fr) var(--center-column) minmax(0, 1fr);
+      }
+
+      .team {
+        align-items: center;
+        display: grid;
+        gap: 10px;
+        grid-template-columns: 42px minmax(0, 1fr);
+        min-width: 0;
+        justify-self: start;
+      }
+
+      .team.away {
+        grid-template-columns: minmax(0, 1fr) 42px;
+        justify-self: end;
+        text-align: right;
+      }
+
+      .teamName {
+        display: block;
+        font-size: 15px;
+        font-weight: 900;
+        line-height: 1.15;
+        min-width: 0;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+
+      .teamMeta {
+        color: var(--muted);
+        display: block;
+        font-size: 10px;
+        font-weight: 900;
+        letter-spacing: 0.08em;
+        margin-top: 3px;
+        text-transform: uppercase;
+      }
+
+      .logo {
+        align-items: center;
+        background:
+          linear-gradient(145deg, rgba(255, 255, 255, 0.16), rgba(255, 255, 255, 0.04)),
+          color-mix(in srgb, var(--accent) 10%, transparent);
+        border: 1px solid var(--line);
+        border-radius: 999px;
+        display: flex;
+        height: 42px;
+        justify-content: center;
+        overflow: hidden;
+        width: 42px;
+      }
+
+      .logo img {
+        display: block;
+        height: 78%;
+        object-fit: contain;
+        width: 78%;
+      }
+
+      .logoFallback {
+        color: var(--accent);
+        font-size: 12px;
+        font-weight: 950;
+      }
+
+      .versus {
+        align-items: center;
+        background: color-mix(in srgb, var(--accent) 14%, transparent);
+        border: 1px solid color-mix(in srgb, var(--accent) 24%, transparent);
+        border-radius: 999px;
+        color: var(--accent);
+        display: flex;
+        font-size: 10px;
+        font-weight: 900;
+        height: 32px;
+        justify-content: center;
+        justify-self: center;
+        letter-spacing: 0.08em;
+        width: 42px;
+      }
+
+      .meta,
+      .reason,
+      .brand {
+        color: var(--muted);
+        font-size: 12px;
+        line-height: 1.4;
+      }
+
+      .reason {
+        background: color-mix(in srgb, var(--accent) 8%, transparent);
+        border: 1px solid color-mix(in srgb, var(--accent) 18%, transparent);
+        border-radius: max(6px, calc(var(--radius) - 4px));
+        margin: 0;
+        padding: 10px;
+      }
+
+      .reason span {
+        color: var(--accent);
+        display: block;
+        font-size: 10px;
+        font-weight: 900;
+        letter-spacing: 0.08em;
+        margin-bottom: 4px;
+        text-transform: uppercase;
+      }
+
+      .prediction {
+        align-items: stretch;
+        background: var(--inset);
+        border: 1px solid var(--inset-border);
+        border-radius: max(6px, calc(var(--radius) - 4px));
+        display: grid;
+        gap: 0;
+        grid-template-columns: minmax(0, 1fr) var(--center-column) minmax(0, 1fr);
+        overflow: hidden;
+      }
+
+      .predictionItem {
+        border-left: 1px solid var(--inset-border);
+        min-width: 0;
+        padding: 11px 12px;
+      }
+
+      .predictionItem:first-child {
+        border-left: 0;
+      }
+
+      .predictionLabel {
+        color: var(--muted);
+        display: block;
+        font-size: 10px;
+        font-weight: 900;
+        letter-spacing: 0.08em;
+        margin-bottom: 5px;
+        text-transform: uppercase;
+      }
+
+      .predictionValue {
+        display: block;
+        font-size: 16px;
+        font-weight: 900;
+        letter-spacing: 0;
+        line-height: 1.1;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+
+      .scoreValue {
+        color: var(--accent);
+        font-size: clamp(24px, 6vw, 38px);
+        line-height: 0.95;
+      }
+
+      .scoreItem {
+        background:
+          radial-gradient(circle at 50% 0%, color-mix(in srgb, var(--accent) 18%, transparent), transparent 70%),
+          var(--glow);
+        text-align: center;
+      }
+
+      .confidenceItem {
+        text-align: left;
+      }
+
+      .confidenceValue {
+        align-items: baseline;
+        display: flex;
+        gap: 5px;
+      }
+
+      .confidenceValue strong {
+        font-size: 19px;
+        line-height: 1;
+      }
+
+      .confidenceValue span {
+        color: var(--muted);
+        font-size: 11px;
+        font-weight: 800;
+      }
+
+      .confidenceTrack {
+        background: var(--track);
+        border-radius: 999px;
+        height: 6px;
+        margin-top: 7px;
+        overflow: hidden;
+      }
+
+      .confidenceFill {
+        background: linear-gradient(90deg, var(--accent), color-mix(in srgb, var(--accent) 62%, #ffffff));
+        border-radius: inherit;
+        display: block;
+        height: 100%;
+      }
+
+      .probabilityList,
+      .factorList {
+        display: grid;
+        gap: 9px;
+        margin: 0;
+        padding: 0;
+      }
+
+      .probabilityRow {
+        display: grid;
+        gap: 6px;
+      }
+
+      .probabilityTop {
+        align-items: baseline;
+        display: flex;
+        gap: 12px;
+        justify-content: space-between;
+      }
+
+      .probabilityTop strong {
+        font-size: 13px;
+        line-height: 1.2;
+        min-width: 0;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+
+      .probabilityTop span {
+        color: var(--accent);
+        flex: 0 0 auto;
+        font-size: 16px;
+        font-weight: 950;
+      }
+
+      .probabilityTrack {
+        background: var(--track);
+        border-radius: 999px;
+        height: 9px;
+        overflow: hidden;
+      }
+
+      .probabilityFill {
+        background: linear-gradient(90deg, var(--accent), color-mix(in srgb, var(--accent) 58%, #ffffff));
+        border-radius: inherit;
+        display: block;
+        height: 100%;
+      }
+
+      .factorList {
+        list-style: none;
+      }
+
+      .factorItem {
+        align-items: start;
+        background: var(--inset);
+        border: 1px solid var(--inset-border);
+        border-radius: max(6px, calc(var(--radius) - 4px));
+        display: grid;
+        gap: 9px;
+        grid-template-columns: 26px minmax(0, 1fr);
+        padding: 10px;
+      }
+
+      .factorIndex {
+        align-items: center;
+        background: color-mix(in srgb, var(--accent) 16%, transparent);
+        border: 1px solid color-mix(in srgb, var(--accent) 28%, transparent);
+        border-radius: 999px;
+        color: var(--accent);
+        display: flex;
+        font-size: 11px;
+        font-weight: 950;
+        height: 26px;
+        justify-content: center;
+        width: 26px;
+      }
+
+      .factorText {
+        color: var(--text);
+        font-size: 13px;
+        font-weight: 750;
+        line-height: 1.35;
+      }
+
+      .leaderboardRow {
+        align-items: center;
+        grid-template-columns: minmax(0, 1fr) auto;
+      }
+
+      .leaderboardRow strong,
+      .leaderboardRow span {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+
+      .brand {
+        align-items: center;
+        border-top: 1px solid var(--line);
+        display: flex;
+        gap: 12px;
+        justify-content: space-between;
+        padding-top: 2px;
+      }
+
+      .brand a {
+        color: var(--accent);
+        font-weight: 900;
+        text-decoration: none;
+      }
+
+      .empty {
+        color: var(--muted);
+        padding: 20px 0;
+      }
+
+      @media (max-width: 520px) {
+        .widget {
+          padding: 14px;
+        }
+
+        .head {
+          align-items: stretch;
+          flex-direction: column;
+        }
+
+        .badge {
+          width: fit-content;
+        }
+
+        .prediction {
+          grid-template-columns: 1fr;
+        }
+
+        .predictionItem {
+          border-left: 0;
+          border-top: 1px solid var(--inset-border);
+        }
+
+        .predictionItem:first-child {
+          border-top: 0;
+        }
+
+        .scoreItem {
+          text-align: left;
+        }
+
+        .teams {
+          align-items: stretch;
+          gap: 9px;
+          grid-template-columns: 1fr;
+        }
+
+        .team.away {
+          grid-template-columns: 42px minmax(0, 1fr);
+          justify-self: stretch;
+          text-align: left;
+        }
+
+        .team {
+          justify-self: stretch;
+        }
+
+        .team.away .logo {
+          order: -1;
+        }
+
+        .versus {
+          height: 26px;
+          width: 100%;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main id="root" class="widget">
+      <p class="empty">Loading AI Sports Prediction widget...</p>
+    </main>
+    <script>
+      var params = new URLSearchParams(location.search);
+      var root = document.getElementById("root");
+      var palette = resolvePalette({
+        accent: cleanColor(params.get("accent")) || "#7df5c1",
+        background: cleanColor(params.get("background")) || (params.get("theme") === "light" ? "#ffffff" : "#101f2e"),
+        text: cleanColor(params.get("text")) || (params.get("theme") === "light" ? "#101820" : "#f7fbff")
+      });
+      var radius = Math.max(0, Math.min(24, Number(params.get("radius")) || 8));
+      var showBranding = params.get("showBranding") !== "0";
+      var showReasoning = params.get("showReasoning") !== "0";
+
+      root.classList.toggle("light", palette.isLight);
+      root.style.setProperty("--accent", palette.accent);
+      root.style.setProperty("--background", palette.background);
+      root.style.setProperty("--text", palette.text);
+      root.style.setProperty("--muted", rgba(palette.textRgb, palette.isLight ? 0.68 : 0.7));
+      root.style.setProperty("--panel", rgba(palette.textRgb, palette.isLight ? 0.055 : 0.075));
+      root.style.setProperty("--panel-strong", rgba(palette.textRgb, palette.isLight ? 0.085 : 0.115));
+      root.style.setProperty("--line", rgba(palette.textRgb, palette.isLight ? 0.15 : 0.16));
+      root.style.setProperty("--inset", rgba(palette.textRgb, palette.isLight ? 0.06 : 0.09));
+      root.style.setProperty("--inset-border", rgba(palette.textRgb, palette.isLight ? 0.11 : 0.12));
+      root.style.setProperty("--track", rgba(palette.textRgb, palette.isLight ? 0.16 : 0.18));
+      root.style.setProperty("--glow", rgba(palette.textRgb, palette.isLight ? 0.03 : 0.035));
+      root.style.setProperty("--shadow", palette.isLight ? rgba(palette.textRgb, 0.14) : "rgba(0, 0, 0, 0.28)");
+      root.style.setProperty("--radius", radius + "px");
+
+      fetch("/api/widgets/predictions?" + buildApiParams().toString(), { headers: { accept: "application/json" } })
+        .then(function (response) {
+          if (!response.ok) {
+            return response.json().catch(function () {
+              return {};
+            }).then(function (body) {
+              var error = new Error(body.message || "Widget API failed");
+              error.status = response.status;
+              error.code = body.error || "widget_api_failed";
+              throw error;
+            });
+          }
+          return response.json();
+        })
+        .then(render)
+        .catch(function (error) {
+          root.innerHTML = renderError(error);
+          notifyHeight();
+        });
+
+      function buildApiParams() {
+        var apiParams = new URLSearchParams();
+        ["type", "sport", "competition", "matchId", "limit", "apiKey", "publisherKey", "sourceOrigin"].forEach(function (key) {
+          var value = params.get(key);
+          if (value) apiParams.set(key, value);
+        });
+        return apiParams;
+      }
+
+      function render(payload) {
+        var type = payload.widget.type;
+        var title = cleanTitle(params.get("title"));
+        var html = [
+          '<header class="head"><div><p class="eyebrow">AI Sports Prediction</p>',
+          title ? '<h1>' + escapeHtml(title) + "</h1>" : "",
+          '</div><span class="badge">',
+          escapeHtml(payload.widget.sport === "all" ? "Sports" : payload.widget.sport),
+          "</span></header>"
+        ];
+
+        if (type === "leaderboard") {
+          html.push(renderLeaderboard(payload));
+        } else if (type === "win-probability") {
+          html.push(renderWinProbability(payload));
+        } else if (type === "key-factors") {
+          html.push(renderKeyFactors(payload));
+        } else {
+          html.push(renderMatches(payload, type));
+        }
+
+        if (showBranding) {
+          html.push('<footer class="brand"><span>Powered by AI Sports Prediction</span><a href="https://www.ai-sports-prediction.net" target="_blank" rel="noopener noreferrer">Open</a></footer>');
+        }
+
+        root.innerHTML = html.join("");
+        notifyHeight();
+      }
+
+      function renderError(error) {
+        var isAccessError = error && (error.status === 401 || error.status === 402 || error.status === 403);
+        var message = isAccessError
+          ? "This AI Sports Prediction widget requires an active publisher plan."
+          : "AI Sports Prediction widget is temporarily unavailable.";
+
+        return [
+          '<header class="head"><div><p class="eyebrow">AI Sports Prediction</p></div><span class="badge">Widget</span></header>',
+          '<p class="empty">',
+          escapeHtml(message),
+          "</p>"
+        ].join("");
+      }
+
+      function renderMatches(payload, type) {
+        if (!payload.matches.length) return '<p class="empty">No matches available for this widget configuration.</p>';
+        return payload.matches.map(function (match) {
+          var prediction = match.topPrediction;
+          var status = [match.competition, formatDate(match.date), match.actualScore ? "Result " + match.actualScore : ""].filter(Boolean).join(" · ");
+          return [
+            '<article class="match"><div class="meta">',
+            escapeHtml(status),
+            '</div><div class="teams">',
+            renderTeam(match.homeTeam, match.homeLogo, match.sport, "home"),
+            '<span class="versus">VS</span>',
+            renderTeam(match.awayTeam, match.awayLogo, match.sport, "away"),
+            "</div>",
+            prediction ? renderPrediction(prediction, type) : '<p class="empty">No model prediction available.</p>',
+            prediction && prediction.reason && showReasoning ? renderReasoning(prediction.reason) : "",
+            "</article>"
+          ].join("");
+        }).join("");
+      }
+
+      function renderWinProbability(payload) {
+        if (!payload.matches.length) return '<p class="empty">No probability data available for this widget configuration.</p>';
+        return payload.matches.map(function (match) {
+          var prediction = match.topPrediction;
+          var probabilities = prediction ? prediction.probabilities : null;
+          var rows = probabilities ? getProbabilityRows(match, probabilities) : [];
+          var status = [match.competition, formatDate(match.date)].filter(Boolean).join(" · ");
+
+          return [
+            '<article class="match"><div class="meta">',
+            escapeHtml(status),
+            '</div><div class="teams">',
+            renderTeam(match.homeTeam, match.homeLogo, match.sport, "home"),
+            '<span class="versus">VS</span>',
+            renderTeam(match.awayTeam, match.awayLogo, match.sport, "away"),
+            '</div>',
+            rows.length ? '<div class="probabilityList">' + rows.map(renderProbabilityRow).join("") + '</div>' : '<p class="empty">No model probabilities available.</p>',
+            prediction && prediction.reason && showReasoning ? renderReasoning(prediction.reason) : "",
+            "</article>"
+          ].join("");
+        }).join("");
+      }
+
+      function renderKeyFactors(payload) {
+        if (!payload.matches.length) return '<p class="empty">No key factors available for this widget configuration.</p>';
+        return payload.matches.map(function (match) {
+          var prediction = match.topPrediction;
+          var factors = prediction && Array.isArray(prediction.keyFactors) ? prediction.keyFactors : [];
+          var status = [match.competition, formatDate(match.date)].filter(Boolean).join(" · ");
+
+          return [
+            '<article class="match"><div class="meta">',
+            escapeHtml(status),
+            '</div><div class="teams">',
+            renderTeam(match.homeTeam, match.homeLogo, match.sport, "home"),
+            '<span class="versus">VS</span>',
+            renderTeam(match.awayTeam, match.awayLogo, match.sport, "away"),
+            '</div>',
+            factors.length ? '<ul class="factorList">' + factors.map(renderFactor).join("") + '</ul>' : '<p class="empty">No key factors available.</p>',
+            "</article>"
+          ].join("");
+        }).join("");
+      }
+
+      function getProbabilityRows(match, probabilities) {
+        return [
+          { label: match.homeTeam, value: probabilities.home },
+          match.sport === "football" ? { label: "Draw", value: probabilities.draw } : null,
+          { label: match.awayTeam, value: probabilities.away }
+        ].filter(function (row) {
+          return row && typeof row.value === "number";
+        });
+      }
+
+      function renderProbabilityRow(row) {
+        var value = Math.max(0, Math.min(100, Number(row.value) || 0));
+        return [
+          '<div class="probabilityRow"><div class="probabilityTop"><strong>',
+          escapeHtml(row.label),
+          '</strong><span>',
+          value,
+          '%</span></div><div class="probabilityTrack"><span class="probabilityFill" style="width: ',
+          value,
+          '%"></span></div></div>'
+        ].join("");
+      }
+
+      function renderFactor(factor, index) {
+        return [
+          '<li class="factorItem"><span class="factorIndex">',
+          index + 1,
+          '</span><span class="factorText">',
+          escapeHtml(factor),
+          "</span></li>"
+        ].join("");
+      }
+
+      function renderReasoning(reason) {
+        return '<p class="reason"><span>Model reasoning</span>' + escapeHtml(reason) + "</p>";
+      }
+
+      function renderTeam(name, logo, sport, side) {
+        var fallback = getInitials(name);
+        var logoHtml = logo
+          ? '<span class="logo"><img alt="" src="' + escapeAttribute(logo) + '" loading="lazy" referrerpolicy="no-referrer" onerror="this.remove();this.parentNode.appendChild(document.createTextNode(\'' + escapeAttribute(fallback) + '\'));this.parentNode.classList.add(\'logoFallback\');"></span>'
+          : '<span class="logo logoFallback">' + escapeHtml(fallback) + "</span>";
+        var nameHtml = '<span><span class="teamName">' + escapeHtml(name) + '</span><span class="teamMeta">' + escapeHtml(sportLabel(sport)) + "</span></span>";
+
+        if (side === "away") {
+          return '<div class="team away">' + nameHtml + logoHtml + "</div>";
+        }
+
+        return '<div class="team">' + logoHtml + nameHtml + "</div>";
+      }
+
+      function renderPrediction(prediction, type) {
+        var confidence = prediction.confidence === null ? null : Math.max(0, Math.min(100, Number(prediction.confidence) || 0));
+        return [
+          '<div class="prediction"><div class="predictionItem pickItem"><span class="predictionLabel">Pick</span><strong class="predictionValue">',
+          escapeHtml(prediction.pick),
+          '</strong></div><div class="predictionItem scoreItem"><span class="predictionLabel">Projected score</span><strong class="predictionValue scoreValue">',
+          escapeHtml(prediction.score),
+          '</strong></div><div class="predictionItem confidenceItem"><span class="predictionLabel">Confidence</span><div class="confidenceValue"><strong>',
+          confidence === null ? "-" : escapeHtml(String(confidence)),
+          '</strong><span>',
+          confidence === null ? "" : "%",
+          "</span></div>",
+          confidence === null ? "" : '<div class="confidenceTrack"><span class="confidenceFill" style="width: ' + confidence + '%"></span></div>',
+          "</div></div>",
+          type === "match-list" ? '<div class="meta">' + escapeHtml(prediction.model) + "</div>" : ""
+        ].join("");
+      }
+
+      function renderLeaderboard(payload) {
+        if (!payload.leaderboard.length) return '<p class="empty">No leaderboard data available.</p>';
+        return payload.leaderboard.slice(0, Number(params.get("limit")) || 5).map(function (row, index) {
+          return [
+            '<div class="leaderboardRow"><div><strong>#',
+            index + 1,
+            " ",
+            escapeHtml(row.model),
+            '</strong><div class="meta">',
+            escapeHtml(row.provider + " · " + row.predictions + " predictions"),
+            '</div></div><span class="badge">',
+            row.averageConfidence === null ? "-" : escapeHtml(String(row.averageConfidence)) + "%",
+            "</span></div>"
+          ].join("");
+        }).join("");
+      }
+
+      function sportLabel(sport) {
+        if (sport === "nba") return "NBA";
+        if (sport === "nfl") return "NFL";
+        if (sport === "tennis") return "Tennis";
+        return "Football";
+      }
+
+      function cleanTitle(value) {
+        var title = String(value || "").trim().replace(/\s+/g, " ");
+        return /^(undefined|null|false)$/i.test(title) ? "" : title;
+      }
+
+      function getInitials(value) {
+        var parts = String(value || "")
+          .replace(/['.]/g, " ")
+          .split(/\s+/)
+          .filter(Boolean);
+        if (!parts.length) return "AI";
+        if (parts.length === 1) return parts[0].slice(0, 3).toUpperCase();
+        return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+      }
+
+      function formatDate(value) {
+        if (!value) return "";
+        try {
+          return new Intl.DateTimeFormat(undefined, { dateStyle: "medium", timeStyle: "short" }).format(new Date(value));
+        } catch (_error) {
+          return "";
+        }
+      }
+
+      function cleanColor(value) {
+        return /^#[0-9a-f]{3,8}$/i.test(value || "") ? value : "";
+      }
+
+      function resolvePalette(input) {
+        var backgroundRgb = hexToRgb(input.background) || hexToRgb("#101f2e");
+        var isLight = relativeLuminance(backgroundRgb) > 0.54;
+        var text = ensureReadableText(input.text, backgroundRgb);
+        var textRgb = hexToRgb(text);
+        var accent = ensureReadableAccent(input.accent, backgroundRgb, isLight);
+
+        return {
+          accent: accent,
+          background: normalizeHex(input.background) || "#101f2e",
+          isLight: isLight,
+          text: text,
+          textRgb: textRgb
+        };
+      }
+
+      function ensureReadableText(color, backgroundRgb) {
+        var normalized = normalizeHex(color);
+        var preferredRgb = hexToRgb(normalized);
+        if (preferredRgb && contrastRatio(preferredRgb, backgroundRgb) >= 4.5) return normalized;
+
+        return ["#101820", "#0b1118", "#f7fbff", "#ffffff"].reduce(function (best, candidate) {
+          var candidateRatio = contrastRatio(hexToRgb(candidate), backgroundRgb);
+          return candidateRatio > best.ratio ? { color: candidate, ratio: candidateRatio } : best;
+        }, { color: "#101820", ratio: 0 }).color;
+      }
+
+      function ensureReadableAccent(color, backgroundRgb, isLight) {
+        var normalized = normalizeHex(color) || (isLight ? "#087f5b" : "#7df5c1");
+        var accentRgb = hexToRgb(normalized);
+        if (accentRgb && contrastRatio(accentRgb, backgroundRgb) >= 3) return normalized;
+
+        var target = isLight ? hexToRgb("#000000") : hexToRgb("#ffffff");
+        for (var amount = 0.12; amount <= 0.72; amount += 0.08) {
+          var mixed = mixRgb(accentRgb, target, amount);
+          if (contrastRatio(mixed, backgroundRgb) >= 3) return rgbToHex(mixed);
+        }
+
+        return isLight ? "#087f5b" : "#7df5c1";
+      }
+
+      function normalizeHex(value) {
+        var clean = cleanColor(value);
+        if (!clean) return "";
+        var hex = clean.slice(1);
+        if (hex.length === 3 || hex.length === 4) {
+          hex = hex.slice(0, 3).split("").map(function (part) {
+            return part + part;
+          }).join("");
+        } else {
+          hex = hex.slice(0, 6);
+        }
+        return "#" + hex.toLowerCase();
+      }
+
+      function hexToRgb(value) {
+        var normalized = normalizeHex(value);
+        if (!normalized) return null;
+        return {
+          r: parseInt(normalized.slice(1, 3), 16),
+          g: parseInt(normalized.slice(3, 5), 16),
+          b: parseInt(normalized.slice(5, 7), 16)
+        };
+      }
+
+      function rgba(rgb, alpha) {
+        return "rgba(" + rgb.r + ", " + rgb.g + ", " + rgb.b + ", " + alpha + ")";
+      }
+
+      function mixRgb(from, to, amount) {
+        return {
+          r: Math.round(from.r + (to.r - from.r) * amount),
+          g: Math.round(from.g + (to.g - from.g) * amount),
+          b: Math.round(from.b + (to.b - from.b) * amount)
+        };
+      }
+
+      function rgbToHex(rgb) {
+        return "#" + [rgb.r, rgb.g, rgb.b].map(function (channel) {
+          return Math.max(0, Math.min(255, channel)).toString(16).padStart(2, "0");
+        }).join("");
+      }
+
+      function relativeLuminance(rgb) {
+        var channels = [rgb.r, rgb.g, rgb.b].map(function (channel) {
+          var value = channel / 255;
+          return value <= 0.03928 ? value / 12.92 : Math.pow((value + 0.055) / 1.055, 2.4);
+        });
+        return 0.2126 * channels[0] + 0.7152 * channels[1] + 0.0722 * channels[2];
+      }
+
+      function contrastRatio(first, second) {
+        var lighter = Math.max(relativeLuminance(first), relativeLuminance(second));
+        var darker = Math.min(relativeLuminance(first), relativeLuminance(second));
+        return (lighter + 0.05) / (darker + 0.05);
+      }
+
+      function escapeHtml(value) {
+        return String(value == null ? "" : value)
+          .replace(/&/g, "&amp;")
+          .replace(/</g, "&lt;")
+          .replace(/>/g, "&gt;")
+          .replace(/"/g, "&quot;");
+      }
+
+      function escapeAttribute(value) {
+        return escapeHtml(value).replace(/'/g, "&#39;");
+      }
+
+      function notifyHeight() {
+        requestAnimationFrame(function () {
+          var widgetHeight = Math.ceil(root.getBoundingClientRect().height);
+          parent.postMessage({ type: "ai-sports-widget-height", height: widgetHeight }, "*");
+        });
+      }
+    </script>
+  </body>
+</html>

@@ -198,6 +198,672 @@
   margin: 0;
 }
 
+.widgetsPage {
+  box-sizing: border-box;
+  display: grid;
+  gap: 22px;
+  margin: 0 auto;
+  max-width: 1120px;
+  padding: 72px 24px;
+}
+
+.widgetsPage *,
+.widgetsPage *::before,
+.widgetsPage *::after {
+  box-sizing: border-box;
+}
+
+.widgetsHero,
+.widgetsPanel,
+.widgetsExample {
+  background:
+    linear-gradient(135deg, rgba(125, 245, 193, 0.08), transparent 42%),
+    rgba(16, 31, 46, 0.94);
+  border: 1px solid rgba(125, 245, 193, 0.18);
+  border-radius: 8px;
+  color: #f7fbff;
+  min-width: 0;
+  overflow-wrap: anywhere;
+  padding: 24px;
+}
+
+.widgetsHero h1 {
+  font-size: clamp(2.4rem, 6vw, 5rem);
+  line-height: 0.95;
+  margin: 0 0 12px;
+}
+
+.widgetsHero p:last-child,
+.widgetsExample p,
+.widgetsOption span {
+  color: rgba(247, 251, 255, 0.74);
+  line-height: 1.55;
+  margin: 0;
+}
+
+.widgetsPanel h2,
+.widgetsExample h2 {
+  margin: 0;
+}
+
+.widgetsSectionIntro {
+  display: grid;
+  gap: 8px;
+  min-width: 0;
+}
+
+.widgetsSectionIntro p {
+  color: rgba(247, 251, 255, 0.74);
+  line-height: 1.55;
+  margin: 0;
+  max-width: 760px;
+}
+
+.widgetsOptionGrid {
+  display: grid;
+  gap: 10px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  margin-top: 16px;
+}
+
+.widgetsOption {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 8px;
+  display: grid;
+  gap: 4px;
+  padding: 12px;
+}
+
+.widgetsOption strong {
+  color: #7df5c1;
+  font-size: 0.84rem;
+}
+
+.widgetsExamples {
+  display: grid;
+  gap: 16px;
+}
+
+.widgetsPricingGrid {
+  display: grid;
+  gap: 12px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  margin-top: 18px;
+}
+
+.widgetsPricingCard {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  border-radius: 8px;
+  display: grid;
+  gap: 18px;
+  padding: 16px;
+}
+
+.widgetsPricingCard span {
+  color: #7df5c1;
+  display: block;
+  font-size: 0.72rem;
+  font-weight: 950;
+  letter-spacing: 0.14em;
+  margin-bottom: 8px;
+  text-transform: uppercase;
+}
+
+.widgetsPricingCard h3 {
+  font-size: 1.35rem;
+  margin: 0 0 8px;
+}
+
+.widgetsPricingCard strong {
+  color: #ffc857;
+  display: block;
+  font-size: 1rem;
+  margin-bottom: 10px;
+}
+
+.widgetsPricingCard p,
+.widgetsPricingCard li {
+  color: rgba(247, 251, 255, 0.74);
+  font-size: 0.94rem;
+  line-height: 1.5;
+}
+
+.widgetsPricingCard p {
+  margin: 0;
+}
+
+.widgetsPricingCard ul {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding-left: 18px;
+}
+
+.widgetBuilder {
+  display: grid;
+  gap: 18px;
+  min-width: 0;
+}
+
+.widgetBuilderGrid {
+  display: grid;
+  gap: 12px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  min-width: 0;
+  width: 100%;
+}
+
+.widgetBuilderField,
+.widgetBuilderCustomize label {
+  display: grid;
+  gap: 6px;
+  min-width: 0;
+}
+
+.widgetBuilderFieldWide {
+  grid-column: 1 / -1;
+}
+
+.widgetBuilderField span,
+.widgetBuilderCustomize span {
+  color: #7df5c1;
+  font-size: 0.76rem;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.widgetBuilderField input,
+.widgetBuilderField select {
+  background: rgba(3, 8, 14, 0.58);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 8px;
+  color: #f7fbff;
+  font: inherit;
+  min-height: 42px;
+  min-width: 0;
+  padding: 10px 12px;
+  width: 100%;
+}
+
+.widgetBuilderActions {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  grid-column: 1 / -1;
+  min-width: 0;
+}
+
+.widgetBuilderActions button {
+  background: #7df5c1;
+  border: 0;
+  border-radius: 8px;
+  color: #07120d;
+  cursor: pointer;
+  font: inherit;
+  font-weight: 950;
+  min-height: 42px;
+  padding: 10px 16px;
+}
+
+.widgetBuilderActions button:disabled {
+  cursor: wait;
+  opacity: 0.66;
+}
+
+.widgetBuilderActions p,
+.widgetBuilderCode p {
+  color: rgba(247, 251, 255, 0.72);
+  margin: 0;
+}
+
+.widgetBuilderMatches {
+  display: grid;
+  gap: 8px;
+}
+
+.widgetBuilderMatches button {
+  background: rgba(255, 255, 255, 0.055);
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  border-radius: 8px;
+  color: #f7fbff;
+  cursor: pointer;
+  display: grid;
+  gap: 4px;
+  padding: 12px;
+  text-align: left;
+}
+
+.widgetBuilderMatches button:hover,
+.widgetBuilderMatches button:focus-visible,
+.widgetBuilderMatches button.isSelected {
+  border-color: rgba(125, 245, 193, 0.62);
+  outline: none;
+}
+
+.widgetBuilderMatches span,
+.widgetBuilderMatches small {
+  color: rgba(247, 251, 255, 0.66);
+}
+
+.widgetBuilderMatches strong {
+  font-size: 1rem;
+}
+
+.widgetBuilderCustomize {
+  align-items: end;
+  display: grid;
+  gap: 12px;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  min-width: 0;
+  width: 100%;
+}
+
+.widgetBuilderColorControl {
+  align-items: center;
+  background: rgba(3, 8, 14, 0.58);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 8px;
+  display: grid;
+  gap: 8px;
+  grid-template-columns: 42px minmax(0, 1fr);
+  min-height: 42px;
+  min-width: 0;
+  padding: 6px;
+  width: 100%;
+}
+
+.widgetBuilderCustomize label:has(input[type="checkbox"]) {
+  align-items: center;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  border-radius: 8px;
+  display: flex;
+  gap: 8px;
+  min-height: 42px;
+  padding: 10px 12px;
+}
+
+.widgetBuilderCustomize input[type="color"] {
+  appearance: none;
+  background: transparent;
+  border: 0;
+  cursor: pointer;
+  height: 30px;
+  padding: 0;
+  width: 42px;
+}
+
+.widgetBuilderColorControl input[type="text"],
+.widgetBuilderColorControl input:not([type]) {
+  background: transparent;
+  border: 0;
+  color: #f7fbff;
+  font: inherit;
+  font-size: 0.9rem;
+  font-weight: 800;
+  min-width: 0;
+  outline: none;
+  text-transform: uppercase;
+}
+
+.widgetBuilderCustomize input[type="checkbox"] {
+  accent-color: #7df5c1;
+}
+
+.widgetBuilderCode {
+  display: grid;
+  gap: 12px;
+  min-width: 0;
+}
+
+.widgetBuilderCodeHeader {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+}
+
+.widgetBuilderCode h3 {
+  margin: 0 0 4px;
+}
+
+.widgetBuilderCodeBox {
+  min-width: 0;
+  position: relative;
+  width: 100%;
+}
+
+.widgetBuilderCodeBox button {
+  align-items: center;
+  background: rgba(255, 255, 255, 0.075);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 6px;
+  color: rgba(247, 251, 255, 0.78);
+  cursor: pointer;
+  display: flex;
+  font: inherit;
+  font-size: 0.95rem;
+  font-weight: 900;
+  height: 30px;
+  justify-content: center;
+  position: absolute;
+  right: 10px;
+  top: 10px;
+  width: 30px;
+  z-index: 1;
+}
+
+.widgetBuilderCodeBox button:hover,
+.widgetBuilderCodeBox button:focus-visible {
+  background: rgba(125, 245, 193, 0.14);
+  border-color: rgba(125, 245, 193, 0.42);
+  color: #7df5c1;
+  outline: none;
+}
+
+.widgetBuilderCode pre {
+  background: rgba(3, 8, 14, 0.72);
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  border-radius: 8px;
+  color: #e9fff5;
+  margin: 0;
+  overflow-x: auto;
+  padding: 14px 54px 14px 14px;
+}
+
+.widgetBuilderCode code {
+  font-size: 0.82rem;
+  line-height: 1.5;
+}
+
+.widgetsExample {
+  display: grid;
+  gap: 16px;
+  grid-template-columns: minmax(220px, 0.7fr) minmax(0, 1.3fr);
+}
+
+.widgetPreview {
+  background:
+    linear-gradient(135deg, rgba(125, 245, 193, 0.12), rgba(255, 200, 87, 0.04)),
+    #102031;
+  border: 1px solid rgba(125, 245, 193, 0.22);
+  border-radius: 8px;
+  box-shadow: 0 18px 38px rgba(0, 0, 0, 0.18);
+  color: #f7fbff;
+  display: grid;
+  gap: 14px;
+  min-width: 0;
+  padding: 16px;
+}
+
+.widgetPreviewLight {
+  background:
+    linear-gradient(135deg, rgba(125, 245, 193, 0.22), rgba(255, 255, 255, 0.76)),
+    #edf4f2;
+  border-color: rgba(15, 82, 62, 0.2);
+  color: #07131a;
+}
+
+.widgetPreviewHeader {
+  align-items: start;
+  display: flex;
+  gap: 12px;
+  justify-content: space-between;
+}
+
+.widgetPreviewHeader span,
+.widgetPreviewMetrics span,
+.widgetPreviewFactors li,
+.widgetPreviewList span,
+.widgetPreviewList small,
+.widgetPreviewLeaderboard em,
+.widgetPreviewProbability span {
+  color: rgba(247, 251, 255, 0.68);
+}
+
+.widgetPreviewLight .widgetPreviewHeader span,
+.widgetPreviewLight .widgetPreviewFactors li,
+.widgetPreviewLight .widgetPreviewList span,
+.widgetPreviewLight .widgetPreviewList small {
+  color: rgba(7, 19, 26, 0.66);
+}
+
+.widgetPreviewHeader span,
+.widgetPreviewMetrics span {
+  font-size: 0.72rem;
+  font-weight: 900;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.widgetPreviewHeader strong {
+  font-size: 1.05rem;
+}
+
+.widgetPreviewTeams {
+  align-items: center;
+  display: grid;
+  gap: 12px;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+}
+
+.widgetPreviewTeams > div {
+  align-items: center;
+  display: flex;
+  gap: 10px;
+  min-width: 0;
+}
+
+.widgetPreviewTeams > div:last-child {
+  justify-content: flex-end;
+  text-align: right;
+}
+
+.widgetPreviewTeams img {
+  background: rgba(255, 255, 255, 0.12);
+  border-radius: 999px;
+  height: 42px;
+  padding: 4px;
+  width: 42px;
+}
+
+.widgetPreviewTeams > span {
+  background: rgba(125, 245, 193, 0.16);
+  border: 1px solid rgba(125, 245, 193, 0.28);
+  border-radius: 999px;
+  color: #7df5c1;
+  font-size: 0.78rem;
+  font-weight: 950;
+  padding: 8px 10px;
+}
+
+.widgetPreviewMetrics {
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 8px;
+  display: grid;
+  grid-template-columns: 1.35fr 0.9fr 0.9fr;
+  overflow: hidden;
+}
+
+.widgetPreviewMetrics > div {
+  background: rgba(255, 255, 255, 0.055);
+  display: grid;
+  gap: 4px;
+  padding: 12px;
+}
+
+.widgetPreviewMetrics > div + div {
+  border-left: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.widgetPreviewMetrics strong {
+  font-size: 1.05rem;
+}
+
+.widgetPreviewReasoning {
+  background: rgba(125, 245, 193, 0.08);
+  border: 1px solid rgba(125, 245, 193, 0.18);
+  border-radius: 8px;
+  display: grid;
+  gap: 6px;
+  padding: 12px;
+}
+
+.widgetPreviewReasoning span {
+  color: #7df5c1;
+  font-size: 0.72rem;
+  font-weight: 950;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.widgetPreviewReasoning p {
+  color: rgba(247, 251, 255, 0.76);
+  line-height: 1.45;
+  margin: 0;
+}
+
+.widgetPreviewList,
+.widgetPreviewLeaderboard,
+.widgetPreviewFactors,
+.widgetPreviewProbability {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+}
+
+.widgetPreviewList > div,
+.widgetPreviewLeaderboard > div {
+  align-items: center;
+  background: rgba(255, 255, 255, 0.46);
+  border: 1px solid rgba(7, 19, 26, 0.08);
+  border-radius: 8px;
+  display: grid;
+  gap: 8px;
+  grid-template-columns: minmax(0, 1.45fr) minmax(0, 0.72fr) auto auto;
+  padding: 10px 12px;
+}
+
+.widgetPreviewListTeams {
+  align-items: center;
+  display: flex;
+  gap: 8px;
+  min-width: 0;
+}
+
+.widgetPreviewListTeams img,
+.widgetPreviewProbabilityTeam img {
+  background: rgba(7, 19, 26, 0.08);
+  border-radius: 999px;
+  flex: 0 0 auto;
+  height: 28px;
+  object-fit: contain;
+  padding: 3px;
+  width: 28px;
+}
+
+.widgetPreviewListTeams strong {
+  color: #07131a;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.widgetPreviewListTeams em {
+  color: rgba(7, 19, 26, 0.46);
+  font-size: 0.78rem;
+  font-style: normal;
+  font-weight: 950;
+}
+
+.widgetPreviewLeaderboard > div {
+  background: rgba(255, 255, 255, 0.055);
+  border-color: rgba(255, 255, 255, 0.08);
+  grid-template-columns: auto minmax(0, 1fr) auto;
+}
+
+.widgetPreviewList strong,
+.widgetPreviewLeaderboard strong {
+  min-width: 0;
+}
+
+.widgetPreviewList em,
+.widgetPreviewList small,
+.widgetPreviewLeaderboard em {
+  font-style: normal;
+  font-weight: 900;
+}
+
+.widgetPreviewLeaderboard span {
+  align-items: center;
+  background: #7df5c1;
+  border-radius: 999px;
+  color: #07131a;
+  display: flex;
+  font-size: 0.78rem;
+  font-weight: 950;
+  height: 24px;
+  justify-content: center;
+  width: 24px;
+}
+
+.widgetPreviewProbability {
+  grid-template-columns: minmax(0, 1fr) auto;
+}
+
+.widgetPreviewProbabilityTeam {
+  align-items: center;
+  display: inline-flex;
+  gap: 8px;
+  min-width: 0;
+}
+
+.widgetPreviewProbabilityTeam img {
+  background: rgba(255, 255, 255, 0.14);
+}
+
+.widgetPreviewProbability strong {
+  color: #7df5c1;
+  font-size: 1.5rem;
+}
+
+.widgetPreviewProbability div {
+  background: rgba(255, 255, 255, 0.16);
+  border-radius: 999px;
+  grid-column: 1 / -1;
+  height: 10px;
+  overflow: hidden;
+}
+
+.widgetPreviewProbability div span {
+  background: #7df5c1;
+  border-radius: inherit;
+  display: block;
+  height: 100%;
+}
+
+.widgetPreviewFactors {
+  list-style: none;
+}
+
+.widgetPreviewFactors li {
+  background: rgba(255, 255, 255, 0.5);
+  border: 1px solid rgba(7, 19, 26, 0.08);
+  border-radius: 8px;
+  padding: 10px 12px;
+}
+
+.widgetPreviewFactors li::before {
+  color: #159c62;
+  content: "*";
+  font-weight: 950;
+  margin-right: 8px;
+}
+
 @media (max-width: 720px) {
   .cookieConsent {
     grid-template-columns: 1fr;
@@ -218,6 +884,38 @@
 
   .cookiePreferencePanel > button {
     justify-self: stretch;
+  }
+
+  .widgetsPage {
+    padding: 42px 14px;
+  }
+
+  .widgetsOptionGrid,
+  .widgetBuilderGrid,
+  .widgetsPricingGrid,
+  .widgetBuilderCustomize,
+  .widgetsExample {
+    grid-template-columns: 1fr;
+  }
+
+  .widgetPreviewMetrics,
+  .widgetPreviewList > div,
+  .widgetPreviewTeams {
+    grid-template-columns: 1fr;
+  }
+
+  .widgetPreviewMetrics > div + div {
+    border-left: 0;
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+  }
+
+  .widgetPreviewTeams > div:last-child {
+    justify-content: flex-start;
+    text-align: left;
+  }
+
+  .widgetPreviewTeams > span {
+    justify-self: start;
   }
 }
 
