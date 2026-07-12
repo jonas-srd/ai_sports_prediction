@@ -57,13 +57,11 @@ export function CookieConsent({ measurementId }: CookieConsentProps) {
 
   return (
     <>
+      <GoogleAnalytics measurementId={measurementId} consent={consent === "analytics" ? "granted" : "denied"} />
       {consent === "analytics" ? (
-        <>
-          <GoogleAnalytics measurementId={measurementId} />
-          <Suspense fallback={null}>
-            <GoogleAnalyticsPageViews measurementId={measurementId} />
-          </Suspense>
-        </>
+        <Suspense fallback={null}>
+          <GoogleAnalyticsPageViews measurementId={measurementId} />
+        </Suspense>
       ) : null}
       {shouldShowBanner ? (
         <section className="cookieConsent" aria-labelledby="cookie-consent-title">

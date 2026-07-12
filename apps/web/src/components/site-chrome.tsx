@@ -8,8 +8,9 @@ import { SiteNav } from "@/components/site-nav";
 export function SiteChrome({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   const isStandalonePage = pathname === "/coming-soon";
+  const showFullSite = process.env.NEXT_PUBLIC_SHOW_FULL_SITE === "1";
 
-  if (isStandalonePage) {
+  if (!showFullSite || isStandalonePage) {
     return children;
   }
 

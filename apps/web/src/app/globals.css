@@ -198,6 +198,186 @@
   margin: 0;
 }
 
+.newsletterModalOverlay {
+  align-items: center;
+  background: rgba(2, 7, 10, 0.66);
+  display: flex;
+  inset: 0;
+  justify-content: center;
+  padding: 20px;
+  position: fixed;
+  z-index: 180;
+}
+
+.newsletterModal {
+  background:
+    linear-gradient(135deg, rgba(125, 245, 193, 0.12), transparent 40%),
+    #101f2e;
+  border: 1px solid rgba(125, 245, 193, 0.28);
+  border-radius: 8px;
+  box-shadow: 0 34px 120px rgba(0, 0, 0, 0.48);
+  color: #f7fbff;
+  display: grid;
+  gap: 14px;
+  max-width: 520px;
+  padding: 24px;
+  position: relative;
+  width: min(100%, 520px);
+}
+
+.newsletterModalClose {
+  align-items: center;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 999px;
+  color: #f7fbff;
+  cursor: pointer;
+  display: inline-flex;
+  font-size: 1.4rem;
+  font-weight: 700;
+  height: 36px;
+  justify-content: center;
+  line-height: 1;
+  position: absolute;
+  right: 14px;
+  top: 14px;
+  width: 36px;
+}
+
+.newsletterModalKicker {
+  color: #7df5c1;
+  font-size: 0.76rem;
+  font-weight: 950;
+  letter-spacing: 0.16em;
+  margin: 0;
+  padding-right: 44px;
+  text-transform: uppercase;
+}
+
+.newsletterModal h2 {
+  color: #ffffff;
+  font-size: clamp(1.8rem, 6vw, 3rem);
+  line-height: 0.95;
+  margin: 0;
+  max-width: 10ch;
+}
+
+.newsletterModal > p:not(.newsletterModalKicker):not(.newsletterModalStatus) {
+  color: rgba(247, 251, 255, 0.76);
+  font-size: 1rem;
+  font-weight: 720;
+  line-height: 1.5;
+  margin: 0;
+}
+
+.newsletterModalForm {
+  display: grid;
+  gap: 12px;
+  margin-top: 4px;
+}
+
+.newsletterModalForm label {
+  display: grid;
+  gap: 7px;
+}
+
+.newsletterModalForm label > span {
+  color: rgba(247, 251, 255, 0.82);
+  font-size: 0.82rem;
+  font-weight: 900;
+}
+
+.newsletterModalForm input[type="email"] {
+  background: rgba(3, 11, 17, 0.72);
+  border: 1px solid rgba(125, 245, 193, 0.24);
+  border-radius: 8px;
+  color: #ffffff;
+  font: inherit;
+  font-size: 1rem;
+  min-height: 48px;
+  outline: none;
+  padding: 12px 14px;
+  width: 100%;
+}
+
+.newsletterModalForm input[type="email"]:focus {
+  border-color: rgba(125, 245, 193, 0.9);
+  box-shadow: 0 0 0 4px rgba(125, 245, 193, 0.14);
+}
+
+.newsletterModalConsent {
+  align-items: start;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  cursor: pointer;
+  display: grid;
+  gap: 10px;
+  grid-template-columns: auto minmax(0, 1fr);
+  padding: 12px;
+}
+
+.newsletterModalConsent input {
+  accent-color: #7df5c1;
+  height: 18px;
+  margin-top: 2px;
+  width: 18px;
+}
+
+.newsletterModalConsent span {
+  color: rgba(247, 251, 255, 0.76);
+  font-size: 0.82rem;
+  font-weight: 720;
+  line-height: 1.45;
+}
+
+.newsletterModalHoneypot {
+  left: -10000px;
+  position: absolute;
+}
+
+.newsletterModalSubmit {
+  background: #7df5c1;
+  border: 1px solid rgba(125, 245, 193, 0.9);
+  border-radius: 8px;
+  color: #07131d;
+  cursor: pointer;
+  font: inherit;
+  font-weight: 950;
+  min-height: 48px;
+  padding: 12px 16px;
+}
+
+.newsletterModalSubmit:disabled {
+  cursor: wait;
+  opacity: 0.68;
+}
+
+.newsletterModalClose:hover,
+.newsletterModalClose:focus-visible,
+.newsletterModalSubmit:hover,
+.newsletterModalSubmit:focus-visible {
+  outline: 3px solid rgba(125, 245, 193, 0.2);
+}
+
+.newsletterModalStatus {
+  border-radius: 8px;
+  font-size: 0.9rem;
+  font-weight: 850;
+  margin: 0;
+  padding: 10px 12px;
+}
+
+.newsletterModalStatus.isSuccess {
+  background: rgba(125, 245, 193, 0.12);
+  color: #9ffbd2;
+}
+
+.newsletterModalStatus.isError {
+  background: rgba(255, 98, 77, 0.12);
+  color: #ffb0a5;
+}
+
 .widgetsPage {
   box-sizing: border-box;
   display: grid;
@@ -884,6 +1064,19 @@
 
   .cookiePreferencePanel > button {
     justify-self: stretch;
+  }
+
+  .newsletterModalOverlay {
+    align-items: end;
+    padding: 14px;
+  }
+
+  .newsletterModal {
+    padding: 20px;
+  }
+
+  .newsletterModal h2 {
+    max-width: 12ch;
   }
 
   .widgetsPage {

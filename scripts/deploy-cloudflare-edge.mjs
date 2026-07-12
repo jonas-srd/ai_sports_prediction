@@ -67,7 +67,18 @@ const taskDefinition = {
         { name: "INTERNAL_API_URL", value: env("WEB_INTERNAL_API_URL", "http://127.0.0.1:3001") },
         { name: "SHOW_FULL_SITE", value: env("SHOW_FULL_SITE", "0") },
         { name: "NEXT_PUBLIC_SHOW_FULL_SITE", value: env("NEXT_PUBLIC_SHOW_FULL_SITE", "0") },
+        { name: "NEXT_PUBLIC_SITE_URL", value: env("NEXT_PUBLIC_SITE_URL", "https://www.ai-sports-prediction.net") },
+        { name: "DATABASE_SSL", value: env("DATABASE_SSL", "1") },
+        { name: "DATABASE_SSL_REJECT_UNAUTHORIZED", value: env("DATABASE_SSL_REJECT_UNAUTHORIZED", "1") },
+        {
+          name: "DATABASE_SSL_CA_FILE",
+          value: env("DATABASE_SSL_CA_FILE", "/etc/ssl/certs/aws-rds-global-bundle.pem")
+        },
         { name: "WEB_API_CACHE_SECONDS", value: env("WEB_API_CACHE_SECONDS", "60") }
+      ],
+      secrets: [
+        { name: "DATABASE_URL", valueFrom: secrets.databaseUrl },
+        { name: "ADMIN_API_TOKEN", valueFrom: secrets.adminApiToken }
       ],
       logConfiguration: awslogs("edge-web")
     },

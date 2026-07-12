@@ -43,6 +43,30 @@ export type JobAttemptInput = {
   finishedAtUtc?: string | null;
 };
 
+export type NewsletterSignupInput = {
+  email: string;
+  locale?: string | null;
+  source?: string | null;
+  consentText: string;
+  ipHash?: string | null;
+  userAgent?: string | null;
+};
+
+export type NewsletterCampaignInput = {
+  subject: string;
+  previewText?: string | null;
+  htmlBody: string;
+  textBody?: string | null;
+  provider?: string | null;
+};
+
+export type NewsletterCampaignRecipient = {
+  recipientId: string;
+  subscriberId: string;
+  email: string;
+  unsubscribeToken: string;
+};
+
 export function createPostgresPool(connectionString = getPostgresDatabaseUrl()): PostgresDb {
   return new Pool({
     connectionString,
@@ -303,6 +327,265 @@ export async function upsertJobAttempt(db: PostgresDb, input: JobAttemptInput): 
   return id;
 }
 
+export async function upsertNewsletterSubscriber(
+  db: PostgresDb,
+  input: NewsletterSignupInput
+): Promise<{ id: string; email: string; status: string }> {
+  await ensureNewsletterSchema(db);
+
+  const id = randomUUID();
+  const unsubscribeToken = randomUUID();
+  const email = normalizeEmail(input.email);
+
+  const result = await db.query<{ id: string; email: string; status: string }>(
+    `
+      insert into newsletter_subscribers (
+        id,
+        email,
+        status,
+        locale,
+        source,
+        consent_text,
+        consented_at_utc,
+        unsubscribe_token,
+        ip_hash,
+        user_agent,
+        updated_at_utc
+      )
+      values ($1, $2, 'subscribed', $3, $4, $5, now(), $6, $7, $8, now())
+      on conflict (email) do update set
+        status = 'subscribed',
+        locale = coalesce(excluded.locale, newsletter_subscribers.locale),
+        source = coalesce(excluded.source, newsletter_subscribers.source),
+        consent_text = excluded.consent_text,
+        consented_at_utc = now(),
+        unsubscribed_at_utc = null,
+        ip_hash = excluded.ip_hash,
+        user_agent = excluded.user_agent,
+        updated_at_utc = now()
+      returning id, email, status
+    `,
+    [
+      id,
+      email,
+      input.locale ?? null,
+      input.source ?? null,
+      input.consentText,
+      unsubscribeToken,
+      input.ipHash ?? null,
+      input.userAgent ?? null
+    ]
+  );
+
+  const row = result.rows[0];
+  if (!row) {
+    throw new Error("Newsletter subscriber could not be saved.");
+  }
+
+  return row;
+}
+
+export async function createNewsletterCampaign(
+  db: PostgresDb,
+  input: NewsletterCampaignInput
+): Promise<string> {
+  await ensureNewsletterSchema(db);
+
+  const id = randomUUID();
+  await db.query(
+    `
+      insert into newsletter_campaigns (
+        id,
+        subject,
+        preview_text,
+        html_body,
+        text_body,
+        status,
+        provider
+      )
+      values ($1, $2, $3, $4, $5, 'queued', $6)
+    `,
+    [
+      id,
+      input.subject,
+      input.previewText ?? null,
+      input.htmlBody,
+      input.textBody ?? null,
+      input.provider ?? null
+    ]
+  );
+
+  return id;
+}
+
+export async function queueNewsletterCampaignRecipients(
+  db: PostgresDb,
+  campaignId: string
+): Promise<NewsletterCampaignRecipient[]> {
+  await ensureNewsletterSchema(db);
+
+  await db.query(
+    `
+      insert into newsletter_campaign_recipients (
+        id,
+        campaign_id,
+        subscriber_id,
+        status
+      )
+      select
+        md5(random()::text || clock_timestamp()::text || id),
+        $1,
+        id,
+        'queued'
+      from newsletter_subscribers
+      where status = 'subscribed'
+      on conflict (campaign_id, subscriber_id) do nothing
+    `,
+    [campaignId]
+  );
+
+  const result = await db.query<NewsletterCampaignRecipient>(
+    `
+      select
+        ncr.id as "recipientId",
+        ns.id as "subscriberId",
+        ns.email,
+        ns.unsubscribe_token as "unsubscribeToken"
+      from newsletter_campaign_recipients ncr
+      join newsletter_subscribers ns on ns.id = ncr.subscriber_id
+      where ncr.campaign_id = $1
+        and ncr.status = 'queued'
+      order by ns.created_at_utc asc
+    `,
+    [campaignId]
+  );
+
+  return result.rows;
+}
+
+export async function updateNewsletterCampaignStatus(
+  db: PostgresDb,
+  campaignId: string,
+  status: "sending" | "sent" | "failed"
+): Promise<void> {
+  await db.query(
+    `
+      update newsletter_campaigns
+      set
+        status = $2,
+        sent_at_utc = case when $2 = 'sent' then now() else sent_at_utc end
+      where id = $1
+    `,
+    [campaignId, status]
+  );
+}
+
+export async function markNewsletterRecipientSent(
+  db: PostgresDb,
+  recipientId: string,
+  providerMessageId?: string | null
+): Promise<void> {
+  await db.query(
+    `
+      update newsletter_campaign_recipients
+      set
+        status = 'sent',
+        provider_message_id = $2,
+        sent_at_utc = now()
+      where id = $1
+    `,
+    [recipientId, providerMessageId ?? null]
+  );
+}
+
+export async function markNewsletterRecipientFailed(
+  db: PostgresDb,
+  recipientId: string,
+  errorMessage: string
+): Promise<void> {
+  await db.query(
+    `
+      update newsletter_campaign_recipients
+      set
+        status = 'failed',
+        error_message = $2
+      where id = $1
+    `,
+    [recipientId, errorMessage]
+  );
+}
+
+export async function unsubscribeNewsletterSubscriber(
+  db: PostgresDb,
+  token: string
+): Promise<boolean> {
+  await ensureNewsletterSchema(db);
+
+  const result = await db.query(
+    `
+      update newsletter_subscribers
+      set
+        status = 'unsubscribed',
+        unsubscribed_at_utc = now(),
+        updated_at_utc = now()
+      where unsubscribe_token = $1
+    `,
+    [token]
+  );
+
+  return Boolean(result.rowCount && result.rowCount > 0);
+}
+
+async function ensureNewsletterSchema(db: PostgresDb): Promise<void> {
+  await db.query(`
+    create table if not exists newsletter_subscribers (
+      id text primary key,
+      email text not null unique,
+      status text not null default 'subscribed' check (status in ('subscribed', 'unsubscribed', 'bounced')),
+      locale text,
+      source text,
+      consent_text text not null,
+      consented_at_utc timestamptz not null default now(),
+      unsubscribed_at_utc timestamptz,
+      unsubscribe_token text not null unique,
+      ip_hash text,
+      user_agent text,
+      created_at_utc timestamptz not null default now(),
+      updated_at_utc timestamptz not null default now()
+    );
+
+    create index if not exists newsletter_subscribers_status_idx
+      on newsletter_subscribers (status);
+
+    create table if not exists newsletter_campaigns (
+      id text primary key,
+      subject text not null,
+      preview_text text,
+      html_body text not null,
+      text_body text,
+      status text not null default 'draft' check (status in ('draft', 'queued', 'sending', 'sent', 'failed')),
+      provider text,
+      created_at_utc timestamptz not null default now(),
+      sent_at_utc timestamptz
+    );
+
+    create table if not exists newsletter_campaign_recipients (
+      id text primary key,
+      campaign_id text not null references newsletter_campaigns(id) on delete cascade,
+      subscriber_id text not null references newsletter_subscribers(id) on delete cascade,
+      status text not null default 'queued' check (status in ('queued', 'sent', 'failed', 'skipped')),
+      provider_message_id text,
+      error_message text,
+      sent_at_utc timestamptz,
+      created_at_utc timestamptz not null default now(),
+      unique (campaign_id, subscriber_id)
+    );
+
+    create index if not exists newsletter_campaign_recipients_campaign_idx
+      on newsletter_campaign_recipients (campaign_id, status);
+  `);
+}
+
 export async function getCriticalTableRowCounts(db: PostgresDb): Promise<Record<string, number>> {
   const tables = [
     "models",
@@ -322,6 +605,10 @@ export async function getCriticalTableRowCounts(db: PostgresDb): Promise<Record<
   }
 
   return counts;
+}
+
+function normalizeEmail(email: string): string {
+  return email.trim().toLowerCase();
 }
 
 async function listPostgresMigrations(): Promise<Array<{ id: string; sql: string }>> {

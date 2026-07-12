@@ -10,6 +10,7 @@
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
   "dependencies": {
+    "@ai-sports-prediction/db": "file:../../packages/db",
     "next": "latest",
     "react": "latest",
     "react-dom": "latest"
