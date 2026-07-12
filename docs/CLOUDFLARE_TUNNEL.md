@@ -63,6 +63,7 @@ The ECS execution role must be allowed to read this secret, together with:
 ai-sports-prediction/database-url
 ai-sports-prediction/redis-url
 ai-sports-prediction/admin-api-token
+ai-sports-prediction/resend-api-key
 ```
 
 ## 3. Configure Public Hostnames

@@ -71,6 +71,9 @@ const text = {
     grandSlams: "Grand Slams",
     prediction: "AI prediction",
     pick: "Pick",
+    odds: "Odds",
+    bestOdds: "Best odds",
+    bookmakers: "books",
     score: "Set score",
     confidence: "Confidence",
     reasoning: "Reasoning",
@@ -135,6 +138,9 @@ const text = {
     grandSlams: "Grand Slams",
     prediction: "KI-Prognose",
     pick: "Tipp",
+    odds: "Quoten",
+    bestOdds: "Beste Quote",
+    bookmakers: "Anbieter",
     score: "Satzscore",
     confidence: "Sicherheit",
     reasoning: "Begrundung",
@@ -554,6 +560,7 @@ function TennisMatchesSection({ locale, matches }: { locale: Locale; matches: Sp
               </div>
               <TennisFixturePlayer align="left" locale={locale} logo={match.awayLogo} name={match.awayName} />
             </div>
+            <TennisCompactOddsLine locale={locale} match={match} />
             <div className="fixturePrediction">
               <TennisPrediction locale={locale} match={match} />
             </div>
@@ -613,6 +620,28 @@ function TennisPrediction({ locale, match }: { locale: Locale; match: SportApiMa
         <div><small>{copy.confidence}</small><strong>{confidence}%</strong></div>
       </div>
       <p className="predictionReasoning"><span>{copy.reasoning}</span>{reasoning}</p>
+    </div>
+  );
+}
+
+function TennisCompactOddsLine({ locale, match }: { locale: Locale; match: SportApiMatch }) {
+  const copy = text[locale];
+  const odds = match.odds;
+
+  if (!odds || odds.outcomes.length === 0) {
+    return null;
+  }
+
+  return (
+    <div className="compactOddsLine" aria-label={copy.odds}>
+      <span>{copy.odds}</span>
+      {odds.outcomes.map((outcome) => (
+        <small key={`${outcome.label}:${outcome.name}`}>
+          <span className="compactOddsName">{formatCompactTennisOddsOutcomeLabel(outcome.label)}</span>
+          <strong>{formatDecimalOdds(outcome.price)}</strong>
+        </small>
+      ))}
+      <em>{odds.bookmakerCount} {copy.bookmakers}</em>
     </div>
   );
 }
@@ -677,6 +706,7 @@ async function TennisNewsSection({
                   </div>
                   <TennisFixturePlayer align="left" locale={locale} name={match.awayName} />
                 </div>
+                <TennisCompactOddsLine locale={locale} match={match} />
                 <div className="fixturePrediction">
                   <TennisPrediction locale={locale} match={match} />
                 </div>
@@ -1459,6 +1489,37 @@ function formatTennisScore(match: SportApiMatch) {
   }
 
   return "vs";
+}
+
+function formatTennisOddsOutcomeLabel(label: "home" | "draw" | "away", match: SportApiMatch, locale: Locale) {
+  if (label === "home") {
+    return match.homeName;
+  }
+
+  if (label === "away") {
+    return match.awayName;
+  }
+
+  return locale === "de" ? "Remis" : "Draw";
+}
+
+function formatCompactTennisOddsOutcomeLabel(label: "home" | "draw" | "away") {
+  if (label === "home") {
+    return "1";
+  }
+
+  if (label === "away") {
+    return "2";
+  }
+
+  return "X";
+}
+
+function formatDecimalOdds(value: number) {
+  return new Intl.NumberFormat("de-DE", {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2
+  }).format(value);
 }
 
 function formatTennisDate(value: string | null, locale: Locale) {

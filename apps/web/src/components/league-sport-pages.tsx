@@ -123,6 +123,9 @@ const labels = {
     pick: "Pick",
     predictedScore: "Score",
     confidence: "Confidence",
+    odds: "Odds",
+    bestOdds: "Best odds",
+    bookmakers: "books",
     reasoning: "Reasoning",
     squadUnavailable: "Core roster roles are shown here; full live roster sync can be connected next.",
     live: "Live",
@@ -187,6 +190,9 @@ const labels = {
     pick: "Tipp",
     predictedScore: "Ergebnis",
     confidence: "Sicherheit",
+    odds: "Quoten",
+    bestOdds: "Beste Quote",
+    bookmakers: "Anbieter",
     reasoning: "Begründung",
     squadUnavailable: "Hier stehen Kaderkern und Rollen; vollständige Live-Roster können als nächster Schritt angebunden werden.",
     live: "Live",
@@ -411,6 +417,7 @@ function LeagueMatchesSection<TTeam extends LeagueTeam>({
                 </div>
                 <LeagueFixtureTeam align="left" config={config} locale={locale} logo={match.awayLogo} name={match.awayName} />
               </div>
+              <LeagueCompactOddsLine locale={locale} match={match} />
               <div className="fixturePrediction">
                 <LeaguePredictionCard config={config} locale={locale} match={match} />
                 <div className="fixtureActionColumn">
@@ -464,6 +471,28 @@ function LeaguePredictionCard<TTeam extends LeagueTeam>({ config, locale, match 
         <span>{text.reasoning}</span>
         {reasoning}
       </p>
+    </div>
+  );
+}
+
+function LeagueCompactOddsLine({ locale, match }: { locale: Locale; match: SportApiMatch }) {
+  const text = labels[locale];
+  const odds = match.odds;
+
+  if (!odds || odds.outcomes.length === 0) {
+    return null;
+  }
+
+  return (
+    <div className="compactOddsLine" aria-label={text.odds}>
+      <span>{text.odds}</span>
+      {odds.outcomes.map((outcome) => (
+        <small key={`${outcome.label}:${outcome.name}`}>
+          <span className="compactOddsName">{formatCompactOddsOutcomeLabel(outcome.label)}</span>
+          <strong>{formatDecimalOdds(outcome.price)}</strong>
+        </small>
+      ))}
+      <em>{odds.bookmakerCount} {text.bookmakers}</em>
     </div>
   );
 }
@@ -523,6 +552,7 @@ async function LeagueNewsSection<TTeam extends LeagueTeam>({
                   </div>
                   <LeagueFixtureTeam align="left" config={config} locale={locale} logo={match.awayLogo} name={match.awayName} />
                 </div>
+                <LeagueCompactOddsLine locale={locale} match={match} />
                 <div className="fixturePrediction">
                   <LeaguePredictionCard config={config} locale={locale} match={match} />
                 </div>
@@ -1245,6 +1275,37 @@ function getLeagueMatchTimestamp(match: SportApiMatch) {
 function isFinishedLeagueMatch(match: SportApiMatch) {
   const status = (match.status ?? "").toLowerCase();
   return Boolean(match.homeScore !== null && match.awayScore !== null) || status.includes("ft") || status.includes("final") || status.includes("finished");
+}
+
+function formatOddsOutcomeLabel(label: "home" | "draw" | "away", match: SportApiMatch, locale: Locale) {
+  if (label === "home") {
+    return match.homeName;
+  }
+
+  if (label === "away") {
+    return match.awayName;
+  }
+
+  return locale === "de" ? "Remis" : "Draw";
+}
+
+function formatCompactOddsOutcomeLabel(label: "home" | "draw" | "away") {
+  if (label === "home") {
+    return "1";
+  }
+
+  if (label === "away") {
+    return "2";
+  }
+
+  return "X";
+}
+
+function formatDecimalOdds(value: number) {
+  return new Intl.NumberFormat("de-DE", {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2
+  }).format(value);
 }
 
 function formatDiff(value: number) {

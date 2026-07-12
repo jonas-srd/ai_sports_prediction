@@ -6,7 +6,7 @@ export const metadata: Metadata = {
   description: "Impressum und Anbieterinformationen für AI Sports Prediction."
 };
 
-const contactEmail = <ObfuscatedEmail reversedDomain="moc.kooltuo" reversedLocalPart="noitciderp-trops-ia" />;
+const contactEmail = <ObfuscatedEmail reversedDomain="moc.kooltuo" reversedLocalPart="noitciderp-strops-ia" />;
 
 export default function GermanLegalNoticePage() {
   return (
@@ -32,7 +32,7 @@ export default function GermanLegalNoticePage() {
             <br />
             AI Sports Prediction
             <br />
-            80469 München
+            81541 München
             <br />
             Deutschland
             <br />

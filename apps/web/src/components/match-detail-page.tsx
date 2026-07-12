@@ -59,6 +59,9 @@ const copy = {
     matchStats: "Match stats",
     modelSignal: "Model signal",
     overview: "Overview",
+    odds: "Odds",
+    bestOdds: "Best odds",
+    bookmakers: "books",
     pick: "Pick",
     prediction: "AI prediction",
     reasoning: "Reasoning",
@@ -87,6 +90,9 @@ const copy = {
     matchStats: "Spielstatistiken",
     modelSignal: "Modell-Signal",
     overview: "Übersicht",
+    odds: "Quoten",
+    bestOdds: "Beste Quote",
+    bookmakers: "Anbieter",
     pick: "Tipp",
     prediction: "KI-Prognose",
     reasoning: "Begründung",
@@ -170,6 +176,7 @@ export async function SportMatchDetailPage({
               <strong>{formatMatchCenter(context.match)}</strong>
               <ParticipantLink context={context} logo={context.match.awayLogo} name={context.match.awayName} />
             </div>
+            <MatchDetailCompactOddsLine context={context} locale={locale} />
           </article>
           <Link className="secondaryLink" href={backHref}>{text.back}</Link>
         </div>
@@ -243,6 +250,28 @@ function PredictionPanel({
         ))}
       </div>
     </article>
+  );
+}
+
+function MatchDetailCompactOddsLine({ context, locale }: { context: MatchContext; locale: Locale }) {
+  const text = copy[locale];
+  const odds = context.match.odds;
+
+  if (!odds || odds.outcomes.length === 0) {
+    return null;
+  }
+
+  return (
+    <div className="compactOddsLine matchDetailCompactOddsLine" aria-label={text.odds}>
+      <span>{text.odds}</span>
+      {odds.outcomes.map((outcome) => (
+        <small key={`${outcome.label}:${outcome.name}`}>
+          <span className="compactOddsName">{formatCompactOddsOutcomeLabel(outcome.label)}</span>
+          <strong>{formatDecimalOdds(outcome.price)}</strong>
+        </small>
+      ))}
+      <em>{odds.bookmakerCount} {text.bookmakers}</em>
+    </div>
   );
 }
 
@@ -1110,6 +1139,37 @@ function formatMatchCenter(match: SportApiMatch) {
   }
 
   return "vs";
+}
+
+function formatOddsOutcomeLabel(label: "home" | "draw" | "away", match: SportApiMatch, locale: Locale) {
+  if (label === "home") {
+    return match.homeName;
+  }
+
+  if (label === "away") {
+    return match.awayName;
+  }
+
+  return locale === "de" ? "Remis" : "Draw";
+}
+
+function formatCompactOddsOutcomeLabel(label: "home" | "draw" | "away") {
+  if (label === "home") {
+    return "1";
+  }
+
+  if (label === "away") {
+    return "2";
+  }
+
+  return "X";
+}
+
+function formatDecimalOdds(value: number) {
+  return new Intl.NumberFormat("de-DE", {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2
+  }).format(value);
 }
 
 function formatMatchDate(value: string | null, locale: Locale) {

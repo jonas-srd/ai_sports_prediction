@@ -2,6 +2,7 @@
  * Purpose: Server-only TheSportsDB data adapter for football, NFL, NBA and tennis.
  */
 import type { FootballCompetition, FootballTeam } from "@/lib/football-data";
+import { hydrateMatchesWithOdds } from "@/lib/odds-api-data";
 import { findTennisPlayerByName, getTennisFlagUrl } from "@/lib/tennis-data";
 
 export type ApiSportId = "football" | "nfl" | "nba" | "tennis";
@@ -21,6 +22,25 @@ export type SportApiMatch = {
   homeScore: number | null;
   awayScore: number | null;
   status: string | null;
+  odds?: SportApiOdds | null;
+};
+
+export type SportApiOddsOutcome = {
+  label: "home" | "draw" | "away";
+  name: string;
+  price: number;
+  bookmaker: string;
+};
+
+export type SportApiOdds = {
+  provider: "The Odds API";
+  market: "h2h";
+  sportKey: string | null;
+  eventId: string | null;
+  eventName: string;
+  bookmakerCount: number;
+  lastUpdated: string | null;
+  outcomes: SportApiOddsOutcome[];
 };
 
 export type SportApiStanding = {
@@ -122,6 +142,15 @@ const THE_SPORTS_DB_FOOTBALL_LEAGUES: Record<string, TheSportsDbLeagueRef> = {
 };
 
 let theSportsDbLeagueRowsPromise: Promise<any[]> | null = null;
+
+function getFootballLeagueSlug(league: TheSportsDbLeagueRef) {
+  return Object.entries(THE_SPORTS_DB_FOOTBALL_LEAGUES).find(([, candidate]) => {
+    const candidateId = getTheSportsDbLeagueId(candidate);
+    const leagueId = getTheSportsDbLeagueId(league);
+
+    return (candidateId && leagueId && candidateId === leagueId) || namesMatch(candidate.name, league.name);
+  })?.[0];
+}
 
 export async function getSportApiSnapshot(sport: ApiSportId): Promise<SportApiSnapshot> {
   const sportsDbLeague = THE_SPORTS_DB_LEAGUES[sport];
@@ -390,7 +419,11 @@ async function fetchTheSportsDbSnapshot(
     fetchTheSportsDbTeams(league).catch(() => []),
     fetchTheSportsDbLeagueEvents(sport, league).catch(() => [])
   ]);
-  const matches = hydrateTheSportsDbEventLogos(sport, events, teams);
+  const matches = await hydrateMatchesWithOdds(
+    sport,
+    hydrateTheSportsDbEventLogos(sport, events, teams),
+    { footballSlug: getFootballLeagueSlug(league), competitionName: league.name }
+  );
   const standings = sport === "football"
     ? await fetchTheSportsDbStandings(league, teams, matches).catch(() => [])
     : [];

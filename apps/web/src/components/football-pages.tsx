@@ -88,6 +88,9 @@ const labels = {
     confidence: "Confidence",
     predictedScore: "Score",
     pick: "Pick",
+    odds: "Odds",
+    bestOdds: "Best odds",
+    bookmakers: "books",
     reasoning: "Reasoning",
     squad: "Squad",
     info: "Info",
@@ -170,6 +173,9 @@ const labels = {
     confidence: "Sicherheit",
     predictedScore: "Ergebnis",
     pick: "Tipp",
+    odds: "Quoten",
+    bestOdds: "Beste Quote",
+    bookmakers: "Anbieter",
     reasoning: "Begründung",
     squad: "Kader",
     info: "Infos",
@@ -762,6 +768,7 @@ function TeamMatchesSection({
                 <small>{fixture.competition || competition.name}</small>
               </div>
               <FixtureTeam competition={competition} locale={locale} logo={fixture.awayLogo} name={fixture.awayName} align="left" />
+              <FixtureCompactOddsLine fixture={fixture} locale={locale} />
             </article>
           ))
         ) : (
@@ -966,6 +973,7 @@ function MatchdaySection({
                 </div>
                 <FixtureTeam competition={competition} locale={locale} logo={fixture.awayLogo} name={fixture.awayName} align="left" />
               </div>
+              <FixtureCompactOddsLine fixture={fixture} locale={locale} />
               <div className="fixturePrediction">
                 <FixturePredictionCard competition={competition} fixture={fixture} locale={locale} />
                 <div className="fixtureActionColumn">
@@ -1024,6 +1032,7 @@ async function CompetitionNewsSection({
                   </div>
                   <FixtureTeam competition={competition} locale={locale} logo={fixture.awayLogo} name={fixture.awayName} align="left" />
                 </div>
+                <FixtureCompactOddsLine fixture={fixture} locale={locale} />
                 <div className="fixturePrediction">
                   <FixturePredictionCard competition={competition} fixture={fixture} locale={locale} />
                 </div>
@@ -1928,6 +1937,28 @@ function FixturePredictionCard({ competition, fixture, locale }: { competition: 
   );
 }
 
+function FixtureCompactOddsLine({ fixture, locale }: { fixture: SportApiMatch; locale: Locale }) {
+  const text = labels[locale];
+  const odds = fixture.odds;
+
+  if (!odds || odds.outcomes.length === 0) {
+    return null;
+  }
+
+  return (
+    <div className="compactOddsLine" aria-label={text.odds}>
+      <span>{text.odds}</span>
+      {odds.outcomes.map((outcome) => (
+        <small key={`${outcome.label}:${outcome.name}`}>
+          <span className="compactOddsName">{formatCompactOddsOutcomeLabel(outcome.label)}</span>
+          <strong>{formatDecimalOdds(outcome.price)}</strong>
+        </small>
+      ))}
+      <em>{odds.bookmakerCount} {text.bookmakers}</em>
+    </div>
+  );
+}
+
 function FixtureStatusPill({ fixture, locale }: { fixture: SportApiMatch; locale: Locale }) {
   const status = formatFixtureStatus(fixture, locale);
 
@@ -2081,6 +2112,37 @@ function getFixtureTimestamp(fixture: SportApiMatch) {
 function isFinishedFixture(fixture: SportApiMatch) {
   const status = (fixture.status ?? "").toLowerCase();
   return Boolean(fixture.homeScore !== null && fixture.awayScore !== null) || status.includes("ft") || status.includes("final") || status.includes("finished");
+}
+
+function formatOddsOutcomeLabel(label: "home" | "draw" | "away", fixture: SportApiMatch, locale: Locale) {
+  if (label === "home") {
+    return fixture.homeName;
+  }
+
+  if (label === "away") {
+    return fixture.awayName;
+  }
+
+  return locale === "de" ? "Remis" : "Draw";
+}
+
+function formatCompactOddsOutcomeLabel(label: "home" | "draw" | "away") {
+  if (label === "home") {
+    return "1";
+  }
+
+  if (label === "away") {
+    return "2";
+  }
+
+  return "X";
+}
+
+function formatDecimalOdds(value: number) {
+  return new Intl.NumberFormat("de-DE", {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2
+  }).format(value);
 }
 
 function formatFixtureCenter(fixture: SportApiMatch, locale: Locale) {

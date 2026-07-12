@@ -2724,6 +2724,113 @@ a {
   white-space: nowrap;
 }
 
+.compactOddsLine {
+  justify-self: center;
+  display: grid;
+  grid-template-columns: 64px repeat(3, 92px) 64px;
+  align-items: center;
+  justify-content: center;
+  justify-items: center;
+  gap: 5px;
+  width: fit-content;
+  max-width: 100%;
+  min-width: 0;
+  margin: -1px auto 3px;
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.032);
+  padding: 4px 6px;
+  color: rgba(248, 251, 255, 0.58);
+  font-size: 0.68rem;
+  font-weight: 820;
+  line-height: 1;
+}
+
+.compactOddsLine:has(small:nth-of-type(2):last-of-type) {
+  grid-template-columns: 64px repeat(2, 92px) 64px;
+}
+
+.compactOddsLine:has(small:nth-of-type(1):last-of-type) {
+  grid-template-columns: 64px 92px 64px;
+}
+
+.compactOddsLine > span,
+.compactOddsLine small,
+.compactOddsLine em {
+  min-height: 24px;
+  display: inline-flex;
+  justify-content: center;
+  align-items: center;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.compactOddsLine > span {
+  border: 1px solid rgba(125, 245, 193, 0.2);
+  border-radius: 999px;
+  background: rgba(125, 245, 193, 0.07);
+  color: #7df5c1;
+  width: 100%;
+  padding: 2px 6px;
+  font-size: 0.58rem;
+  font-weight: 950;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.compactOddsLine small {
+  display: grid;
+  grid-template-columns: 18px minmax(0, 1fr);
+  gap: 8px;
+  width: 100%;
+  max-width: none;
+  min-width: 0;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.045);
+  color: rgba(248, 251, 255, 0.68);
+  padding: 3px 9px;
+  text-overflow: ellipsis;
+}
+
+.compactOddsName {
+  justify-self: center;
+  min-width: 0;
+  overflow: hidden;
+  color: rgba(248, 251, 255, 0.7);
+  font-size: 0.64rem;
+  font-weight: 950;
+  letter-spacing: 0.08em;
+  position: relative;
+  text-overflow: ellipsis;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.compactOddsName::after {
+  color: rgba(248, 251, 255, 0.32);
+  content: ":";
+  margin-left: 2px;
+}
+
+.compactOddsLine strong {
+  justify-self: end;
+  color: #ffc857;
+  font-family: "Courier New", monospace;
+  font-size: 0.72rem;
+  font-weight: 950;
+}
+
+.compactOddsLine em {
+  padding: 0 4px;
+  width: 100%;
+  color: rgba(248, 251, 255, 0.42);
+  font-size: 0.62rem;
+  font-style: normal;
+  font-weight: 800;
+}
+
 .predictionReasoning {
   background: rgba(255, 255, 255, 0.04);
   border-left: 2px solid rgba(255, 200, 87, 0.65);
@@ -5091,6 +5198,15 @@ a.matchDetailParticipant:focus-visible {
   .predictionMetrics strong {
     font-size: 0.82rem;
     white-space: normal;
+  }
+
+  .compactOddsLine {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .compactOddsLine small {
+    max-width: 100%;
   }
 
   .predictionReasoning {

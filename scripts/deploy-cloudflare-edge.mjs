@@ -38,6 +38,7 @@ const secrets = {
   databaseUrl: secretArn("ai-sports-prediction/database-url"),
   redisUrl: secretArn("ai-sports-prediction/redis-url"),
   adminApiToken: secretArn("ai-sports-prediction/admin-api-token"),
+  resendApiKey: secretArn("ai-sports-prediction/resend-api-key"),
   cloudflareTunnelToken: secretArn("ai-sports-prediction/cloudflare-tunnel-token")
 };
 
@@ -68,6 +69,7 @@ const taskDefinition = {
         { name: "SHOW_FULL_SITE", value: env("SHOW_FULL_SITE", "0") },
         { name: "NEXT_PUBLIC_SHOW_FULL_SITE", value: env("NEXT_PUBLIC_SHOW_FULL_SITE", "0") },
         { name: "NEXT_PUBLIC_SITE_URL", value: env("NEXT_PUBLIC_SITE_URL", "https://www.ai-sports-prediction.net") },
+        { name: "NEWSLETTER_FROM_EMAIL", value: env("NEWSLETTER_FROM_EMAIL", "AI Sports Prediction <ai-sports-prediction@outlook.com>") },
         { name: "DATABASE_SSL", value: env("DATABASE_SSL", "1") },
         { name: "DATABASE_SSL_REJECT_UNAUTHORIZED", value: env("DATABASE_SSL_REJECT_UNAUTHORIZED", "1") },
         {
@@ -78,7 +80,8 @@ const taskDefinition = {
       ],
       secrets: [
         { name: "DATABASE_URL", valueFrom: secrets.databaseUrl },
-        { name: "ADMIN_API_TOKEN", valueFrom: secrets.adminApiToken }
+        { name: "ADMIN_API_TOKEN", valueFrom: secrets.adminApiToken },
+        { name: "RESEND_API_KEY", valueFrom: secrets.resendApiKey }
       ],
       logConfiguration: awslogs("edge-web")
     },

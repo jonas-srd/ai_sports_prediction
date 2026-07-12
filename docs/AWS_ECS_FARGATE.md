@@ -80,6 +80,7 @@ ai-sports-prediction/redis-url
 ai-sports-prediction/openrouter-api-key
 ai-sports-prediction/football-data-api-key
 ai-sports-prediction/admin-api-token
+ai-sports-prediction/resend-api-key
 ai-sports-prediction/cloudflare-tunnel-token
 ```
 
