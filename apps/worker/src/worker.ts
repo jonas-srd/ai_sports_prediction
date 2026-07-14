@@ -15,10 +15,12 @@ const connection = parseRedisConnection(process.env.REDIS_URL);
 const db = createPostgresPool();
 const queuePrefix = process.env.QUEUE_KEY_PREFIX ?? "{ai-sports-prediction}";
 const predictionQueue = new Queue("predictions", { connection, prefix: queuePrefix });
+const oddsQueue = new Queue("odds-refresh", { connection, prefix: queuePrefix });
 
 const queues = [
   "fixture-sync",
   "predictions",
+  "odds-refresh",
   "scoring",
   "backups"
 ];
@@ -72,7 +74,7 @@ const workers = queues.map((queueName) => new Worker(
 
 console.log(`AI Sport Prediction worker listening on queues: ${queues.join(", ")}`);
 void registerRecurringJobs().catch((error) => {
-  console.error("Could not register recurring prediction jobs:", error);
+  console.error("Could not register recurring worker jobs:", error);
 });
 
 process.on("SIGTERM", () => shutdown());
@@ -82,6 +84,12 @@ async function runQueuedJob(queueName: string, jobName: string, data: unknown): 
   if (queueName === "predictions" && jobName === "generate-upcoming-sport-api-predictions") {
     const { generateUpcomingSportApiPredictions } = await import("./jobs/generate-upcoming-sport-api-predictions");
     await generateUpcomingSportApiPredictions(db);
+    return;
+  }
+
+  if (queueName === "odds-refresh" && jobName === "refresh-upcoming-bookmaker-odds") {
+    const { refreshUpcomingOdds } = await import("./jobs/refresh-upcoming-odds");
+    await refreshUpcomingOdds(db);
     return;
   }
 
@@ -108,11 +116,25 @@ async function registerRecurringJobs(): Promise<void> {
       removeOnFail: 50
     }
   );
+
+  const oddsIntervalMinutes = Number(process.env.ODDS_REFRESH_INTERVAL_MINUTES ?? 60);
+  const oddsEvery = Math.max(5, Number.isFinite(oddsIntervalMinutes) ? oddsIntervalMinutes : 60) * 60 * 1000;
+
+  await oddsQueue.add(
+    "refresh-upcoming-bookmaker-odds",
+    {},
+    {
+      jobId: "refresh-upcoming-bookmaker-odds",
+      repeat: { every: oddsEvery },
+      removeOnComplete: 50,
+      removeOnFail: 100
+    }
+  );
 }
 
 async function shutdown(): Promise<void> {
   console.log("Shutting down AI Sport Prediction worker");
-  await Promise.all([...workers.map((worker) => worker.close()), predictionQueue.close()]);
+  await Promise.all([...workers.map((worker) => worker.close()), predictionQueue.close(), oddsQueue.close()]);
   await db.end();
   process.exit(0);
 }

@@ -87,8 +87,42 @@ export type MatchPredictionInput = {
   status?: string | null;
   source?: string | null;
   sourceMatchId?: string | null;
+  sport?: string | null;
   stage?: string | null;
   matchday?: number | null;
+};
+
+export type OddsRefreshCandidate = {
+  matchId: string;
+  sourceMatchId: string | null;
+  sport: string | null;
+  utcDate: string;
+  competition: string;
+  homeTeam: string;
+  awayTeam: string;
+};
+
+export type StoredMatchOddsInput = {
+  matchId: string;
+  provider: string;
+  market: string;
+  sportKey?: string | null;
+  providerEventId?: string | null;
+  eventName: string;
+  bookmakerCount: number;
+  outcomes: unknown;
+  providerLastUpdatedAtUtc?: string | null;
+  checkedAtUtc: string;
+};
+
+export type OddsRefreshCheckInput = {
+  matchId: string;
+  provider: string;
+  status: "available" | "unavailable" | "error" | "unsupported";
+  providerEventId?: string | null;
+  bookmakerCount?: number;
+  checkedAtUtc: string;
+  errorMessage?: string | null;
 };
 
 export type StoredPredictionInput = {
@@ -277,10 +311,11 @@ export async function upsertPredictionMatch(db: PostgresDb, input: MatchPredicti
         status,
         source,
         source_match_id,
+        sport,
         stage,
         matchday
       )
-      values ($1, $2, $3, $4, $5, $6, coalesce($7, 'SCHEDULED'), $8, $9, $10, $11)
+      values ($1, $2, $3, $4, $5, $6, coalesce($7, 'SCHEDULED'), $8, $9, $10, $11, $12)
       on conflict (id) do update set
         utc_date = excluded.utc_date,
         competition = excluded.competition,
@@ -290,6 +325,7 @@ export async function upsertPredictionMatch(db: PostgresDb, input: MatchPredicti
         status = excluded.status,
         source = coalesce(excluded.source, matches.source),
         source_match_id = coalesce(excluded.source_match_id, matches.source_match_id),
+        sport = coalesce(excluded.sport, matches.sport),
         stage = coalesce(excluded.stage, matches.stage),
         matchday = coalesce(excluded.matchday, matches.matchday),
         updated_at = now()
@@ -304,6 +340,7 @@ export async function upsertPredictionMatch(db: PostgresDb, input: MatchPredicti
       input.status ?? "SCHEDULED",
       input.source ?? null,
       input.sourceMatchId ?? null,
+      input.sport ?? null,
       input.stage ?? null,
       input.matchday ?? null
     ]
@@ -313,6 +350,165 @@ export async function upsertPredictionMatch(db: PostgresDb, input: MatchPredicti
 export async function predictionExists(db: PostgresDb, matchId: string, modelId: string): Promise<boolean> {
   const result = await db.query("select 1 from predictions where match_id = $1 and model_id = $2", [matchId, modelId]);
   return Boolean(result.rowCount && result.rowCount > 0);
+}
+
+export async function listMatchesDueForOddsRefresh(
+  db: PostgresDb,
+  options: { lookaheadDays: number; minRefreshMinutes: number; limit: number }
+): Promise<OddsRefreshCandidate[]> {
+  const result = await db.query<{
+    match_id: string;
+    source_match_id: string | null;
+    sport: string | null;
+    utc_date: Date;
+    competition: string;
+    home_team: string;
+    away_team: string;
+  }>(
+    `
+      select
+        m.id as match_id,
+        m.source_match_id,
+        m.sport,
+        m.utc_date,
+        m.competition,
+        m.home_team,
+        m.away_team
+      from matches m
+      left join lateral (
+        select checked_at_utc
+        from odds_refresh_checks
+        where match_id = m.id
+          and provider = 'The Odds API'
+        order by checked_at_utc desc
+        limit 1
+      ) latest_check on true
+      where m.utc_date > now()
+        and m.utc_date <= now() + ($1::int * interval '1 day')
+        and lower(coalesce(m.status, '')) not like '%final%'
+        and lower(coalesce(m.status, '')) not like '%finished%'
+        and lower(coalesce(m.status, '')) <> 'ft'
+        and (
+          latest_check.checked_at_utc is null
+          or latest_check.checked_at_utc <= now() - ($2::int * interval '1 minute')
+        )
+      order by m.utc_date asc
+      limit $3
+    `,
+    [options.lookaheadDays, options.minRefreshMinutes, options.limit]
+  );
+
+  return result.rows.map((row) => ({
+    matchId: row.match_id,
+    sourceMatchId: row.source_match_id,
+    sport: row.sport,
+    utcDate: row.utc_date.toISOString(),
+    competition: row.competition,
+    homeTeam: row.home_team,
+    awayTeam: row.away_team
+  }));
+}
+
+export async function upsertStoredMatchOdds(db: PostgresDb, input: StoredMatchOddsInput): Promise<string> {
+  const id = randomUUID();
+  const result = await db.query<{ id: string }>(
+    `
+      insert into match_odds (
+        id,
+        match_id,
+        provider,
+        market,
+        sport_key,
+        provider_event_id,
+        event_name,
+        bookmaker_count,
+        outcomes,
+        provider_last_updated_at_utc,
+        checked_at_utc
+      )
+      values ($1, $2, $3, $4, $5, $6, $7, $8, $9::jsonb, $10, $11)
+      on conflict (match_id, provider, market) do update set
+        sport_key = excluded.sport_key,
+        provider_event_id = excluded.provider_event_id,
+        event_name = excluded.event_name,
+        bookmaker_count = excluded.bookmaker_count,
+        outcomes = excluded.outcomes,
+        provider_last_updated_at_utc = excluded.provider_last_updated_at_utc,
+        checked_at_utc = excluded.checked_at_utc,
+        updated_at = now()
+      returning id
+    `,
+    [
+      id,
+      input.matchId,
+      input.provider,
+      input.market,
+      input.sportKey ?? null,
+      input.providerEventId ?? null,
+      input.eventName,
+      input.bookmakerCount,
+      JSON.stringify(input.outcomes),
+      input.providerLastUpdatedAtUtc ?? null,
+      input.checkedAtUtc
+    ]
+  );
+
+  return result.rows[0]?.id ?? id;
+}
+
+export async function insertOddsRefreshCheck(db: PostgresDb, input: OddsRefreshCheckInput): Promise<string> {
+  const id = randomUUID();
+  await db.query(
+    `
+      insert into odds_refresh_checks (
+        id,
+        match_id,
+        provider,
+        status,
+        provider_event_id,
+        bookmaker_count,
+        checked_at_utc,
+        error_message
+      )
+      values ($1, $2, $3, $4, $5, $6, $7, $8)
+    `,
+    [
+      id,
+      input.matchId,
+      input.provider,
+      input.status,
+      input.providerEventId ?? null,
+      input.bookmakerCount ?? 0,
+      input.checkedAtUtc,
+      input.errorMessage ?? null
+    ]
+  );
+
+  return id;
+}
+
+export async function listLatestMatchOddsBySourceMatchIds(db: PostgresDb, sourceMatchIds: string[]): Promise<unknown[]> {
+  if (sourceMatchIds.length === 0) {
+    return [];
+  }
+
+  const result = await db.query(
+    `
+      select
+        mo.*,
+        m.source_match_id,
+        m.home_team,
+        m.away_team,
+        m.utc_date
+      from match_odds mo
+      join matches m on m.id = mo.match_id
+      where m.source_match_id = any($1::text[])
+      order by mo.updated_at desc
+    `,
+    [sourceMatchIds]
+  );
+
+  return result.rows;
 }
 
 export async function upsertStoredPrediction(db: PostgresDb, input: StoredPredictionInput): Promise<string> {
@@ -748,6 +944,8 @@ export async function getCriticalTableRowCounts(db: PostgresDb): Promise<Record<
   const tables = [
     "models",
     "matches",
+    "match_odds",
+    "odds_refresh_checks",
     "benchmark_predictions",
     "prediction_evaluations",
     "special_predictions",

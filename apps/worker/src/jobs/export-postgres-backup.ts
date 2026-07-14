@@ -19,6 +19,8 @@ const EXPORT_TABLES = [
   "schema_migrations",
   "models",
   "matches",
+  "match_odds",
+  "odds_refresh_checks",
   "predictions",
   "scores",
   "benchmark_predictions",

@@ -10,7 +10,7 @@ import {
 } from "@ai-sports-prediction/db";
 import { OpenRouterClient } from "@ai-sports-prediction/llm";
 
-type SportId = "football" | "nfl" | "nba" | "tennis";
+export type SportId = "football" | "nfl" | "nba" | "tennis";
 
 type LeagueRef = {
   competition: string;
@@ -18,7 +18,7 @@ type LeagueRef = {
   sport: SportId;
 };
 
-type SportFixture = {
+export type SportFixture = {
   id: string;
   competition: string;
   sport: SportId;
@@ -101,6 +101,7 @@ export async function generateUpcomingSportApiPredictions(db: PostgresDb) {
       status: fixture.status,
       source: "thesportsdb",
       sourceMatchId: fixture.id,
+      sport: fixture.sport,
       stage: fixture.round,
       matchday: fixture.matchday
     });
@@ -131,10 +132,14 @@ export async function generateUpcomingSportApiPredictions(db: PostgresDb) {
   console.log(`Upcoming prediction job finished: ${created} created, ${skipped} skipped, ${failed} failed.`);
 }
 
-async function fetchUpcomingFixtures(apiKey: string) {
+export async function fetchUpcomingFixtures(
+  apiKey: string,
+  lookaheadDays = Number(process.env.PREDICTION_AUTOMATION_LOOKAHEAD_DAYS ?? 7)
+) {
   const rows = (await Promise.all(LEAGUES.map((league) => fetchLeagueFixtures(apiKey, league)))).flat();
   const now = Date.now();
-  const horizonMs = Number(process.env.PREDICTION_AUTOMATION_LOOKAHEAD_DAYS ?? 7) * 24 * 60 * 60 * 1000;
+  const safeLookaheadDays = Number.isFinite(lookaheadDays) ? Math.max(1, Math.min(90, lookaheadDays)) : 7;
+  const horizonMs = safeLookaheadDays * 24 * 60 * 60 * 1000;
   const seen = new Set<string>();
 
   return rows

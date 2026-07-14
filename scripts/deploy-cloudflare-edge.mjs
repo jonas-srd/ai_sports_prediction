@@ -77,6 +77,7 @@ const taskDefinition = {
         { name: "OPENROUTER_SITE_NAME", value: env("OPENROUTER_SITE_NAME", "AI Sports Prediction") },
         { name: "NEWSLETTER_FROM_EMAIL", value: env("NEWSLETTER_FROM_EMAIL", "AI Sports Prediction <ai-sports-prediction@outlook.com>") },
         { name: "THE_ODDS_API_REGIONS", value: env("THE_ODDS_API_REGIONS", "eu,us") },
+        { name: "ODDS_REFRESH_LOOKAHEAD_DAYS", value: env("ODDS_REFRESH_LOOKAHEAD_DAYS", "7") },
         { name: "THE_SPORTS_DB_CACHE_SECONDS", value: env("THE_SPORTS_DB_CACHE_SECONDS", "300") },
         { name: "THE_SPORTS_DB_LIVE_CACHE_SECONDS", value: env("THE_SPORTS_DB_LIVE_CACHE_SECONDS", "60") },
         { name: "DATABASE_SSL", value: env("DATABASE_SSL", "1") },
@@ -85,7 +86,8 @@ const taskDefinition = {
           name: "DATABASE_SSL_CA_FILE",
           value: env("DATABASE_SSL_CA_FILE", "/etc/ssl/certs/aws-rds-global-bundle.pem")
         },
-        { name: "WEB_API_CACHE_SECONDS", value: env("WEB_API_CACHE_SECONDS", "60") }
+        { name: "WEB_API_CACHE_SECONDS", value: env("WEB_API_CACHE_SECONDS", "60") },
+        { name: "WEB_API_ODDS_CACHE_SECONDS", value: env("WEB_API_ODDS_CACHE_SECONDS", "60") }
       ],
       secrets: [
         { name: "DATABASE_URL", valueFrom: secrets.databaseUrl },
@@ -116,6 +118,7 @@ const taskDefinition = {
         { name: "API_CORS_ORIGIN", value: env("API_CORS_ORIGIN", "https://www.ai-sports-prediction.net") },
         { name: "API_CACHE_ENABLED", value: env("API_CACHE_ENABLED", "1") },
         { name: "API_CACHE_MATCHES_TTL_SECONDS", value: env("API_CACHE_MATCHES_TTL_SECONDS", "300") },
+        { name: "API_CACHE_ODDS_TTL_SECONDS", value: env("API_CACHE_ODDS_TTL_SECONDS", "60") },
         { name: "API_CACHE_BENCHMARK_TTL_SECONDS", value: env("API_CACHE_BENCHMARK_TTL_SECONDS", "300") },
         { name: "API_CACHE_SPECIAL_TTL_SECONDS", value: env("API_CACHE_SPECIAL_TTL_SECONDS", "300") },
         { name: "API_CACHE_HEALTH_TTL_SECONDS", value: env("API_CACHE_HEALTH_TTL_SECONDS", "2") },
@@ -144,6 +147,11 @@ const taskDefinition = {
         { name: "PREDICTION_AUTOMATION_LOOKAHEAD_DAYS", value: env("PREDICTION_AUTOMATION_LOOKAHEAD_DAYS", "7") },
         { name: "PREDICTION_AUTOMATION_INTERVAL_MINUTES", value: env("PREDICTION_AUTOMATION_INTERVAL_MINUTES", "60") },
         { name: "PREDICTION_AUTOMATION_MAX_NEW_PER_RUN", value: env("PREDICTION_AUTOMATION_MAX_NEW_PER_RUN", "50") },
+        { name: "THE_ODDS_API_REGIONS", value: env("THE_ODDS_API_REGIONS", "eu,us") },
+        { name: "ODDS_REFRESH_LOOKAHEAD_DAYS", value: env("ODDS_REFRESH_LOOKAHEAD_DAYS", "7") },
+        { name: "ODDS_REFRESH_INTERVAL_MINUTES", value: env("ODDS_REFRESH_INTERVAL_MINUTES", "60") },
+        { name: "ODDS_REFRESH_MIN_AGE_MINUTES", value: env("ODDS_REFRESH_MIN_AGE_MINUTES", "60") },
+        { name: "ODDS_REFRESH_MAX_MATCHES_PER_RUN", value: env("ODDS_REFRESH_MAX_MATCHES_PER_RUN", "250") },
         { name: "DATABASE_SSL", value: env("DATABASE_SSL", "1") },
         { name: "DATABASE_SSL_REJECT_UNAUTHORIZED", value: env("DATABASE_SSL_REJECT_UNAUTHORIZED", "1") },
         {
@@ -155,7 +163,8 @@ const taskDefinition = {
         { name: "DATABASE_URL", valueFrom: secrets.databaseUrl },
         { name: "REDIS_URL", valueFrom: secrets.redisUrl },
         { name: "OPENROUTER_API_KEY", valueFrom: secrets.openrouterApiKey },
-        { name: "THE_SPORTS_DB_API_KEY", valueFrom: secrets.theSportsDbApiKey }
+        { name: "THE_SPORTS_DB_API_KEY", valueFrom: secrets.theSportsDbApiKey },
+        { name: "THE_ODDS_API_KEY", valueFrom: secrets.theOddsApiKey }
       ],
       logConfiguration: awslogs("edge-worker")
     },

@@ -8,6 +8,7 @@ import {
   listBackupArtifacts,
   listBenchmarkPredictionsForApi,
   listDashboardMatches,
+  listLatestMatchOddsBySourceMatchIds,
   listSpecialPredictionsForApi
 } from "@ai-sports-prediction/db";
 import { createApiCache } from "./cache";
@@ -20,6 +21,7 @@ const cache = createApiCache();
 const CACHE_TTLS = {
   health: Number(process.env.API_CACHE_HEALTH_TTL_SECONDS ?? 2),
   matches: Number(process.env.API_CACHE_MATCHES_TTL_SECONDS ?? 300),
+  odds: Number(process.env.API_CACHE_ODDS_TTL_SECONDS ?? 60),
   benchmarkPredictions: Number(process.env.API_CACHE_BENCHMARK_TTL_SECONDS ?? 300),
   specialPredictions: Number(process.env.API_CACHE_SPECIAL_TTL_SECONDS ?? 300)
 };
@@ -81,6 +83,28 @@ async function routeRequest(request: IncomingMessage, response: ServerResponse):
       "benchmark-predictions",
       CACHE_TTLS.benchmarkPredictions,
       async () => ({ predictions: await listBenchmarkPredictionsForApi(db) })
+    );
+    sendJson(response, 200, cached.value, cacheHeaders(cached.hit));
+    return;
+  }
+
+  if (url.pathname === "/v1/odds") {
+    const sourceMatchIds = (url.searchParams.get("sourceMatchIds") ?? "")
+      .split(",")
+      .map((value) => value.trim())
+      .filter(Boolean)
+      .slice(0, 250);
+
+    if (sourceMatchIds.length === 0) {
+      sendJson(response, 400, { error: "source_match_ids_required" });
+      return;
+    }
+
+    const cacheKey = `odds:${[...sourceMatchIds].sort().join(",")}`;
+    const cached = await cache.getOrSet(
+      cacheKey,
+      CACHE_TTLS.odds,
+      async () => ({ odds: await listLatestMatchOddsBySourceMatchIds(db, sourceMatchIds) })
     );
     sendJson(response, 200, cached.value, cacheHeaders(cached.hit));
     return;

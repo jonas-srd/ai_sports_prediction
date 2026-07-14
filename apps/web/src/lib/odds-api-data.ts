@@ -35,6 +35,20 @@ type TheOddsApiOutcome = {
   price?: number;
 };
 
+type StoredOddsApiRow = {
+  source_match_id?: string | null;
+  sport_key?: string | null;
+  provider_event_id?: string | null;
+  event_name?: string | null;
+  bookmaker_count?: number | string | null;
+  outcomes?: unknown;
+  provider_last_updated_at_utc?: string | null;
+  checked_at_utc?: string | null;
+};
+
+const ODDS_REFRESH_WINDOW_DAYS = 7;
+const DAY_MS = 24 * 60 * 60 * 1000;
+
 const FOOTBALL_ODDS_KEYS: Record<string, string[]> = {
   "bundesliga": ["soccer_germany_bundesliga"],
   "dfb-pokal": ["soccer_germany_dfb_pokal"],
@@ -60,24 +74,34 @@ export async function hydrateMatchesWithOdds(
   matches: SportApiMatch[],
   context: OddsSportContext = {}
 ): Promise<SportApiMatch[]> {
+  const eligibleMatches = matches.filter(isInsideOddsRefreshWindow);
+  const storedOdds = await fetchStoredOdds(eligibleMatches);
+  const matchesWithStoredOdds = matches.map((match) => ({
+    ...match,
+    odds: storedOdds.get(getSourceMatchId(match)) ?? match.odds
+  }));
   const apiKey = getTheOddsApiKey();
-  if (!apiKey || matches.length === 0) {
-    return withModelFallbackOdds(sport, matches);
+  if (!apiKey || eligibleMatches.length === 0) {
+    return withModelFallbackOdds(sport, matchesWithStoredOdds);
   }
 
   const sportKeys = getOddsSportKeys(sport, context);
   if (sportKeys.length === 0) {
-    return withModelFallbackOdds(sport, matches);
+    return withModelFallbackOdds(sport, matchesWithStoredOdds);
   }
 
-  const events = (await Promise.all(sportKeys.map((sportKey) => fetchOddsEvents(sportKey).catch(() => [])))).flat();
+  const from = new Date().toISOString();
+  const to = new Date(Date.now() + getOddsRefreshWindowDays() * DAY_MS).toISOString();
+  const events = (await Promise.all(sportKeys.map((sportKey) => fetchOddsEvents(sportKey, from, to).catch(() => [])))).flat();
   if (events.length === 0) {
-    return withModelFallbackOdds(sport, matches);
+    return withModelFallbackOdds(sport, matchesWithStoredOdds);
   }
 
-  return matches.map((match) => ({
+  return matchesWithStoredOdds.map((match) => ({
     ...match,
-    odds: findBestMatchOdds(match, events) ?? buildModelFallbackOdds(sport, match)
+    odds: isInsideOddsRefreshWindow(match)
+      ? findBestMatchOdds(match, events) ?? match.odds ?? buildModelFallbackOdds(sport, match)
+      : match.odds ?? buildModelFallbackOdds(sport, match)
   }));
 }
 
@@ -89,7 +113,7 @@ function getOddsSportKeys(sport: ApiSportId, context: OddsSportContext) {
   return SPORT_ODDS_KEYS[sport] ?? [];
 }
 
-async function fetchOddsEvents(sportKey: string): Promise<TheOddsApiEvent[]> {
+async function fetchOddsEvents(sportKey: string, commenceTimeFrom: string, commenceTimeTo: string): Promise<TheOddsApiEvent[]> {
   const apiKey = getTheOddsApiKey();
   if (!apiKey) {
     return [];
@@ -101,6 +125,8 @@ async function fetchOddsEvents(sportKey: string): Promise<TheOddsApiEvent[]> {
   url.searchParams.set("markets", "h2h");
   url.searchParams.set("oddsFormat", "decimal");
   url.searchParams.set("dateFormat", "iso");
+  url.searchParams.set("commenceTimeFrom", commenceTimeFrom);
+  url.searchParams.set("commenceTimeTo", commenceTimeTo);
 
   const controller = new AbortController();
   const timeoutMs = Number(process.env.THE_ODDS_API_FETCH_TIMEOUT_MS ?? 6000);
@@ -118,6 +144,85 @@ async function fetchOddsEvents(sportKey: string): Promise<TheOddsApiEvent[]> {
 
   const payload = await response.json();
   return Array.isArray(payload) ? payload : [];
+}
+
+async function fetchStoredOdds(matches: SportApiMatch[]) {
+  const stored = new Map<string, SportApiOdds>();
+  const apiUrl = (process.env.AI_SPORTS_API_URL ?? process.env.INTERNAL_API_URL)?.replace(/\/+$/, "");
+  const sourceMatchIds = [...new Set(matches.map(getSourceMatchId).filter(Boolean))].slice(0, 250);
+
+  if (!apiUrl || sourceMatchIds.length === 0) {
+    return stored;
+  }
+
+  const url = new URL(`${apiUrl}/v1/odds`);
+  url.searchParams.set("sourceMatchIds", sourceMatchIds.join(","));
+  const response = await fetch(url, {
+    headers: { accept: "application/json" },
+    next: { revalidate: Number(process.env.WEB_API_ODDS_CACHE_SECONDS ?? 60) }
+  }).catch(() => null);
+
+  if (!response?.ok) {
+    return stored;
+  }
+
+  const payload = await response.json().catch(() => null) as { odds?: StoredOddsApiRow[] } | null;
+  for (const row of payload?.odds ?? []) {
+    const sourceMatchId = String(row.source_match_id ?? "").trim();
+    const outcomes = normalizeStoredOutcomes(row.outcomes);
+    if (!sourceMatchId || outcomes.length < 2 || stored.has(sourceMatchId)) {
+      continue;
+    }
+
+    stored.set(sourceMatchId, {
+      provider: "The Odds API",
+      market: "h2h",
+      sportKey: row.sport_key ?? null,
+      eventId: row.provider_event_id ?? null,
+      eventName: row.event_name || "Bookmaker odds",
+      bookmakerCount: Number(row.bookmaker_count ?? 0),
+      lastUpdated: row.provider_last_updated_at_utc ?? row.checked_at_utc ?? null,
+      outcomes
+    });
+  }
+
+  return stored;
+}
+
+function normalizeStoredOutcomes(value: unknown): SportApiOddsOutcome[] {
+  const rows = Array.isArray(value) ? value : [];
+  return rows.flatMap((row) => {
+    if (!row || typeof row !== "object") return [];
+    const candidate = row as Record<string, unknown>;
+    const label = candidate.label;
+    const price = Number(candidate.price);
+    if ((label !== "home" && label !== "draw" && label !== "away") || !Number.isFinite(price) || price <= 1) {
+      return [];
+    }
+
+    return [{
+      label,
+      name: String(candidate.name ?? ""),
+      price,
+      bookmaker: String(candidate.bookmaker ?? "Bookmaker")
+    }];
+  });
+}
+
+function getSourceMatchId(match: SportApiMatch) {
+  return match.id.replace(/^(?:tsdb|sport-api):/i, "");
+}
+
+function isInsideOddsRefreshWindow(match: SportApiMatch) {
+  if (!match.date) return false;
+  const timestamp = new Date(match.date).getTime();
+  const now = Date.now();
+  return Number.isFinite(timestamp) && timestamp > now && timestamp <= now + getOddsRefreshWindowDays() * DAY_MS;
+}
+
+function getOddsRefreshWindowDays() {
+  const configured = Number(process.env.ODDS_REFRESH_LOOKAHEAD_DAYS ?? ODDS_REFRESH_WINDOW_DAYS);
+  return Number.isFinite(configured) ? Math.max(1, Math.min(30, configured)) : ODDS_REFRESH_WINDOW_DAYS;
 }
 
 function findBestMatchOdds(match: SportApiMatch, events: TheOddsApiEvent[]): SportApiOdds | null {

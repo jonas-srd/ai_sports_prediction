@@ -36,11 +36,28 @@ export type MatchRow = {
   actual_advancer?: AdvancerClass | null;
   source?: string | null;
   source_match_id?: string | null;
+  sport?: string | null;
   tournament_edition?: string | null;
   stage?: string | null;
   group_name?: string | null;
   matchday?: number | null;
   is_knockout?: boolean | number | null;
+};
+
+export type MatchOddsRow = {
+  id: string;
+  match_id: string;
+  source_match_id: string | null;
+  provider: string;
+  market: string;
+  sport_key: string | null;
+  provider_event_id: string | null;
+  event_name: string;
+  bookmaker_count: number;
+  outcomes: unknown;
+  provider_last_updated_at_utc: string | null;
+  checked_at_utc: string;
+  updated_at: string;
 };
 
 export type PredictionRow = {
