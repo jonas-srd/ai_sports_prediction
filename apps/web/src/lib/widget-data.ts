@@ -11,7 +11,7 @@ import {
   type ApiSportId,
   type SportApiMatch
 } from "@/lib/sports-api-data";
-import { findTennisPlayerByName, getTennisFlagUrl, tennisPlayers, tennisTournaments } from "@/lib/tennis-data";
+import { resolveTennisPlayerFlagUrl, tennisPlayers, tennisTournaments } from "@/lib/tennis-data";
 
 export type WidgetSport = "all" | "football" | "nba" | "nfl" | "tennis";
 export type WidgetType = "prediction-card" | "match-list" | "leaderboard" | "win-probability" | "key-factors";
@@ -554,8 +554,7 @@ function getWidgetTeamLogo(teamName: string, sport: Exclude<WidgetSport, "all">)
   }
 
   if (sport === "tennis") {
-    const player = findTennisPlayerByName(teamName);
-    return getTennisFlagUrl(player?.countryCode) ?? null;
+    return resolveTennisPlayerFlagUrl(teamName) ?? null;
   }
 
   const footballTeam = footballCompetitions

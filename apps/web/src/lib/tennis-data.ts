@@ -40,10 +40,10 @@ export const tennisPlayers: TennisPlayer[] = [
   { slug: "carlos-alcaraz", name: "Carlos Alcaraz", shortName: "Alcaraz", tour: "ATP", country: "Spain", countryCode: "es", rank: 2, age: 23, hand: "Right-handed", height: "1.83 m", turnedPro: "2018", residence: "El Palmar", coach: "Juan Carlos Ferrero", titles: 18, grandSlams: 4, hard: 90, clay: 96, grass: 92, indoor: 78, form: "W W L W W", prediction: "Shot creation and surface versatility make him dangerous in every draw.", strengths: ["Forehand offense", "Drop-shot variety", "Five-set ceiling"] },
   { slug: "novak-djokovic", name: "Novak Djokovic", shortName: "Djokovic", tour: "ATP", country: "Serbia", countryCode: "rs", rank: 3, age: 39, hand: "Right-handed", height: "1.88 m", turnedPro: "2003", residence: "Monte Carlo", coach: "Team Djokovic", titles: 99, grandSlams: 24, hard: 92, clay: 86, grass: 90, indoor: 89, form: "W L W W L", prediction: "Elite return games and tiebreak control keep his upset risk low.", strengths: ["Return game", "Tiebreaks", "Big-match management"] },
   { slug: "alexander-zverev", name: "Alexander Zverev", shortName: "Zverev", tour: "ATP", country: "Germany", countryCode: "de", rank: 4, age: 29, hand: "Right-handed", height: "1.98 m", turnedPro: "2013", residence: "Monte Carlo", coach: "Alexander Zverev Sr.", titles: 24, grandSlams: 0, hard: 84, clay: 88, grass: 72, indoor: 85, form: "W W L W L", prediction: "Serve plus backhand control gives him a strong best-of-three floor.", strengths: ["First serve", "Backhand line", "Clay movement"] },
-  { slug: "daniil-medvedev", name: "Daniil Medvedev", shortName: "Medvedev", tour: "ATP", country: "Neutral", countryCode: "un", rank: 5, age: 30, hand: "Right-handed", height: "1.98 m", turnedPro: "2014", residence: "Monte Carlo", coach: "Gilles Cervara", titles: 20, grandSlams: 1, hard: 91, clay: 70, grass: 77, indoor: 84, form: "L W W L W", prediction: "Deep return position and rally tolerance still rate highly on hard courts.", strengths: ["Hard-court defense", "Serve patterns", "Long rallies"] },
+  { slug: "daniil-medvedev", name: "Daniil Medvedev", shortName: "Medvedev", tour: "ATP", country: "Russia", countryCode: "ru", rank: 5, age: 30, hand: "Right-handed", height: "1.98 m", turnedPro: "2014", residence: "Monte Carlo", coach: "Gilles Cervara", titles: 20, grandSlams: 1, hard: 91, clay: 70, grass: 77, indoor: 84, form: "L W W L W", prediction: "Deep return position and rally tolerance still rate highly on hard courts.", strengths: ["Hard-court defense", "Serve patterns", "Long rallies"] },
   { slug: "taylor-fritz", name: "Taylor Fritz", shortName: "Fritz", tour: "ATP", country: "United States", countryCode: "us", rank: 6, age: 28, hand: "Right-handed", height: "1.96 m", turnedPro: "2015", residence: "Rancho Palos Verdes", coach: "Michael Russell", titles: 8, grandSlams: 0, hard: 88, clay: 73, grass: 84, indoor: 83, form: "W L W W L", prediction: "Serve plus first forehand keeps him dangerous on fast courts.", strengths: ["First serve", "Hard-court offense", "Tiebreak profile"] },
   { slug: "casper-ruud", name: "Casper Ruud", shortName: "Ruud", tour: "ATP", country: "Norway", countryCode: "no", rank: 7, age: 27, hand: "Right-handed", height: "1.83 m", turnedPro: "2015", residence: "Oslo", coach: "Christian Ruud", titles: 12, grandSlams: 0, hard: 76, clay: 92, grass: 66, indoor: 74, form: "W W L L W", prediction: "Heavy forehand patterns rate strongest on clay and slower hard courts.", strengths: ["Clay forehand", "Point construction", "Fitness"] },
-  { slug: "andrey-rublev", name: "Andrey Rublev", shortName: "Rublev", tour: "ATP", country: "Neutral", countryCode: "un", rank: 8, age: 28, hand: "Right-handed", height: "1.88 m", turnedPro: "2014", residence: "Monte Carlo", coach: "Fernando Vicente", titles: 16, grandSlams: 0, hard: 84, clay: 82, grass: 71, indoor: 86, form: "L W W L W", prediction: "High pace from both wings gives him upset value in best-of-three draws.", strengths: ["Forehand speed", "Indoor rhythm", "Aggressive returns"] },
+  { slug: "andrey-rublev", name: "Andrey Rublev", shortName: "Rublev", tour: "ATP", country: "Russia", countryCode: "ru", rank: 8, age: 28, hand: "Right-handed", height: "1.88 m", turnedPro: "2014", residence: "Monte Carlo", coach: "Fernando Vicente", titles: 16, grandSlams: 0, hard: 84, clay: 82, grass: 71, indoor: 86, form: "L W W L W", prediction: "High pace from both wings gives him upset value in best-of-three draws.", strengths: ["Forehand speed", "Indoor rhythm", "Aggressive returns"] },
   { slug: "alex-de-minaur", name: "Alex de Minaur", shortName: "De Minaur", tour: "ATP", country: "Australia", countryCode: "au", rank: 9, age: 27, hand: "Right-handed", height: "1.83 m", turnedPro: "2015", residence: "Sydney", coach: "Adolfo Gutierrez", titles: 9, grandSlams: 0, hard: 86, clay: 75, grass: 83, indoor: 78, form: "W W W L L", prediction: "Speed, defense and return consistency reduce downside in tight matches.", strengths: ["Court speed", "Return consistency", "Counterpunching"] },
   { slug: "ben-shelton", name: "Ben Shelton", shortName: "Shelton", tour: "ATP", country: "United States", countryCode: "us", rank: 10, age: 23, hand: "Left-handed", height: "1.93 m", turnedPro: "2022", residence: "Gainesville", coach: "Bryan Shelton", titles: 3, grandSlams: 0, hard: 84, clay: 70, grass: 80, indoor: 82, form: "W L W W W", prediction: "Lefty serve pressure and athleticism create high-ceiling upset paths.", strengths: ["Lefty serve", "Explosive movement", "Net pressure"] },
   { slug: "jack-draper", name: "Jack Draper", shortName: "Draper", tour: "ATP", country: "Great Britain", countryCode: "gb", rank: 11, age: 24, hand: "Left-handed", height: "1.93 m", turnedPro: "2018", residence: "London", coach: "James Trotman", titles: 3, grandSlams: 0, hard: 83, clay: 75, grass: 84, indoor: 82, form: "L W W W L", prediction: "Left-handed serve patterns and grass upside give the model strong variance.", strengths: ["Lefty patterns", "Grass movement", "Serve plus one"] },
@@ -54,11 +54,11 @@ export const tennisPlayers: TennisPlayer[] = [
   { slug: "grigor-dimitrov", name: "Grigor Dimitrov", shortName: "Dimitrov", tour: "ATP", country: "Bulgaria", countryCode: "bg", rank: 16, age: 35, hand: "Right-handed", height: "1.91 m", turnedPro: "2008", residence: "Monte Carlo", coach: "Team Dimitrov", titles: 9, grandSlams: 0, hard: 82, clay: 76, grass: 84, indoor: 83, form: "W L W W L", prediction: "Variety, slice and serve patterns rate well on grass and indoor hard.", strengths: ["Slice variety", "All-court play", "Indoor rhythm"] },
   { slug: "arthur-fery", name: "Arthur Fery", shortName: "Fery", tour: "ATP", country: "Great Britain", countryCode: "gb", rank: 114, age: 23, hand: "Right-handed", height: "1.75 m", turnedPro: "2023", residence: "Wimbledon", coach: "Team Fery", titles: 0, grandSlams: 0, hard: 74, clay: 68, grass: 82, indoor: 72, form: "W W L W W", prediction: "Grass-court timing and compact all-court patterns make him a live underdog on fast surfaces.", strengths: ["Grass timing", "All-court variety", "Return composure"] },
   { slug: "iga-swiatek", name: "Iga Swiatek", shortName: "Swiatek", tour: "WTA", country: "Poland", countryCode: "pl", rank: 1, age: 25, hand: "Right-handed", height: "1.76 m", turnedPro: "2016", residence: "Raszyn", coach: "Team Swiatek", titles: 22, grandSlams: 5, hard: 91, clay: 98, grass: 76, indoor: 84, form: "W W W W L", prediction: "Clay dominance and return pressure make her the strongest surface-specific profile.", strengths: ["Clay movement", "Return depth", "Forehand patterns"] },
-  { slug: "aryna-sabalenka", name: "Aryna Sabalenka", shortName: "Sabalenka", tour: "WTA", country: "Neutral", countryCode: "un", rank: 2, age: 28, hand: "Right-handed", height: "1.82 m", turnedPro: "2015", residence: "Miami", coach: "Anton Dubrov", titles: 18, grandSlams: 2, hard: 94, clay: 84, grass: 79, indoor: 87, form: "W L W W W", prediction: "Power on serve and first strike tennis create high confidence in fast conditions.", strengths: ["First strike", "Serve power", "Hard-court offense"] },
+  { slug: "aryna-sabalenka", name: "Aryna Sabalenka", shortName: "Sabalenka", tour: "WTA", country: "Belarus", countryCode: "by", rank: 2, age: 28, hand: "Right-handed", height: "1.82 m", turnedPro: "2015", residence: "Miami", coach: "Anton Dubrov", titles: 18, grandSlams: 2, hard: 94, clay: 84, grass: 79, indoor: 87, form: "W L W W W", prediction: "Power on serve and first strike tennis create high confidence in fast conditions.", strengths: ["First strike", "Serve power", "Hard-court offense"] },
   { slug: "coco-gauff", name: "Coco Gauff", shortName: "Gauff", tour: "WTA", country: "United States", countryCode: "us", rank: 3, age: 22, hand: "Right-handed", height: "1.75 m", turnedPro: "2018", residence: "Delray Beach", coach: "Team Gauff", titles: 9, grandSlams: 1, hard: 88, clay: 83, grass: 78, indoor: 80, form: "W W L W L", prediction: "Defense, athleticism and improving serve patterns create a strong week-to-week floor.", strengths: ["Court coverage", "Backhand defense", "Return games"] },
   { slug: "elena-rybakina", name: "Elena Rybakina", shortName: "Rybakina", tour: "WTA", country: "Kazakhstan", countryCode: "kz", rank: 4, age: 27, hand: "Right-handed", height: "1.84 m", turnedPro: "2016", residence: "Moscow", coach: "Team Rybakina", titles: 8, grandSlams: 1, hard: 89, clay: 82, grass: 90, indoor: 86, form: "L W W W L", prediction: "Serve efficiency and grass-court ceiling are elite prediction signals.", strengths: ["Serve efficiency", "Grass offense", "Short points"] },
   { slug: "jessica-pegula", name: "Jessica Pegula", shortName: "Pegula", tour: "WTA", country: "United States", countryCode: "us", rank: 5, age: 32, hand: "Right-handed", height: "1.70 m", turnedPro: "2009", residence: "Boca Raton", coach: "Team Pegula", titles: 6, grandSlams: 0, hard: 86, clay: 76, grass: 78, indoor: 82, form: "W L W L W", prediction: "Consistency and low-error patterns keep her model rating stable.", strengths: ["Low errors", "Return consistency", "Hard-court rhythm"] },
-  { slug: "mirra-andreeva", name: "Mirra Andreeva", shortName: "Andreeva", tour: "WTA", country: "Neutral", countryCode: "un", rank: 6, age: 19, hand: "Right-handed", height: "1.75 m", turnedPro: "2022", residence: "Cannes", coach: "Conchita Martinez", titles: 3, grandSlams: 0, hard: 86, clay: 88, grass: 74, indoor: 80, form: "W W L W W", prediction: "Rapid improvement and clean backhand patterns lift her model ceiling.", strengths: ["Backhand timing", "Return quality", "Composure"] },
+  { slug: "mirra-andreeva", name: "Mirra Andreeva", shortName: "Andreeva", tour: "WTA", country: "Russia", countryCode: "ru", rank: 6, age: 19, hand: "Right-handed", height: "1.75 m", turnedPro: "2022", residence: "Cannes", coach: "Conchita Martinez", titles: 3, grandSlams: 0, hard: 86, clay: 88, grass: 74, indoor: 80, form: "W W L W W", prediction: "Rapid improvement and clean backhand patterns lift her model ceiling.", strengths: ["Backhand timing", "Return quality", "Composure"] },
   { slug: "jasmine-paolini", name: "Jasmine Paolini", shortName: "Paolini", tour: "WTA", country: "Italy", countryCode: "it", rank: 7, age: 30, hand: "Right-handed", height: "1.63 m", turnedPro: "2011", residence: "Bagni di Lucca", coach: "Renzo Furlan", titles: 2, grandSlams: 0, hard: 82, clay: 84, grass: 80, indoor: 78, form: "W L W W L", prediction: "Movement and all-court balance keep her competitive across surfaces.", strengths: ["Movement", "Forehand angles", "Surface balance"] },
   { slug: "qinwen-zheng", name: "Qinwen Zheng", shortName: "Zheng", tour: "WTA", country: "China", countryCode: "cn", rank: 8, age: 23, hand: "Right-handed", height: "1.78 m", turnedPro: "2019", residence: "Barcelona", coach: "Pere Riba", titles: 5, grandSlams: 0, hard: 87, clay: 81, grass: 73, indoor: 84, form: "L W W L W", prediction: "Serve power and forehand weight make her especially strong on hard courts.", strengths: ["Serve power", "Forehand weight", "Hard-court pressure"] },
   { slug: "madison-keys", name: "Madison Keys", shortName: "Keys", tour: "WTA", country: "United States", countryCode: "us", rank: 9, age: 31, hand: "Right-handed", height: "1.78 m", turnedPro: "2009", residence: "Orlando", coach: "Team Keys", titles: 9, grandSlams: 1, hard: 85, clay: 78, grass: 83, indoor: 82, form: "W L W L W", prediction: "First-strike power gives her matchup value against defensive opponents.", strengths: ["Forehand power", "Fast starts", "Serve plus one"] },
@@ -68,7 +68,7 @@ export const tennisPlayers: TennisPlayer[] = [
   { slug: "barbora-krejcikova", name: "Barbora Krejcikova", shortName: "Krejcikova", tour: "WTA", country: "Czech Republic", countryCode: "cz", rank: 13, age: 30, hand: "Right-handed", height: "1.78 m", turnedPro: "2010", residence: "Ivancice", coach: "Team Krejcikova", titles: 8, grandSlams: 2, hard: 82, clay: 84, grass: 86, indoor: 79, form: "W L W L W", prediction: "All-court variety and major experience lift her knockout-round profile.", strengths: ["All-court variety", "Major experience", "Grass timing"] },
   { slug: "marketa-vondrousova", name: "Marketa Vondrousova", shortName: "Vondrousova", tour: "WTA", country: "Czech Republic", countryCode: "cz", rank: 14, age: 27, hand: "Left-handed", height: "1.72 m", turnedPro: "2015", residence: "Prague", coach: "Team Vondrousova", titles: 2, grandSlams: 1, hard: 79, clay: 83, grass: 87, indoor: 76, form: "L W W L L", prediction: "Left-handed spin and grass-court craft create upset leverage.", strengths: ["Lefty spin", "Grass craft", "Drop shots"] },
   { slug: "karolina-muchova", name: "Karolina Muchova", shortName: "Muchova", tour: "WTA", country: "Czech Republic", countryCode: "cz", rank: 15, age: 29, hand: "Right-handed", height: "1.80 m", turnedPro: "2013", residence: "Prague", coach: "Team Muchova", titles: 1, grandSlams: 0, hard: 84, clay: 82, grass: 83, indoor: 78, form: "W W L L W", prediction: "Variety, net instincts and defense make her draw-dependent but dangerous.", strengths: ["Net instincts", "Variety", "Defensive skill"] },
-  { slug: "daria-kasatkina", name: "Daria Kasatkina", shortName: "Kasatkina", tour: "WTA", country: "Neutral", countryCode: "un", rank: 16, age: 29, hand: "Right-handed", height: "1.70 m", turnedPro: "2014", residence: "Dubai", coach: "Team Kasatkina", titles: 8, grandSlams: 0, hard: 79, clay: 82, grass: 76, indoor: 80, form: "L W L W W", prediction: "Point construction and defensive IQ keep her reliable against power variance.", strengths: ["Point craft", "Defense", "Clay patterns"] }
+  { slug: "daria-kasatkina", name: "Daria Kasatkina", shortName: "Kasatkina", tour: "WTA", country: "Australia", countryCode: "au", rank: 16, age: 29, hand: "Right-handed", height: "1.70 m", turnedPro: "2014", residence: "Dubai", coach: "Team Kasatkina", titles: 8, grandSlams: 0, hard: 79, clay: 82, grass: 76, indoor: 80, form: "L W L W W", prediction: "Point construction and defensive IQ keep her reliable against power variance.", strengths: ["Point craft", "Defense", "Clay patterns"] }
 ];
 
 export const tennisTournaments: TennisTournament[] = [
@@ -133,6 +133,78 @@ export function findTennisPlayerByName(name: string) {
   return matches.length === 1 ? matches[0] : undefined;
 }
 
+const TENNIS_PLAYER_COUNTRY_ALIASES: Record<string, string> = {
+  "andrea pellegrino": "it",
+  "alejandro davidovich fokina": "es",
+  "alexander bublik": "kz",
+  "arthur fils": "fr",
+  "arthur rinderknech": "fr",
+  "clement tabur": "fr",
+  "clément tabur": "fr",
+  "davidovich fokina": "es",
+  "fabian marozsan": "hu",
+  "felix auger aliassime": "ca",
+  "felix auger-aliassime": "ca",
+  "flavio cobolli": "it",
+  "francisco cerundolo": "ar",
+  "francisco cerúndolo": "ar",
+  "gabriel diallo": "ca",
+  "jakub mensik": "cz",
+  "jakub menšík": "cz",
+  "jiri lehecka": "cz",
+  "jiří lehečka": "cz",
+  "karen khachanov": "ru",
+  "learner tien": "us",
+  "lorenzo musetti": "it",
+  "luciano darderi": "it",
+  "lorenzo sonego": "it",
+  "matteo arnaldi": "it",
+  "matteo berrettini": "it",
+  "marco trungelliti": "ar",
+  "raphael collignon": "be",
+  "raphaël collignon": "be",
+  "nuno borges": "pt",
+  "sebastian baez": "ar",
+  "sebastian báez": "ar",
+  "sebastian korda": "us",
+  "tallon griekspoor": "nl",
+  "valentin vacherot": "mc",
+  "yannick hanfmann": "de",
+  collignon: "be",
+  fokina: "es",
+  hanfmann: "de",
+  pellegrino: "it",
+  rinderknech: "fr",
+  sonego: "it",
+  tabur: "fr",
+  trungelliti: "ar"
+};
+
+const TENNIS_PLAYER_LAST_NAME_COUNTRY_ALIASES = buildUniqueLastNameCountryAliases();
+
+export function resolveTennisPlayerCountryCode(name: null | string | undefined) {
+  const normalized = normalizeTennisPlayerName(name ?? "");
+
+  if (!normalized) {
+    return null;
+  }
+
+  const localPlayer = findTennisPlayerByName(normalized);
+  if (localPlayer?.countryCode) {
+    return localPlayer.countryCode;
+  }
+
+  const directAlias = TENNIS_PLAYER_COUNTRY_ALIASES[normalized];
+  if (directAlias) {
+    return directAlias;
+  }
+
+  const tokens = normalized.split(" ").filter(Boolean);
+  const lastName = tokens[tokens.length - 1];
+
+  return lastName ? TENNIS_PLAYER_LAST_NAME_COUNTRY_ALIASES[lastName] ?? null : null;
+}
+
 export function getTennisFlagUrl(countryCode: null | string | undefined) {
   const normalized = countryCode?.trim().toLowerCase();
 
@@ -141,6 +213,10 @@ export function getTennisFlagUrl(countryCode: null | string | undefined) {
   }
 
   return `https://flagcdn.com/w80/${normalized}.png`;
+}
+
+export function resolveTennisPlayerFlagUrl(name: null | string | undefined, currentLogo?: null | string) {
+  return currentLogo || getTennisFlagUrl(resolveTennisPlayerCountryCode(name));
 }
 
 export function getTennisTournament(slug: string) {
@@ -179,4 +255,35 @@ function normalizeTennisPlayerName(value: string) {
     .replace(/[^a-zA-Z0-9]+/g, " ")
     .trim()
     .toLowerCase();
+}
+
+function buildUniqueLastNameCountryAliases() {
+  const countryByLastName = new Map<string, string>();
+  const duplicateLastNames = new Set<string>();
+  const add = (name: string, countryCode: string) => {
+    const tokens = normalizeTennisPlayerName(name).split(" ").filter(Boolean);
+    const lastName = tokens[tokens.length - 1];
+
+    if (!lastName || !countryCode) {
+      return;
+    }
+
+    if (countryByLastName.has(lastName) && countryByLastName.get(lastName) !== countryCode) {
+      duplicateLastNames.add(lastName);
+      countryByLastName.delete(lastName);
+      return;
+    }
+
+    if (!duplicateLastNames.has(lastName)) {
+      countryByLastName.set(lastName, countryCode);
+    }
+  };
+
+  tennisPlayers.forEach((player) => {
+    add(player.name, player.countryCode);
+    add(player.shortName, player.countryCode);
+  });
+  Object.entries(TENNIS_PLAYER_COUNTRY_ALIASES).forEach(([name, countryCode]) => add(name, countryCode));
+
+  return Object.fromEntries(countryByLastName);
 }

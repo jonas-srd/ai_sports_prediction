@@ -19,7 +19,7 @@ import {
   type SportApiMatch
 } from "@/lib/sports-api-data";
 import { getSportsNewsLinks, type SportsNewsItem } from "@/lib/sports-news";
-import { tennisPlayers } from "@/lib/tennis-data";
+import { resolveTennisPlayerFlagUrl } from "@/lib/tennis-data";
 
 const homeExperience = {
   en: {
@@ -786,14 +786,7 @@ function findNbaTeamLogo(name: string) {
 }
 
 function findTennisPlayerFlag(name: string) {
-  const player = tennisPlayers.find((entry) => isSameParticipant(entry.name, name) || isSameParticipant(entry.shortName, name));
-  const code = player?.countryCode?.toLowerCase();
-
-  if (!code || code === "un" || code === "xx") {
-    return null;
-  }
-
-  return `https://flagcdn.com/w80/${code}.png`;
+  return resolveTennisPlayerFlagUrl(name);
 }
 
 function findFootballTeamLogo(name: string) {

@@ -19,7 +19,7 @@ import {
   type ApiSportId,
   type SportApiMatch
 } from "@/lib/sports-api-data";
-import { findTennisPlayerByName, getTennisFlagUrl } from "@/lib/tennis-data";
+import { findTennisPlayerByName, resolveTennisPlayerFlagUrl } from "@/lib/tennis-data";
 import { SportsNewsCards } from "@/components/sports-news-cards";
 
 export type MatchDetailTab = "overview" | "comparison" | "stats" | "signal";
@@ -536,7 +536,7 @@ function findParticipantLogo(sport: ApiSportId, name: string) {
   }
 
   if (sport === "tennis") {
-    return getTennisFlagUrl(findTennisPlayerByName(name)?.countryCode);
+    return resolveTennisPlayerFlagUrl(name);
   }
 
   void name;

@@ -3,7 +3,7 @@
  */
 import type { FootballCompetition, FootballTeam } from "@/lib/football-data";
 import { hydrateMatchesWithOdds } from "@/lib/odds-api-data";
-import { findTennisPlayerByName, getTennisFlagUrl } from "@/lib/tennis-data";
+import { findTennisPlayerByName, getTennisFlagUrl, resolveTennisPlayerCountryCode } from "@/lib/tennis-data";
 
 export type ApiSportId = "football" | "nfl" | "nba" | "tennis";
 
@@ -983,13 +983,13 @@ function hydrateTheSportsDbEventLogos(sport: ApiSportId, matches: SportApiMatch[
   return matches.map((match) => {
     const home = teams.find((team) => team.id === match.homeId || namesMatch(team.name, match.homeName));
     const away = teams.find((team) => team.id === match.awayId || namesMatch(team.name, match.awayName));
-    const homePlayer = sport === "tennis" ? findTennisPlayerByName(match.homeName) : null;
-    const awayPlayer = sport === "tennis" ? findTennisPlayerByName(match.awayName) : null;
+    const homePlayerCountryCode = sport === "tennis" ? resolveTennisPlayerCountryCode(match.homeName) : null;
+    const awayPlayerCountryCode = sport === "tennis" ? resolveTennisPlayerCountryCode(match.awayName) : null;
 
     return {
       ...match,
-      homeLogo: match.homeLogo ?? home?.logo ?? getTennisFlagUrl(homePlayer?.countryCode) ?? null,
-      awayLogo: match.awayLogo ?? away?.logo ?? getTennisFlagUrl(awayPlayer?.countryCode) ?? null
+      homeLogo: match.homeLogo || home?.logo || getTennisFlagUrl(homePlayerCountryCode) || null,
+      awayLogo: match.awayLogo || away?.logo || getTennisFlagUrl(awayPlayerCountryCode) || null
     };
   });
 }
