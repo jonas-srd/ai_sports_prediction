@@ -16,7 +16,7 @@ const sports = [
   },
   {
     title: "NBA",
-    text: "Rest Days, Travel, Rotationen, Spieler-Verfügbarkeit, Pace und Effizienzsignale für Matchup Nights."
+    text: "Erholungstage, Reisen, Rotationen, Spieler-Verfügbarkeit, Tempo und Effizienzsignale für NBA-Abende."
   },
   {
     title: "Tennis",
@@ -27,15 +27,15 @@ const sports = [
 const process = [
   {
     title: "1. Signale sammeln",
-    text: "Fixtures, Teams, historische Performance, Form, Verletzungen und sportartspezifischer Kontext werden normalisiert."
+    text: "Spiele, Teams, historische Leistung, Form, Verletzungen und sportartspezifischer Kontext werden normalisiert."
   },
   {
     title: "2. Modelle laufen lassen",
-    text: "Mehrere Modell-Setups erzeugen strukturierte Prognosen, Konfidenzwerte und Reasoning-Metadaten."
+    text: "Mehrere Modell-Setups erzeugen strukturierte Prognosen, Konfidenzwerte und Begründungsdaten."
   },
   {
-    title: "3. Forecasts vergleichen",
-    text: "Die Plattform bündelt Modelltipps zu Consensus Views, Upset Alerts und Reliability Scores."
+    title: "3. Prognosen vergleichen",
+    text: "Die Plattform bündelt Modelltipps zu Konsensansichten, Upset-Hinweisen und Zuverlässigkeitswerten."
   },
   {
     title: "4. Ergebnisse prüfen",
@@ -47,7 +47,7 @@ const principles = [
   "Vorhersagen werden als Wahrscheinlichkeiten gezeigt, nicht als Sicherheiten.",
   "Modellleistung wird erst nach offiziellen Ergebnissen bewertet.",
   "Jede Sportart bekommt eigene Signale statt einer generischen Formel für alles.",
-  "Das Produkt ist zuerst als stabile Datenplattform gebaut: Postgres, Queue Worker, Backups und Restore-Checks."
+  "Das Produkt ist zuerst als stabile Datenplattform gebaut: Postgres, Warteschlangen, Backups und Wiederherstellungsprüfungen."
 ];
 
 export default function GermanAboutPage() {
@@ -66,11 +66,11 @@ export default function GermanAboutPage() {
         <div className="sectionHeaderRow">
           <div>
             <p className="sectionKicker">Sportarten</p>
-            <h2>Vier Sportarten, eine Prediction-Schicht</h2>
+            <h2>Vier Sportarten, eine Prognoseschicht</h2>
           </div>
           <p>
             AI Sports Prediction startet mit Fußball und wird um die Sportarten erweitert, bei denen
-            Modellsignale, Spielpläne und Ergebnisvalidierung ein nützliches Daily Product ergeben.
+            Modellsignale, Spielpläne und Ergebnisvalidierung ein nützliches tägliches Produkt ergeben.
           </p>
         </div>
         <div className="sportCardsGrid">
@@ -91,10 +91,10 @@ export default function GermanAboutPage() {
         <div className="sectionHeaderRow">
           <div>
             <p className="sectionKicker">Methode</p>
-            <h2>Wie Forecasts zum Produkt werden</h2>
+            <h2>Wie Prognosen zum Produkt werden</h2>
           </div>
           <p>
-            Die Plattform ist auf strukturierte Inputs, wiederholbare Modellläufe und transparente
+            Die Plattform ist auf strukturierte Eingaben, wiederholbare Modellläufe und transparente
             Auswertung ausgelegt.
           </p>
         </div>

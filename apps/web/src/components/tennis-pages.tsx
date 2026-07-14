@@ -641,7 +641,7 @@ function TennisCompactOddsLine({ locale, match }: { locale: Locale; match: Sport
           <strong>{formatDecimalOdds(outcome.price)}</strong>
         </small>
       ))}
-      <em>{odds.bookmakerCount} {copy.bookmakers}</em>
+      <em>{formatCompactOddsSource(odds, locale, copy.bookmakers)}</em>
     </div>
   );
 }
@@ -698,13 +698,13 @@ async function TennisNewsSection({
                   href={getSportMatchHref({ locale, match, sport: "tennis" })}
                 />
                 <div className="fixtureMatchLine">
-                  <TennisFixturePlayer align="right" locale={locale} name={match.homeName} />
+                  <TennisFixturePlayer align="right" locale={locale} logo={match.homeLogo} name={match.homeName} />
                   <div className="fixtureTime">
                     <span>{formatTennisDate(match.date, locale)}</span>
                     <strong>{formatTennisScore(match)}</strong>
                     <small>{match.competition}</small>
                   </div>
-                  <TennisFixturePlayer align="left" locale={locale} name={match.awayName} />
+                  <TennisFixturePlayer align="left" locale={locale} logo={match.awayLogo} name={match.awayName} />
                 </div>
                 <TennisCompactOddsLine locale={locale} match={match} />
                 <div className="fixturePrediction">
@@ -1131,13 +1131,20 @@ function getUpcomingTennisTournaments(now = new Date()) {
 
 function getUpcomingTennisMatches(matches: SportApiMatch[]) {
   const now = Date.now();
-
-  return [...matches]
+  const live = matches
+    .filter((match) => {
+      const timestamp = getMatchTimestamp(match.date);
+      return timestamp !== null && timestamp < now && isActiveTennisMatch(match) && !isCompletedTennisMatch(match);
+    })
+    .sort((a, b) => (getMatchTimestamp(a.date) ?? Number.MAX_SAFE_INTEGER) - (getMatchTimestamp(b.date) ?? Number.MAX_SAFE_INTEGER));
+  const scheduled = matches
     .filter((match) => {
       const timestamp = getMatchTimestamp(match.date);
       return timestamp !== null && timestamp >= now && !isCompletedTennisMatch(match);
     })
     .sort((a, b) => (getMatchTimestamp(a.date) ?? Number.MAX_SAFE_INTEGER) - (getMatchTimestamp(b.date) ?? Number.MAX_SAFE_INTEGER));
+
+  return [...live, ...scheduled];
 }
 
 function groupTournaments() {
@@ -1513,6 +1520,16 @@ function formatCompactTennisOddsOutcomeLabel(label: "home" | "draw" | "away") {
   }
 
   return "X";
+}
+
+function formatCompactOddsSource(odds: SportApiMatch["odds"], locale: Locale, bookmakersLabel: string) {
+  if (!odds) {
+    return "";
+  }
+
+  return odds.provider === "The Odds API"
+    ? `${odds.bookmakerCount} ${bookmakersLabel}`
+    : locale === "de" ? "Modell" : "model";
 }
 
 function formatDecimalOdds(value: number) {

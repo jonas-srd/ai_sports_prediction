@@ -3,7 +3,7 @@ import { NflPage as NflPageContent } from "@/components/nfl-pages";
 
 export const metadata: Metadata = {
   title: "NFL Prognosen | AI Sports Prediction",
-  description: "NFL-Prognosen für Weekly Lines, Margins, Verletzungen, Teamstärke und Playoff-Pfade."
+  description: "NFL-Prognosen für Wochenlinien, Abstände, Verletzungen, Teamstärke und Playoff-Pfade."
 };
 
 export default function GermanNflPage() {

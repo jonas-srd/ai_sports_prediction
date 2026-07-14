@@ -492,7 +492,7 @@ function LeagueCompactOddsLine({ locale, match }: { locale: Locale; match: Sport
           <strong>{formatDecimalOdds(outcome.price)}</strong>
         </small>
       ))}
-      <em>{odds.bookmakerCount} {text.bookmakers}</em>
+      <em>{formatCompactOddsSource(odds, locale, text.bookmakers)}</em>
     </div>
   );
 }
@@ -500,7 +500,7 @@ function LeagueCompactOddsLine({ locale, match }: { locale: Locale; match: Sport
 function LeagueStatusPill({ locale, match }: { locale: Locale; match: SportApiMatch }) {
   const text = labels[locale];
   const status = (match.status ?? "").toLowerCase();
-  const isLive = status.includes("live") || status.includes("quarter") || status.includes("halftime") || status.includes("in play");
+  const isLive = isLiveLeagueMatch(match);
   const label = isLive
     ? text.live
     : match.homeScore !== null && match.awayScore !== null
@@ -1253,6 +1253,15 @@ function formatMatchDate(value: string | null, locale: Locale) {
 
 function getUpcomingLeagueMatches(matches: SportApiMatch[]) {
   const now = Date.now();
+  const live = matches
+    .filter((match) => {
+      const timestamp = getLeagueMatchTimestamp(match);
+      return timestamp !== null &&
+        timestamp < now &&
+        (isLiveLeagueMatch(match) || isScheduledTodayLeagueMatch(match)) &&
+        !isFinishedLeagueMatch(match);
+    })
+    .sort((a, b) => (getLeagueMatchTimestamp(a) ?? Number.MAX_SAFE_INTEGER) - (getLeagueMatchTimestamp(b) ?? Number.MAX_SAFE_INTEGER));
   const scheduled = matches
     .filter((match) => {
       const timestamp = getLeagueMatchTimestamp(match);
@@ -1260,7 +1269,7 @@ function getUpcomingLeagueMatches(matches: SportApiMatch[]) {
     })
     .sort((a, b) => (getLeagueMatchTimestamp(a) ?? Number.MAX_SAFE_INTEGER) - (getLeagueMatchTimestamp(b) ?? Number.MAX_SAFE_INTEGER));
 
-  return scheduled;
+  return [...live, ...scheduled];
 }
 
 function getLeagueMatchTimestamp(match: SportApiMatch) {
@@ -1274,7 +1283,59 @@ function getLeagueMatchTimestamp(match: SportApiMatch) {
 
 function isFinishedLeagueMatch(match: SportApiMatch) {
   const status = (match.status ?? "").toLowerCase();
-  return Boolean(match.homeScore !== null && match.awayScore !== null) || status.includes("ft") || status.includes("final") || status.includes("finished");
+
+  if (status.includes("aot") || status.includes("ft") || status.includes("final") || status.includes("finished")) {
+    return true;
+  }
+
+  return Boolean(match.homeScore !== null && match.awayScore !== null) &&
+    !isLiveLeagueMatch(match) &&
+    !isScheduledTodayLeagueMatch(match);
+}
+
+function isLiveLeagueMatch(match: SportApiMatch) {
+  const status = (match.status ?? "").toLowerCase();
+  return status.includes("live") ||
+    status.includes("in play") ||
+    status.includes("quarter") ||
+    status.includes("half") ||
+    status.includes("period") ||
+    status === "ot" ||
+    status.includes(" overtime") ||
+    status.includes("q1") ||
+    status.includes("q2") ||
+    status.includes("q3") ||
+    status.includes("q4");
+}
+
+function isScheduledTodayLeagueMatch(match: SportApiMatch) {
+  const status = (match.status ?? "").toLowerCase();
+
+  if (!status.includes("ns") && !status.includes("scheduled") && !status.includes("not started")) {
+    return false;
+  }
+
+  if (!match.date) {
+    return false;
+  }
+
+  const matchDate = new Date(match.date);
+  const now = new Date();
+
+  return Number.isFinite(matchDate.getTime()) &&
+    matchDate.getUTCFullYear() === now.getUTCFullYear() &&
+    matchDate.getUTCMonth() === now.getUTCMonth() &&
+    matchDate.getUTCDate() === now.getUTCDate();
+}
+
+function formatCompactOddsSource(odds: SportApiMatch["odds"], locale: Locale, bookmakersLabel: string) {
+  if (!odds) {
+    return "";
+  }
+
+  return odds.provider === "The Odds API"
+    ? `${odds.bookmakerCount} ${bookmakersLabel}`
+    : locale === "de" ? "Modell" : "model";
 }
 
 function formatOddsOutcomeLabel(label: "home" | "draw" | "away", match: SportApiMatch, locale: Locale) {

@@ -1,7 +1,7 @@
 /**
  * Purpose: Queue-backed production worker entrypoint.
  */
-import { Worker } from "bullmq";
+import { Queue, Worker } from "bullmq";
 import {
   createPostgresPool,
   upsertJobAttempt
@@ -14,6 +14,7 @@ if (!process.env.REDIS_URL) {
 const connection = parseRedisConnection(process.env.REDIS_URL);
 const db = createPostgresPool();
 const queuePrefix = process.env.QUEUE_KEY_PREFIX ?? "{ai-sports-prediction}";
+const predictionQueue = new Queue("predictions", { connection, prefix: queuePrefix });
 
 const queues = [
   "fixture-sync",
@@ -70,11 +71,20 @@ const workers = queues.map((queueName) => new Worker(
 ));
 
 console.log(`AI Sport Prediction worker listening on queues: ${queues.join(", ")}`);
+void registerRecurringJobs().catch((error) => {
+  console.error("Could not register recurring prediction jobs:", error);
+});
 
 process.on("SIGTERM", () => shutdown());
 process.on("SIGINT", () => shutdown());
 
 async function runQueuedJob(queueName: string, jobName: string, data: unknown): Promise<void> {
+  if (queueName === "predictions" && jobName === "generate-upcoming-sport-api-predictions") {
+    const { generateUpcomingSportApiPredictions } = await import("./jobs/generate-upcoming-sport-api-predictions");
+    await generateUpcomingSportApiPredictions(db);
+    return;
+  }
+
   if (queueName === "backups" && jobName === "postgres-logical-export") {
     const { main } = await import("./jobs/export-postgres-backup-runner");
     await main();
@@ -84,9 +94,25 @@ async function runQueuedJob(queueName: string, jobName: string, data: unknown): 
   throw new Error(`No handler registered for ${queueName}:${jobName} with payload ${JSON.stringify(data)}`);
 }
 
+async function registerRecurringJobs(): Promise<void> {
+  const intervalMinutes = Number(process.env.PREDICTION_AUTOMATION_INTERVAL_MINUTES ?? 60);
+  const every = Math.max(5, Number.isFinite(intervalMinutes) ? intervalMinutes : 60) * 60 * 1000;
+
+  await predictionQueue.add(
+    "generate-upcoming-sport-api-predictions",
+    {},
+    {
+      jobId: "generate-upcoming-sport-api-predictions",
+      repeat: { every },
+      removeOnComplete: 20,
+      removeOnFail: 50
+    }
+  );
+}
+
 async function shutdown(): Promise<void> {
   console.log("Shutting down AI Sport Prediction worker");
-  await Promise.all(workers.map((worker) => worker.close()));
+  await Promise.all([...workers.map((worker) => worker.close()), predictionQueue.close()]);
   await db.end();
   process.exit(0);
 }

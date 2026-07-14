@@ -92,13 +92,13 @@ const homeExperience = {
     liveBadge: "Live Model Hub",
     primaryCta: "Sportarten entdecken",
     secondaryCta: "Hintergrund & Methodik",
-    boardTitle: "Prediction Board",
+    boardTitle: "Prognose-Board",
     boardSubtitle: "Modell-Konsens über aktive Sportarten",
     sportNavLabel: "Zur Sportart springen",
     sportPageCta: "Sportseite öffnen",
     sportsTitle: "Sportarten für Prognosen",
     sportsText: "Jede Sportart bekommt eigene Modell-Signale, Kontextdaten und Ergebnisvalidierung.",
-    dashboardEyebrow: "Live Preview",
+    dashboardEyebrow: "Live-Vorschau",
     dashboardTitle: "Aktuelle Fußball-Benchmark-Ansicht",
     dashboardText: "Die vorhandenen Match-Daten bleiben verfügbar, während das Multi-Sport-Frontend ausgebaut wird.",
     signalTitle: "Eine neue Art, Sport vor dem Spiel zu lesen",
@@ -123,35 +123,35 @@ const homeExperience = {
         id: "nfl",
         label: "NFL",
         status: "Nächstes Modul",
-        title: "Game Lines, Playoff Odds und Team Strength",
-        description: "Prognosen auf Basis von Effizienz, Verletzungen, Spielplan und Game Scripts.",
+        title: "Quotenlinien, Playoff-Chancen und Teamstärke",
+        description: "Prognosen auf Basis von Effizienz, Verletzungen, Spielplan und Spielverlauf.",
         features: ["Siegwahrscheinlichkeit", "Spread-Sensitivität", "Playoff-Pfad-Simulation"],
-        markets: "Sieger, Margin, Totals, Conference- und Super-Bowl-Pfade"
+        markets: "Sieger, Abstand, Gesamtpunkte, Conference- und Super-Bowl-Pfade"
       },
       {
         id: "nba",
         label: "NBA",
         status: "Nächstes Modul",
-        title: "Schnelle Forecasts für Matchup Nights",
-        description: "Vorhersagen mit Rest Days, Travel, Rotation und Spieler-Verfügbarkeit.",
-        features: ["Back-to-back-Faktor", "Lineup Impact", "Pace- und Effizienzsignale"],
-        markets: "Sieger, Margin, Totals, Playoff-Serien"
+        title: "Schnelle Prognosen für NBA-Abende",
+        description: "Vorhersagen mit Erholungstagen, Reisen, Rotation und Spieler-Verfügbarkeit.",
+        features: ["Back-to-back-Faktor", "Lineup-Einfluss", "Tempo- und Effizienzsignale"],
+        markets: "Sieger, Abstand, Gesamtpunkte, Playoff-Serien"
       },
       {
         id: "tennis",
         label: "Tennis",
         status: "Nächstes Modul",
-        title: "Surface-aware Match Predictions",
-        description: "Tennis-Prognosen mit Draw-Kontext, Belag, Serve-Qualität und aktueller Form.",
-        features: ["Belag-Anpassung", "Serve-/Return-Split", "Best-of-Format"],
+        title: "Belagsspezifische Match-Prognosen",
+        description: "Tennis-Prognosen mit Draw-Kontext, Belag, Aufschlagqualität und aktueller Form.",
+        features: ["Belag-Anpassung", "Aufschlag-/Return-Split", "Best-of-Format"],
         markets: "Match-Sieger, Satz-Ergebnis, Turnierpfade"
       }
     ],
     signals: [
-      { label: "Signal Fusion", text: "Verknüpft Form, Matchup-Stil, Spielplan-Druck und Live-Kontext zu einem Prognose-Signal." },
-      { label: "Reasoning Engine", text: "Übersetzt komplexe Modellwerte in eine klare Begründung, warum der Tipp entsteht." },
-      { label: "Confidence Filter", text: "Trennt echte Modellvorteile von Spielen, bei denen die Datenlage bewusst vorsichtig bewertet wird." },
-      { label: "Result Feedback", text: "Prüft Prognosen nach dem Endstand, damit sichtbar wird, welche Signale wirklich getragen haben." }
+      { label: "Signalbündelung", text: "Verknüpft Form, Matchup-Stil, Spielplan-Druck und Live-Kontext zu einem Prognose-Signal." },
+      { label: "Begründungslogik", text: "Übersetzt komplexe Modellwerte in eine klare Begründung, warum der Tipp entsteht." },
+      { label: "Konfidenzfilter", text: "Trennt echte Modellvorteile von Spielen, bei denen die Datenlage bewusst vorsichtig bewertet wird." },
+      { label: "Ergebnisfeedback", text: "Prüft Prognosen nach dem Endstand, damit sichtbar wird, welche Signale wirklich getragen haben." }
     ]
   }
 } as const;
@@ -265,91 +265,91 @@ const sportPageContent: Record<Locale, Record<SportPageId, {
   de: {
     football: {
       label: "Fußball",
-      eyebrow: "Fußball Prediction Hub",
+      eyebrow: "Fußball-Prognosezentrum",
       title: "Fußball-Prognosen für Ligen, Pokale und Turnierpfade.",
-      description: "Eine eigene Fußball-Ansicht für 90-Minuten-Ausgänge, Exact-Score-Ideen, Formtrends, xG-Kontext und K.-o.-Simulationen.",
+      description: "Eine eigene Fußball-Ansicht für 90-Minuten-Ausgänge, exakte Ergebnisideen, Formtrends, xG-Kontext und K.-o.-Simulationen.",
       status: "Kernmodul",
       sampleMatch: "Deutschland vs Brasilien",
       samplePick: "2:1",
       confidence: "64%",
       modelNote: "Kombiniert aktuelle Form, xG-Trend, Heim-/Neutral-Kontext und Turnierdruck zu einem lesbaren Tipp.",
       focusCards: [
-        { title: "Spielausgang", text: "Sieg, Remis-Wahrscheinlichkeit und Upset-Risiko für normale Fixtures." },
-        { title: "Exaktes Ergebnis", text: "Scoreline-Spannen mit Konfidenz statt einem einzelnen Blind-Tipp." },
+        { title: "Spielausgang", text: "Sieg, Remis-Wahrscheinlichkeit und Überraschungsrisiko für normale Spiele." },
+        { title: "Exaktes Ergebnis", text: "Ergebnisspannen mit Konfidenz statt einem einzelnen Blind-Tipp." },
         { title: "Turnierpfade", text: "Gruppentabellen, Qualifikationschancen und K.-o.-Szenarien." }
       ],
       signalRows: [
         { label: "Hauptsignal", value: "xG und Formkurve" },
         { label: "Markt", value: "Ergebnis, Exact Score, Qualifikation" },
-        { label: "Update-Rhythmus", value: "Tägliche Spiele und Lineup-Fenster" }
+        { label: "Aktualisierung", value: "Tägliche Spiele und Aufstellungsfenster" }
       ],
-      roadmap: ["Liga-Forecast-Karten", "Internationaler Turniermodus", "Lineup- und Verletzungsgewichtung"]
+      roadmap: ["Liga-Prognosekarten", "Internationaler Turniermodus", "Aufstellungs- und Verletzungsgewichtung"]
     },
     nfl: {
       label: "NFL",
-      eyebrow: "NFL Prediction Hub",
-      title: "NFL-Prognosen für Weekly Lines, Margins und Playoff-Pfade.",
-      description: "Eine eigene NFL-Seite für Siegchancen, Spread-Sensitivität, Teamstärke, Injury-Kontext und Postseason-Szenarien.",
+      eyebrow: "NFL-Prognosezentrum",
+      title: "NFL-Prognosen für Wochenlinien, Abstände und Playoff-Pfade.",
+      description: "Eine eigene NFL-Seite für Siegchancen, Spread-Sensitivität, Teamstärke, Verletzungskontext und Playoff-Szenarien.",
       status: "Nächstes Modul",
       sampleMatch: "Chiefs vs Bills",
       samplePick: "27:24",
       confidence: "58%",
-      modelNote: "Gewichtet Offensive Efficiency, Defensive Pressure, Quarterback-Verfügbarkeit, Rest Days und Game Script.",
+      modelNote: "Gewichtet Offensiv-Effizienz, Defensivdruck, Quarterback-Verfügbarkeit, Erholungstage und erwarteten Spielverlauf.",
       focusCards: [
-        { title: "Siegwahrscheinlichkeit", text: "Pregame-Likelihood mit Konfidenz und Volatilitätsflag." },
-        { title: "Spread-Sensitivität", text: "Margin-Spannen, die zeigen, wann ein Spiel nah an der Line liegt." },
+        { title: "Siegwahrscheinlichkeit", text: "Vor-dem-Spiel-Wahrscheinlichkeit mit Konfidenz und Volatilitätshinweis." },
+        { title: "Spread-Sensitivität", text: "Abstandsspannen, die zeigen, wann ein Spiel nah an der Linie liegt." },
         { title: "Playoff-Simulator", text: "Conference-Pfade, Seeding-Druck und Super-Bowl-Routen." }
       ],
       signalRows: [
-        { label: "Hauptsignal", value: "EPA, Verletzungen und Schedule" },
-        { label: "Markt", value: "Sieger, Spread, Totals, Playoff-Pfad" },
-        { label: "Update-Rhythmus", value: "Weekly Slate und Injury-Report-Fenster" }
+        { label: "Hauptsignal", value: "EPA, Verletzungen und Spielplan" },
+        { label: "Markt", value: "Sieger, Spread, Gesamtpunkte, Playoff-Pfad" },
+        { label: "Aktualisierung", value: "Wöchentliche Spiele und Verletzungsbericht-Fenster" }
       ],
-      roadmap: ["Team-Strength-Index", "Injury-Report-Import", "Playoff-Pfad-Modell"]
+      roadmap: ["Teamstärke-Index", "Import der Verletzungsberichte", "Playoff-Pfad-Modell"]
     },
     nba: {
       label: "NBA",
-      eyebrow: "NBA Prediction Hub",
-      title: "NBA-Prognosen für Nightly Matchups und Playoff-Serien.",
-      description: "Eine Basketball-Ansicht für Pace, Rest, Travel, Player Availability, Rotationen und Series Probability.",
+      eyebrow: "NBA-Prognosezentrum",
+      title: "NBA-Prognosen für Spielabende und Playoff-Serien.",
+      description: "Eine Basketball-Ansicht für Tempo, Erholung, Reisen, Spieler-Verfügbarkeit, Rotationen und Serienwahrscheinlichkeit.",
       status: "Nächstes Modul",
       sampleMatch: "Celtics vs Knicks",
       samplePick: "113:108",
       confidence: "61%",
-      modelNote: "Liest Pace, Efficiency, Lineup-Verfügbarkeit, Back-to-back-Fatigue und Travel-Kontext.",
+      modelNote: "Liest Tempo, Effizienz, Aufstellungsverfügbarkeit, Belastung aus direkt aufeinanderfolgenden Spielen und Reisekontext.",
       focusCards: [
-        { title: "Nightly Matchup", text: "Sieger und Score Range für hochfrequente Regular-Season-Spiele." },
-        { title: "Player Availability", text: "Rotationen und Ausfälle als sichtbare Modellinputs." },
-        { title: "Series View", text: "Playoff-Serienquoten mit Momentum und Home-Court-Kontext." }
+        { title: "Spielabend-Matchup", text: "Sieger und Ergebnisspanne für viele Regular-Season-Spiele." },
+        { title: "Spieler-Verfügbarkeit", text: "Rotationen und Ausfälle als sichtbare Modelleingaben." },
+        { title: "Serienansicht", text: "Playoff-Serienquoten mit Momentum und Heimvorteil-Kontext." }
       ],
       signalRows: [
-        { label: "Hauptsignal", value: "Pace, Effizienz und Rest" },
-        { label: "Markt", value: "Sieger, Margin, Totals, Serien" },
-        { label: "Update-Rhythmus", value: "Daily Slate und Injury Updates" }
+        { label: "Hauptsignal", value: "Tempo, Effizienz und Erholung" },
+        { label: "Markt", value: "Sieger, Abstand, Gesamtpunkte, Serien" },
+        { label: "Aktualisierung", value: "Tägliche Spiele und Verletzungsupdates" }
       ],
-      roadmap: ["Daily Game Board", "Lineup-Impact-Layer", "Playoff-Serien-Simulator"]
+      roadmap: ["Tägliches Spieleboard", "Aufstellungs-Einfluss", "Playoff-Serien-Simulator"]
     },
     tennis: {
       label: "Tennis",
-      eyebrow: "Tennis Prediction Hub",
+      eyebrow: "Tennis-Prognosezentrum",
       title: "Tennis-Prognosen für Beläge, Draws und Satz-Ergebnisse.",
-      description: "Eine Tennis-Seite für Match-Winner-Wahrscheinlichkeit, Satzscore-Spannen, Surface Strength und Draw-Kontext.",
+      description: "Eine Tennis-Seite für Siegchancen, Satzscore-Spannen, Belagsstärke und Draw-Kontext.",
       status: "Nächstes Modul",
       sampleMatch: "Sinner vs Alcaraz",
       samplePick: "3:1",
       confidence: "55%",
-      modelNote: "Trennt Surface Form, Serve-/Return-Splits, Best-of-Format und Draw Fatigue von generischer Matchform.",
+      modelNote: "Trennt Belagsform, Aufschlag-/Return-Splits, Best-of-Format und Draw-Belastung von generischer Matchform.",
       focusCards: [
-        { title: "Surface Model", text: "Clay, Grass und Hard Court werden als eigene Kontexte behandelt." },
-        { title: "Serve und Return", text: "Service Games, Break Pressure und Return Quality klar getrennt." },
-        { title: "Draw Path", text: "Turnierpfad, Rest Days und Belastung zwischen Runden." }
+        { title: "Belagsmodell", text: "Sand, Rasen und Hartplatz werden als eigene Kontexte behandelt." },
+        { title: "Aufschlag und Return", text: "Aufschlagspiele, Break-Druck und Return-Qualität werden klar getrennt." },
+        { title: "Draw-Pfad", text: "Turnierpfad, Erholungstage und Belastung zwischen Runden." }
       ],
       signalRows: [
         { label: "Hauptsignal", value: "Belag und Serve-/Return-Split" },
-        { label: "Markt", value: "Sieger, Satzscore, Draw Path" },
-        { label: "Update-Rhythmus", value: "Turnierrunden und Draw Updates" }
+        { label: "Markt", value: "Sieger, Satzscore, Draw-Pfad" },
+        { label: "Aktualisierung", value: "Turnierrunden und Draw-Updates" }
       ],
-      roadmap: ["Surface-adjusted Ratings", "Draw Simulation", "Set-Score Probability View"]
+      roadmap: ["Belagsbereinigte Ratings", "Draw-Simulation", "Satzscore-Wahrscheinlichkeiten"]
     }
   }
 };
@@ -502,7 +502,7 @@ function getHomeStartCopy(locale: Locale) {
       newsEyebrow: "Topnews",
       newsText: "Nur sportliche Themen: Teams, Spieler, Form, Verletzungen und Turnierkontext. Der Feed aktualisiert sich regelmäßig.",
       newsTitle: "Was vor den nächsten Spielen wichtig ist",
-      topGamesEyebrow: "Next AI Predictions",
+      topGamesEyebrow: "Nächste KI-Prognosen",
       topGamesTitle: "Ein Topspiel pro Sportart",
       prediction: "KI-Prognose",
       confidence: "Sicherheit",
@@ -841,7 +841,7 @@ function buildHomePrediction(sport: ApiSportId, match: SportApiMatch, locale: Lo
       confidence: `${confidence}%`,
       pick: favorite,
       reason: locale === "de"
-        ? "Quarterback-Stabilität, Rest Days und Defensive Pressure geben dem Modell den Ausschlag."
+        ? "Quarterback-Stabilität, Erholungstage und Defensivdruck geben dem Modell den Ausschlag."
         : "Quarterback stability, rest days and defensive pressure create the model edge.",
       score: `${home}:${away}`
     };
@@ -953,9 +953,9 @@ export async function SportPageContent({ locale, sport }: { locale: Locale; spor
       method: "Methodik",
       sample: "Beispiel-Prognose",
       confidence: "Konfidenz",
-      focus: "Prediction-Fokus",
-      signals: "Signal-Setup",
-      roadmap: "Build-Roadmap",
+      focus: "Prognose-Fokus",
+      signals: "Signalstruktur",
+      roadmap: "Ausbauplan",
       switchSport: "Sportart wechseln",
       liveGames: "Live-Spiele",
       status: "Status"

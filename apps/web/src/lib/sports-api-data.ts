@@ -33,7 +33,7 @@ export type SportApiOddsOutcome = {
 };
 
 export type SportApiOdds = {
-  provider: "The Odds API";
+  provider: "The Odds API" | "Model fair odds";
   market: "h2h";
   sportKey: string | null;
   eventId: string | null;
@@ -910,19 +910,74 @@ function cleanTheSportsDbTennisParticipantName(value: string) {
   }
 
   const cleanedName = name
+    .replace(/^(?:atp|wta|itf|challenger)\s+\d{3,4}\s*[-:]\s*/i, "")
+    .replace(/^(?:[^:–-]{2,80}\b(?:open|championships|masters|cup|classic|trophy|finals|invitational|international)\b)\s*[:–-]\s*/i, "")
     .replace(tennisTournamentPrefixPattern, "")
     .replace(/\s+/g, " ")
     .trim();
-  const knownPlayer = findTennisPlayerByName(cleanedName) ?? findTennisPlayerByName(name);
+  const strippedName = stripGenericTennisTournamentContext(cleanedName);
+  const knownPlayer = findTennisPlayerByName(strippedName) ?? findTennisPlayerByName(cleanedName) ?? findTennisPlayerByName(name);
 
   if (knownPlayer) {
     return knownPlayer.name;
   }
 
-  return cleanedName;
+  return strippedName;
 }
 
-const tennisTournamentPrefixPattern = /^(?:atp|wta|itf|challenger)?\s*(?:wimbledon|us open|u\.s\. open|australian open|roland[-\s]garros|french open|canadian open|cincinnati|monte carlo|madrid open|italian open|rome|paris masters|shanghai masters|miami open|indian wells|atp finals|wta finals|dubai tennis championships|qatar open|halle open|queen'?s club|stuttgart open|vienna open|basel|rotterdam|doha|tokyo|beijing|berlin open)\s+/i;
+const tennisTournamentPrefixPattern = /^(?:atp|wta|itf|challenger)?\s*(?:wimbledon|us open|u\.s\. open|australian open|roland[-\s]garros|french open|croatia open|canadian open|cincinnati|monte carlo|madrid open|italian open|rome|paris masters|shanghai masters|miami open|indian wells|atp finals|wta finals|dubai tennis championships|qatar open|halle open|queen'?s club|stuttgart open|vienna open|basel|rotterdam|doha|tokyo|beijing|berlin open)\s+/i;
+const tennisTournamentLocationTokens = new Set([
+  "adelaide",
+  "bastad",
+  "brisbane",
+  "doha",
+  "dubai",
+  "gstaad",
+  "hamburg",
+  "halle",
+  "london",
+  "madrid",
+  "miami",
+  "newport",
+  "paris",
+  "rome",
+  "stuttgart",
+  "umag",
+  "vienna",
+  "washington"
+]);
+
+function stripGenericTennisTournamentContext(name: string) {
+  const tournamentWord = /\b(open|championships|masters|cup|classic|trophy|finals|invitational|international)\b/i.exec(name);
+
+  if (!tournamentWord?.index) {
+    return name;
+  }
+
+  const afterTournament = name.slice(tournamentWord.index + tournamentWord[0].length).trim();
+
+  if (!afterTournament) {
+    return name;
+  }
+
+  const knownAfterTournament = findTennisPlayerByName(afterTournament);
+
+  if (knownAfterTournament) {
+    return knownAfterTournament.name;
+  }
+
+  const tokens = afterTournament.split(/\s+/).filter(Boolean);
+
+  if (tokens.length >= 3) {
+    return tokens.slice(-2).join(" ");
+  }
+
+  if (tokens.length === 2 && tennisTournamentLocationTokens.has(tokens[0].toLowerCase())) {
+    return tokens[1];
+  }
+
+  return afterTournament;
+}
 
 function hydrateTheSportsDbEventLogos(sport: ApiSportId, matches: SportApiMatch[], teams: SportApiTeam[]) {
   return matches.map((match) => {

@@ -14,7 +14,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 
   return {
     title: `${competition?.name ?? "Fußball"} | AI Sports Prediction`,
-    description: competition?.description ?? "Fußball Prediction Hub."
+    description: competition?.description ?? "Fußball-Prognosezentrum."
   };
 }
 

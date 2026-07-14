@@ -38,7 +38,10 @@ const secrets = {
   databaseUrl: secretArn("ai-sports-prediction/database-url"),
   redisUrl: secretArn("ai-sports-prediction/redis-url"),
   adminApiToken: secretArn("ai-sports-prediction/admin-api-token"),
+  openrouterApiKey: secretArn("ai-sports-prediction/openrouter-api-key"),
   resendApiKey: secretArn("ai-sports-prediction/resend-api-key"),
+  theOddsApiKey: secretArn("ai-sports-prediction/the-odds-api-key"),
+  theSportsDbApiKey: secretArn("ai-sports-prediction/the-sports-db-api-key"),
   cloudflareTunnelToken: secretArn("ai-sports-prediction/cloudflare-tunnel-token")
 };
 
@@ -69,7 +72,13 @@ const taskDefinition = {
         { name: "SHOW_FULL_SITE", value: env("SHOW_FULL_SITE", "0") },
         { name: "NEXT_PUBLIC_SHOW_FULL_SITE", value: env("NEXT_PUBLIC_SHOW_FULL_SITE", "0") },
         { name: "NEXT_PUBLIC_SITE_URL", value: env("NEXT_PUBLIC_SITE_URL", "https://www.ai-sports-prediction.net") },
+        { name: "OPENROUTER_MODEL_IDS", value: env("OPENROUTER_MODEL_IDS", "openai/gpt-oss-20b:free") },
+        { name: "OPENROUTER_SITE_URL", value: env("OPENROUTER_SITE_URL", "https://www.ai-sports-prediction.net") },
+        { name: "OPENROUTER_SITE_NAME", value: env("OPENROUTER_SITE_NAME", "AI Sports Prediction") },
         { name: "NEWSLETTER_FROM_EMAIL", value: env("NEWSLETTER_FROM_EMAIL", "AI Sports Prediction <ai-sports-prediction@outlook.com>") },
+        { name: "THE_ODDS_API_REGIONS", value: env("THE_ODDS_API_REGIONS", "eu,us") },
+        { name: "THE_SPORTS_DB_CACHE_SECONDS", value: env("THE_SPORTS_DB_CACHE_SECONDS", "300") },
+        { name: "THE_SPORTS_DB_LIVE_CACHE_SECONDS", value: env("THE_SPORTS_DB_LIVE_CACHE_SECONDS", "60") },
         { name: "DATABASE_SSL", value: env("DATABASE_SSL", "1") },
         { name: "DATABASE_SSL_REJECT_UNAUTHORIZED", value: env("DATABASE_SSL_REJECT_UNAUTHORIZED", "1") },
         {
@@ -81,7 +90,10 @@ const taskDefinition = {
       secrets: [
         { name: "DATABASE_URL", valueFrom: secrets.databaseUrl },
         { name: "ADMIN_API_TOKEN", valueFrom: secrets.adminApiToken },
-        { name: "RESEND_API_KEY", valueFrom: secrets.resendApiKey }
+        { name: "OPENROUTER_API_KEY", valueFrom: secrets.openrouterApiKey },
+        { name: "RESEND_API_KEY", valueFrom: secrets.resendApiKey },
+        { name: "THE_ODDS_API_KEY", valueFrom: secrets.theOddsApiKey },
+        { name: "THE_SPORTS_DB_API_KEY", valueFrom: secrets.theSportsDbApiKey }
       ],
       logConfiguration: awslogs("edge-web")
     },
@@ -106,14 +118,46 @@ const taskDefinition = {
         { name: "API_CACHE_MATCHES_TTL_SECONDS", value: env("API_CACHE_MATCHES_TTL_SECONDS", "300") },
         { name: "API_CACHE_BENCHMARK_TTL_SECONDS", value: env("API_CACHE_BENCHMARK_TTL_SECONDS", "300") },
         { name: "API_CACHE_SPECIAL_TTL_SECONDS", value: env("API_CACHE_SPECIAL_TTL_SECONDS", "300") },
-        { name: "API_CACHE_HEALTH_TTL_SECONDS", value: env("API_CACHE_HEALTH_TTL_SECONDS", "2") }
+        { name: "API_CACHE_HEALTH_TTL_SECONDS", value: env("API_CACHE_HEALTH_TTL_SECONDS", "2") },
+        { name: "OPENROUTER_MODEL_IDS", value: env("OPENROUTER_MODEL_IDS", "openai/gpt-oss-20b:free") },
+        { name: "OPENROUTER_SITE_URL", value: env("OPENROUTER_SITE_URL", "https://www.ai-sports-prediction.net") },
+        { name: "OPENROUTER_SITE_NAME", value: env("OPENROUTER_SITE_NAME", "AI Sports Prediction") }
       ],
       secrets: [
         { name: "DATABASE_URL", valueFrom: secrets.databaseUrl },
         { name: "REDIS_URL", valueFrom: secrets.redisUrl },
-        { name: "ADMIN_API_TOKEN", valueFrom: secrets.adminApiToken }
+        { name: "ADMIN_API_TOKEN", valueFrom: secrets.adminApiToken },
+        { name: "OPENROUTER_API_KEY", valueFrom: secrets.openrouterApiKey }
       ],
       logConfiguration: awslogs("edge-api")
+    },
+    {
+      name: "worker",
+      image: imageUri,
+      essential: true,
+      environment: [
+        { name: "NODE_ENV", value: "production" },
+        { name: "SERVICE_ROLE", value: "worker" },
+        { name: "OPENROUTER_MODEL_IDS", value: env("OPENROUTER_MODEL_IDS", "openai/gpt-oss-20b:free") },
+        { name: "OPENROUTER_SITE_URL", value: env("OPENROUTER_SITE_URL", "https://www.ai-sports-prediction.net") },
+        { name: "OPENROUTER_SITE_NAME", value: env("OPENROUTER_SITE_NAME", "AI Sports Prediction") },
+        { name: "PREDICTION_AUTOMATION_LOOKAHEAD_DAYS", value: env("PREDICTION_AUTOMATION_LOOKAHEAD_DAYS", "7") },
+        { name: "PREDICTION_AUTOMATION_INTERVAL_MINUTES", value: env("PREDICTION_AUTOMATION_INTERVAL_MINUTES", "60") },
+        { name: "PREDICTION_AUTOMATION_MAX_NEW_PER_RUN", value: env("PREDICTION_AUTOMATION_MAX_NEW_PER_RUN", "50") },
+        { name: "DATABASE_SSL", value: env("DATABASE_SSL", "1") },
+        { name: "DATABASE_SSL_REJECT_UNAUTHORIZED", value: env("DATABASE_SSL_REJECT_UNAUTHORIZED", "1") },
+        {
+          name: "DATABASE_SSL_CA_FILE",
+          value: env("DATABASE_SSL_CA_FILE", "/etc/ssl/certs/aws-rds-global-bundle.pem")
+        }
+      ],
+      secrets: [
+        { name: "DATABASE_URL", valueFrom: secrets.databaseUrl },
+        { name: "REDIS_URL", valueFrom: secrets.redisUrl },
+        { name: "OPENROUTER_API_KEY", valueFrom: secrets.openrouterApiKey },
+        { name: "THE_SPORTS_DB_API_KEY", valueFrom: secrets.theSportsDbApiKey }
+      ],
+      logConfiguration: awslogs("edge-worker")
     },
     {
       name: "cloudflared",
@@ -247,7 +291,7 @@ function env(name, fallback) {
 }
 
 function aws(args) {
-  return execFileSync("aws", ["--region", region, ...args], {
+  return execFileSync("aws", ["--region", region, "--cli-connect-timeout", "5", "--cli-read-timeout", "30", ...args], {
     encoding: "utf8",
     stdio: ["ignore", "pipe", "pipe"]
   }).trim();

@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 
 type WidgetType = "prediction-card" | "match-list" | "leaderboard" | "win-probability" | "key-factors";
 type WidgetSport = "all" | "football" | "nba" | "nfl" | "tennis";
+type WidgetBuilderLocale = "en" | "de";
 
 type BuilderMatch = {
   id: string;
@@ -21,23 +22,117 @@ type MatchSearchResponse = {
   matches: BuilderMatch[];
 };
 
-const widgetTypes: Array<{ label: string; value: WidgetType }> = [
-  { label: "Prediction card", value: "prediction-card" },
-  { label: "Match list", value: "match-list" },
-  { label: "Win probability", value: "win-probability" },
-  { label: "Key factors", value: "key-factors" },
-  { label: "Leaderboard", value: "leaderboard" }
-];
+const widgetTypes: Record<WidgetBuilderLocale, Array<{ label: string; value: WidgetType }>> = {
+  en: [
+    { label: "Prediction card", value: "prediction-card" },
+    { label: "Match list", value: "match-list" },
+    { label: "Win probability", value: "win-probability" },
+    { label: "Key factors", value: "key-factors" },
+    { label: "Leaderboard", value: "leaderboard" }
+  ],
+  de: [
+    { label: "Prognosekarte", value: "prediction-card" },
+    { label: "Matchliste", value: "match-list" },
+    { label: "Sieg-Wahrscheinlichkeit", value: "win-probability" },
+    { label: "Schlüsselfaktoren", value: "key-factors" },
+    { label: "Rangliste", value: "leaderboard" }
+  ]
+};
 
-const sports: Array<{ label: string; value: WidgetSport }> = [
-  { label: "All sports", value: "all" },
-  { label: "Football", value: "football" },
-  { label: "NBA", value: "nba" },
-  { label: "NFL", value: "nfl" },
-  { label: "Tennis", value: "tennis" }
-];
+const sports: Record<WidgetBuilderLocale, Array<{ label: string; value: WidgetSport }>> = {
+  en: [
+    { label: "All sports", value: "all" },
+    { label: "Football", value: "football" },
+    { label: "NBA", value: "nba" },
+    { label: "NFL", value: "nfl" },
+    { label: "Tennis", value: "tennis" }
+  ],
+  de: [
+    { label: "Alle Sportarten", value: "all" },
+    { label: "Fußball", value: "football" },
+    { label: "NBA", value: "nba" },
+    { label: "NFL", value: "nfl" },
+    { label: "Tennis", value: "tennis" }
+  ]
+};
 
-export function WidgetBuilder() {
+const builderText = {
+  en: {
+    initialStatus: "Enter a paid publisher key and search for a match.",
+    keyRequired: "A paid publisher key is required before match search.",
+    searchingStatus: "Searching matches...",
+    searchUnavailable: "Match search is not available for this key.",
+    matchesFound: (count: number) => `${count} matches found.`,
+    noMatches: "No matching games found.",
+    searchFailed: "Match search failed.",
+    copy: "Copy",
+    copied: "Copied",
+    copyFailed: "Copy failed",
+    title: "Widget builder",
+    intro: "Search a match with a paid publisher key, select the widget format and copy the finished embed code.",
+    apiKey: "Publisher API key",
+    domain: "Publisher domain",
+    sport: "Sport",
+    type: "Widget type",
+    query: "Search team, player, competition or match id",
+    searchButton: "Search matches",
+    searchingButton: "Searching...",
+    results: "Match results",
+    accent: "Accent",
+    background: "Background",
+    text: "Text",
+    reasoning: "Reasoning",
+    branding: "Branding",
+    embedCode: "Embed code",
+    selected: "selected.",
+    selectMatch: "Select a match to include an exact match id.",
+    copiedLabel: "Embed code copied",
+    copyLabel: "Copy embed code",
+    color: "color",
+    hex: "hex code",
+    dateTbd: "Date tbd",
+    copyCommandFailed: "Copy command failed"
+  },
+  de: {
+    initialStatus: "Bezahlten Publisher-Schlüssel eingeben und ein Match suchen.",
+    keyRequired: "Für die Matchsuche ist ein bezahlter Publisher-Schlüssel erforderlich.",
+    searchingStatus: "Matches werden gesucht...",
+    searchUnavailable: "Die Matchsuche ist für diesen Schlüssel nicht verfügbar.",
+    matchesFound: (count: number) => `${count} Matches gefunden.`,
+    noMatches: "Keine passenden Spiele gefunden.",
+    searchFailed: "Matchsuche fehlgeschlagen.",
+    copy: "Kopieren",
+    copied: "Kopiert",
+    copyFailed: "Kopieren fehlgeschlagen",
+    title: "Widget-Builder",
+    intro: "Suche mit einem bezahlten Publisher-Schlüssel ein Match, wähle das Widget-Format und kopiere den fertigen Einbettungscode.",
+    apiKey: "Publisher-API-Schlüssel",
+    domain: "Publisher-Domain",
+    sport: "Sport",
+    type: "Widget-Typ",
+    query: "Team, Spieler, Wettbewerb oder Match-ID suchen",
+    searchButton: "Matches suchen",
+    searchingButton: "Suche läuft...",
+    results: "Suchergebnisse",
+    accent: "Akzent",
+    background: "Hintergrund",
+    text: "Text",
+    reasoning: "Begründung",
+    branding: "Markenhinweis",
+    embedCode: "Einbettungscode",
+    selected: "ausgewählt.",
+    selectMatch: "Wähle ein Match aus, um eine exakte Match-ID einzubinden.",
+    copiedLabel: "Einbettungscode kopiert",
+    copyLabel: "Einbettungscode kopieren",
+    color: "Farbe",
+    hex: "Hexcode",
+    dateTbd: "Datum offen",
+    copyCommandFailed: "Kopierbefehl fehlgeschlagen"
+  }
+};
+
+export function WidgetBuilder({ locale = "en" }: { locale?: WidgetBuilderLocale }) {
+  const textCopy = builderText[locale];
   const [apiKey, setApiKey] = useState("");
   const [publisherDomain, setPublisherDomain] = useState("https://publisher.example");
   const [sport, setSport] = useState<WidgetSport>("nba");
@@ -50,8 +145,8 @@ export function WidgetBuilder() {
   const [showBranding, setShowBranding] = useState(true);
   const [matches, setMatches] = useState<BuilderMatch[]>([]);
   const [selectedMatchId, setSelectedMatchId] = useState("");
-  const [status, setStatus] = useState("Enter a paid publisher key and search for a match.");
-  const [copyStatus, setCopyStatus] = useState("Copy");
+  const [status, setStatus] = useState(textCopy.initialStatus);
+  const [copyStatus, setCopyStatus] = useState(textCopy.copy);
   const [isLoading, setIsLoading] = useState(false);
 
   const selectedMatch = matches.find((match) => match.id === selectedMatchId) ?? null;
@@ -69,14 +164,14 @@ export function WidgetBuilder() {
 
   async function searchMatches() {
     if (!apiKey.trim()) {
-      setStatus("A paid publisher key is required before match search.");
+      setStatus(textCopy.keyRequired);
       setMatches([]);
       setSelectedMatchId("");
       return;
     }
 
     setIsLoading(true);
-    setStatus("Searching matches...");
+    setStatus(textCopy.searchingStatus);
 
     const params = new URLSearchParams({
       apiKey: apiKey.trim(),
@@ -93,17 +188,17 @@ export function WidgetBuilder() {
       const body = await response.json() as Partial<MatchSearchResponse> & { message?: string };
 
       if (!response.ok) {
-        throw new Error(body.message || "Match search is not available for this key.");
+        throw new Error(body.message || textCopy.searchUnavailable);
       }
 
       const nextMatches = body.matches ?? [];
       setMatches(nextMatches);
       setSelectedMatchId(nextMatches[0]?.id ?? "");
-      setStatus(nextMatches.length ? `${nextMatches.length} matches found.` : "No matching games found.");
+      setStatus(nextMatches.length ? textCopy.matchesFound(nextMatches.length) : textCopy.noMatches);
     } catch (error) {
       setMatches([]);
       setSelectedMatchId("");
-      setStatus(error instanceof Error ? error.message : "Match search failed.");
+      setStatus(error instanceof Error ? error.message : textCopy.searchFailed);
     } finally {
       setIsLoading(false);
     }
@@ -116,16 +211,16 @@ export function WidgetBuilder() {
       } else {
         copyWithTextareaFallback(embedCode);
       }
-      setCopyStatus("Copied");
-      window.setTimeout(() => setCopyStatus("Copy"), 1800);
+      setCopyStatus(textCopy.copied);
+      window.setTimeout(() => setCopyStatus(textCopy.copy), 1800);
     } catch (_error) {
       try {
         copyWithTextareaFallback(embedCode);
-        setCopyStatus("Copied");
-        window.setTimeout(() => setCopyStatus("Copy"), 1800);
+        setCopyStatus(textCopy.copied);
+        window.setTimeout(() => setCopyStatus(textCopy.copy), 1800);
       } catch (_fallbackError) {
-        setCopyStatus("Copy failed");
-        window.setTimeout(() => setCopyStatus("Copy"), 2200);
+        setCopyStatus(textCopy.copyFailed);
+        window.setTimeout(() => setCopyStatus(textCopy.copy), 2200);
       }
     }
   }
@@ -133,15 +228,13 @@ export function WidgetBuilder() {
   return (
     <section className="widgetsPanel widgetBuilder" aria-labelledby="widget-builder-title">
       <div className="widgetsSectionIntro">
-        <h2 id="widget-builder-title">Widget builder</h2>
-        <p>
-          Search a match with a paid publisher key, select the widget format and copy the finished embed code.
-        </p>
+        <h2 id="widget-builder-title">{textCopy.title}</h2>
+        <p>{textCopy.intro}</p>
       </div>
 
       <div className="widgetBuilderGrid">
         <label className="widgetBuilderField">
-          <span>Publisher API key</span>
+          <span>{textCopy.apiKey}</span>
           <input
             autoComplete="off"
             onChange={(event) => setApiKey(event.target.value)}
@@ -152,7 +245,7 @@ export function WidgetBuilder() {
         </label>
 
         <label className="widgetBuilderField">
-          <span>Publisher domain</span>
+          <span>{textCopy.domain}</span>
           <input
             onChange={(event) => setPublisherDomain(event.target.value)}
             placeholder="https://publisher.example"
@@ -163,23 +256,23 @@ export function WidgetBuilder() {
         <label className="widgetBuilderField">
           <span>Sport</span>
           <select onChange={(event) => setSport(event.target.value as WidgetSport)} value={sport}>
-            {sports.map((option) => (
+            {sports[locale].map((option) => (
               <option key={option.value} value={option.value}>{option.label}</option>
             ))}
           </select>
         </label>
 
         <label className="widgetBuilderField">
-          <span>Widget type</span>
+          <span>{textCopy.type}</span>
           <select onChange={(event) => setType(event.target.value as WidgetType)} value={type}>
-            {widgetTypes.map((option) => (
+            {widgetTypes[locale].map((option) => (
               <option key={option.value} value={option.value}>{option.label}</option>
             ))}
           </select>
         </label>
 
         <label className="widgetBuilderField widgetBuilderFieldWide">
-          <span>Search team, player, competition or match id</span>
+          <span>{textCopy.query}</span>
           <input
             onChange={(event) => setQuery(event.target.value)}
             placeholder="Boston Celtics, Wimbledon, Champions League..."
@@ -189,14 +282,14 @@ export function WidgetBuilder() {
 
         <div className="widgetBuilderActions">
           <button disabled={isLoading} onClick={searchMatches} type="button">
-            {isLoading ? "Searching..." : "Search matches"}
+            {isLoading ? textCopy.searchingButton : textCopy.searchButton}
           </button>
           <p>{status}</p>
         </div>
       </div>
 
       {matches.length > 0 ? (
-        <div className="widgetBuilderMatches" aria-label="Match results">
+        <div className="widgetBuilderMatches" aria-label={textCopy.results}>
           {matches.map((match) => (
             <button
               className={match.id === selectedMatchId ? "isSelected" : ""}
@@ -206,41 +299,41 @@ export function WidgetBuilder() {
             >
               <span>{match.competition}</span>
               <strong>{match.label}</strong>
-              <small>{formatDate(match.date)} · {match.id}</small>
+              <small>{formatDate(match.date, textCopy.dateTbd, locale)} · {match.id}</small>
             </button>
           ))}
         </div>
       ) : null}
 
       <div className="widgetBuilderCustomize">
-        <ColorField label="Accent" onChange={setAccent} value={accent} />
-        <ColorField label="Background" onChange={setBackground} value={background} />
-        <ColorField label="Text" onChange={setText} value={text} />
+        <ColorField colorLabel={textCopy.color} hexLabel={textCopy.hex} label={textCopy.accent} onChange={setAccent} value={accent} />
+        <ColorField colorLabel={textCopy.color} hexLabel={textCopy.hex} label={textCopy.background} onChange={setBackground} value={background} />
+        <ColorField colorLabel={textCopy.color} hexLabel={textCopy.hex} label={textCopy.text} onChange={setText} value={text} />
         <label>
           <input checked={showReasoning} onChange={(event) => setShowReasoning(event.target.checked)} type="checkbox" />
-          <span>Reasoning</span>
+          <span>{textCopy.reasoning}</span>
         </label>
         <label>
           <input checked={showBranding} onChange={(event) => setShowBranding(event.target.checked)} type="checkbox" />
-          <span>Branding</span>
+          <span>{textCopy.branding}</span>
         </label>
       </div>
 
       <div className="widgetBuilderCode">
         <div className="widgetBuilderCodeHeader">
           <div>
-            <h3>Embed code</h3>
-            <p>{selectedMatch ? `${selectedMatch.label} selected.` : "Select a match to include an exact match id."}</p>
+            <h3>{textCopy.embedCode}</h3>
+            <p>{selectedMatch ? `${selectedMatch.label} ${textCopy.selected}` : textCopy.selectMatch}</p>
           </div>
         </div>
         <div className="widgetBuilderCodeBox">
           <button
-            aria-label={copyStatus === "Copied" ? "Embed code copied" : "Copy embed code"}
+            aria-label={copyStatus === textCopy.copied ? textCopy.copiedLabel : textCopy.copyLabel}
             onClick={copyEmbedCode}
-            title={copyStatus === "Copied" ? "Copied" : "Copy"}
+            title={copyStatus === textCopy.copied ? textCopy.copied : textCopy.copy}
             type="button"
           >
-            <span aria-hidden="true">{copyStatus === "Copied" ? "✓" : "⧉"}</span>
+            <span aria-hidden="true">{copyStatus === textCopy.copied ? "✓" : "⧉"}</span>
           </button>
           <pre><code>{embedCode}</code></pre>
         </div>
@@ -250,10 +343,14 @@ export function WidgetBuilder() {
 }
 
 function ColorField({
+  colorLabel,
+  hexLabel,
   label,
   onChange,
   value
 }: {
+  colorLabel: string;
+  hexLabel: string;
   label: string;
   onChange: (value: string) => void;
   value: string;
@@ -262,9 +359,9 @@ function ColorField({
     <label className="widgetBuilderColorField">
       <span>{label}</span>
       <span className="widgetBuilderColorControl">
-        <input aria-label={`${label} color`} onChange={(event) => onChange(event.target.value)} type="color" value={toColorInputValue(value)} />
+        <input aria-label={`${label} ${colorLabel}`} onChange={(event) => onChange(event.target.value)} type="color" value={toColorInputValue(value)} />
         <input
-          aria-label={`${label} hex code`}
+          aria-label={`${label} ${hexLabel}`}
           inputMode="text"
           onChange={(event) => onChange(normalizeHexInput(event.target.value))}
           spellCheck={false}
@@ -315,16 +412,16 @@ function buildEmbedCode({
   return lines.join("\n");
 }
 
-function formatDate(value: string | null): string {
-  if (!value) return "Date tbd";
+function formatDate(value: string | null, fallback: string, locale: WidgetBuilderLocale): string {
+  if (!value) return fallback;
 
   try {
-    return new Intl.DateTimeFormat(undefined, {
+    return new Intl.DateTimeFormat(locale === "de" ? "de-DE" : "en-US", {
       dateStyle: "medium",
       timeStyle: "short"
     }).format(new Date(value));
   } catch (_error) {
-    return "Date tbd";
+    return fallback;
   }
 }
 

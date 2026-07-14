@@ -32,7 +32,7 @@ export default function GermanLegalNoticePage() {
             <br />
             AI Sports Prediction
             <br />
-            81541 München
+            81541 Munich
             <br />
             Deutschland
             <br />

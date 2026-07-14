@@ -22,6 +22,15 @@ export type LlmModel = {
 
 export const MINIMAL_FLAGSHIP_MODELS: BenchmarkModelConfig[] = [
   {
+    slot: "openai_gpt_oss_20b_free",
+    displayName: "GPT OSS 20B Free",
+    modelId: "openai/gpt-oss-20b:free",
+    canonicalVersion: "openai/gpt-oss-20b:free",
+    family: "OpenAI",
+    tier: "free_preview",
+    includeInPrimary2x2: true
+  },
+  {
     slot: "openai_gpt_5_5",
     displayName: "GPT-5.5",
     modelId: "openai/gpt-5.5",

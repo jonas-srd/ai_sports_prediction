@@ -216,6 +216,7 @@ SERVICE_ROLE=worker
 DATABASE_URL=<secret>
 REDIS_URL=<secret>
 OPENROUTER_API_KEY=<secret>
+OPENROUTER_MODEL_IDS=openai/gpt-oss-20b:free
 FOOTBALL_DATA_API_KEY=<secret>
 BACKUP_S3_BUCKET=ai-sports-prediction
 BACKUP_S3_REGION=eu-central-1

@@ -67,6 +67,40 @@ export type NewsletterCampaignRecipient = {
   unsubscribeToken: string;
 };
 
+export type PredictionModelInput = {
+  id: string;
+  name: string;
+  provider: string;
+  modelVersion?: string | null;
+  modelFamily?: string | null;
+  supportsToolAccess?: boolean | null;
+  isOpenWeight?: boolean | null;
+};
+
+export type MatchPredictionInput = {
+  id: string;
+  utcDate: string;
+  competition: string;
+  homeTeam: string;
+  awayTeam: string;
+  venue?: string | null;
+  status?: string | null;
+  source?: string | null;
+  sourceMatchId?: string | null;
+  stage?: string | null;
+  matchday?: number | null;
+};
+
+export type StoredPredictionInput = {
+  matchId: string;
+  modelId: string;
+  predictedHome: number;
+  predictedAway: number;
+  confidence?: number | null;
+  reason?: string | null;
+  rawResponse: unknown;
+};
+
 export function createPostgresPool(connectionString = getPostgresDatabaseUrl()): PostgresDb {
   return new Pool({
     connectionString,
@@ -194,6 +228,130 @@ export async function listSpecialPredictionsForApi(db: PostgresDb): Promise<unkn
   `);
 
   return result.rows;
+}
+
+export async function upsertPredictionModel(db: PostgresDb, input: PredictionModelInput): Promise<void> {
+  await db.query(
+    `
+      insert into models (
+        id,
+        name,
+        provider,
+        model_version,
+        model_family,
+        supports_tool_access,
+        is_open_weight
+      )
+      values ($1, $2, $3, $4, $5, $6, $7)
+      on conflict (id) do update set
+        name = excluded.name,
+        provider = excluded.provider,
+        active = true,
+        model_version = excluded.model_version,
+        model_family = excluded.model_family,
+        supports_tool_access = excluded.supports_tool_access,
+        is_open_weight = excluded.is_open_weight
+    `,
+    [
+      input.id,
+      input.name,
+      input.provider,
+      input.modelVersion ?? null,
+      input.modelFamily ?? null,
+      input.supportsToolAccess ?? null,
+      input.isOpenWeight ?? null
+    ]
+  );
+}
+
+export async function upsertPredictionMatch(db: PostgresDb, input: MatchPredictionInput): Promise<void> {
+  await db.query(
+    `
+      insert into matches (
+        id,
+        utc_date,
+        competition,
+        home_team,
+        away_team,
+        venue,
+        status,
+        source,
+        source_match_id,
+        stage,
+        matchday
+      )
+      values ($1, $2, $3, $4, $5, $6, coalesce($7, 'SCHEDULED'), $8, $9, $10, $11)
+      on conflict (id) do update set
+        utc_date = excluded.utc_date,
+        competition = excluded.competition,
+        home_team = excluded.home_team,
+        away_team = excluded.away_team,
+        venue = coalesce(excluded.venue, matches.venue),
+        status = excluded.status,
+        source = coalesce(excluded.source, matches.source),
+        source_match_id = coalesce(excluded.source_match_id, matches.source_match_id),
+        stage = coalesce(excluded.stage, matches.stage),
+        matchday = coalesce(excluded.matchday, matches.matchday),
+        updated_at = now()
+    `,
+    [
+      input.id,
+      input.utcDate,
+      input.competition,
+      input.homeTeam,
+      input.awayTeam,
+      input.venue ?? null,
+      input.status ?? "SCHEDULED",
+      input.source ?? null,
+      input.sourceMatchId ?? null,
+      input.stage ?? null,
+      input.matchday ?? null
+    ]
+  );
+}
+
+export async function predictionExists(db: PostgresDb, matchId: string, modelId: string): Promise<boolean> {
+  const result = await db.query("select 1 from predictions where match_id = $1 and model_id = $2", [matchId, modelId]);
+  return Boolean(result.rowCount && result.rowCount > 0);
+}
+
+export async function upsertStoredPrediction(db: PostgresDb, input: StoredPredictionInput): Promise<string> {
+  const id = randomUUID();
+  const rawResponse = typeof input.rawResponse === "string" ? input.rawResponse : JSON.stringify(input.rawResponse);
+  const result = await db.query<{ id: string }>(
+    `
+      insert into predictions (
+        id,
+        match_id,
+        model_id,
+        predicted_home,
+        predicted_away,
+        confidence,
+        reason,
+        raw_response
+      )
+      values ($1, $2, $3, $4, $5, $6, $7, $8)
+      on conflict (match_id, model_id) do update set
+        predicted_home = excluded.predicted_home,
+        predicted_away = excluded.predicted_away,
+        confidence = excluded.confidence,
+        reason = excluded.reason,
+        raw_response = excluded.raw_response
+      returning id
+    `,
+    [
+      id,
+      input.matchId,
+      input.modelId,
+      input.predictedHome,
+      input.predictedAway,
+      input.confidence ?? null,
+      input.reason ?? null,
+      rawResponse
+    ]
+  );
+
+  return result.rows[0]?.id ?? id;
 }
 
 export async function listBackupArtifacts(db: PostgresDb): Promise<unknown[]> {

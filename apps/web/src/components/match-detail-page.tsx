@@ -270,7 +270,7 @@ function MatchDetailCompactOddsLine({ context, locale }: { context: MatchContext
           <strong>{formatDecimalOdds(outcome.price)}</strong>
         </small>
       ))}
-      <em>{odds.bookmakerCount} {text.bookmakers}</em>
+      <em>{formatCompactOddsSource(odds, locale, text.bookmakers)}</em>
     </div>
   );
 }
@@ -1163,6 +1163,16 @@ function formatCompactOddsOutcomeLabel(label: "home" | "draw" | "away") {
   }
 
   return "X";
+}
+
+function formatCompactOddsSource(odds: SportApiMatch["odds"], locale: Locale, bookmakersLabel: string) {
+  if (!odds) {
+    return "";
+  }
+
+  return odds.provider === "The Odds API"
+    ? `${odds.bookmakerCount} ${bookmakersLabel}`
+    : locale === "de" ? "Modell" : "model";
 }
 
 function formatDecimalOdds(value: number) {

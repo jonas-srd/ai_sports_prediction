@@ -14,7 +14,7 @@ export default function LegalNoticePage() {
       <section className="competitionHero legalHero">
         <div className="sportschauCompetitionTitle">
           <p className="footballEyebrow">Legal</p>
-          <h1>Legal Notice</h1>
+          <h1>Legal notice</h1>
           <p>Contact and provider information for AI Sports Prediction.</p>
         </div>
       </section>
@@ -22,11 +22,11 @@ export default function LegalNoticePage() {
       <section className="footballPanel legalPagePanel" aria-labelledby="legal-title">
         <div className="sportschauSectionTitle">
           <span>AI Sports Prediction</span>
-          <h2 id="legal-title">Legal Notice</h2>
+          <h2 id="legal-title">Legal notice</h2>
         </div>
 
         <div className="legalPageBlock">
-          <h2>Information pursuant to Section 5 DDG</h2>
+          <h2>Information pursuant to § 5 DDG</h2>
           <p>
             Jonas Schröder
             <br />
@@ -36,7 +36,7 @@ export default function LegalNoticePage() {
             <br />
             Germany
             <br />
-            Postal address upon request: {contactEmail}
+            Postal address on request: {contactEmail}
           </p>
         </div>
 
@@ -46,7 +46,7 @@ export default function LegalNoticePage() {
         </div>
 
         <div className="legalPageBlock">
-          <h2>Responsible for content under Section 18(2) MStV</h2>
+          <h2>Responsible for content pursuant to § 18 para. 2 MStV</h2>
           <p>Jonas Schröder (address as above)</p>
         </div>
 
@@ -62,9 +62,9 @@ export default function LegalNoticePage() {
         <div className="legalPageBlock">
           <h2>Liability for content</h2>
           <p>
-            As a service provider, we are responsible for our own content on these pages in accordance
-            with general law. Under Sections 8 to 10 DDG, however, we are not obliged to monitor
-            transmitted or stored third-party information.
+            As a service provider, we are responsible for our own content on these pages in
+            accordance with § 7 para. 1 DDG and general law. According to §§ 8 to 10 DDG, however,
+            we are not obliged to monitor transmitted or stored third-party information.
           </p>
         </div>
       </section>
