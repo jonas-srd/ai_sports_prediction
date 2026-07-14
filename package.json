@@ -19,13 +19,19 @@
     "start:api": "node scripts/run-with-env.mjs node --import tsx apps/api/src/server.ts",
     "start:worker": "node scripts/run-with-env.mjs node --import tsx apps/worker/src/worker.ts",
     "test:analytics": "node --import tsx apps/web/src/lib/benchmark-analytics.test.ts",
+    "test:prediction-models": "node --import tsx apps/web/src/lib/prediction-models.test.ts",
     "test:special": "node --import tsx packages/llm/src/special-questions.test.ts",
     "load:test": "node scripts/load-test.mjs",
     "aws:deploy-cloudflare-edge": "node scripts/deploy-cloudflare-edge.mjs",
     "typecheck": "npm run typecheck --workspaces --if-present",
     "db:migrate:postgres": "node scripts/run-with-env.mjs node --import tsx apps/worker/src/jobs/migrate-postgres.ts",
+    "db:migrate:outreach": "node scripts/run-with-env.mjs node --import tsx apps/worker/src/jobs/migrate-outreach-postgres.ts",
     "backup:postgres": "node scripts/run-with-env.mjs node --import tsx apps/worker/src/jobs/export-postgres-backup.ts",
-    "queue:backup": "node scripts/run-with-env.mjs node --import tsx apps/worker/src/jobs/enqueue-postgres-backup.ts"
+    "queue:backup": "node scripts/run-with-env.mjs node --import tsx apps/worker/src/jobs/enqueue-postgres-backup.ts",
+    "outreach:discover": "node scripts/run-with-env.mjs node --import tsx apps/worker/src/jobs/discover-editorial-outreach-cli.ts",
+    "outreach:backfill-drafts": "node scripts/run-with-env.mjs node --import tsx apps/worker/src/jobs/backfill-editorial-outreach-drafts.ts",
+    "outreach:approve": "node scripts/run-with-env.mjs node --import tsx apps/worker/src/jobs/approve-editorial-outreach-cli.ts",
+    "outreach:send": "node scripts/run-with-env.mjs node --import tsx apps/worker/src/jobs/send-editorial-outreach-cli.ts"
   },
   "engines": {
     "node": ">=20"

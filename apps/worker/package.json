@@ -6,9 +6,15 @@
   "scripts": {
     "start": "tsx src/worker.ts",
     "migrate:postgres": "tsx src/jobs/migrate-postgres.ts",
+    "migrate:outreach": "tsx src/jobs/migrate-outreach-postgres.ts",
     "backup:postgres": "tsx src/jobs/export-postgres-backup.ts",
     "queue:backup": "tsx src/jobs/enqueue-postgres-backup.ts",
     "verify:postgres-backup": "tsx src/jobs/verify-postgres-backup.ts",
+    "outreach:discover": "tsx src/jobs/discover-editorial-outreach-cli.ts",
+    "outreach:backfill-drafts": "tsx src/jobs/backfill-editorial-outreach-drafts.ts",
+    "outreach:approve": "tsx src/jobs/approve-editorial-outreach-cli.ts",
+    "outreach:send": "tsx src/jobs/send-editorial-outreach-cli.ts",
+    "test:outreach": "node --import tsx src/editorial-outreach-agent.test.ts",
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
   "dependencies": {

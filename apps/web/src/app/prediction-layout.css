@@ -1,0 +1,23 @@
+/* Final responsive guards for the shared prediction UI. Loaded after the legacy theme. */
+@media (max-width: 900px) {
+  .matchDetailGrid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .matchDetailPrediction.selectedModelPrediction {
+    grid-template-rows: none;
+    height: auto;
+  }
+}
+
+@media (max-width: 620px) {
+  .matchDetailPrediction,
+  .matchDetailComparison {
+    min-width: 0;
+    padding: 16px;
+  }
+
+  .matchDetailPrediction .predictionContextGrid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

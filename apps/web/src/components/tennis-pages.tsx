@@ -7,6 +7,8 @@ import { findTennisPlayerByName, getTennisFlagUrl, getTennisPlayer, getTennisTou
 import { getAtpRankingSnapshot, type TennisRankingRow, type TennisRankingSnapshot } from "@/lib/tennis-rankings";
 import { getSportMatchHref } from "@/components/match-detail-page";
 import { SportsNewsCards } from "@/components/sports-news-cards";
+import { PredictionModelSelector, SelectedModelPrediction } from "@/components/prediction-model-selector";
+import { buildModelPredictions } from "@/lib/prediction-models";
 
 export type TennisTab = "news" | "matches" | "tournaments" | "rankings" | "players";
 export type TennisTournamentTab = "results" | "info" | "players";
@@ -75,7 +77,7 @@ const text = {
     bestOdds: "Best odds",
     bookmakers: "books",
     score: "Set score",
-    confidence: "Confidence",
+    confidence: "Win probability",
     reasoning: "Reasoning",
     surfaceStrength: "Surface strength",
     importantTournaments: "Important tournaments",
@@ -142,8 +144,8 @@ const text = {
     bestOdds: "Beste Quote",
     bookmakers: "Anbieter",
     score: "Satzscore",
-    confidence: "Sicherheit",
-    reasoning: "Begrundung",
+    confidence: "Siegchance",
+    reasoning: "Begründung",
     surfaceStrength: "Belagstarke",
     importantTournaments: "Wichtige Turniere",
     tournamentProfile: "Turnierprofil",
@@ -541,7 +543,10 @@ function TennisMatchesSection({ locale, matches }: { locale: Locale; matches: Sp
         <div>
           <p>{copy.matches}</p>
         </div>
-        <strong>{copy.tennis}</strong>
+        <div className="fixturePanelModelTools">
+          <strong>{copy.tennis}</strong>
+          <PredictionModelSelector compact locale={locale} />
+        </div>
       </div>
       <div className="fixtureGrid sportschauFixtureList">
         {matches.map((match) => (
@@ -610,18 +615,36 @@ function TennisPrediction({ locale, match }: { locale: Locale; match: SportApiMa
   const reasoning = locale === "de"
     ? `${winner} liegt vorne, weil Ranking, Belagprofil, Form und Return-Stabilitat im Modell besser zusammenpassen.`
     : `${winner} leads because ranking, surface profile, form and return stability fit the model better.`;
+  const variants = buildModelPredictions({
+    baseConfidence: confidence,
+    basePick: winner,
+    baseReason: reasoning,
+    baseScore: score,
+    homeName: match.homeName,
+    awayName: match.awayName,
+    locale,
+    seed: getTennisPredictionSeed(`${match.id}:${match.homeName}:${match.awayName}`),
+    sport: "tennis"
+  });
 
   return (
-    <div className="fixturePredictionMain tennisPredictionMain">
-      <span>{copy.prediction}</span>
-      <div className="predictionMetrics">
-        <div><small>{copy.pick}</small><strong>{winner}</strong></div>
-        <div><small>{copy.score}</small><strong>{score}</strong></div>
-        <div><small>{copy.confidence}</small><strong>{confidence}%</strong></div>
-      </div>
-      <p className="predictionReasoning"><span>{copy.reasoning}</span>{reasoning}</p>
-    </div>
+    <SelectedModelPrediction
+      className="fixturePredictionMain tennisPredictionMain"
+      labels={{
+        pick: copy.pick,
+        prediction: copy.prediction,
+        probability: copy.confidence,
+        reason: copy.reasoning,
+        score: copy.score
+      }}
+      locale={locale}
+      variants={variants}
+    />
   );
+}
+
+function getTennisPredictionSeed(value: string) {
+  return value.split("").reduce((total, character) => total + character.charCodeAt(0), 0);
 }
 
 function TennisCompactOddsLine({ locale, match }: { locale: Locale; match: SportApiMatch }) {

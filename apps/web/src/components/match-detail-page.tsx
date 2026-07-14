@@ -21,6 +21,8 @@ import {
 } from "@/lib/sports-api-data";
 import { findTennisPlayerByName, resolveTennisPlayerFlagUrl } from "@/lib/tennis-data";
 import { SportsNewsCards } from "@/components/sports-news-cards";
+import { SelectedModelPrediction, SelectedModelSignal } from "@/components/prediction-model-selector";
+import { buildModelPredictions, type ModelPredictionSet } from "@/lib/prediction-models";
 
 export type MatchDetailTab = "overview" | "comparison" | "stats" | "signal";
 
@@ -52,7 +54,7 @@ const copy = {
   en: {
     back: "Back",
     comparison: "Comparison",
-    confidence: "Confidence",
+    confidence: "Win probability",
     datePending: "Date pending",
     h2h: "H2H & trend",
     live: "Live",
@@ -83,7 +85,7 @@ const copy = {
   de: {
     back: "Zurück",
     comparison: "Vergleich",
-    confidence: "Sicherheit",
+    confidence: "Siegchance",
     datePending: "Termin offen",
     h2h: "H2H & Trend",
     live: "Live",
@@ -138,6 +140,17 @@ export async function SportMatchDetailPage({
   const text = copy[locale];
   const activeTab = isMatchTab(tab) ? tab : "overview";
   const prediction = buildPrediction(context);
+  const predictionVariants = buildModelPredictions({
+    baseConfidence: Number.parseInt(prediction.confidence, 10),
+    basePick: prediction.pick,
+    baseReason: prediction.reason,
+    baseScore: prediction.score,
+    homeName: context.match.homeName,
+    awayName: context.match.awayName,
+    locale,
+    seed: stringSeed(`${context.match.id}:${context.match.homeName}:${context.match.awayName}`),
+    sport: context.sport
+  });
   const metrics = buildMetrics(context);
   const backHref = getBackHref(context);
   const matchNews = activeTab === "overview" ? await getMatchNews(context) : [];
@@ -198,7 +211,7 @@ export async function SportMatchDetailPage({
       {activeTab === "overview" ? (
         <>
           <section className="footballPanel matchDetailGrid">
-            <PredictionPanel context={context} locale={locale} prediction={prediction} />
+            <PredictionPanel context={context} locale={locale} variants={predictionVariants} />
             <ComparisonPanel locale={locale} metrics={metrics.slice(0, 4)} />
           </section>
           <MatchNewsPanel locale={locale} newsItems={matchNews} />
@@ -214,7 +227,7 @@ export async function SportMatchDetailPage({
       ) : null}
 
       {activeTab === "signal" ? (
-        <SignalPanel context={context} locale={locale} prediction={prediction} />
+        <SignalPanel context={context} locale={locale} prediction={prediction} variants={predictionVariants} />
       ) : null}
     </main>
   );
@@ -223,24 +236,29 @@ export async function SportMatchDetailPage({
 function PredictionPanel({
   context,
   locale,
-  prediction
+  variants
 }: {
   context: MatchContext;
   locale: Locale;
-  prediction: Prediction;
+  variants: ModelPredictionSet;
 }) {
   const text = copy[locale];
   const contextRows = getPredictionContextRows(context, locale);
 
   return (
-    <article className="matchDetailPrediction">
-      <span>{text.prediction}</span>
-      <div className="predictionMetrics">
-        <div><small>{text.pick}</small><strong>{prediction.pick}</strong></div>
-        <div><small>{text.score}</small><strong>{prediction.score}</strong></div>
-        <div><small>{text.confidence}</small><strong>{prediction.confidence}</strong></div>
-      </div>
-      <p className="predictionReasoning"><span>{text.reasoning}</span>{prediction.reason}</p>
+    <SelectedModelPrediction
+      className="matchDetailPrediction"
+      labels={{
+        pick: text.pick,
+        prediction: text.prediction,
+        probability: text.confidence,
+        reason: text.reasoning,
+        score: text.score
+      }}
+      locale={locale}
+      showSelector
+      variants={variants}
+    >
       <div className="predictionContextGrid">
         {contextRows.map((row) => (
           <div key={row.label}>
@@ -249,7 +267,7 @@ function PredictionPanel({
           </div>
         ))}
       </div>
-    </article>
+    </SelectedModelPrediction>
   );
 }
 
@@ -352,26 +370,22 @@ function StatsPanel({ context, locale, metrics }: { context: MatchContext; local
   );
 }
 
-function SignalPanel({ context, locale, prediction }: { context: MatchContext; locale: Locale; prediction: Prediction }) {
+function SignalPanel({
+  context,
+  locale,
+  prediction,
+  variants
+}: {
+  context: MatchContext;
+  locale: Locale;
+  prediction: Prediction;
+  variants: ModelPredictionSet;
+}) {
   const text = copy[locale];
-  const signals = getSignalRows(context, prediction, locale);
+  const staticSignals = getSignalRows(context, prediction, locale).slice(2);
 
   return (
-    <section className="footballPanel matchDetailSignalPanel">
-      <div className="sportschauSectionTitle">
-        <span>{text.modelSignal}</span>
-        <h2>{prediction.pick}</h2>
-      </div>
-      <div className="signalGrid">
-        {signals.map((signal) => (
-          <article className="signalCard" key={signal.label}>
-            <span />
-            <h3>{signal.label}</h3>
-            <p>{signal.text}</p>
-          </article>
-        ))}
-      </div>
-    </section>
+    <SelectedModelSignal eyebrow={text.modelSignal} locale={locale} staticSignals={staticSignals} variants={variants} />
   );
 }
 

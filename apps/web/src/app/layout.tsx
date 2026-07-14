@@ -4,10 +4,12 @@ import { CookieConsent } from "@/components/cookie-consent";
 import { HtmlLangSync } from "@/components/html-lang-sync";
 import { LocaleProvider } from "@/components/locale-provider";
 import { NewsletterSignupModal } from "@/components/newsletter-signup-modal";
+import { PredictionModelProvider } from "@/components/prediction-model-selector";
 import { SiteChrome } from "@/components/site-chrome";
 import { TimeZoneProvider } from "@/components/time-zone-provider";
 import "./globals.css";
 import "./sportschau-nav.css";
+import "./prediction-layout.css";
 
 const GA_MEASUREMENT_ID_PATTERN = /^G-[A-Z0-9]+$/i;
 
@@ -65,10 +67,12 @@ export default function RootLayout({ children }: Readonly<{ children: ReactNode 
       <body>
         <LocaleProvider>
           <TimeZoneProvider>
-            <HtmlLangSync />
-            <SiteChrome>{children}</SiteChrome>
-            <CookieConsent measurementId={googleAnalyticsMeasurementId} />
-            <NewsletterSignupModal />
+            <PredictionModelProvider>
+              <HtmlLangSync />
+              <SiteChrome>{children}</SiteChrome>
+              <CookieConsent measurementId={googleAnalyticsMeasurementId} />
+              <NewsletterSignupModal />
+            </PredictionModelProvider>
           </TimeZoneProvider>
         </LocaleProvider>
       </body>

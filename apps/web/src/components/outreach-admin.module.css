@@ -1,0 +1,274 @@
+.shell {
+  background:
+    radial-gradient(circle at 12% 0%, rgba(24, 216, 137, 0.14), transparent 34rem),
+    linear-gradient(180deg, #07110c 0%, #050806 42%, #08100c 100%);
+  color: #f6fff8;
+  min-height: 100vh;
+  padding: 48px clamp(18px, 4vw, 64px) 80px;
+}
+
+.header {
+  align-items: flex-end;
+  display: flex;
+  gap: 24px;
+  justify-content: space-between;
+  margin: 0 auto 30px;
+  max-width: 1480px;
+}
+
+.eyebrow {
+  color: #65e6a8;
+  display: block;
+  font-size: 0.72rem;
+  font-weight: 900;
+  letter-spacing: 0.16em;
+  margin-bottom: 10px;
+  text-transform: uppercase;
+}
+
+.header h1 {
+  font-size: clamp(2.2rem, 5vw, 4.8rem);
+  letter-spacing: -0.06em;
+  line-height: 0.94;
+  margin: 0;
+}
+
+.header p {
+  color: #a7b8ad;
+  margin: 14px 0 0;
+  max-width: 740px;
+}
+
+.headerActions,
+.prospectActions,
+.draftActions,
+.badgeRow {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.loginCard {
+  background: rgba(12, 24, 17, 0.9);
+  border: 1px solid rgba(125, 245, 193, 0.2);
+  border-radius: 24px;
+  box-shadow: 0 30px 100px rgba(0, 0, 0, 0.38);
+  display: grid;
+  gap: 22px;
+  margin: 12vh auto 0;
+  max-width: 580px;
+  padding: clamp(24px, 5vw, 46px);
+}
+
+.loginCard h2 { font-size: 1.7rem; margin: 0; }
+.loginCard p { color: #9caf9f; margin: 7px 0 0; }
+.lockIcon { color: #7df5c1; font-size: 2.4rem; }
+
+.loginCard form,
+.draftCard,
+.approvalPanel {
+  display: grid;
+  gap: 16px;
+}
+
+.shell label {
+  display: grid;
+  gap: 7px;
+}
+
+.shell label > span,
+.prospectMeta > div > span,
+.draftHeader > div > span {
+  color: #8fa398;
+  font-size: 0.7rem;
+  font-weight: 900;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.shell input,
+.shell select,
+.shell textarea {
+  background: rgba(255, 255, 255, 0.045);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 12px;
+  color: #f6fff8;
+  font: inherit;
+  outline: none;
+  padding: 12px 14px;
+  transition: border-color 150ms ease, box-shadow 150ms ease;
+  width: 100%;
+}
+
+.shell select option { background: #101c16; }
+.shell textarea { line-height: 1.55; resize: vertical; }
+.shell input:focus,
+.shell select:focus,
+.shell textarea:focus { border-color: #43d99a; box-shadow: 0 0 0 3px rgba(67, 217, 154, 0.12); }
+.shell input:disabled,
+.shell textarea:disabled { opacity: 0.58; }
+
+.primaryButton,
+.secondaryButton,
+.ghostButton,
+.dangerButton,
+.approveButton {
+  border-radius: 999px;
+  cursor: pointer;
+  font: inherit;
+  font-size: 0.78rem;
+  font-weight: 900;
+  min-height: 40px;
+  padding: 9px 17px;
+}
+
+.primaryButton,
+.approveButton { background: #7df5c1; border: 1px solid #7df5c1; color: #06110b; }
+.secondaryButton { background: rgba(125, 245, 193, 0.08); border: 1px solid rgba(125, 245, 193, 0.28); color: #baffdc; }
+.ghostButton { background: transparent; border: 1px solid rgba(255, 255, 255, 0.13); color: #dceae1; }
+.dangerButton { background: rgba(255, 98, 77, 0.08); border: 1px solid rgba(255, 98, 77, 0.26); color: #ff9c8e; }
+.primaryButton:disabled,
+.secondaryButton:disabled,
+.ghostButton:disabled,
+.dangerButton:disabled,
+.approveButton:disabled { cursor: not-allowed; opacity: 0.38; }
+
+.statusLine {
+  color: #a7b8ad;
+  font-size: 0.8rem;
+  margin: 14px auto;
+  max-width: 1480px;
+}
+
+.statsGrid {
+  display: grid;
+  gap: 14px;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  margin: 0 auto 16px;
+  max-width: 1480px;
+}
+
+.stat {
+  background: rgba(15, 29, 21, 0.82);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 18px;
+  display: grid;
+  gap: 4px;
+  padding: 18px 20px;
+}
+
+.stat span { color: #899c91; font-size: 0.72rem; font-weight: 850; text-transform: uppercase; }
+.stat strong { color: #7df5c1; font-size: 2rem; }
+
+.controlBar {
+  align-items: end;
+  background: rgba(9, 17, 12, 0.88);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 18px;
+  display: grid;
+  gap: 14px;
+  grid-template-columns: minmax(240px, 1fr) minmax(190px, 0.3fr) minmax(220px, 0.35fr);
+  margin: 0 auto;
+  max-width: 1480px;
+  padding: 16px;
+}
+
+.configReady,
+.configWarning {
+  border-radius: 12px;
+  display: grid;
+  gap: 3px;
+  min-height: 44px;
+  padding: 9px 12px;
+}
+.configReady { background: rgba(24, 216, 137, 0.1); color: #90f4c6; }
+.configWarning { background: rgba(245, 201, 90, 0.1); color: #f5d678; }
+.configReady span,
+.configWarning span { font-size: 0.72rem; opacity: 0.72; }
+
+.prospectList { display: grid; gap: 18px; margin: 0 auto; max-width: 1480px; }
+.prospectCard { background: rgba(12, 22, 16, 0.92); border: 1px solid rgba(255, 255, 255, 0.09); border-radius: 24px; overflow: hidden; }
+.prospectHeader { align-items: center; display: grid; gap: 18px; grid-template-columns: auto minmax(0, 1fr) auto; padding: 22px; }
+
+.score {
+  align-content: center;
+  aspect-ratio: 1;
+  background: conic-gradient(#7df5c1 var(--score), rgba(255,255,255,0.07) 0);
+  border-radius: 50%;
+  display: grid;
+  justify-items: center;
+  min-width: 70px;
+  padding: 8px;
+  position: relative;
+}
+.score::before { background: #0c1610; border-radius: inherit; content: ""; inset: 5px; position: absolute; }
+.score strong,
+.score span { position: relative; z-index: 1; }
+.score strong { font-size: 1.25rem; line-height: 1; }
+.score span { color: #8fa398; font-size: 0.58rem; font-weight: 900; text-transform: uppercase; }
+
+.prospectTitle h2 { font-size: 1.5rem; margin: 9px 0 4px; }
+.prospectTitle > a,
+.prospectMeta a,
+.contactList a { color: #7df5c1; text-decoration: none; }
+.statusBadge,
+.neutralBadge,
+.consentBadge,
+.dangerBadge,
+.draftBadge { border-radius: 999px; font-size: 0.64rem; font-weight: 900; padding: 5px 9px; text-transform: uppercase; }
+.statusBadge { background: rgba(110, 231, 255, 0.1); color: #96edff; }
+.neutralBadge { background: rgba(245, 201, 90, 0.1); color: #f5d678; }
+.consentBadge { background: rgba(125, 245, 193, 0.11); color: #9cf7cc; }
+.dangerBadge { background: rgba(255, 98, 77, 0.11); color: #ff9c8e; }
+.draftBadge { background: rgba(255, 255, 255, 0.07); color: #d4e3d9; }
+
+.prospectMeta {
+  border-top: 1px solid rgba(255, 255, 255, 0.07);
+  display: grid;
+  gap: 24px;
+  grid-template-columns: 0.8fr 1.4fr 1fr;
+  padding: 22px;
+}
+.prospectMeta p,
+.prospectMeta ul { color: #a9b9af; font-size: 0.82rem; line-height: 1.55; margin: 9px 0; padding-left: 18px; }
+.prospectMeta p { padding-left: 0; }
+.contactList { list-style: none; padding-left: 0 !important; }
+.contactList li { display: grid; gap: 2px; margin-bottom: 8px; }
+.sourceLink { color: #788d80 !important; font-size: 0.68rem; }
+
+.drafts { background: rgba(0, 0, 0, 0.15); border-top: 1px solid rgba(255, 255, 255, 0.07); padding: 22px; }
+.draftCard { background: rgba(255, 255, 255, 0.025); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 18px; padding: 18px; }
+.draftHeader { align-items: center; display: flex; justify-content: space-between; }
+.draftHeader > div { align-items: center; display: flex; gap: 10px; }
+.draftHeader small { color: #74877b; }
+.draftActions { justify-content: flex-end; }
+.errorMessage { color: #ff9c8e; margin: 0; }
+.noDraft { color: #83978a; margin: 0; }
+
+.approvalPanel { background: rgba(125, 245, 193, 0.045); border: 1px solid rgba(125, 245, 193, 0.16); border-radius: 16px; grid-template-columns: repeat(2, minmax(0, 1fr)); padding: 18px; }
+.approvalPanel > div:first-child { display: grid; gap: 4px; grid-column: 1 / -1; }
+.approvalPanel > div:first-child span { color: #8fa398; font-size: 0.76rem; }
+.approvalPanel label:nth-of-type(2) { grid-column: 1 / -1; }
+.approvalPanel .approveButton { grid-column: 1 / -1; justify-self: end; }
+
+.emptyState { border: 1px dashed rgba(255, 255, 255, 0.14); border-radius: 18px; color: #8ea096; display: grid; gap: 5px; padding: 50px; text-align: center; }
+
+@media (max-width: 900px) {
+  .statsGrid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .controlBar,
+  .prospectMeta { grid-template-columns: 1fr; }
+  .prospectHeader { align-items: start; grid-template-columns: auto minmax(0, 1fr); }
+  .prospectActions { grid-column: 1 / -1; }
+}
+
+@media (max-width: 620px) {
+  .shell { padding: 28px 14px 60px; }
+  .header { align-items: start; flex-direction: column; }
+  .statsGrid { grid-template-columns: 1fr 1fr; }
+  .prospectHeader { grid-template-columns: 1fr; }
+  .score { width: 70px; }
+  .approvalPanel { grid-template-columns: 1fr; }
+  .approvalPanel > * { grid-column: 1 !important; }
+  .draftActions { align-items: stretch; flex-direction: column; }
+}

@@ -16,6 +16,278 @@
   --soft-shadow: 0 18px 48px rgba(0, 0, 0, 0.3);
 }
 
+/* Shared NEXUS / PULSE / EDGE prediction model controls */
+.globalModelBar {
+  --model-accent: #7df5c1;
+  background:
+    linear-gradient(90deg, color-mix(in srgb, var(--model-accent) 9%, transparent), transparent 34%),
+    rgba(7, 14, 20, 0.96);
+  border-bottom: 1px solid color-mix(in srgb, var(--model-accent) 24%, rgba(255, 255, 255, 0.06));
+}
+
+.globalModelBarInner {
+  align-items: center;
+  display: flex;
+  gap: 24px;
+  justify-content: space-between;
+  margin: 0 auto;
+  max-width: 1480px;
+  padding: 10px 24px;
+}
+
+.globalModelCopy {
+  align-items: baseline;
+  display: flex;
+  gap: 14px;
+  min-width: 0;
+}
+
+.globalModelCopy > span,
+.predictionModelControl > span {
+  color: var(--model-accent, #7df5c1);
+  flex: 0 0 auto;
+  font-size: 0.66rem;
+  font-weight: 950;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+}
+
+.globalModelCopy p {
+  color: rgba(248, 251, 255, 0.6);
+  font-size: 0.76rem;
+  font-weight: 760;
+  margin: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.predictionModelControl {
+  align-items: center;
+  display: flex;
+  gap: 12px;
+  justify-content: flex-end;
+  min-width: 0;
+}
+
+.predictionModelSelector {
+  align-items: center;
+  background: rgba(255, 255, 255, 0.035);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 999px;
+  display: inline-flex;
+  gap: 4px;
+  padding: 4px;
+}
+
+.predictionModelSelector button {
+  align-items: center;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  color: rgba(248, 251, 255, 0.58);
+  cursor: pointer;
+  display: inline-flex;
+  font: inherit;
+  font-size: 0.7rem;
+  font-weight: 950;
+  gap: 7px;
+  letter-spacing: 0.08em;
+  min-height: 30px;
+  padding: 5px 11px;
+  transition: background 160ms ease, border-color 160ms ease, color 160ms ease, transform 160ms ease;
+}
+
+.predictionModelSelector button > span {
+  background: var(--model-accent);
+  border-radius: 999px;
+  box-shadow: 0 0 10px color-mix(in srgb, var(--model-accent) 54%, transparent);
+  height: 6px;
+  opacity: 0.62;
+  width: 6px;
+}
+
+.predictionModelSelector button:hover,
+.predictionModelSelector button:focus-visible {
+  border-color: color-mix(in srgb, var(--model-accent) 38%, transparent);
+  color: #f8fbff;
+  outline: none;
+}
+
+.predictionModelSelector button.isActive {
+  background: color-mix(in srgb, var(--model-accent) 13%, rgba(255, 255, 255, 0.035));
+  border-color: color-mix(in srgb, var(--model-accent) 42%, transparent);
+  color: #f8fbff;
+}
+
+.predictionModelSelector button.isActive > span {
+  opacity: 1;
+}
+
+.predictionModelControl.isCompact .predictionModelSelector button {
+  font-size: 0.62rem;
+  min-height: 26px;
+  padding: 3px 8px;
+}
+
+.selectedModelPrediction {
+  --model-accent: #7df5c1;
+}
+
+.selectedModelPredictionHeader {
+  align-items: center;
+  display: flex;
+  gap: 12px;
+  justify-content: space-between;
+  min-width: 0;
+}
+
+.selectedModelPredictionHeader > span {
+  color: var(--model-accent);
+  font-size: 0.7rem;
+  font-weight: 950;
+  letter-spacing: 0.14em;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.selectedModelPrediction .predictionReasoning {
+  border-left-color: var(--model-accent);
+}
+
+.selectedModelPrediction .predictionReasoning > span {
+  color: var(--model-accent);
+}
+
+.modelProbabilityBreakdown {
+  display: grid;
+  gap: 7px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  min-width: 0;
+}
+
+.modelProbabilityBreakdown > div {
+  display: grid;
+  gap: 4px;
+  grid-template-columns: minmax(0, 1fr) auto;
+  min-width: 0;
+}
+
+.modelProbabilityBreakdown small {
+  color: rgba(248, 251, 255, 0.54);
+  font-size: 0.64rem;
+  font-weight: 820;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.modelProbabilityBreakdown strong {
+  color: #f8fbff;
+  font-size: 0.7rem;
+  font-weight: 950;
+}
+
+.modelProbabilityBreakdown > div > span {
+  background: rgba(255, 255, 255, 0.07);
+  border-radius: 999px;
+  grid-column: 1 / -1;
+  height: 4px;
+  overflow: hidden;
+}
+
+.modelProbabilityBreakdown i {
+  background: var(--model-accent);
+  border-radius: inherit;
+  display: block;
+  height: 100%;
+}
+
+.modelProbabilityBreakdown.isCompact {
+  gap: 5px;
+}
+
+.selectedHomePrediction {
+  border-left-color: var(--model-accent);
+}
+
+.selectedHomePrediction > span,
+.selectedHomePrediction p span {
+  color: var(--model-accent);
+}
+
+.selectedHomePrediction .modelProbabilityBreakdown small,
+.selectedHomePrediction .modelProbabilityBreakdown strong {
+  font-size: 0.58rem;
+}
+
+.selectedModelSignal {
+  --model-accent: #7df5c1;
+}
+
+.selectedModelSignal .sportschauSectionTitle > span,
+.selectedModelSignal .signalCard h3 {
+  color: var(--model-accent);
+}
+
+@media (max-width: 900px) {
+  .globalModelBarInner,
+  .globalModelCopy {
+    align-items: stretch;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .globalModelCopy p {
+    white-space: normal;
+  }
+
+  .globalModelBarInner {
+    padding: 10px 14px;
+  }
+
+  .predictionModelControl {
+    align-items: flex-start;
+    flex-direction: column;
+    justify-content: flex-start;
+  }
+}
+
+@media (max-width: 720px) {
+  .predictionModelSelector {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    width: 100%;
+  }
+
+  .predictionModelSelector button {
+    justify-content: center;
+    min-width: 0;
+    padding-left: 6px;
+    padding-right: 6px;
+  }
+
+  .selectedModelPredictionHeader {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .selectedModelPredictionHeader .predictionModelControl,
+  .selectedModelPredictionHeader .predictionModelSelector {
+    width: 100%;
+  }
+
+  .modelProbabilityBreakdown {
+    grid-template-columns: 1fr;
+  }
+
+  .selectedHomePrediction .modelProbabilityBreakdown {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
 .cookieConsent {
   align-items: center;
   background:
@@ -1905,6 +2177,301 @@ a {
 
   .forecastPick {
     align-items: flex-start;
+  }
+}
+
+/* Shared AI prediction layout: football, NFL, NBA, tennis and match details. */
+.selectedModelPrediction {
+  display: grid;
+  gap: 12px;
+  min-width: 0;
+  width: 100%;
+}
+
+.selectedModelPredictionHeader {
+  min-height: 34px;
+}
+
+.selectedModelPredictionTitle {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+}
+
+.selectedModelPredictionTitle > span {
+  color: var(--model-accent);
+  font-size: 0.72rem;
+  font-weight: 950;
+  letter-spacing: 0.14em;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.selectedModelPredictionTitle > small {
+  color: rgba(248, 251, 255, 0.52);
+  font-size: 0.68rem;
+  font-weight: 720;
+  line-height: 1.35;
+}
+
+.predictionSummary {
+  display: grid;
+  gap: 10px;
+  grid-template-columns: minmax(0, 1.4fr) minmax(90px, 0.7fr) minmax(110px, 0.8fr);
+  min-width: 0;
+}
+
+.predictionSummaryCard {
+  align-content: center;
+  background: rgba(255, 255, 255, 0.045);
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  border-radius: 8px;
+  display: grid;
+  gap: 5px;
+  min-height: 66px;
+  min-width: 0;
+  padding: 11px 12px;
+}
+
+.predictionSummaryCard.isPick {
+  background:
+    linear-gradient(135deg, color-mix(in srgb, var(--model-accent) 12%, transparent), transparent 72%),
+    rgba(255, 255, 255, 0.045);
+  border-color: color-mix(in srgb, var(--model-accent) 22%, rgba(255, 255, 255, 0.08));
+}
+
+.predictionSummaryCard small {
+  color: rgba(248, 251, 255, 0.53);
+  font-size: 0.66rem;
+  font-weight: 900;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.predictionSummaryCard strong {
+  color: #f8fbff;
+  font-size: clamp(0.98rem, 1.25vw, 1.16rem);
+  font-weight: 920;
+  line-height: 1.2;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.predictionSummaryCard.isConfidence strong {
+  color: var(--model-accent);
+}
+
+.predictionProbabilitySection {
+  background: rgba(4, 12, 19, 0.24);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 8px;
+  display: grid;
+  gap: 10px;
+  min-width: 0;
+  padding: 11px 12px 12px;
+}
+
+.predictionSectionHeading {
+  align-items: baseline;
+  display: flex;
+  gap: 10px;
+  justify-content: space-between;
+  min-width: 0;
+}
+
+.predictionSectionHeading > span {
+  color: var(--model-accent);
+  font-size: 0.65rem;
+  font-weight: 950;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.predictionSectionHeading > small {
+  color: rgba(248, 251, 255, 0.42);
+  font-size: 0.62rem;
+  font-weight: 760;
+  text-align: right;
+}
+
+.selectedModelPrediction .modelProbabilityBreakdown {
+  gap: 8px;
+}
+
+.selectedModelPrediction .modelProbabilityBreakdown > div {
+  background: rgba(255, 255, 255, 0.035);
+  border: 1px solid rgba(255, 255, 255, 0.065);
+  border-radius: 7px;
+  gap: 7px;
+  min-height: 55px;
+  padding: 9px 10px;
+}
+
+.selectedModelPrediction .modelProbabilityBreakdown > div.isLeading {
+  background: color-mix(in srgb, var(--model-accent) 8%, rgba(255, 255, 255, 0.035));
+  border-color: color-mix(in srgb, var(--model-accent) 25%, transparent);
+}
+
+.selectedModelPrediction .modelProbabilityBreakdown small {
+  color: rgba(248, 251, 255, 0.64);
+  font-size: 0.66rem;
+}
+
+.selectedModelPrediction .modelProbabilityBreakdown strong {
+  color: #f8fbff;
+  font-size: 0.76rem;
+}
+
+.selectedModelPrediction .modelProbabilityBreakdown > div.isLeading strong {
+  color: var(--model-accent);
+}
+
+.selectedModelPrediction .modelProbabilityBreakdown > div > span {
+  height: 5px;
+}
+
+.selectedModelPrediction .predictionReasoning {
+  border-left: 3px solid var(--model-accent);
+  display: grid;
+  gap: 5px;
+  padding: 11px 12px;
+}
+
+.selectedModelPrediction .predictionReasoning > span {
+  margin: 0;
+}
+
+.selectedModelPrediction .predictionReasoning > p {
+  margin: 0;
+}
+
+.matchDetailGrid {
+  align-items: stretch;
+}
+
+.matchDetailPrediction.selectedModelPrediction {
+  align-content: stretch;
+  gap: 16px;
+  grid-template-rows: auto auto auto minmax(94px, 0.75fr) minmax(112px, 0.85fr);
+  height: 100%;
+}
+
+.matchDetailPrediction .predictionSummaryCard {
+  min-height: 86px;
+  padding: 14px 15px;
+}
+
+.matchDetailPrediction .predictionSummaryCard.isPick strong {
+  font-size: clamp(1.05rem, 1.55vw, 1.35rem);
+}
+
+.matchDetailPrediction .predictionProbabilitySection {
+  align-content: center;
+  padding: 14px;
+}
+
+.matchDetailPrediction .modelProbabilityBreakdown > div {
+  align-content: center;
+  min-height: 66px;
+  padding: 11px 12px;
+}
+
+.matchDetailPrediction .predictionReasoning {
+  align-content: center;
+  font-size: 0.84rem;
+  min-height: 94px;
+  padding: 14px 15px;
+}
+
+.matchDetailPrediction .predictionContextGrid {
+  align-self: stretch;
+  margin-top: 0;
+  min-height: 112px;
+}
+
+.matchDetailPrediction .predictionContextGrid > div {
+  align-content: center;
+  background:
+    linear-gradient(145deg, color-mix(in srgb, var(--model-accent) 7%, transparent), transparent 76%),
+    rgba(255, 255, 255, 0.035);
+  border-color: color-mix(in srgb, var(--model-accent) 17%, rgba(255, 255, 255, 0.07));
+  padding: 15px;
+}
+
+.matchDetailPrediction .predictionContextGrid small {
+  color: var(--model-accent);
+}
+
+@media (max-width: 900px) {
+  .matchDetailPrediction.selectedModelPrediction {
+    grid-template-rows: none;
+    height: auto;
+  }
+}
+
+@media (max-width: 620px) {
+  .predictionSummary {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .predictionSummaryCard.isPick {
+    grid-column: 1 / -1;
+  }
+
+  .predictionSectionHeading {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 3px;
+  }
+
+  .predictionSectionHeading > small {
+    text-align: left;
+  }
+
+  .selectedModelPrediction .modelProbabilityBreakdown {
+    grid-template-columns: 1fr;
+  }
+
+  .selectedModelPredictionTitle > small {
+    display: none;
+  }
+
+  .matchDetailPrediction,
+  .matchDetailComparison {
+    padding: 16px;
+  }
+}
+
+.homeHighlightPrediction.selectedHomePrediction {
+  border-left-color: var(--model-accent);
+}
+
+.homeHighlightPrediction.selectedHomePrediction > span,
+.homeHighlightPrediction.selectedHomePrediction p span {
+  color: var(--model-accent);
+}
+
+.fixturePanelModelTools {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  justify-content: flex-end;
+}
+
+@media (max-width: 720px) {
+  .footballPanelHeader {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .fixturePanelModelTools,
+  .fixturePanelModelTools .predictionModelControl,
+  .fixturePanelModelTools .predictionModelSelector {
+    justify-content: stretch;
+    width: 100%;
   }
 }
 

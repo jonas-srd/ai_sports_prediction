@@ -22,7 +22,8 @@ const queues = [
   "predictions",
   "odds-refresh",
   "scoring",
-  "backups"
+  "backups",
+  "outreach"
 ];
 
 const workers = queues.map((queueName) => new Worker(
@@ -99,7 +100,32 @@ async function runQueuedJob(queueName: string, jobName: string, data: unknown): 
     return;
   }
 
+  if (queueName === "outreach" && jobName === "discover-editorial-prospects") {
+    const { runEditorialOutreachResearch } = await import("./editorial-outreach-agent");
+    const result = await runEditorialOutreachResearch(db);
+    console.log("Editorial outreach research finished:", result);
+    return;
+  }
+
+  if (queueName === "outreach" && jobName === "send-approved-editorial-outreach") {
+    const draftId = readRequiredString(data, "draftId");
+    const { sendEditorialOutreach } = await import("./jobs/send-editorial-outreach");
+    await sendEditorialOutreach(draftId);
+    return;
+  }
+
   throw new Error(`No handler registered for ${queueName}:${jobName} with payload ${JSON.stringify(data)}`);
+}
+
+function readRequiredString(data: unknown, key: string): string {
+  if (!data || typeof data !== "object") {
+    throw new Error(`Queued job payload must be an object containing ${key}.`);
+  }
+  const value = (data as Record<string, unknown>)[key];
+  if (typeof value !== "string" || !value.trim()) {
+    throw new Error(`Queued job payload must contain a non-empty ${key}.`);
+  }
+  return value.trim();
 }
 
 async function registerRecurringJobs(): Promise<void> {

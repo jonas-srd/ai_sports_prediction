@@ -23,6 +23,8 @@ import {
   type SportApiTeam
 } from "@/lib/sports-api-data";
 import { SportsNewsCards } from "@/components/sports-news-cards";
+import { PredictionModelSelector, SelectedModelPrediction } from "@/components/prediction-model-selector";
+import { buildModelPredictions } from "@/lib/prediction-models";
 
 const labels = {
   en: {
@@ -85,7 +87,7 @@ const labels = {
     cupPredictions: "Cup predictions",
     previousMatchday: "Previous",
     nextMatchday: "Next",
-    confidence: "Confidence",
+    confidence: "Win probability",
     predictedScore: "Score",
     pick: "Pick",
     odds: "Odds",
@@ -170,7 +172,7 @@ const labels = {
     cupPredictions: "Pokal-Prognosen",
     previousMatchday: "Zurück",
     nextMatchday: "Weiter",
-    confidence: "Sicherheit",
+    confidence: "Siegchance",
     predictedScore: "Ergebnis",
     pick: "Tipp",
     odds: "Quoten",
@@ -750,7 +752,10 @@ function TeamMatchesSection({
           <p>{text.teamFixtures}</p>
           <span className="dataProviderNote">{competition.name}</span>
         </div>
-        <strong>{team.shortName}</strong>
+        <div className="fixturePanelModelTools">
+          <strong>{team.shortName}</strong>
+          <PredictionModelSelector compact locale={locale} />
+        </div>
       </div>
       <div className="fixtureGrid sportschauFixtureList">
         {fixtures.length > 0 ? (
@@ -938,7 +943,10 @@ function MatchdaySection({
         <div>
           <p>{text.fixturesAndResults}</p>
         </div>
-        <strong>{activeGroup?.label ?? competition.name}</strong>
+        <div className="fixturePanelModelTools">
+          <strong>{activeGroup?.label ?? competition.name}</strong>
+          <PredictionModelSelector compact locale={locale} />
+        </div>
       </div>
       {hasMultipleGroups ? (
         <nav className="matchdayStepper" aria-label={text.selectMatchday}>
@@ -1911,30 +1919,35 @@ function FixtureTeam({
 function FixturePredictionCard({ competition, fixture, locale }: { competition: FootballCompetition; fixture: SportApiMatch; locale: Locale }) {
   const text = labels[locale];
   const prediction = buildFixturePrediction(fixture, competition, locale);
+  const variants = buildModelPredictions({
+    baseConfidence: Number.parseInt(prediction.confidence, 10),
+    basePick: prediction.pick,
+    baseReason: prediction.reasoning,
+    baseScore: prediction.score,
+    homeName: fixture.homeName,
+    awayName: fixture.awayName,
+    locale,
+    seed: getPredictionSeed(`${fixture.id}:${fixture.homeName}:${fixture.awayName}`),
+    sport: "football"
+  });
 
   return (
-    <div className="fixturePredictionMain">
-      <span>{text.predictionSignal}</span>
-      <div className="predictionMetrics">
-        <div>
-          <small>{text.pick}</small>
-          <strong>{prediction.pick}</strong>
-        </div>
-        <div>
-          <small>{text.predictedScore}</small>
-          <strong>{prediction.score}</strong>
-        </div>
-        <div>
-          <small>{text.confidence}</small>
-          <strong>{prediction.confidence}</strong>
-        </div>
-      </div>
-      <p className="predictionReasoning">
-        <span>{text.reasoning}</span>
-        {prediction.reasoning}
-      </p>
-    </div>
+    <SelectedModelPrediction
+      labels={{
+        pick: text.pick,
+        prediction: text.predictionSignal,
+        probability: text.confidence,
+        reason: text.reasoning,
+        score: text.predictedScore
+      }}
+      locale={locale}
+      variants={variants}
+    />
   );
+}
+
+function getPredictionSeed(value: string) {
+  return value.split("").reduce((total, character) => total + character.charCodeAt(0), 0);
 }
 
 function FixtureCompactOddsLine({ fixture, locale }: { fixture: SportApiMatch; locale: Locale }) {

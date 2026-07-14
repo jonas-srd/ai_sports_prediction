@@ -20,6 +20,12 @@ import {
 } from "@/lib/sports-api-data";
 import { getSportsNewsLinks, type SportsNewsItem } from "@/lib/sports-news";
 import { resolveTennisPlayerFlagUrl } from "@/lib/tennis-data";
+import { buildModelPredictions, type ModelPredictionSet } from "@/lib/prediction-models";
+import {
+  PredictionModelSelector,
+  SelectedHomePrediction,
+  SelectedPredictionScore
+} from "@/components/prediction-model-selector";
 
 const homeExperience = {
   en: {
@@ -394,6 +400,7 @@ export async function HomePageContent({ locale }: { locale: Locale }) {
             <p className="sectionKicker">{homeCopy.topGamesEyebrow}</p>
             <h2>{homeCopy.topGamesTitle}</h2>
           </div>
+          <PredictionModelSelector locale={locale} showLabel />
         </div>
         <div className="homeHighlightGrid">
           {matchSections.top.map((highlight) => (
@@ -455,12 +462,7 @@ type HomeMatchHighlight = {
   accent: string;
   href: string;
   match: SportApiMatch;
-  prediction: {
-    confidence: string;
-    pick: string;
-    reason: string;
-    score: string;
-  };
+  prediction: ModelPredictionSet;
   sport: ApiSportId;
   sportLabel: string;
 };
@@ -489,6 +491,7 @@ function getHomeStartCopy(locale: Locale) {
       topGamesTitle: "One top game per sport",
       prediction: "AI prediction",
       confidence: "Confidence",
+      probability: "Win probability",
       reason: "Reasoning"
     },
     de: {
@@ -506,6 +509,7 @@ function getHomeStartCopy(locale: Locale) {
       topGamesTitle: "Ein Topspiel pro Sportart",
       prediction: "KI-Prognose",
       confidence: "Sicherheit",
+      probability: "Siegchance",
       reason: "Begründung"
     }
   }[locale];
@@ -826,55 +830,64 @@ function buildHomePrediction(sport: ApiSportId, match: SportApiMatch, locale: Lo
   const confidence = 57 + ((seed + index * 5) % 18);
   const homeEdge = ((seed % 11) - 5) / 10;
   const favorite = homeEdge >= 0 ? match.homeName : match.awayName;
+  let base: { confidence: number; pick: string; reason: string; score: string };
 
   if (sport === "nfl") {
     const home = 20 + (seed % 14);
     const away = 17 + ((seed + 6) % 13);
-    return {
-      confidence: `${confidence}%`,
+    base = {
+      confidence,
       pick: favorite,
       reason: locale === "de"
         ? "Quarterback-Stabilität, Erholungstage und Defensivdruck geben dem Modell den Ausschlag."
         : "Quarterback stability, rest days and defensive pressure create the model edge.",
       score: `${home}:${away}`
     };
-  }
-
-  if (sport === "nba") {
+  } else if (sport === "nba") {
     const home = 102 + (seed % 18);
     const away = 99 + ((seed + 9) % 17);
-    return {
-      confidence: `${confidence}%`,
+    base = {
+      confidence,
       pick: favorite,
       reason: locale === "de"
         ? "Pace, Rotationstiefe und Rest-Kontext sprechen knapp für diesen Tipp."
         : "Pace, rotation depth and rest context point narrowly toward this pick.",
       score: `${home}:${away}`
     };
-  }
-
-  if (sport === "tennis") {
+  } else if (sport === "tennis") {
     const score = seed % 3 === 0 ? "2:1" : seed % 3 === 1 ? "2:0" : "1:2";
-    return {
-      confidence: `${confidence}%`,
+    base = {
+      confidence,
       pick: favorite,
       reason: locale === "de"
         ? "Belagprofil, aktuelle Form und Return-Stabilität liefern den stärksten Ausschlag."
         : "Surface profile, recent form and return stability create the strongest edge.",
       score
     };
+  } else {
+    const homeGoals = 1 + (seed % 3);
+    const awayGoals = (seed + 1) % 3;
+    base = {
+      confidence,
+      pick: favorite,
+      reason: locale === "de"
+        ? "Formkurve, Heimkontext und Chancenqualität ergeben einen messbaren Vorteil."
+        : "Form curve, home context and chance quality create a measurable edge.",
+      score: `${homeGoals}:${awayGoals}`
+    };
   }
 
-  const homeGoals = 1 + (seed % 3);
-  const awayGoals = (seed + 1) % 3;
-  return {
-    confidence: `${confidence}%`,
-    pick: favorite,
-    reason: locale === "de"
-      ? "Formkurve, Heimkontext und Chancenqualität ergeben einen messbaren Vorteil."
-      : "Form curve, home context and chance quality create a measurable edge.",
-    score: `${homeGoals}:${awayGoals}`
-  };
+  return buildModelPredictions({
+    baseConfidence: base.confidence,
+    basePick: base.pick,
+    baseReason: base.reason,
+    baseScore: base.score,
+    homeName: match.homeName,
+    awayName: match.awayName,
+    locale,
+    seed,
+    sport
+  });
 }
 
 function getStringSeed(value: string) {
@@ -883,6 +896,9 @@ function getStringSeed(value: string) {
 
 function HomeHighlightCard({ highlight, locale }: { highlight: HomeMatchHighlight; locale: Locale }) {
   const copy = getHomeStartCopy(locale);
+  const actualScore = highlight.match.homeScore !== null && highlight.match.awayScore !== null
+    ? `${highlight.match.homeScore}:${highlight.match.awayScore}`
+    : null;
 
   return (
     <Link className="homeHighlightCard" href={highlight.href} style={{ "--accent": highlight.accent } as CSSProperties}>
@@ -895,31 +911,19 @@ function HomeHighlightCard({ highlight, locale }: { highlight: HomeMatchHighligh
           <SportTeamLogo logo={highlight.match.homeLogo} name={highlight.match.homeName} />
           <strong>{highlight.match.homeName}</strong>
         </div>
-        <em>{formatHomeHighlightScore(highlight.match, highlight.prediction.score)}</em>
+        <SelectedPredictionScore actualScore={actualScore} variants={highlight.prediction} />
         <div>
           <SportTeamLogo logo={highlight.match.awayLogo} name={highlight.match.awayName} />
           <strong>{highlight.match.awayName}</strong>
         </div>
       </div>
-      <div className="homeHighlightPrediction">
-        <span>{copy.prediction}</span>
-        <strong>{highlight.prediction.pick}</strong>
-        <small>{highlight.prediction.confidence}</small>
-        <p>
-          <span>{copy.reason}</span>{" "}
-          {highlight.prediction.reason}
-        </p>
-      </div>
+      <SelectedHomePrediction
+        labels={{ prediction: copy.prediction, probability: copy.probability, reason: copy.reason }}
+        locale={locale}
+        variants={highlight.prediction}
+      />
     </Link>
   );
-}
-
-function formatHomeHighlightScore(match: SportApiMatch, predictionScore: string) {
-  if (match.homeScore !== null && match.awayScore !== null) {
-    return `${match.homeScore}:${match.awayScore}`;
-  }
-
-  return predictionScore;
 }
 
 export async function SportPageContent({ locale, sport }: { locale: Locale; sport: SportPageId }) {

@@ -46,8 +46,11 @@ npm run dev
 npm run dev:api
 npm run start:worker
 npm run db:migrate:postgres
+npm run db:migrate:outreach
 npm run backup:postgres
 npm run queue:backup
+npm run outreach:discover
+npm run outreach:backfill-drafts
 npm run typecheck
 ```
 
@@ -92,3 +95,4 @@ See `docs/backup_and_restore.md`.
 - `docs/CLOUDFLARE_TUNNEL.md`
 - `docs/RAILWAY.md`
 - `docs/worldcup2026_benchmark_protocol.md`
+- `docs/editorial_outreach_agent.md`

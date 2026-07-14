@@ -12,6 +12,11 @@ const { Pool } = pg;
 
 export type PostgresDb = PgPool;
 
+export type PostgresPoolOptions = {
+  connectionTimeoutMillis?: number;
+  ssl?: boolean | { rejectUnauthorized: boolean; ca?: string };
+};
+
 export type JobAttemptStatus = "queued" | "running" | "succeeded" | "failed";
 
 export type BackupArtifactInput = {
@@ -135,10 +140,14 @@ export type StoredPredictionInput = {
   rawResponse: unknown;
 };
 
-export function createPostgresPool(connectionString = getPostgresDatabaseUrl()): PostgresDb {
+export function createPostgresPool(
+  connectionString = getPostgresDatabaseUrl(),
+  options: PostgresPoolOptions = {}
+): PostgresDb {
   return new Pool({
     connectionString,
-    ssl: getPostgresSslConfig()
+    connectionTimeoutMillis: options.connectionTimeoutMillis,
+    ssl: options.ssl ?? getPostgresSslConfig()
   });
 }
 

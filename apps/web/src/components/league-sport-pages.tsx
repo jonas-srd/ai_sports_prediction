@@ -5,6 +5,8 @@ import { getSportsNewsLinks } from "@/lib/sports-news";
 import { getSportApiSnapshot, type ApiSportId, type SportApiMatch, type SportApiTeam } from "@/lib/sports-api-data";
 import { getSportMatchHref } from "@/components/match-detail-page";
 import { SportsNewsCards } from "@/components/sports-news-cards";
+import { PredictionModelSelector, SelectedModelPrediction } from "@/components/prediction-model-selector";
+import { buildModelPredictions } from "@/lib/prediction-models";
 
 type LeagueTeam = {
   slug: string;
@@ -122,7 +124,7 @@ const labels = {
     predictionSignal: "AI prediction",
     pick: "Pick",
     predictedScore: "Score",
-    confidence: "Confidence",
+    confidence: "Win probability",
     odds: "Odds",
     bestOdds: "Best odds",
     bookmakers: "books",
@@ -189,7 +191,7 @@ const labels = {
     predictionSignal: "KI-Prognose",
     pick: "Tipp",
     predictedScore: "Ergebnis",
-    confidence: "Sicherheit",
+    confidence: "Siegchance",
     odds: "Quoten",
     bestOdds: "Beste Quote",
     bookmakers: "Anbieter",
@@ -397,7 +399,10 @@ function LeagueMatchesSection<TTeam extends LeagueTeam>({
         <div>
           <p>{text.fixturesAndResults}</p>
         </div>
-        <strong>{title ?? config.title}</strong>
+        <div className="fixturePanelModelTools">
+          <strong>{title ?? config.title}</strong>
+          <PredictionModelSelector compact locale={locale} />
+        </div>
       </div>
       {matches.length > 0 ? (
         <div className="fixtureGrid sportschauFixtureList">
@@ -449,30 +454,35 @@ function LeaguePredictionCard<TTeam extends LeagueTeam>({ config, locale, match 
   const reasoning = locale === "de"
     ? `${winner} liegt im Modell vorne: Bilanz, Formkurve, Heimvorteil und ${config.modelFocus.de.toLowerCase()} geben den Ausschlag.`
     : `${winner} leads the model: record, form trend, home edge and ${config.modelFocus.en.toLowerCase()} drive the projection.`;
+  const variants = buildModelPredictions({
+    baseConfidence: confidence,
+    basePick: winner,
+    baseReason: reasoning,
+    baseScore: score,
+    homeName: match.homeName,
+    awayName: match.awayName,
+    locale,
+    seed: getLeaguePredictionSeed(`${match.id}:${match.homeName}:${match.awayName}`),
+    sport: config.apiSport
+  });
 
   return (
-    <div className="fixturePredictionMain">
-      <span>{text.predictionSignal}</span>
-      <div className="predictionMetrics">
-        <div>
-          <small>{text.pick}</small>
-          <strong>{winner}</strong>
-        </div>
-        <div>
-          <small>{text.predictedScore}</small>
-          <strong>{score}</strong>
-        </div>
-        <div>
-          <small>{text.confidence}</small>
-          <strong>{confidence}%</strong>
-        </div>
-      </div>
-      <p className="predictionReasoning">
-        <span>{text.reasoning}</span>
-        {reasoning}
-      </p>
-    </div>
+    <SelectedModelPrediction
+      labels={{
+        pick: text.pick,
+        prediction: text.predictionSignal,
+        probability: text.confidence,
+        reason: text.reasoning,
+        score: text.predictedScore
+      }}
+      locale={locale}
+      variants={variants}
+    />
   );
+}
+
+function getLeaguePredictionSeed(value: string) {
+  return value.split("").reduce((total, character) => total + character.charCodeAt(0), 0);
 }
 
 function LeagueCompactOddsLine({ locale, match }: { locale: Locale; match: SportApiMatch }) {
