@@ -77,6 +77,13 @@ const BLOCKED_NEWS_TERMS: Record<Locale, string[]> = {
   ]
 };
 
+const TOPIC_RELEVANCE_TERMS: Record<SportsNewsTopic, string[]> = {
+  football: ["football", "soccer", "fussball", "bundesliga", "premier league", "champions league", "uefa", "fifa", "transfer"],
+  nba: ["nba", "basketball", "basketballer"],
+  nfl: ["nfl", "american football", "quarterback", "super bowl"],
+  tennis: ["tennis", "atp", "wta", "grand slam", "wimbledon", "us open", "french open", "australian open"]
+};
+
 export async function getSportsNewsLinks({
   contextName,
   limit = 3,
@@ -97,7 +104,10 @@ export async function getSportsNewsLinks({
 
     if (response?.ok) {
       const xml = await response.text();
-      const items = rankSportsNewsItems(filterSportsNewsItems(parseNewsRss(xml), locale), contextName).slice(0, limit);
+      const items = rankSportsNewsItems(
+        filterSportsNewsItems(parseNewsRss(xml), locale, topic),
+        contextName
+      ).slice(0, limit);
 
       if (items.length > 0) {
         return fillWithFallbackItems(items, topic, locale, contextName, limit);
@@ -120,11 +130,24 @@ function buildNewsQuery(topic: SportsNewsTopic, locale: Locale, contextName?: st
   return [contextQuery, TOPIC_QUERIES[topic][locale], sportingIntent, locale === "de" ? "Nachrichten" : "latest", "when:10d"].filter(Boolean).join(" ");
 }
 
-function filterSportsNewsItems(items: SportsNewsItem[], locale: Locale) {
+function filterSportsNewsItems(items: SportsNewsItem[], locale: Locale, topic: SportsNewsTopic) {
   return items.filter((item) => {
     const searchable = normalizeNewsText(`${item.title} ${item.summary} ${item.source}`);
-    return !BLOCKED_NEWS_TERMS[locale].some((term) => searchable.includes(normalizeNewsText(term)));
+    return !BLOCKED_NEWS_TERMS[locale].some((term) => searchable.includes(normalizeNewsText(term)))
+      && isSportsNewsItemRelevant(item, topic);
   });
+}
+
+export function isSportsNewsItemRelevant(item: SportsNewsItem, topic: SportsNewsTopic, now = Date.now()): boolean {
+  if (item.publishedAt) {
+    const publishedAt = new Date(item.publishedAt).getTime();
+    if (Number.isNaN(publishedAt) || publishedAt < now - 14 * 24 * 60 * 60 * 1000 || publishedAt > now + 60 * 60 * 1000) {
+      return false;
+    }
+  }
+
+  const editorialText = normalizeNewsText(`${item.title} ${item.summary}`);
+  return TOPIC_RELEVANCE_TERMS[topic].some((term) => editorialText.includes(normalizeNewsText(term)));
 }
 
 function rankSportsNewsItems(items: SportsNewsItem[], contextName?: string) {

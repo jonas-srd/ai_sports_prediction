@@ -16,6 +16,7 @@ const db = createPostgresPool();
 const queuePrefix = process.env.QUEUE_KEY_PREFIX ?? "{ai-sports-prediction}";
 const predictionQueue = new Queue("predictions", { connection, prefix: queuePrefix });
 const oddsQueue = new Queue("odds-refresh", { connection, prefix: queuePrefix });
+const marketingQueue = new Queue("marketing", { connection, prefix: queuePrefix });
 
 const queues = [
   "fixture-sync",
@@ -23,7 +24,8 @@ const queues = [
   "odds-refresh",
   "scoring",
   "backups",
-  "outreach"
+  "outreach",
+  "marketing"
 ];
 
 const workers = queues.map((queueName) => new Worker(
@@ -102,7 +104,7 @@ async function runQueuedJob(queueName: string, jobName: string, data: unknown): 
 
   if (queueName === "outreach" && jobName === "discover-editorial-prospects") {
     const { runEditorialOutreachResearch } = await import("./editorial-outreach-agent");
-    const result = await runEditorialOutreachResearch(db);
+    const result = await runEditorialOutreachResearch(db, readOutreachResearchOptions(data));
     console.log("Editorial outreach research finished:", result);
     return;
   }
@@ -114,7 +116,56 @@ async function runQueuedJob(queueName: string, jobName: string, data: unknown): 
     return;
   }
 
+  if (queueName === "marketing" && jobName === "generate-marketing-campaigns") {
+    const { runMarketingCampaignGeneration } = await import("./marketing-agent");
+    const result = await runMarketingCampaignGeneration(db);
+    console.log("Marketing campaign generation finished:", result);
+
+    if ((process.env.MARKETING_PUBLISH_MODE ?? "review").trim().toLowerCase() === "auto") {
+      const { approveMarketingCampaign, publishMarketingCampaign } = await import("./marketing-publishers");
+      for (const campaignId of result.campaignIds) {
+        await approveMarketingCampaign(db, campaignId, "marketing-agent:auto");
+        await publishMarketingCampaign(db, campaignId);
+      }
+    }
+    return;
+  }
+
+  if (queueName === "marketing" && jobName === "publish-approved-marketing-campaigns") {
+    const { publishApprovedMarketingCampaigns } = await import("./marketing-publishers");
+    const results = await publishApprovedMarketingCampaigns(db);
+    console.log("Approved marketing campaign publishing finished:", results);
+    return;
+  }
+
+  if (queueName === "marketing" && jobName === "analyze-marketing-performance") {
+    const { runMarketingPerformanceAgent } = await import("./marketing-performance-agent");
+    const result = await runMarketingPerformanceAgent(db);
+    console.log("Marketing performance analysis finished:", result);
+    return;
+  }
+
   throw new Error(`No handler registered for ${queueName}:${jobName} with payload ${JSON.stringify(data)}`);
+}
+
+function readOutreachResearchOptions(data: unknown): {
+  country?: string;
+  searchLanguage?: string;
+  emailLanguage?: "de" | "en" | "es" | "fr" | "it" | "nl";
+} {
+  const row = data && typeof data === "object" ? data as Record<string, unknown> : {};
+  const emailLanguage = readOptionalString(row.emailLanguage);
+  return {
+    country: readOptionalString(row.country),
+    searchLanguage: readOptionalString(row.searchLanguage),
+    emailLanguage: emailLanguage === "de" || emailLanguage === "en" || emailLanguage === "es" || emailLanguage === "fr" || emailLanguage === "it" || emailLanguage === "nl"
+      ? emailLanguage
+      : undefined
+  };
+}
+
+function readOptionalString(value: unknown): string | undefined {
+  return typeof value === "string" && value.trim() ? value.trim() : undefined;
 }
 
 function readRequiredString(data: unknown, key: string): string {
@@ -156,13 +207,58 @@ async function registerRecurringJobs(): Promise<void> {
       removeOnFail: 100
     }
   );
+
+  if (readBooleanEnv(process.env.MARKETING_AUTOMATION_ENABLED)) {
+    const marketingIntervalMinutes = Number(process.env.MARKETING_AUTOMATION_INTERVAL_MINUTES ?? 180);
+    const marketingEvery = Math.max(
+      15,
+      Number.isFinite(marketingIntervalMinutes) ? marketingIntervalMinutes : 180
+    ) * 60 * 1000;
+    await marketingQueue.add(
+      "generate-marketing-campaigns",
+      {},
+      {
+        jobId: "generate-marketing-campaigns",
+        repeat: { every: marketingEvery },
+        removeOnComplete: 50,
+        removeOnFail: 100
+      }
+    );
+  }
+
+  if (readBooleanEnv(process.env.MARKETING_ANALYTICS_ENABLED)) {
+    const analyticsIntervalMinutes = Number(process.env.MARKETING_ANALYTICS_INTERVAL_MINUTES ?? 360);
+    const analyticsEvery = Math.max(
+      30,
+      Number.isFinite(analyticsIntervalMinutes) ? analyticsIntervalMinutes : 360
+    ) * 60 * 1000;
+    await marketingQueue.add(
+      "analyze-marketing-performance",
+      {},
+      {
+        jobId: "analyze-marketing-performance",
+        repeat: { every: analyticsEvery },
+        removeOnComplete: 50,
+        removeOnFail: 100
+      }
+    );
+  }
 }
 
 async function shutdown(): Promise<void> {
   console.log("Shutting down AI Sport Prediction worker");
-  await Promise.all([...workers.map((worker) => worker.close()), predictionQueue.close(), oddsQueue.close()]);
+  await Promise.all([
+    ...workers.map((worker) => worker.close()),
+    predictionQueue.close(),
+    oddsQueue.close(),
+    marketingQueue.close()
+  ]);
   await db.end();
   process.exit(0);
+}
+
+function readBooleanEnv(value: string | undefined): boolean {
+  return ["1", "true", "yes", "on"].includes((value ?? "").trim().toLowerCase());
 }
 
 function parseRedisConnection(redisUrl: string) {

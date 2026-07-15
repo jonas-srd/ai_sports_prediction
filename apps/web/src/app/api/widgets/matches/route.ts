@@ -10,7 +10,7 @@ export async function GET(request: NextRequest) {
   const { searchParams } = request.nextUrl;
   const sport = parseWidgetSport(searchParams.get("sport"));
   const type = parseWidgetType(searchParams.get("type"));
-  const access = verifyWidgetAccess({ limit: 1, request, type });
+  const access = await verifyWidgetAccess({ limit: 1, request, type });
 
   if (!access.ok) {
     return NextResponse.json({
@@ -28,8 +28,11 @@ export async function GET(request: NextRequest) {
   const query = normalizeSearch(searchParams.get("q"));
   const payload = await getPublicWidgetPayload({
     competition: searchParams.get("competition"),
+    language: "en",
     limit: 12,
     matchId: null,
+    matchIds: [],
+    model: "nexus",
     sport,
     type
   });

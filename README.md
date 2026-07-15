@@ -51,6 +51,10 @@ npm run backup:postgres
 npm run queue:backup
 npm run outreach:discover
 npm run outreach:backfill-drafts
+npm run marketing:generate
+npm run marketing:approve -- <campaign-id> <reviewer>
+npm run marketing:publish -- <campaign-id>
+npm run marketing:analyze
 npm run typecheck
 ```
 
@@ -96,3 +100,4 @@ See `docs/backup_and_restore.md`.
 - `docs/RAILWAY.md`
 - `docs/worldcup2026_benchmark_protocol.md`
 - `docs/editorial_outreach_agent.md`
+- `docs/marketing_agent.md`

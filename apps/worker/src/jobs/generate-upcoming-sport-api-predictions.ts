@@ -13,9 +13,13 @@ import { OpenRouterClient } from "@ai-sports-prediction/llm";
 export type SportId = "football" | "nfl" | "nba" | "tennis";
 
 type LeagueRef = {
+  aliases?: string[];
   competition: string;
+  eventCountry?: string;
   id: string;
+  mainStageOnly?: boolean;
   sport: SportId;
+  strictIdentity?: boolean;
 };
 
 export type SportFixture = {
@@ -33,18 +37,18 @@ export type SportFixture = {
 
 const LEAGUES: LeagueRef[] = [
   { sport: "football", id: "4331", competition: "German Bundesliga" },
-  { sport: "football", id: "4470", competition: "DFB-Pokal" },
+  { sport: "football", id: "4485", competition: "DFB-Pokal", aliases: ["DFB Pokal"], eventCountry: "Germany", strictIdentity: true },
   { sport: "football", id: "4328", competition: "English Premier League" },
-  { sport: "football", id: "4482", competition: "FA Cup" },
+  { sport: "football", id: "4482", competition: "FA Cup", aliases: ["English FA Cup"], eventCountry: "England", strictIdentity: true },
   { sport: "football", id: "4335", competition: "Spanish La Liga" },
-  { sport: "football", id: "4483", competition: "Copa del Rey" },
+  { sport: "football", id: "4483", competition: "Copa del Rey", eventCountry: "Spain", strictIdentity: true },
   { sport: "football", id: "4334", competition: "French Ligue 1" },
-  { sport: "football", id: "4484", competition: "Coupe de France" },
+  { sport: "football", id: "4484", competition: "Coupe de France", eventCountry: "France", strictIdentity: true },
   { sport: "football", id: "4332", competition: "Italian Serie A" },
-  { sport: "football", id: "4485", competition: "Coppa Italia" },
-  { sport: "football", id: "4480", competition: "UEFA Champions League" },
-  { sport: "football", id: "4481", competition: "UEFA Europa League" },
-  { sport: "football", id: "4486", competition: "UEFA Conference League" },
+  { sport: "football", id: "4506", competition: "Coppa Italia", eventCountry: "Italy", strictIdentity: true },
+  { sport: "football", id: "4480", competition: "UEFA Champions League", aliases: ["Champions League"], eventCountry: "Europe", mainStageOnly: true, strictIdentity: true },
+  { sport: "football", id: "4481", competition: "UEFA Europa League", aliases: ["Europa League"], eventCountry: "Europe", strictIdentity: true },
+  { sport: "football", id: "5071", competition: "UEFA Conference League", aliases: ["UEFA Europa Conference League", "Europa Conference League"], eventCountry: "Europe", strictIdentity: true },
   { sport: "nfl", id: "4391", competition: "NFL" },
   { sport: "nba", id: "4387", competition: "NBA" },
   { sport: "tennis", id: "4464", competition: "ATP" },
@@ -166,8 +170,77 @@ async function fetchLeagueFixtures(apiKey: string, league: LeagueRef): Promise<S
 
   return rows
     .flat()
+    .filter((row) => matchesLeagueFixtureRow(row, league))
     .map((row) => normalizeFixture(row, league))
     .filter((fixture): fixture is SportFixture => Boolean(fixture));
+}
+
+function matchesLeagueFixtureRow(row: any, league: LeagueRef) {
+  const rowLeagueId = readString(row.idLeague ?? row.leagueId ?? row.league_id);
+  if (rowLeagueId && rowLeagueId !== league.id) {
+    return false;
+  }
+
+  if (!league.strictIdentity) {
+    return matchesRequestedCompetitionStage(row, league);
+  }
+
+  const rowLeagueName = normalizeComparableName(readString(row.strLeague ?? row.league ?? row.leagueName));
+  const rowCountry = normalizeComparableName(readString(row.strCountry ?? row.country));
+  const rowSport = normalizeComparableName(readString(row.strSport ?? row.sport));
+  const expectedNames = [league.competition, ...(league.aliases ?? [])]
+    .map(normalizeComparableName);
+  const exactLeagueName = !rowLeagueName || expectedNames.includes(rowLeagueName);
+  const exactCountry = Boolean(
+    league.eventCountry &&
+    rowCountry &&
+    rowCountry === normalizeComparableName(league.eventCountry)
+  );
+  const exactSport = !rowSport || league.sport !== "football" || rowSport === "soccer";
+
+  if (rowLeagueId === league.id) {
+    return exactLeagueName &&
+      exactSport &&
+      (!rowCountry || !league.eventCountry || exactCountry) &&
+      matchesRequestedCompetitionStage(row, league);
+  }
+
+  return Boolean(
+    league.eventCountry &&
+    exactLeagueName &&
+    exactCountry &&
+    exactSport &&
+    matchesRequestedCompetitionStage(row, league)
+  );
+}
+
+function matchesRequestedCompetitionStage(row: any, league: LeagueRef) {
+  if (!league.mainStageOnly) {
+    return true;
+  }
+
+  const stageText = [
+    row.strStage,
+    row.strRound,
+    row.strEvent,
+    row.strDescription,
+    row.stage,
+    row.round
+  ].map(readString).join(" ");
+  if (/qualif|prelim|play[ -]?off/i.test(stageText)) {
+    return false;
+  }
+
+  const rawDate = readString(row.strTimestamp ?? row.dateEvent ?? row.date ?? row.timestamp);
+  const eventDate = rawDate ? new Date(rawDate) : null;
+  if (eventDate && Number.isFinite(eventDate.getTime())) {
+    const month = eventDate.getUTCMonth();
+    if (month >= 5 && month <= 7) {
+      return false;
+    }
+  }
+
+  return true;
 }
 
 async function fetchTheSportsDbV1(apiKey: string, path: string, query: Record<string, string>): Promise<any[]> {
@@ -215,7 +288,7 @@ function normalizeFixture(row: any, league: LeagueRef): SportFixture | null {
 
   return {
     id,
-    competition: readString(row.strLeague ?? row.league ?? row.leagueName) || league.competition,
+    competition: league.competition,
     sport: league.sport,
     utcDate,
     homeTeam,
@@ -296,6 +369,15 @@ function findArrays(value: unknown): unknown[][] {
 
 function readString(value: unknown) {
   return typeof value === "string" ? value.trim() : "";
+}
+
+function normalizeComparableName(value: string) {
+  return value
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-zA-Z0-9]+/g, " ")
+    .trim()
+    .toLowerCase();
 }
 
 function readNumber(value: unknown) {

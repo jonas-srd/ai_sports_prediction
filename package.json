@@ -19,6 +19,7 @@
     "start:api": "node scripts/run-with-env.mjs node --import tsx apps/api/src/server.ts",
     "start:worker": "node scripts/run-with-env.mjs node --import tsx apps/worker/src/worker.ts",
     "test:analytics": "node --import tsx apps/web/src/lib/benchmark-analytics.test.ts",
+    "test:admin-access": "node --import tsx --test apps/web/src/lib/admin-session.test.ts apps/web/src/lib/admin-totp.test.ts",
     "test:prediction-models": "node --import tsx apps/web/src/lib/prediction-models.test.ts",
     "test:special": "node --import tsx packages/llm/src/special-questions.test.ts",
     "load:test": "node scripts/load-test.mjs",
@@ -31,7 +32,13 @@
     "outreach:discover": "node scripts/run-with-env.mjs node --import tsx apps/worker/src/jobs/discover-editorial-outreach-cli.ts",
     "outreach:backfill-drafts": "node scripts/run-with-env.mjs node --import tsx apps/worker/src/jobs/backfill-editorial-outreach-drafts.ts",
     "outreach:approve": "node scripts/run-with-env.mjs node --import tsx apps/worker/src/jobs/approve-editorial-outreach-cli.ts",
-    "outreach:send": "node scripts/run-with-env.mjs node --import tsx apps/worker/src/jobs/send-editorial-outreach-cli.ts"
+    "outreach:send": "node scripts/run-with-env.mjs node --import tsx apps/worker/src/jobs/send-editorial-outreach-cli.ts",
+    "marketing:generate": "node scripts/run-with-env.mjs node --import tsx apps/worker/src/jobs/generate-marketing-campaigns-cli.ts",
+    "marketing:approve": "node scripts/run-with-env.mjs node --import tsx apps/worker/src/jobs/approve-marketing-campaign-cli.ts",
+    "marketing:reject": "node scripts/run-with-env.mjs node --import tsx apps/worker/src/jobs/reject-marketing-campaign-cli.ts",
+    "marketing:publish": "node scripts/run-with-env.mjs node --import tsx apps/worker/src/jobs/publish-marketing-campaign-cli.ts",
+    "marketing:publish-approved": "node scripts/run-with-env.mjs node --import tsx apps/worker/src/jobs/publish-approved-marketing-campaigns-cli.ts",
+    "marketing:analyze": "node scripts/run-with-env.mjs node --import tsx apps/worker/src/jobs/analyze-marketing-performance-cli.ts"
   },
   "engines": {
     "node": ">=20"

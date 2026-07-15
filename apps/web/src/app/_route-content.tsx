@@ -19,6 +19,7 @@ import {
   type SportApiMatch
 } from "@/lib/sports-api-data";
 import { getSportsNewsLinks, type SportsNewsItem } from "@/lib/sports-news";
+import { isFinishedMatchStatus, isUpcomingPredictionMatch } from "@/lib/home-content-quality";
 import { resolveTennisPlayerFlagUrl } from "@/lib/tennis-data";
 import { buildModelPredictions, type ModelPredictionSet } from "@/lib/prediction-models";
 import {
@@ -382,7 +383,10 @@ export async function HomePageContent({ locale }: { locale: Locale }) {
         <section className="homeTopGames homeLiveGames" id="live">
           <div className="homeSectionHeader">
             <div>
-              <p className="sectionKicker">{homeCopy.liveGamesEyebrow}</p>
+              <p className="sectionKicker homeLiveKicker">
+                <span aria-hidden="true" className="homeLiveSignal"><i /></span>
+                <span>{homeCopy.liveGamesEyebrow}</span>
+              </p>
               <h2>{homeCopy.liveGamesTitle}</h2>
             </div>
           </div>
@@ -644,11 +648,8 @@ function pickTopHomeMatch(matches: SportApiMatch[], liveHighlights: HomeMatchHig
   const upcoming = matches
     .filter((match) => !liveIds.has(match.id) && !isLiveHomeMatch(match, now) && isUpcomingHomeMatch(match, now))
     .sort(compareSportMatchesByDate);
-  const relevant = matches
-    .filter((match) => !liveIds.has(match.id) && !isFinishedHomeMatch(match.status))
-    .sort(compareSportMatchesByDate);
 
-  return upcoming[0] ?? relevant[0] ?? null;
+  return upcoming[0] ?? null;
 }
 
 function pickRelevantHomeMatch(matches: SportApiMatch[]) {
@@ -664,21 +665,7 @@ function pickRelevantHomeMatch(matches: SportApiMatch[]) {
 }
 
 function isUpcomingHomeMatch(match: SportApiMatch, now: number) {
-  if (isFinishedHomeMatch(match.status)) {
-    return false;
-  }
-
-  if (!match.date) {
-    return true;
-  }
-
-  const time = new Date(match.date).getTime();
-
-  if (Number.isNaN(time)) {
-    return true;
-  }
-
-  return time >= now - 20 * 60 * 1000;
+  return isUpcomingPredictionMatch(match, now);
 }
 
 function isLiveHomeMatch(match: SportApiMatch, now: number) {
@@ -731,24 +718,7 @@ function compareHomeHighlights(left: SportApiMatch, right: SportApiMatch) {
 }
 
 function isFinishedHomeMatch(status: string | null | undefined) {
-  if (!status) {
-    return false;
-  }
-
-  const normalized = status.toLowerCase();
-
-  return [
-    "finished",
-    "full time",
-    "fulltime",
-    "after extra time",
-    "after penalties",
-    "match finished",
-    "ft",
-    "aet",
-    "pen",
-    "final"
-  ].some((label) => normalized === label || normalized.includes(label));
+  return isFinishedMatchStatus(status);
 }
 
 function hydrateHomeHighlightMatch(sport: ApiSportId, match: SportApiMatch): SportApiMatch {

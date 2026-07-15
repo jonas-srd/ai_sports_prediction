@@ -857,7 +857,9 @@ function LeagueFixtureTeam<TTeam extends LeagueTeam>({
   name: string;
 }) {
   const localTeam = findLocalTeam(config.teams, name);
-  const mark = localTeam ? <LeagueTeamLogo team={localTeam} /> : <SportLogo logo={logo} name={name} />;
+  const mark = localTeam
+    ? <LeagueTeamLogo team={{ ...localTeam, apiLogo: logo }} />
+    : <SportLogo logo={logo} name={name} />;
   const content = (
     <>
       {align === "right" ? name : mark}

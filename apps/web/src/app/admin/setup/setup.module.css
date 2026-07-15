@@ -1,0 +1,87 @@
+.page {
+  background: #06130f;
+  color: #eefbf5;
+  font-family: Arial, sans-serif;
+  min-height: 100vh;
+  padding: clamp(28px, 5vw, 72px);
+}
+
+.page > header,
+.grid,
+.page > aside {
+  margin-left: auto;
+  margin-right: auto;
+  max-width: 1000px;
+}
+
+.eyebrow {
+  color: #65e5ad;
+  font-family: monospace;
+  font-size: 12px;
+  font-weight: 900;
+  letter-spacing: 0.15em;
+}
+
+.page h1 {
+  font-size: clamp(38px, 7vw, 66px);
+  letter-spacing: -0.055em;
+  margin: 12px 0;
+}
+
+.page header p,
+.card p,
+.page aside {
+  color: #aebdb6;
+  line-height: 1.55;
+}
+
+.grid {
+  display: grid;
+  gap: 22px;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 360px), 1fr));
+  margin-top: 38px;
+}
+
+.card {
+  background: #0d211a;
+  border: 1px solid rgba(101, 229, 173, 0.24);
+  border-radius: 18px;
+  padding: 24px;
+}
+
+.card h2 {
+  font-size: 18px;
+  overflow-wrap: anywhere;
+}
+
+.card img {
+  background: #fff;
+  border-radius: 12px;
+  display: block;
+  height: auto;
+  margin: 22px auto;
+  max-width: 100%;
+}
+
+.card details {
+  border-top: 1px solid rgba(174, 189, 182, 0.18);
+  padding-top: 14px;
+}
+
+.card summary {
+  cursor: pointer;
+}
+
+.card code {
+  display: block;
+  font-size: 13px;
+  margin-top: 12px;
+  overflow-wrap: anywhere;
+}
+
+.page > aside {
+  background: rgba(255, 190, 77, 0.08);
+  border-left: 3px solid #ffbe4d;
+  margin-top: 28px;
+  padding: 14px 16px;
+}

@@ -99,8 +99,78 @@
         text-transform: uppercase;
       }
 
-      .match,
-      .leaderboardRow {
+      .modelSwitchWrap {
+        align-items: center;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        justify-content: space-between;
+      }
+
+      .modelSwitchLabel {
+        color: var(--muted);
+        font-size: 10px;
+        font-weight: 900;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+      }
+
+      .modelSwitch {
+        background: var(--inset);
+        border: 1px solid var(--inset-border);
+        border-radius: 999px;
+        display: inline-flex;
+        gap: 4px;
+        padding: 4px;
+      }
+
+      .modelButton {
+        align-items: center;
+        background: transparent;
+        border: 1px solid transparent;
+        border-radius: 999px;
+        color: var(--muted);
+        cursor: pointer;
+        display: inline-flex;
+        font: inherit;
+        font-size: 10px;
+        font-weight: 950;
+        gap: 6px;
+        letter-spacing: 0.08em;
+        padding: 7px 10px;
+      }
+
+      .modelButton::before,
+      .modelLabel::before {
+        background: var(--model-accent, var(--accent));
+        border-radius: 999px;
+        content: "";
+        height: 7px;
+        width: 7px;
+      }
+
+      .modelButton:hover,
+      .modelButton:focus-visible,
+      .modelButton.isActive {
+        background: color-mix(in srgb, var(--model-accent, var(--accent)) 15%, transparent);
+        border-color: color-mix(in srgb, var(--model-accent, var(--accent)) 46%, transparent);
+        color: var(--text);
+        outline: none;
+      }
+
+      .modelLabel {
+        align-items: center;
+        color: var(--muted);
+        display: inline-flex;
+        font-size: 10px;
+        font-weight: 950;
+        gap: 6px;
+        letter-spacing: 0.08em;
+        margin: 0 0 8px;
+        text-transform: uppercase;
+      }
+
+      .match {
         background:
           linear-gradient(135deg, var(--panel-strong), var(--panel)),
           var(--panel);
@@ -178,12 +248,6 @@
         height: 78%;
         object-fit: contain;
         width: 78%;
-      }
-
-      .logoFallback {
-        color: var(--accent);
-        font-size: 12px;
-        font-weight: 950;
       }
 
       .versus {
@@ -405,18 +469,6 @@
         line-height: 1.35;
       }
 
-      .leaderboardRow {
-        align-items: center;
-        grid-template-columns: minmax(0, 1fr) auto;
-      }
-
-      .leaderboardRow strong,
-      .leaderboardRow span {
-        overflow: hidden;
-        text-overflow: ellipsis;
-        white-space: nowrap;
-      }
-
       .brand {
         align-items: center;
         border-top: 1px solid var(--line);
@@ -502,6 +554,63 @@
     <script>
       var params = new URLSearchParams(location.search);
       var root = document.getElementById("root");
+      var language = params.get("language") === "de" ? "de" : "en";
+      var modelMode = normalizeModel(params.get("model"));
+      var activeModel = modelMode === "viewer" ? "nexus" : modelMode;
+      var currentPayload = null;
+      var translations = {
+        en: {
+          accessRequired: "This AI Sports Prediction widget requires an active publisher plan.",
+          allSports: "Sports",
+          confidence: "Confidence",
+          draw: "Draw",
+          football: "Football",
+          keyFactorsUnavailable: "No key factors available for this widget configuration.",
+          loading: "Loading AI Sports Prediction widget...",
+          model: "Choose model",
+          modelPredictionUnavailable: "No model prediction available.",
+          modelProbabilitiesUnavailable: "No model probabilities available.",
+          modelReasoning: "Model reasoning",
+          noMatches: "No matches available for this widget configuration.",
+          open: "Open",
+          pick: "Pick",
+          poweredBy: "Powered by AI Sports Prediction",
+          predictions: "predictions",
+          probabilityUnavailable: "No probability data available for this widget configuration.",
+          projectedScore: "Projected score",
+          result: "Result",
+          temporarilyUnavailable: "AI Sports Prediction widget is temporarily unavailable.",
+          versus: "VS",
+          widget: "Widget"
+        },
+        de: {
+          accessRequired: "Dieses AI Sports Prediction Widget benötigt einen aktiven Publisher-Tarif.",
+          allSports: "Sport",
+          confidence: "Konfidenz",
+          draw: "Remis",
+          football: "Fußball",
+          keyFactorsUnavailable: "Für diese Widget-Konfiguration sind keine Schlüsselfaktoren verfügbar.",
+          loading: "AI Sports Prediction Widget wird geladen...",
+          model: "Modell wählen",
+          modelPredictionUnavailable: "Keine Modellprognose verfügbar.",
+          modelProbabilitiesUnavailable: "Keine Modellwahrscheinlichkeiten verfügbar.",
+          modelReasoning: "Modellbegründung",
+          noMatches: "Für diese Widget-Konfiguration sind keine Spiele verfügbar.",
+          open: "Öffnen",
+          pick: "Tipp",
+          poweredBy: "Bereitgestellt von AI Sports Prediction",
+          predictions: "Prognosen",
+          probabilityUnavailable: "Für diese Widget-Konfiguration sind keine Wahrscheinlichkeiten verfügbar.",
+          projectedScore: "Ergebnisidee",
+          result: "Ergebnis",
+          temporarilyUnavailable: "Das AI Sports Prediction Widget ist vorübergehend nicht verfügbar.",
+          versus: "VS",
+          widget: "Widget"
+        }
+      };
+      var copy = translations[language];
+      document.documentElement.lang = language;
+      root.innerHTML = '<p class="empty">' + escapeHtml(copy.loading) + "</p>";
       var palette = resolvePalette({
         accent: cleanColor(params.get("accent")) || "#7df5c1",
         background: cleanColor(params.get("background")) || (params.get("theme") === "light" ? "#ffffff" : "#101f2e"),
@@ -540,7 +649,10 @@
           }
           return response.json();
         })
-        .then(render)
+        .then(function (payload) {
+          currentPayload = payload;
+          render(payload);
+        })
         .catch(function (error) {
           root.innerHTML = renderError(error);
           notifyHeight();
@@ -548,7 +660,7 @@
 
       function buildApiParams() {
         var apiParams = new URLSearchParams();
-        ["type", "sport", "competition", "matchId", "limit", "apiKey", "publisherKey", "sourceOrigin"].forEach(function (key) {
+        ["type", "sport", "language", "model", "competition", "matchId", "matchIds", "limit", "apiKey", "publisherKey", "sourceOrigin"].forEach(function (key) {
           var value = params.get(key);
           if (value) apiParams.set(key, value);
         });
@@ -558,17 +670,20 @@
       function render(payload) {
         var type = payload.widget.type;
         var title = cleanTitle(params.get("title"));
+        var eyebrow = type === "match-list" ? matchListHeaderLabel(payload.widget.sport) : "AI Sports Prediction";
         var html = [
-          '<header class="head"><div><p class="eyebrow">AI Sports Prediction</p>',
+          '<header class="head"><div><p class="eyebrow">' + escapeHtml(eyebrow) + '</p>',
           title ? '<h1>' + escapeHtml(title) + "</h1>" : "",
           '</div><span class="badge">',
-          escapeHtml(payload.widget.sport === "all" ? "Sports" : payload.widget.sport),
+          escapeHtml(payload.widget.sport === "all" ? copy.allSports : sportLabel(payload.widget.sport)),
           "</span></header>"
         ];
 
-        if (type === "leaderboard") {
-          html.push(renderLeaderboard(payload));
-        } else if (type === "win-probability") {
+        if (modelMode === "viewer") {
+          html.push(renderModelSwitch());
+        }
+
+        if (type === "win-probability") {
           html.push(renderWinProbability(payload));
         } else if (type === "key-factors") {
           html.push(renderKeyFactors(payload));
@@ -577,21 +692,50 @@
         }
 
         if (showBranding) {
-          html.push('<footer class="brand"><span>Powered by AI Sports Prediction</span><a href="https://www.ai-sports-prediction.net" target="_blank" rel="noopener noreferrer">Open</a></footer>');
+          html.push('<footer class="brand"><span>' + escapeHtml(copy.poweredBy) + '</span><a href="https://www.ai-sports-prediction.net" target="_blank" rel="noopener noreferrer">' + escapeHtml(copy.open) + "</a></footer>");
         }
 
         root.innerHTML = html.join("");
+        bindModelSwitch();
         notifyHeight();
+      }
+
+      function renderModelSwitch() {
+        var models = [
+          { accent: "#7df5c1", id: "nexus", name: "NEXUS" },
+          { accent: "#58d8ff", id: "pulse", name: "PULSE" },
+          { accent: "#ffc857", id: "edge", name: "EDGE" }
+        ];
+        return [
+          '<div class="modelSwitchWrap"><span class="modelSwitchLabel">',
+          escapeHtml(copy.model),
+          '</span><div class="modelSwitch" role="group" aria-label="',
+          escapeAttribute(copy.model),
+          '">',
+          models.map(function (model) {
+            return '<button class="modelButton' + (model.id === activeModel ? " isActive" : "") + '" data-widget-model="' + model.id + '" style="--model-accent:' + model.accent + '" type="button">' + model.name + "</button>";
+          }).join(""),
+          "</div></div>"
+        ].join("");
+      }
+
+      function bindModelSwitch() {
+        Array.prototype.slice.call(root.querySelectorAll("[data-widget-model]")).forEach(function (button) {
+          button.addEventListener("click", function () {
+            activeModel = normalizeModel(button.getAttribute("data-widget-model"));
+            if (currentPayload) render(currentPayload);
+          });
+        });
       }
 
       function renderError(error) {
         var isAccessError = error && (error.status === 401 || error.status === 402 || error.status === 403);
         var message = isAccessError
-          ? "This AI Sports Prediction widget requires an active publisher plan."
-          : "AI Sports Prediction widget is temporarily unavailable.";
+          ? copy.accessRequired
+          : copy.temporarilyUnavailable;
 
         return [
-          '<header class="head"><div><p class="eyebrow">AI Sports Prediction</p></div><span class="badge">Widget</span></header>',
+          '<header class="head"><div><p class="eyebrow">AI Sports Prediction</p></div><span class="badge">' + escapeHtml(copy.widget) + "</span></header>",
           '<p class="empty">',
           escapeHtml(message),
           "</p>"
@@ -599,19 +743,19 @@
       }
 
       function renderMatches(payload, type) {
-        if (!payload.matches.length) return '<p class="empty">No matches available for this widget configuration.</p>';
+        if (!payload.matches.length) return '<p class="empty">' + escapeHtml(copy.noMatches) + "</p>";
         return payload.matches.map(function (match) {
-          var prediction = match.topPrediction;
-          var status = [match.competition, formatDate(match.date), match.actualScore ? "Result " + match.actualScore : ""].filter(Boolean).join(" · ");
+          var prediction = getSelectedPrediction(match);
+          var status = [match.competition, formatDate(match.date), match.actualScore ? copy.result + " " + match.actualScore : ""].filter(Boolean).join(" · ");
           return [
             '<article class="match"><div class="meta">',
             escapeHtml(status),
             '</div><div class="teams">',
             renderTeam(match.homeTeam, match.homeLogo, match.sport, "home"),
-            '<span class="versus">VS</span>',
+            '<span class="versus">' + escapeHtml(copy.versus) + "</span>",
             renderTeam(match.awayTeam, match.awayLogo, match.sport, "away"),
             "</div>",
-            prediction ? renderPrediction(prediction, type) : '<p class="empty">No model prediction available.</p>',
+            prediction ? renderPrediction(prediction, type) : '<p class="empty">' + escapeHtml(copy.modelPredictionUnavailable) + "</p>",
             prediction && prediction.reason && showReasoning ? renderReasoning(prediction.reason) : "",
             "</article>"
           ].join("");
@@ -619,9 +763,9 @@
       }
 
       function renderWinProbability(payload) {
-        if (!payload.matches.length) return '<p class="empty">No probability data available for this widget configuration.</p>';
+        if (!payload.matches.length) return '<p class="empty">' + escapeHtml(copy.probabilityUnavailable) + "</p>";
         return payload.matches.map(function (match) {
-          var prediction = match.topPrediction;
+          var prediction = getSelectedPrediction(match);
           var probabilities = prediction ? prediction.probabilities : null;
           var rows = probabilities ? getProbabilityRows(match, probabilities) : [];
           var status = [match.competition, formatDate(match.date)].filter(Boolean).join(" · ");
@@ -631,10 +775,11 @@
             escapeHtml(status),
             '</div><div class="teams">',
             renderTeam(match.homeTeam, match.homeLogo, match.sport, "home"),
-            '<span class="versus">VS</span>',
+            '<span class="versus">' + escapeHtml(copy.versus) + "</span>",
             renderTeam(match.awayTeam, match.awayLogo, match.sport, "away"),
             '</div>',
-            rows.length ? '<div class="probabilityList">' + rows.map(renderProbabilityRow).join("") + '</div>' : '<p class="empty">No model probabilities available.</p>',
+            prediction ? renderModelLabel(prediction) : "",
+            rows.length ? '<div class="probabilityList">' + rows.map(renderProbabilityRow).join("") + '</div>' : '<p class="empty">' + escapeHtml(copy.modelProbabilitiesUnavailable) + "</p>",
             prediction && prediction.reason && showReasoning ? renderReasoning(prediction.reason) : "",
             "</article>"
           ].join("");
@@ -642,9 +787,9 @@
       }
 
       function renderKeyFactors(payload) {
-        if (!payload.matches.length) return '<p class="empty">No key factors available for this widget configuration.</p>';
+        if (!payload.matches.length) return '<p class="empty">' + escapeHtml(copy.keyFactorsUnavailable) + "</p>";
         return payload.matches.map(function (match) {
-          var prediction = match.topPrediction;
+          var prediction = getSelectedPrediction(match);
           var factors = prediction && Array.isArray(prediction.keyFactors) ? prediction.keyFactors : [];
           var status = [match.competition, formatDate(match.date)].filter(Boolean).join(" · ");
 
@@ -653,10 +798,11 @@
             escapeHtml(status),
             '</div><div class="teams">',
             renderTeam(match.homeTeam, match.homeLogo, match.sport, "home"),
-            '<span class="versus">VS</span>',
+            '<span class="versus">' + escapeHtml(copy.versus) + "</span>",
             renderTeam(match.awayTeam, match.awayLogo, match.sport, "away"),
             '</div>',
-            factors.length ? '<ul class="factorList">' + factors.map(renderFactor).join("") + '</ul>' : '<p class="empty">No key factors available.</p>',
+            prediction ? renderModelLabel(prediction) : "",
+            factors.length ? '<ul class="factorList">' + factors.map(renderFactor).join("") + '</ul>' : '<p class="empty">' + escapeHtml(copy.keyFactorsUnavailable) + "</p>",
             "</article>"
           ].join("");
         }).join("");
@@ -665,7 +811,7 @@
       function getProbabilityRows(match, probabilities) {
         return [
           { label: match.homeTeam, value: probabilities.home },
-          match.sport === "football" ? { label: "Draw", value: probabilities.draw } : null,
+          match.sport === "football" ? { label: copy.draw, value: probabilities.draw } : null,
           { label: match.awayTeam, value: probabilities.away }
         ].filter(function (row) {
           return row && typeof row.value === "number";
@@ -696,14 +842,11 @@
       }
 
       function renderReasoning(reason) {
-        return '<p class="reason"><span>Model reasoning</span>' + escapeHtml(reason) + "</p>";
+        return '<p class="reason"><span>' + escapeHtml(copy.modelReasoning) + "</span>" + escapeHtml(reason) + "</p>";
       }
 
       function renderTeam(name, logo, sport, side) {
-        var fallback = getInitials(name);
-        var logoHtml = logo
-          ? '<span class="logo"><img alt="" src="' + escapeAttribute(logo) + '" loading="lazy" referrerpolicy="no-referrer" onerror="this.remove();this.parentNode.appendChild(document.createTextNode(\'' + escapeAttribute(fallback) + '\'));this.parentNode.classList.add(\'logoFallback\');"></span>'
-          : '<span class="logo logoFallback">' + escapeHtml(fallback) + "</span>";
+        var logoHtml = '<span class="logo"><img alt="' + escapeAttribute(name + " logo") + '" src="' + escapeAttribute(logo) + '" loading="lazy" referrerpolicy="no-referrer"></span>';
         var nameHtml = '<span><span class="teamName">' + escapeHtml(name) + '</span><span class="teamMeta">' + escapeHtml(sportLabel(sport)) + "</span></span>";
 
         if (side === "away") {
@@ -716,43 +859,47 @@
       function renderPrediction(prediction, type) {
         var confidence = prediction.confidence === null ? null : Math.max(0, Math.min(100, Number(prediction.confidence) || 0));
         return [
-          '<div class="prediction"><div class="predictionItem pickItem"><span class="predictionLabel">Pick</span><strong class="predictionValue">',
+          renderModelLabel(prediction),
+          '<div class="prediction"><div class="predictionItem pickItem"><span class="predictionLabel">' + escapeHtml(copy.pick) + '</span><strong class="predictionValue">',
           escapeHtml(prediction.pick),
-          '</strong></div><div class="predictionItem scoreItem"><span class="predictionLabel">Projected score</span><strong class="predictionValue scoreValue">',
+          '</strong></div><div class="predictionItem scoreItem"><span class="predictionLabel">' + escapeHtml(copy.projectedScore) + '</span><strong class="predictionValue scoreValue">',
           escapeHtml(prediction.score),
-          '</strong></div><div class="predictionItem confidenceItem"><span class="predictionLabel">Confidence</span><div class="confidenceValue"><strong>',
+          '</strong></div><div class="predictionItem confidenceItem"><span class="predictionLabel">' + escapeHtml(copy.confidence) + '</span><div class="confidenceValue"><strong>',
           confidence === null ? "-" : escapeHtml(String(confidence)),
           '</strong><span>',
           confidence === null ? "" : "%",
           "</span></div>",
           confidence === null ? "" : '<div class="confidenceTrack"><span class="confidenceFill" style="width: ' + confidence + '%"></span></div>',
-          "</div></div>",
-          type === "match-list" ? '<div class="meta">' + escapeHtml(prediction.model) + "</div>" : ""
+          "</div></div>"
         ].join("");
       }
 
-      function renderLeaderboard(payload) {
-        if (!payload.leaderboard.length) return '<p class="empty">No leaderboard data available.</p>';
-        return payload.leaderboard.slice(0, Number(params.get("limit")) || 5).map(function (row, index) {
-          return [
-            '<div class="leaderboardRow"><div><strong>#',
-            index + 1,
-            " ",
-            escapeHtml(row.model),
-            '</strong><div class="meta">',
-            escapeHtml(row.provider + " · " + row.predictions + " predictions"),
-            '</div></div><span class="badge">',
-            row.averageConfidence === null ? "-" : escapeHtml(String(row.averageConfidence)) + "%",
-            "</span></div>"
-          ].join("");
-        }).join("");
+      function renderModelLabel(prediction) {
+        var colors = { nexus: "#7df5c1", pulse: "#58d8ff", edge: "#ffc857" };
+        return '<div class="modelLabel" style="--model-accent:' + (colors[prediction.modelKey] || "var(--accent)") + '">' + escapeHtml(prediction.model) + "</div>";
+      }
+
+      function getSelectedPrediction(match) {
+        var predictions = Array.isArray(match.predictions) ? match.predictions : [];
+        return predictions.find(function (prediction) {
+          return prediction.modelKey === activeModel;
+        }) || match.topPrediction || predictions[0] || null;
       }
 
       function sportLabel(sport) {
         if (sport === "nba") return "NBA";
         if (sport === "nfl") return "NFL";
         if (sport === "tennis") return "Tennis";
-        return "Football";
+        return copy.football;
+      }
+
+      function matchListHeaderLabel(sport) {
+        if (sport === "all") return language === "de" ? "Matchliste" : "Match list";
+        return sportLabel(sport);
+      }
+
+      function normalizeModel(value) {
+        return value === "pulse" || value === "edge" || value === "viewer" ? value : "nexus";
       }
 
       function cleanTitle(value) {
@@ -760,20 +907,10 @@
         return /^(undefined|null|false)$/i.test(title) ? "" : title;
       }
 
-      function getInitials(value) {
-        var parts = String(value || "")
-          .replace(/['.]/g, " ")
-          .split(/\s+/)
-          .filter(Boolean);
-        if (!parts.length) return "AI";
-        if (parts.length === 1) return parts[0].slice(0, 3).toUpperCase();
-        return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
-      }
-
       function formatDate(value) {
         if (!value) return "";
         try {
-          return new Intl.DateTimeFormat(undefined, { dateStyle: "medium", timeStyle: "short" }).format(new Date(value));
+          return new Intl.DateTimeFormat(language === "de" ? "de-DE" : "en-US", { dateStyle: "medium", timeStyle: "short" }).format(new Date(value));
         } catch (_error) {
           return "";
         }

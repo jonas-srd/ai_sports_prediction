@@ -1,4 +1,5 @@
 import { timingSafeEqual } from "node:crypto";
+import { Queue } from "bullmq";
 import { NextResponse, type NextRequest } from "next/server";
 import {
   approveOutreachDraft,
@@ -23,6 +24,7 @@ export async function GET(request: NextRequest) {
     return json({
       ok: true,
       prospects: await listOutreachProspects(),
+      researchConfigured: Boolean(process.env.REDIS_URL?.trim() && (process.env.SERPAPI_API_KEY?.trim() || process.env.BRAVE_SEARCH_API_KEY?.trim())),
       sendConfigured: isSendConfigured(),
       generatedAtUtc: new Date().toISOString()
     });
@@ -49,6 +51,13 @@ export async function PATCH(request: NextRequest) {
   const action = text(body.action);
 
   try {
+    if (action === "start_research") {
+      const countries = readCountries(body.countries);
+      const emailLanguage = readEmailLanguage(body.emailLanguage);
+      const jobs = await enqueueOutreachResearch(countries, emailLanguage);
+      return json({ ok: true, jobs });
+    }
+
     if (action === "update_draft") {
       const draftId = required(body.draftId, "Entwurf-ID");
       const subject = required(body.subject, "Betreff").slice(0, 180);
@@ -102,13 +111,73 @@ export async function PATCH(request: NextRequest) {
   }
 }
 
+async function enqueueOutreachResearch(countries: string[], emailLanguage: string): Promise<number> {
+  const redisUrl = requireEnv("REDIS_URL");
+  const queue = new Queue("outreach", {
+    connection: parseRedisConnection(redisUrl),
+    prefix: process.env.QUEUE_KEY_PREFIX ?? "{ai-sports-prediction}"
+  });
+  try {
+    for (const country of countries) {
+      await queue.add("discover-editorial-prospects", {
+        country,
+        searchLanguage: COUNTRY_LANGUAGES[country] ?? "en",
+        emailLanguage
+      }, {
+        jobId: `outreach-${country.toLowerCase()}-${Date.now()}`,
+        attempts: 2,
+        removeOnComplete: 20,
+        removeOnFail: 50
+      });
+    }
+    return countries.length;
+  } finally {
+    await queue.close();
+  }
+}
+
+const COUNTRY_LANGUAGES: Record<string, string> = {
+  DE: "de", AT: "de", CH: "de", GB: "en", US: "en", CA: "en", AU: "en",
+  ES: "es", FR: "fr", IT: "it", NL: "nl"
+};
+
+function readCountries(value: unknown): string[] {
+  const countries = Array.isArray(value)
+    ? value.filter((item): item is string => typeof item === "string").map((item) => item.trim().toUpperCase())
+    : [];
+  const valid = [...new Set(countries.filter((country) => country in COUNTRY_LANGUAGES))];
+  if (!valid.length) throw new Error("Mindestens ein unterstütztes Zielland ist erforderlich.");
+  return valid;
+}
+
+function readEmailLanguage(value: unknown): string {
+  const language = text(value);
+  if (!["de", "en", "es", "fr", "it", "nl"].includes(language)) {
+    throw new Error("Die E-Mail-Sprache wird nicht unterstützt.");
+  }
+  return language;
+}
+
+function parseRedisConnection(redisUrl: string) {
+  const url = new URL(redisUrl);
+  return {
+    host: url.hostname,
+    port: Number(url.port || 6379),
+    username: url.username ? decodeURIComponent(url.username) : undefined,
+    password: url.password ? decodeURIComponent(url.password) : undefined,
+    maxRetriesPerRequest: null,
+    tls: url.protocol === "rediss:" ? {} : undefined
+  };
+}
+
 async function sendApprovedDraft(draftId: string): Promise<string> {
   const draft = await claimOutreachDraftForSend(draftId);
   const apiKey = requireEnv("RESEND_API_KEY");
   const from = requireEnv("OUTREACH_FROM_EMAIL");
   const replyTo = requireEnv("OUTREACH_REPLY_TO_EMAIL");
-  const optOutText = `\n\nFalls Sie keine weiteren Nachrichten von uns wünschen, genügt eine kurze Antwort an ${replyTo}.`;
-  const optOutHtml = `<p>Falls Sie keine weiteren Nachrichten von uns wünschen, genügt eine kurze Antwort an <a href="mailto:${escapeHtml(replyTo)}">${escapeHtml(replyTo)}</a>.</p>`;
+  const optOut = localizedOptOut(draft.emailLanguage, replyTo);
+  const optOutText = `\n\n${optOut.text}`;
+  const optOutHtml = `<p>${escapeHtml(optOut.prefix)} <a href="mailto:${escapeHtml(replyTo)}">${escapeHtml(replyTo)}</a>${escapeHtml(optOut.suffix)}</p>`;
 
   try {
     const response = await fetch("https://api.resend.com/emails", {
@@ -126,7 +195,7 @@ async function sendApprovedDraft(draftId: string): Promise<string> {
         text: `${draft.textBody}${optOutText}`,
         html: `${draft.htmlBody ?? textToHtml(draft.textBody)}${optOutHtml}`,
         headers: {
-          "List-Unsubscribe": `<mailto:${replyTo}?subject=${encodeURIComponent("Keine weiteren Nachrichten")}>`
+          "List-Unsubscribe": `<mailto:${replyTo}?subject=${encodeURIComponent(optOut.subject)}>`
         }
       })
     });
@@ -140,6 +209,19 @@ async function sendApprovedDraft(draftId: string): Promise<string> {
     await markOutreachDraftFailed(draft.id, error instanceof Error ? error.message : String(error));
     throw error;
   }
+}
+
+function localizedOptOut(language: "de" | "en" | "es" | "fr" | "it" | "nl", replyTo: string) {
+  const translations = {
+    de: { prefix: "Falls Sie keine weiteren Nachrichten von uns wünschen, genügt eine kurze Antwort an", suffix: ".", subject: "Keine weiteren Nachrichten" },
+    en: { prefix: "If you do not wish to receive further messages from us, simply reply to", suffix: ".", subject: "No further messages" },
+    es: { prefix: "Si no desea recibir más mensajes nuestros, simplemente responda a", suffix: ".", subject: "No recibir más mensajes" },
+    fr: { prefix: "Si vous ne souhaitez plus recevoir de messages de notre part, répondez simplement à", suffix: ".", subject: "Plus de messages" },
+    it: { prefix: "Se non desidera ricevere altri messaggi da parte nostra, risponda semplicemente a", suffix: ".", subject: "Nessun altro messaggio" },
+    nl: { prefix: "Als u geen verdere berichten van ons wilt ontvangen, antwoord dan eenvoudig naar", suffix: ".", subject: "Geen verdere berichten" }
+  } as const;
+  const selected = translations[language] ?? translations.en;
+  return { ...selected, text: `${selected.prefix} ${replyTo}${selected.suffix}` };
 }
 
 function isAdminAuthorized(request: NextRequest): boolean {

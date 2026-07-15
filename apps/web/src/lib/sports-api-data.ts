@@ -3,7 +3,12 @@
  */
 import type { FootballCompetition, FootballTeam } from "@/lib/football-data";
 import { hydrateMatchesWithOdds } from "@/lib/odds-api-data";
+import {
+  matchesTheSportsDbLeagueRow,
+  type TheSportsDbLeagueIdentity
+} from "@/lib/sports-league-identity";
 import { findTennisPlayerByName, getTennisFlagUrl, resolveTennisPlayerCountryCode } from "@/lib/tennis-data";
+import { resolveTennisPlayerCountryCodes } from "@/lib/tennis-country-resolver";
 
 export type ApiSportId = "football" | "nfl" | "nba" | "tennis";
 
@@ -98,11 +103,7 @@ export type SportApiAnalysisSnapshot = {
   source: string;
 };
 
-type TheSportsDbLeagueRef = {
-  id?: string;
-  name: string;
-  aliases?: string[];
-};
+type TheSportsDbLeagueRef = TheSportsDbLeagueIdentity;
 
 const THE_SPORTS_DB_LEAGUES: Record<ApiSportId, TheSportsDbLeagueRef> = {
   football: { id: "4328", name: "English Premier League" },
@@ -127,18 +128,33 @@ const THE_SPORTS_DB_V1_SPORT_NAMES: Record<ApiSportId, string> = {
 
 const THE_SPORTS_DB_FOOTBALL_LEAGUES: Record<string, TheSportsDbLeagueRef> = {
   "bundesliga": { id: "4331", name: "German Bundesliga" },
-  "dfb-pokal": { id: "4470", name: "DFB-Pokal" },
+  "dfb-pokal": {
+    id: "4485",
+    name: "DFB-Pokal",
+    aliases: ["DFB Pokal"],
+    eventCountry: "Germany",
+    sportName: "Soccer",
+    strictIdentity: true
+  },
   "premier-league": { id: "4328", name: "English Premier League" },
-  "fa-cup": { id: "4482", name: "FA Cup" },
+  "fa-cup": { id: "4482", name: "FA Cup", country: "England", sportName: "Soccer", strictIdentity: true },
   "la-liga": { id: "4335", name: "Spanish La Liga" },
-  "copa-del-rey": { id: "4483", name: "Copa del Rey" },
+  "copa-del-rey": { id: "4483", name: "Copa del Rey", eventCountry: "Spain", sportName: "Soccer", strictIdentity: true },
   "ligue-1": { id: "4334", name: "French Ligue 1" },
-  "coupe-de-france": { id: "4484", name: "Coupe de France" },
+  "coupe-de-france": { id: "4484", name: "Coupe de France", eventCountry: "France", sportName: "Soccer", strictIdentity: true },
   "serie-a": { id: "4332", name: "Italian Serie A" },
-  "coppa-italia": { id: "4485", name: "Coppa Italia" },
-  "champions-league": { id: "4480", name: "UEFA Champions League" },
-  "europa-league": { id: "4481", name: "UEFA Europa League" },
-  "conference-league": { id: "5366", name: "UEFA Conference League", aliases: ["UEFA Europa Conference League", "Europa Conference League"] }
+  "coppa-italia": { id: "4506", name: "Coppa Italia", eventCountry: "Italy", sportName: "Soccer", strictIdentity: true },
+  "champions-league": {
+    id: "4480",
+    name: "UEFA Champions League",
+    aliases: ["Champions League"],
+    eventCountry: "Europe",
+    mainStageOnly: true,
+    sportName: "Soccer",
+    strictIdentity: true
+  },
+  "europa-league": { id: "4481", name: "UEFA Europa League", aliases: ["Europa League"], eventCountry: "Europe", sportName: "Soccer", strictIdentity: true },
+  "conference-league": { id: "5071", name: "UEFA Conference League", aliases: ["UEFA Europa Conference League", "Europa Conference League"], eventCountry: "Europe", sportName: "Soccer", strictIdentity: true }
 };
 
 let theSportsDbLeagueRowsPromise: Promise<any[]> | null = null;
@@ -419,9 +435,11 @@ async function fetchTheSportsDbSnapshot(
     fetchTheSportsDbTeams(league).catch(() => []),
     fetchTheSportsDbLeagueEvents(sport, league).catch(() => [])
   ]);
+  const leagueEvents = league.strictIdentity ? filterMatchesByLeagueTeams(events, teams) : events;
+  const matchesWithLogos = await hydrateTheSportsDbEventLogos(sport, leagueEvents, teams);
   const matches = await hydrateMatchesWithOdds(
     sport,
-    hydrateTheSportsDbEventLogos(sport, events, teams),
+    matchesWithLogos,
     { footballSlug: getFootballLeagueSlug(league), competitionName: league.name }
   );
   const standings = sport === "football"
@@ -451,46 +469,103 @@ async function fetchTheSportsDbLeagueEvents(sport: ApiSportId, league: TheSports
     fetchTheSportsDbV2Events(`schedule/previous/league/${leagueId}`),
     fetchTheSportsDbV2SeasonEvents(leagueId, seasons),
     fetchTheSportsDbV2Events(`livescore/${leagueId}`),
-    fetchTheSportsDbSportLiveEvents(sport, leagueId, league.name),
+    fetchTheSportsDbSportLiveEvents(sport, leagueId, league),
     fetchTheSportsDbList<any>("eventsnextleague.php", { id: leagueId }, "events"),
     fetchTheSportsDbList<any>("eventspastleague.php", { id: leagueId }, "events"),
     fetchTheSportsDbSeasonEvents(leagueId, seasons)
   ]);
   const limit = getTheSportsDbMatchLimit();
 
-  const merged = mergeMatches([
-    ...v2LiveEvents.map(normalizeTheSportsDbEvent),
-    ...v2SportLiveEvents.map(normalizeTheSportsDbEvent),
-    ...v2NextEvents.map(normalizeTheSportsDbEvent),
-    ...v2SeasonEvents.map(normalizeTheSportsDbEvent),
-    ...v2PastEvents.map(normalizeTheSportsDbEvent),
-    ...nextEvents.map(normalizeTheSportsDbEvent),
-    ...seasonEvents.map(normalizeTheSportsDbEvent),
-    ...pastEvents.map(normalizeTheSportsDbEvent)
-  ], [])
+  const leagueEventRows = filterTheSportsDbRowsForLeague([
+    ...v2LiveEvents,
+    ...v2SportLiveEvents,
+    ...v2NextEvents,
+    ...v2SeasonEvents,
+    ...v2PastEvents,
+    ...nextEvents,
+    ...seasonEvents,
+    ...pastEvents
+  ], leagueId, league);
+  const merged = mergeMatches(leagueEventRows.map((row) => ({
+    ...normalizeTheSportsDbEvent(row),
+    competition: league.name
+  })), [])
     .filter((match) => match.homeName && match.awayName);
 
   if (merged.length > 0) {
     return limitMatchesWithUpcomingPriority(merged, limit);
   }
 
-  const dayEvents = await fetchTheSportsDbUpcomingDayEvents(sport, leagueId, league.name);
-  const dayMatches = mergeMatches(dayEvents.map(normalizeTheSportsDbEvent), [])
+  const dayEvents = await fetchTheSportsDbUpcomingDayEvents(sport, leagueId, league);
+  const dayMatches = mergeMatches(
+    filterTheSportsDbRowsForLeague(dayEvents, leagueId, league).map((row) => ({
+      ...normalizeTheSportsDbEvent(row),
+      competition: league.name
+    })),
+    []
+  )
     .filter((match) => match.homeName && match.awayName);
 
   return limitMatchesWithUpcomingPriority(dayMatches, limit);
 }
 
 async function fetchTheSportsDbTeams(league: TheSportsDbLeagueRef): Promise<SportApiTeam[]> {
-  const rows = await fetchTheSportsDbList<any>("search_all_teams.php", { l: league.name }, "teams");
+  const leagueId = await resolveTheSportsDbLeagueId(league);
+  const v2Rows = leagueId
+    ? await fetchTheSportsDbV2TeamRows(leagueId).catch(() => [])
+    : [];
+  const rows = v2Rows.length > 0
+    ? v2Rows
+    : league.strictIdentity
+      ? []
+      : await fetchTheSportsDbList<any>("search_all_teams.php", { l: league.name }, "teams");
 
-  return mergeTeams(rows
-    .map((team: any): SportApiTeam => ({
-      id: getString(team.idTeam),
-      name: getString(team.strTeam),
-      logo: getString(team.strBadge || team.strTeamBadge || team.strLogo || team.strTeamLogo) || null
-    }))
+  const leagueRows = league.country
+    ? rows.filter((team) => {
+        const country = getString(team.strCountry || team.country);
+        return !country || namesMatch(country, league.country ?? "");
+      })
+    : rows;
+
+  return mergeTeams(leagueRows
+    .map(normalizeTheSportsDbTeam)
     .filter((team) => team.name), []);
+}
+
+async function fetchTheSportsDbV2TeamRows(leagueId: string): Promise<any[]> {
+  const payload = await fetchTheSportsDbV2<Record<string, unknown>>(`list/teams/${leagueId}?v=league-country-v1`);
+  return findTheSportsDbRows<any>(payload, "teams");
+}
+
+function normalizeTheSportsDbTeam(team: any): SportApiTeam {
+  return {
+    id: getString(team.idTeam || team.id || team.teamId),
+    name: getString(team.strTeam || team.team || team.name),
+    logo: getString(
+      team.strBadge ||
+      team.strTeamBadge ||
+      team.strLogo ||
+      team.strTeamLogo ||
+      team.badge ||
+      team.logo
+    ) || null
+  };
+}
+
+function filterMatchesByLeagueTeams(matches: SportApiMatch[], teams: SportApiTeam[]) {
+  if (teams.length === 0) {
+    return [];
+  }
+
+  const participantBelongsToLeague = (teamId: string | null | undefined, teamName: string) =>
+    teams.some((team) =>
+      Boolean(teamId && team.id === teamId) || namesMatch(team.name, teamName)
+    );
+
+  return matches.filter((match) =>
+    participantBelongsToLeague(match.homeId, match.homeName) &&
+    participantBelongsToLeague(match.awayId, match.awayName)
+  );
 }
 
 async function fetchTheSportsDbStandings(
@@ -979,12 +1054,20 @@ function stripGenericTennisTournamentContext(name: string) {
   return afterTournament;
 }
 
-function hydrateTheSportsDbEventLogos(sport: ApiSportId, matches: SportApiMatch[], teams: SportApiTeam[]) {
+async function hydrateTheSportsDbEventLogos(sport: ApiSportId, matches: SportApiMatch[], teams: SportApiTeam[]) {
+  const tennisCountryCodes = sport === "tennis"
+    ? await resolveTennisPlayerCountryCodes(matches.flatMap((match) => [match.homeName, match.awayName])).catch(() => new Map<string, string>())
+    : new Map<string, string>();
+
   return matches.map((match) => {
     const home = teams.find((team) => team.id === match.homeId || namesMatch(team.name, match.homeName));
     const away = teams.find((team) => team.id === match.awayId || namesMatch(team.name, match.awayName));
-    const homePlayerCountryCode = sport === "tennis" ? resolveTennisPlayerCountryCode(match.homeName) : null;
-    const awayPlayerCountryCode = sport === "tennis" ? resolveTennisPlayerCountryCode(match.awayName) : null;
+    const homePlayerCountryCode = sport === "tennis"
+      ? tennisCountryCodes.get(match.homeName) ?? resolveTennisPlayerCountryCode(match.homeName)
+      : null;
+    const awayPlayerCountryCode = sport === "tennis"
+      ? tennisCountryCodes.get(match.awayName) ?? resolveTennisPlayerCountryCode(match.awayName)
+      : null;
 
     return {
       ...match,
@@ -1123,6 +1206,10 @@ function getTheSportsDbLeagueId(league: TheSportsDbLeagueRef) {
 
 async function resolveTheSportsDbLeagueId(league: TheSportsDbLeagueRef) {
   const configured = getTheSportsDbLeagueId(league);
+  if (configured) {
+    return configured;
+  }
+
   const lookupNames = getTheSportsDbLeagueLookupNames(league);
   const rows = await getTheSportsDbLeagueRowsCached();
   const match = rows.find((row) => {
@@ -1133,10 +1220,6 @@ async function resolveTheSportsDbLeagueId(league: TheSportsDbLeagueRef) {
   const resolved = getString(match?.idLeague || match?.id || match?.leagueId);
   if (resolved) {
     return resolved;
-  }
-
-  if (configured) {
-    return configured;
   }
 
   return "";
@@ -1212,11 +1295,11 @@ function getTheSportsDbLeagueLookupNames(league: TheSportsDbLeagueRef) {
   return uniqueStrings([league.name, ...(league.aliases ?? [])]);
 }
 
-async function fetchTheSportsDbSportLiveEvents(sport: ApiSportId, leagueId: string, leagueName: string): Promise<any[]> {
+async function fetchTheSportsDbSportLiveEvents(sport: ApiSportId, leagueId: string, league: TheSportsDbLeagueRef): Promise<any[]> {
   const results = await Promise.all(
     THE_SPORTS_DB_SPORT_PATHS[sport].map((path) =>
       fetchTheSportsDbV2Events(`livescore/${path}`)
-        .then((rows) => filterTheSportsDbRowsForLeague(rows, leagueId, leagueName))
+        .then((rows) => filterTheSportsDbRowsForLeague(rows, leagueId, league))
         .catch(() => [])
     )
   );
@@ -1224,35 +1307,30 @@ async function fetchTheSportsDbSportLiveEvents(sport: ApiSportId, leagueId: stri
   return results.flat();
 }
 
-async function fetchTheSportsDbUpcomingDayEvents(sport: ApiSportId, leagueId: string, leagueName: string): Promise<any[]> {
+async function fetchTheSportsDbUpcomingDayEvents(sport: ApiSportId, leagueId: string, league: TheSportsDbLeagueRef): Promise<any[]> {
   const days = getUpcomingIsoDates(Number(process.env.THE_SPORTS_DB_DAY_SCAN_DAYS ?? 28));
-  const leagueParam = leagueName.replace(/\s+/g, "_");
+  const leagueParam = league.name.replace(/\s+/g, "_");
   const sportName = THE_SPORTS_DB_V1_SPORT_NAMES[sport];
   const results = await Promise.all(
     days.flatMap((date) => [
       fetchTheSportsDbV2Events(`schedule/day/${date}/league/${leagueId}`).catch(() => []),
       fetchTheSportsDbV2Events(`schedule/league/${leagueId}/day/${date}`).catch(() => []),
-      fetchTheSportsDbV2Events(`schedule/day/${date}`).then((rows) => filterTheSportsDbRowsForLeague(rows, leagueId, leagueName)).catch(() => []),
+      fetchTheSportsDbV2Events(`schedule/day/${date}`).then((rows) => filterTheSportsDbRowsForLeague(rows, leagueId, league)).catch(() => []),
       ...THE_SPORTS_DB_SPORT_PATHS[sport].flatMap((path) => [
-        fetchTheSportsDbV2Events(`schedule/day/${date}/${path}`).then((rows) => filterTheSportsDbRowsForLeague(rows, leagueId, leagueName)).catch(() => []),
-        fetchTheSportsDbV2Events(`schedule/${path}/day/${date}`).then((rows) => filterTheSportsDbRowsForLeague(rows, leagueId, leagueName)).catch(() => [])
+        fetchTheSportsDbV2Events(`schedule/day/${date}/${path}`).then((rows) => filterTheSportsDbRowsForLeague(rows, leagueId, league)).catch(() => []),
+        fetchTheSportsDbV2Events(`schedule/${path}/day/${date}`).then((rows) => filterTheSportsDbRowsForLeague(rows, leagueId, league)).catch(() => [])
       ]),
       fetchTheSportsDbList<any>("eventsday.php", { d: date, l: leagueParam }, "events").catch(() => []),
-      fetchTheSportsDbList<any>("eventsday.php", { d: date, l: leagueName }, "events").catch(() => []),
-      fetchTheSportsDbList<any>("eventsday.php", { d: date, s: sportName }, "events").then((rows) => filterTheSportsDbRowsForLeague(rows, leagueId, leagueName)).catch(() => [])
+      fetchTheSportsDbList<any>("eventsday.php", { d: date, l: league.name }, "events").catch(() => []),
+      fetchTheSportsDbList<any>("eventsday.php", { d: date, s: sportName }, "events").then((rows) => filterTheSportsDbRowsForLeague(rows, leagueId, league)).catch(() => [])
     ])
   );
 
   return results.flat();
 }
 
-function filterTheSportsDbRowsForLeague(rows: any[], leagueId: string, leagueName: string) {
-  return rows.filter((row) => {
-    const rowLeagueId = getString(row.idLeague || row.leagueId || row.league_id);
-    const rowLeagueName = getTheSportsDbLeagueName(row);
-
-    return rowLeagueId === leagueId || namesMatch(rowLeagueName, leagueName);
-  });
+function filterTheSportsDbRowsForLeague(rows: any[], leagueId: string, league: TheSportsDbLeagueRef) {
+  return rows.filter((row) => matchesTheSportsDbLeagueRow(row, leagueId, league));
 }
 
 function getUpcomingIsoDates(dayCount: number) {

@@ -1,13 +1,21 @@
 import type { Metadata } from "next";
 import { WidgetBuilder } from "@/components/widget-builder";
+import { WidgetGrowthFunnel } from "@/components/widget-growth-funnel";
 import type { Locale } from "@/lib/i18n";
+import { getWidgetPreviewMatches, type WidgetPreviewMatch, type WidgetPreviewMatches } from "@/lib/widget-data";
 
 export const metadata: Metadata = {
   title: "AI Sports Prediction | Editorial widgets",
   description: "Embeddable AI sports prediction widgets for editorial articles."
 };
 
-const pricingPlansByLocale = {
+const pricingPlansByLocale: Record<Locale, Array<{
+  description: string;
+  features: string[];
+  name: string;
+  plan: "starter" | "growth" | "enterprise";
+  price: string;
+}>> = {
   en: [
     {
       name: "Starter",
@@ -20,7 +28,7 @@ const pricingPlansByLocale = {
       name: "Growth",
       price: "149 EUR / month",
       description: "For regular sports desks that need more formats and article integrations.",
-      features: ["250k widget impressions", "8 domains", "All widget types including key factors and leaderboard", "Reasoning toggle and color customization"],
+      features: ["250k widget impressions", "8 domains", "All widget types including key factors", "Reasoning toggle and color customization"],
       plan: "growth"
     },
     {
@@ -43,7 +51,7 @@ const pricingPlansByLocale = {
       name: "Growth",
       price: "149 EUR / Monat",
       description: "Für regelmäßige Sportredaktionen, die mehr Formate und Artikel-Integrationen brauchen.",
-      features: ["250k Widget-Impressions", "8 Domains", "Alle Widget-Typen inklusive Schlüsselfaktoren und Rangliste", "Begründungs-Schalter und Farbanpassung"],
+      features: ["250k Widget-Impressions", "8 Domains", "Alle Widget-Typen inklusive Schlüsselfaktoren", "Begründungs-Schalter und Farbanpassung"],
       plan: "growth"
     },
     {
@@ -60,14 +68,12 @@ const examplesByLocale = {
   en: [
     { title: "Prediction card", description: "One compact match card with pick, score idea and confidence.", type: "prediction" },
     { title: "Match list", description: "Several upcoming predictions for a live blog or matchday article.", type: "list" },
-    { title: "Model leaderboard", description: "Confidence overview across the selected sport or competition.", type: "leaderboard" },
     { title: "Win probability", description: "A clean probability view for who the model expects to win.", type: "probability" },
     { title: "Key factors", description: "Editorial bullet points explaining the model signal behind a match.", type: "factors" }
   ],
   de: [
     { title: "Prognosekarte", description: "Eine kompakte Matchkarte mit Tipp, Ergebnisidee und Konfidenz.", type: "prediction" },
     { title: "Matchliste", description: "Mehrere kommende Prognosen für einen Liveblog oder Spieltagsartikel.", type: "list" },
-    { title: "Modell-Rangliste", description: "Konfidenz-Übersicht für die gewählte Sportart oder den Wettbewerb.", type: "leaderboard" },
     { title: "Sieg-Wahrscheinlichkeit", description: "Eine klare Wahrscheinlichkeitsansicht für den erwarteten Sieger.", type: "probability" },
     { title: "Schlüsselfaktoren", description: "Redaktionelle Stichpunkte, die das Modellsignal hinter einem Match erklären.", type: "factors" }
   ]
@@ -87,6 +93,8 @@ const pageText = {
       competition: "Optional competition filter",
       matchId: "Optional exact match id",
       limit: "1-12 items",
+      language: "English or German widget interface",
+      model: "Fixed model or visitor model switcher",
       accent: "Hex color, e.g. #7df5c1",
       color: "Hex color"
     }
@@ -104,6 +112,8 @@ const pageText = {
       competition: "Optionaler Wettbewerbsfilter",
       matchId: "Optionale exakte Match-ID",
       limit: "1-12 Einträge",
+      language: "Deutsche oder englische Widget-Oberfläche",
+      model: "Festes Modell oder Modellauswahl für Besucher",
       accent: "Hex-Farbe, z. B. #7df5c1",
       color: "Hex-Farbe"
     }
@@ -114,10 +124,11 @@ export default function WidgetsPage() {
   return <WidgetsPageContent locale="en" />;
 }
 
-export function WidgetsPageContent({ locale }: { locale: Locale }) {
+export async function WidgetsPageContent({ locale }: { locale: Locale }) {
   const text = pageText[locale];
   const pricingPlans = pricingPlansByLocale[locale];
   const examples = examplesByLocale[locale];
+  const previewMatches = await getWidgetPreviewMatches();
 
   return (
     <main className="widgetsPage">
@@ -130,33 +141,20 @@ export function WidgetsPageContent({ locale }: { locale: Locale }) {
         <div className="widgetsSectionIntro">
           <h2 id="widget-pricing-title">{text.pricing}</h2>
         </div>
-        <div className="widgetsPricingGrid">
-          {pricingPlans.map((plan) => (
-            <article className="widgetsPricingCard" key={plan.name}>
-              <div>
-                <span>{plan.plan}</span>
-                <h3>{plan.name}</h3>
-                <strong>{plan.price}</strong>
-                <p>{plan.description}</p>
-              </div>
-              <ul>
-                {plan.features.map((feature) => (
-                  <li key={feature}>{feature}</li>
-                ))}
-              </ul>
-            </article>
-          ))}
-        </div>
+        <WidgetGrowthFunnel locale={locale} plans={pricingPlans} />
       </section>
 
       <section className="widgetsPanel" aria-labelledby="widget-options-title">
         <h2 id="widget-options-title">{text.config}</h2>
         <div className="widgetsOptionGrid">
           <WidgetOption name="data-api-key" value={text.options.apiKey} />
-          <WidgetOption name="data-type" value="prediction-card | match-list | leaderboard | win-probability | key-factors" />
+          <WidgetOption name="data-type" value="prediction-card | match-list | win-probability | key-factors" />
           <WidgetOption name="data-sport" value="all | football | nba | nfl | tennis" />
+          <WidgetOption name="data-language" value={`en | de · ${text.options.language}`} />
+          <WidgetOption name="data-model" value={`viewer | nexus | pulse | edge · ${text.options.model}`} />
           <WidgetOption name="data-competition" value={text.options.competition} />
           <WidgetOption name="data-match-id" value={text.options.matchId} />
+          <WidgetOption name="data-match-ids" value={locale === "de" ? "Mehrere ausgewählte Match-IDs, kommagetrennt" : "Multiple selected match ids, comma-separated"} />
           <WidgetOption name="data-limit" value={text.options.limit} />
           <WidgetOption name="data-theme" value="dark | light" />
           <WidgetOption name="data-accent" value={text.options.accent} />
@@ -167,7 +165,7 @@ export function WidgetsPageContent({ locale }: { locale: Locale }) {
         </div>
       </section>
 
-      <WidgetBuilder locale={locale} />
+      <WidgetBuilder locale={locale} previewMatches={previewMatches} />
 
       <section className="widgetsExamples" aria-label={text.examplesLabel}>
         <div className="widgetsSectionIntro">
@@ -180,7 +178,7 @@ export function WidgetsPageContent({ locale }: { locale: Locale }) {
               <h2>{example.title}</h2>
               <p>{example.description}</p>
             </div>
-            <WidgetPreview locale={locale} type={example.type} />
+            <WidgetPreview locale={locale} previewMatches={previewMatches} type={example.type} />
           </article>
         ))}
       </section>
@@ -188,10 +186,13 @@ export function WidgetsPageContent({ locale }: { locale: Locale }) {
   );
 }
 
-function WidgetPreview({ locale, type }: { locale: Locale; type: string }) {
+function WidgetPreview({ locale, previewMatches, type }: { locale: Locale; previewMatches: WidgetPreviewMatches; type: string }) {
   const isGerman = locale === "de";
+  const availableMatches = Object.values(previewMatches).flat().filter((match): match is WidgetPreviewMatch => Boolean(match));
+  const primaryMatch = previewMatches.nba?.[0] ?? availableMatches[0] ?? null;
 
   if (type === "list") {
+    if (!availableMatches.length) return <WidgetPreviewUnavailable locale={locale} />;
     return (
       <div className="widgetPreview widgetPreviewLight">
         <div className="widgetPreviewHeader">
@@ -199,55 +200,25 @@ function WidgetPreview({ locale, type }: { locale: Locale; type: string }) {
           <strong>{isGerman ? "Spieltag-Tipps" : "Matchday picks"}</strong>
         </div>
         <div className="widgetPreviewList">
-          <WidgetPreviewRow
-            away="Chelsea"
-            awayLogo="https://a.espncdn.com/i/teamlogos/soccer/500/363.png"
-            confidence="64%"
-            home="Arsenal"
-            homeLogo="https://a.espncdn.com/i/teamlogos/soccer/500/359.png"
-            pick="Arsenal"
-            score="2:1"
-          />
-          <WidgetPreviewRow
-            away="Tottenham"
-            awayLogo="https://a.espncdn.com/i/teamlogos/soccer/500/367.png"
-            confidence="71%"
-            home="Liverpool"
-            homeLogo="https://a.espncdn.com/i/teamlogos/soccer/500/364.png"
-            pick="Liverpool"
-            score="3:1"
-          />
-          <WidgetPreviewRow
-            away="Newcastle"
-            awayLogo="https://a.espncdn.com/i/teamlogos/soccer/500/361.png"
-            confidence="52%"
-            home="Aston Villa"
-            homeLogo="https://a.espncdn.com/i/teamlogos/soccer/500/362.png"
-            pick={isGerman ? "Remis" : "Draw"}
-            score="1:1"
-          />
-        </div>
-      </div>
-    );
-  }
-
-  if (type === "leaderboard") {
-    return (
-      <div className="widgetPreview">
-        <div className="widgetPreviewHeader">
-          <span>Tennis</span>
-          <strong>{isGerman ? "Modell-Rangliste" : "Model leaderboard"}</strong>
-        </div>
-        <div className="widgetPreviewLeaderboard">
-          <WidgetPreviewLeader rank="1" model="AISP Edge" confidence="73%" />
-          <WidgetPreviewLeader rank="2" model={isGerman ? "Markt-Mix" : "Market blend"} confidence="68%" />
-          <WidgetPreviewLeader rank="3" model={isGerman ? "Formmodell" : "Form model"} confidence="61%" />
+          {(previewMatches.football ?? availableMatches).slice(0, 3).map((match, index) => (
+            <WidgetPreviewRow
+              away={match.awayTeam}
+              awayLogo={match.awayLogo}
+              confidence={`${64 + index * 3}%`}
+              home={match.homeTeam}
+              homeLogo={match.homeLogo}
+              key={`${match.sport}:${match.homeTeam}:${match.awayTeam}`}
+              pick={match.homeTeam}
+              score={index === 1 ? "1:1" : "2:1"}
+            />
+          ))}
         </div>
       </div>
     );
   }
 
   if (type === "probability") {
+    if (!primaryMatch) return <WidgetPreviewUnavailable locale={locale} />;
     return (
       <div className="widgetPreview">
         <div className="widgetPreviewHeader">
@@ -256,14 +227,14 @@ function WidgetPreview({ locale, type }: { locale: Locale; type: string }) {
         </div>
         <div className="widgetPreviewProbability">
           <span className="widgetPreviewProbabilityTeam">
-            <img alt="" src="https://a.espncdn.com/i/teamlogos/nba/500/bos.png" />
-            Boston Celtics
+            <img alt={`${primaryMatch.homeTeam} logo`} src={primaryMatch.homeLogo} />
+            {primaryMatch.homeTeam}
           </span>
           <strong>67%</strong>
           <div><span style={{ width: "67%" }} /></div>
           <span className="widgetPreviewProbabilityTeam">
-            <img alt="" src="https://a.espncdn.com/i/teamlogos/nba/500/ny.png" />
-            New York Knicks
+            <img alt={`${primaryMatch.awayTeam} logo`} src={primaryMatch.awayLogo} />
+            {primaryMatch.awayTeam}
           </span>
           <strong>33%</strong>
           <div><span style={{ width: "33%" }} /></div>
@@ -273,12 +244,15 @@ function WidgetPreview({ locale, type }: { locale: Locale; type: string }) {
   }
 
   if (type === "factors") {
+    const factorMatch = previewMatches.football?.[0] ?? primaryMatch;
+    if (!factorMatch) return <WidgetPreviewUnavailable locale={locale} />;
     return (
       <div className="widgetPreview widgetPreviewLight">
         <div className="widgetPreviewHeader">
-          <span>Champions League</span>
+          <span>{factorMatch.competition}</span>
           <strong>{isGerman ? "Schlüsselfaktoren" : "Key factors"}</strong>
         </div>
+        <WidgetPreviewTeams match={factorMatch} />
         <ul className="widgetPreviewFactors">
           <li>{isGerman ? "Das Heimteam erzeugt laut Modell mehr Abschlüsse im letzten Drittel." : "Home side projects higher shot volume in the final third."}</li>
           <li>{isGerman ? "Der Erholungsvorteil stärkt das Drucksignal in der Schlussphase." : "Rest advantage improves late-game pressure signal."}</li>
@@ -288,31 +262,23 @@ function WidgetPreview({ locale, type }: { locale: Locale; type: string }) {
     );
   }
 
+  if (!primaryMatch) return <WidgetPreviewUnavailable locale={locale} />;
+
   return (
     <div className="widgetPreview">
       <div className="widgetPreviewHeader">
-        <span>NBA · 11.07.2026</span>
+        <span>{primaryMatch.competition}</span>
         <strong>{isGerman ? "KI-Prognose" : "AI prediction"}</strong>
       </div>
-      <div className="widgetPreviewTeams">
-        <div>
-          <img alt="" src="https://a.espncdn.com/i/teamlogos/nba/500/bos.png" />
-          <strong>Boston Celtics</strong>
-        </div>
-        <span>vs</span>
-        <div>
-          <strong>New York Knicks</strong>
-          <img alt="" src="https://a.espncdn.com/i/teamlogos/nba/500/ny.png" />
-        </div>
-      </div>
+      <WidgetPreviewTeams match={primaryMatch} />
       <div className="widgetPreviewMetrics">
         <div>
           <span>{isGerman ? "Tipp" : "Pick"}</span>
-          <strong>Boston Celtics</strong>
+          <strong>{primaryMatch.homeTeam}</strong>
         </div>
         <div>
           <span>{isGerman ? "Prognose-Score" : "Projected score"}</span>
-          <strong>2:1</strong>
+          <strong>112:106</strong>
         </div>
         <div>
           <span>{isGerman ? "Konfidenz" : "Confidence"}</span>
@@ -323,12 +289,26 @@ function WidgetPreview({ locale, type }: { locale: Locale; type: string }) {
         <span>{isGerman ? "Modell-Begründung" : "Model reasoning"}</span>
         <p>
           {isGerman
-            ? "Boston liegt bei Erholung, defensiver Effizienz und Wurfqualität in der Schlussphase vorn. Das Modell sieht deshalb einen knappen 2:1-Vorteil."
-            : "Boston rates higher on rest, defensive efficiency and late-game shot quality, with the model leaning toward a narrow 2:1 edge."}
+            ? `${primaryMatch.homeTeam} liegt bei Pace, Rotationstiefe, Wurfprofil und Erholung vorn.`
+            : `${primaryMatch.homeTeam} rates higher on pace, rotation depth, shot profile and rest.`}
         </p>
       </div>
     </div>
   );
+}
+
+function WidgetPreviewTeams({ match }: { match: WidgetPreviewMatch }) {
+  return (
+    <div className="widgetPreviewTeams">
+      <div><img alt={`${match.homeTeam} logo`} src={match.homeLogo} /><strong>{match.homeTeam}</strong></div>
+      <span>vs</span>
+      <div><strong>{match.awayTeam}</strong><img alt={`${match.awayTeam} logo`} src={match.awayLogo} /></div>
+    </div>
+  );
+}
+
+function WidgetPreviewUnavailable({ locale }: { locale: Locale }) {
+  return <div className="widgetPreview"><p>{locale === "de" ? "Vorschau wird geladen, sobald zwei API-Logos verfügbar sind." : "Preview loads when two API logos are available."}</p></div>;
 }
 
 function WidgetPreviewRow({
@@ -351,25 +331,15 @@ function WidgetPreviewRow({
   return (
     <div>
       <span className="widgetPreviewListTeams">
-        <img alt="" src={homeLogo} />
+        <img alt={`${home} logo`} src={homeLogo} />
         <strong>{home}</strong>
         <em>vs</em>
-        <img alt="" src={awayLogo} />
+        <img alt={`${away} logo`} src={awayLogo} />
         <strong>{away}</strong>
       </span>
       <strong>{pick}</strong>
       <em>{score}</em>
       <small>{confidence}</small>
-    </div>
-  );
-}
-
-function WidgetPreviewLeader({ confidence, model, rank }: { confidence: string; model: string; rank: string }) {
-  return (
-    <div>
-      <span>{rank}</span>
-      <strong>{model}</strong>
-      <em>{confidence}</em>
     </div>
   );
 }

@@ -9,6 +9,7 @@ A public email address is not permission to send advertising. In Germany, Sectio
 The workflow therefore enforces:
 
 - only public role addresses such as `redaktion@`, `sport@`, or `partners@`; personal addresses are discarded;
+- pages without a verified public role email are discarded before a prospect is stored;
 - `robots.txt`, same-origin crawling, a descriptive user agent, request limits, and crawl delays;
 - no recurring discovery job by default;
 - drafts remain `pending_review` after discovery;
@@ -22,7 +23,7 @@ This is a technical safeguard, not legal advice. Have the final process and cons
 
 ## Setup
 
-Run the Postgres migrations and configure the outreach variables from `.env.example`. Discovery supports SerpApi and Brave Search; SerpApi is selected automatically when `SERPAPI_API_KEY` is present. Optional OpenRouter personalization creates tailored drafts. Without `OPENROUTER_API_KEY`, a factual template draft is created instead.
+Run the Postgres migrations and configure the outreach variables from `.env.example`. Discovery supports SerpApi and Brave Search; SerpApi is selected automatically when `SERPAPI_API_KEY` is present. The cockpit can enqueue separate searches for Germany, Austria, Switzerland, the United Kingdom, the United States, Canada, Australia, Spain, France, Italy, and the Netherlands. Search region and query language follow the selected country, while the draft language can independently be German, English, Spanish, French, Italian, or Dutch. Optional OpenRouter personalization creates tailored drafts. Without `OPENROUTER_API_KEY`, a localized factual template draft is created instead.
 
 For delivery, use a Resend-verified domain you own. Do not configure a public mailbox domain such as Outlook as the Resend sender. Resend's domain setup requires SPF and DKIM; DMARC is also recommended.
 
@@ -68,7 +69,7 @@ The admin cockpit exposes the same guarded operations. Editing an approved draft
 
 The worker also recognizes these manually enqueued jobs on the `outreach` queue:
 
-- `discover-editorial-prospects`
+- `discover-editorial-prospects` with optional `{ "country": "FR", "searchLanguage": "fr", "emailLanguage": "fr" }`
 - `send-approved-editorial-outreach` with `{ "draftId": "..." }`
 
 Neither job is scheduled automatically. The send job performs the same permission and approval checks as the command-line path.

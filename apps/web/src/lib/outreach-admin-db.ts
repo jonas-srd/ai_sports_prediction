@@ -19,6 +19,7 @@ export type SendableOutreachDraft = {
   subject: string;
   textBody: string;
   htmlBody: string | null;
+  emailLanguage: "de" | "en" | "es" | "fr" | "it" | "nl";
 };
 
 export function getOutreachDb(): PostgresDb {
@@ -54,6 +55,12 @@ export async function listOutreachProspects(db = getOutreachDb()): Promise<Outre
         discovered_at_utc as "discoveredAtUtc",
         researched_at_utc as "researchedAtUtc"
       from editorial_prospects
+      where exists (
+        select 1 from editorial_contacts c
+        where c.prospect_id = editorial_prospects.id
+          and c.kind = 'generic_email'
+          and c.is_role_address = true
+      )
       order by
         case status when 'pending_review' then 0 when 'qualified' then 1 when 'discovered' then 2 else 3 end,
         fit_score desc,
@@ -70,6 +77,7 @@ export async function listOutreachProspects(db = getOutreachDb()): Promise<Outre
         source_url as "sourceUrl",
         is_role_address as "isRoleAddress"
       from editorial_contacts
+      where kind = 'generic_email' and is_role_address = true
       order by created_at_utc asc
     `),
     db.query<OutreachDraftView & { prospectId: string }>(`
@@ -79,6 +87,7 @@ export async function listOutreachProspects(db = getOutreachDb()): Promise<Outre
         contact_id as "contactId",
         subject,
         text_body as "textBody",
+        email_language as "emailLanguage",
         status,
         model_id as "modelId",
         approved_by as "approvedBy",
@@ -243,7 +252,8 @@ export async function claimOutreachDraftForSend(draftId: string, db = getOutreac
           c.value as email,
           d.subject,
           d.text_body as "textBody",
-          d.html_body as "htmlBody"
+          d.html_body as "htmlBody",
+          d.email_language as "emailLanguage"
         from editorial_outreach_drafts d
         join editorial_prospects p on p.id = d.prospect_id
         join editorial_contacts c on c.id = d.contact_id

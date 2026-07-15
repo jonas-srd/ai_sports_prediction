@@ -1,6 +1,7 @@
 import { createHash, timingSafeEqual } from "node:crypto";
 import type { NextRequest } from "next/server";
 import type { WidgetType } from "@/lib/widget-data";
+import { getWidgetDb } from "@/lib/widget-db";
 
 export type WidgetAccessPlan = "starter" | "growth" | "enterprise";
 
@@ -13,7 +14,7 @@ export type WidgetAccessCustomer = {
   monthlyLimit?: number;
   name?: string;
   plan?: WidgetAccessPlan;
-  status?: "active" | "trialing" | "past_due" | "canceled" | "inactive";
+  status?: "active" | "past_due" | "canceled" | "inactive";
 };
 
 export type WidgetAccessGrant = {
@@ -32,11 +33,11 @@ const PLAN_RULES: Record<WidgetAccessPlan, { allowedTypes: WidgetType[]; maxLimi
     maxLimit: 3
   },
   growth: {
-    allowedTypes: ["prediction-card", "match-list", "leaderboard", "win-probability", "key-factors"],
+    allowedTypes: ["prediction-card", "match-list", "win-probability", "key-factors"],
     maxLimit: 8
   },
   enterprise: {
-    allowedTypes: ["prediction-card", "match-list", "leaderboard", "win-probability", "key-factors"],
+    allowedTypes: ["prediction-card", "match-list", "win-probability", "key-factors"],
     maxLimit: 12
   }
 };
@@ -45,14 +46,22 @@ export function verifyWidgetAccess(args: {
   limit: number;
   request: NextRequest;
   type: WidgetType;
-}): WidgetAccessDecision {
+}): Promise<WidgetAccessDecision> {
+  return verifyWidgetAccessAsync(args);
+}
+
+async function verifyWidgetAccessAsync(args: {
+  limit: number;
+  request: NextRequest;
+  type: WidgetType;
+}): Promise<WidgetAccessDecision> {
   const key = readWidgetApiKey(args.request);
   if (!key) {
     return deny("missing_key", 401, "A paid widget API key is required.");
   }
 
   const customers = readWidgetCustomers();
-  const customer = customers.find((row) => matchesCustomerKey(row, key));
+  const customer = customers.find((row) => matchesCustomerKey(row, key)) ?? await findDatabaseCustomer(key);
   if (!customer) {
     return deny("invalid_key", 401, "The widget API key is invalid.");
   }
@@ -120,6 +129,47 @@ function readWidgetCustomers(): WidgetAccessCustomer[] {
   }
 }
 
+async function findDatabaseCustomer(key: string): Promise<WidgetAccessCustomer | null> {
+  if (!process.env.DATABASE_URL && !process.env.POSTGRES_URL) {
+    return null;
+  }
+
+  const keyHash = createHash("sha256").update(key).digest("hex");
+
+  try {
+    const result = await getWidgetDb().query<{
+      api_key_hash: string;
+      domain: string;
+      email: string;
+      monthly_limit: number;
+      plan: WidgetAccessPlan;
+      publication_name: string;
+      status: WidgetAccessCustomer["status"];
+      access_expires_at_utc: Date | null;
+    }>(`
+      select api_key_hash, domain, email, monthly_limit, plan, publication_name, status, access_expires_at_utc
+      from widget_customers
+      where api_key_hash = $1
+      limit 1
+    `, [keyHash]);
+    const row = result.rows[0];
+    if (!row) return null;
+
+    return {
+      domains: [row.domain],
+      expiresAt: row.access_expires_at_utc?.toISOString(),
+      keyHash: row.api_key_hash,
+      monthlyLimit: row.monthly_limit,
+      name: row.publication_name || row.email,
+      plan: row.plan,
+      status: row.status
+    };
+  } catch (error) {
+    console.error("Widget customer lookup failed", error);
+    return null;
+  }
+}
+
 function isWidgetCustomer(value: unknown): value is WidgetAccessCustomer {
   if (!value || typeof value !== "object") return false;
   const row = value as WidgetAccessCustomer;
@@ -143,7 +193,7 @@ function secureCompare(left: string, right: string): boolean {
 }
 
 function isPaidCustomer(customer: WidgetAccessCustomer): boolean {
-  if (customer.status !== "active" && customer.status !== "trialing") return false;
+  if (customer.status !== "active") return false;
   if (!customer.expiresAt) return true;
   return new Date(customer.expiresAt).getTime() > Date.now();
 }

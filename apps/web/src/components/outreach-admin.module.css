@@ -141,6 +141,39 @@
   max-width: 1480px;
 }
 
+.researchPanel {
+  background: rgba(12, 24, 17, 0.9);
+  border: 1px solid rgba(125, 245, 193, 0.2);
+  border-radius: 22px;
+  display: grid;
+  gap: 20px;
+  grid-template-columns: minmax(260px, 0.65fr) minmax(420px, 1.35fr) minmax(220px, 0.45fr);
+  margin: 0 auto 16px;
+  max-width: 1480px;
+  padding: 20px;
+}
+.researchPanel h2 { font-size: 1.35rem; margin: 0; }
+.researchPanel p { color: #91a498; font-size: 0.82rem; line-height: 1.5; margin: 8px 0 0; }
+.countryGrid { display: grid; gap: 8px; grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.countryOption,
+.countrySelected {
+  align-items: center;
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  border-radius: 10px;
+  cursor: pointer;
+  display: flex !important;
+  font-size: 0.76rem;
+  gap: 7px !important;
+  padding: 9px;
+}
+.countrySelected { background: rgba(125, 245, 193, 0.1); border-color: rgba(125, 245, 193, 0.42); }
+.countryOption input,
+.countrySelected input { accent-color: #7df5c1; width: auto; }
+.countryOption span,
+.countrySelected span { color: #7df5c1 !important; font-size: 0.68rem !important; }
+.researchActions { align-content: end; display: grid; gap: 10px; }
+.researchActions small { color: #788d80; font-size: 0.7rem; }
+
 .statsGrid {
   display: grid;
   gap: 14px;
@@ -257,6 +290,7 @@
 @media (max-width: 900px) {
   .statsGrid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .controlBar,
+  .researchPanel,
   .prospectMeta { grid-template-columns: 1fr; }
   .prospectHeader { align-items: start; grid-template-columns: auto minmax(0, 1fr); }
   .prospectActions { grid-column: 1 / -1; }

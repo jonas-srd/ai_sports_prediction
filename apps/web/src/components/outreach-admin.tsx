@@ -16,6 +16,11 @@ type ApprovalEdit = {
 };
 
 const TOKEN_STORAGE_KEY = "ai-sports-outreach-admin-token";
+const researchCountries = [
+  ["DE", "Deutschland"], ["AT", "Österreich"], ["CH", "Schweiz"], ["GB", "Großbritannien"],
+  ["US", "USA"], ["CA", "Kanada"], ["AU", "Australien"], ["ES", "Spanien"],
+  ["FR", "Frankreich"], ["IT", "Italien"], ["NL", "Niederlande"]
+] as const;
 
 export function OutreachAdmin() {
   const [token, setToken] = useState("");
@@ -27,6 +32,8 @@ export function OutreachAdmin() {
   const [draftEdits, setDraftEdits] = useState<Record<string, DraftEdit>>({});
   const [approvalEdits, setApprovalEdits] = useState<Record<string, ApprovalEdit>>({});
   const [busyId, setBusyId] = useState<string | null>(null);
+  const [researchCountriesSelected, setResearchCountriesSelected] = useState<string[]>(["DE"]);
+  const [emailLanguage, setEmailLanguage] = useState("de");
 
   useEffect(() => {
     const storedToken = window.sessionStorage.getItem(TOKEN_STORAGE_KEY) ?? "";
@@ -110,6 +117,25 @@ export function OutreachAdmin() {
     }
   }
 
+  async function startResearch() {
+    setBusyId("research");
+    setStatus("Internationale Redaktionssuche wird eingeplant …");
+    try {
+      const response = await fetch("/api/admin/outreach", {
+        method: "PATCH",
+        headers: { authorization: `Bearer ${token.trim()}`, "content-type": "application/json" },
+        body: JSON.stringify({ action: "start_research", countries: researchCountriesSelected, emailLanguage })
+      });
+      const body = await response.json() as { jobs?: number; message?: string };
+      if (!response.ok) throw new Error(body.message || "Recherche konnte nicht gestartet werden.");
+      setStatus(`${body.jobs ?? researchCountriesSelected.length} Länder-Recherchen wurden gestartet. Es werden nur Redaktionen mit öffentlicher Funktions-E-Mail gespeichert.`);
+    } catch (error) {
+      setStatus(error instanceof Error ? error.message : "Recherche konnte nicht gestartet werden.");
+    } finally {
+      setBusyId(null);
+    }
+  }
+
   function submitToken(event: FormEvent) {
     event.preventDefault();
     void loadProspects();
@@ -166,6 +192,41 @@ export function OutreachAdmin() {
         </section>
       ) : (
         <>
+          <section className={styles.researchPanel} aria-labelledby="research-title">
+            <div>
+              <span className={styles.eyebrow}>International Research Agent</span>
+              <h2 id="research-title">Redaktionen nach Ländern finden</h2>
+              <p>Die Suche nutzt die jeweilige Landesregion und Landessprache. Seiten ohne öffentlich bestätigte Funktions-E-Mail werden verworfen.</p>
+            </div>
+            <div className={styles.countryGrid}>
+              {researchCountries.map(([code, name]) => (
+                <label className={researchCountriesSelected.includes(code) ? styles.countrySelected : styles.countryOption} key={code}>
+                  <input
+                    checked={researchCountriesSelected.includes(code)}
+                    onChange={(event) => setResearchCountriesSelected((current) => event.target.checked
+                      ? [...new Set([...current, code])]
+                      : current.filter((item) => item !== code))}
+                    type="checkbox"
+                  />
+                  <span>{code}</span>{name}
+                </label>
+              ))}
+            </div>
+            <div className={styles.researchActions}>
+              <label>
+                <span>E-Mail-Sprache</span>
+                <select data-testid="outreach-email-language" onChange={(event) => setEmailLanguage(event.target.value)} value={emailLanguage}>
+                  <option value="de">Deutsch</option><option value="en">Englisch</option><option value="es">Spanisch</option>
+                  <option value="fr">Französisch</option><option value="it">Italienisch</option><option value="nl">Niederländisch</option>
+                </select>
+              </label>
+              <button className={styles.primaryButton} disabled={!data.researchConfigured || !researchCountriesSelected.length || busyId === "research"} onClick={() => void startResearch()} type="button">
+                {busyId === "research" ? "Recherche startet …" : "Recherche starten"}
+              </button>
+              <small>{data.researchConfigured ? "Such-API und Queue sind bereit." : "Such-API oder Queue ist noch nicht konfiguriert."}</small>
+            </div>
+          </section>
+
           <section className={styles.statsGrid} aria-label="Outreach-Übersicht">
             <Stat label="Prospects" value={stats.total} />
             <Stat label="Zu prüfen" value={stats.review} />
@@ -252,6 +313,7 @@ function ProspectCard({
           <div className={styles.badgeRow}>
             <StatusBadge status={prospect.status} />
             <ConsentBadge status={prospect.consentStatus} />
+            {prospect.country ? <span className={styles.neutralBadge}>{prospect.country}</span> : null}
             {isSuppressed ? <span className={styles.dangerBadge}>Gesperrt</span> : null}
           </div>
           <h2>{prospect.publicationName}</h2>
@@ -338,7 +400,7 @@ function DraftEditor({ approval, busy, draft, edit, onApprovalChange, onDraftCha
     <section className={styles.draftCard}>
       <div className={styles.draftHeader}>
         <div><span>E-Mail-Entwurf</span><DraftBadge status={draft.status} /></div>
-        <small>{draft.modelId ? `KI: ${draft.modelId}` : "Standardvorlage"}</small>
+        <small>{draft.emailLanguage.toUpperCase()} · {draft.modelId ? `KI: ${draft.modelId}` : "Standardvorlage"}</small>
       </div>
       <label>
         <span>Betreff</span>

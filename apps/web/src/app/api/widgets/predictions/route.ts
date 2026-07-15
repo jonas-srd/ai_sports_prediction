@@ -1,7 +1,10 @@
 import { NextResponse, type NextRequest } from "next/server";
 import {
   getPublicWidgetPayload,
+  parseWidgetLanguage,
   parseWidgetLimit,
+  parseWidgetMatchIds,
+  parseWidgetModel,
   parseWidgetSport,
   parseWidgetType
 } from "@/lib/widget-data";
@@ -11,7 +14,7 @@ export async function GET(request: NextRequest) {
   const { searchParams } = request.nextUrl;
   const limit = parseWidgetLimit(searchParams.get("limit"));
   const type = parseWidgetType(searchParams.get("type"));
-  const access = verifyWidgetAccess({ limit, request, type });
+  const access = await verifyWidgetAccess({ limit, request, type });
 
   if (!access.ok) {
     return NextResponse.json({
@@ -28,8 +31,11 @@ export async function GET(request: NextRequest) {
 
   const payload = await getPublicWidgetPayload({
     competition: searchParams.get("competition"),
+    language: parseWidgetLanguage(searchParams.get("language")),
     limit,
     matchId: searchParams.get("matchId"),
+    matchIds: parseWidgetMatchIds(searchParams.get("matchIds")),
+    model: parseWidgetModel(searchParams.get("model")),
     sport: parseWidgetSport(searchParams.get("sport")),
     type
   });

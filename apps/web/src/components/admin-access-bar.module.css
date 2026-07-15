@@ -1,0 +1,53 @@
+.bar {
+  align-items: center;
+  backdrop-filter: blur(18px);
+  background: rgba(5, 17, 13, 0.92);
+  border-bottom: 1px solid rgba(108, 235, 181, 0.2);
+  color: #d9e7e1;
+  display: flex;
+  font: 700 12px/1 Arial, sans-serif;
+  gap: 20px;
+  justify-content: center;
+  min-height: 44px;
+  padding: 0 18px;
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+}
+
+.lock {
+  color: #65e5ad;
+  font-family: monospace;
+  letter-spacing: 0.12em;
+}
+
+.bar nav {
+  display: flex;
+  gap: 14px;
+}
+
+.bar a,
+.bar button {
+  background: none;
+  border: 0;
+  color: inherit;
+  cursor: pointer;
+  font: inherit;
+  padding: 7px 4px;
+  text-decoration: none;
+}
+
+.bar button {
+  color: #9eaca6;
+}
+
+@media (max-width: 560px) {
+  .bar {
+    gap: 10px;
+    justify-content: space-between;
+  }
+
+  .lock {
+    font-size: 10px;
+  }
+}

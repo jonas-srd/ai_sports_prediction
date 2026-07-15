@@ -77,6 +77,31 @@ api.ai-sports-prediction.net  -> HTTP -> http://127.0.0.1:3001
 
 Do not expose admin backup endpoints as a public hostname.
 
+## Private admin cockpit
+
+Add a dedicated tunnel hostname:
+
+```text
+cockpit.ai-sports-prediction.net -> HTTP -> http://127.0.0.1:3000
+```
+
+The application protects `/admin/*` and `/api/admin/*` with its own authenticator
+login. Every exact address in `ADMIN_ACCESS_EMAILS` has a different TOTP secret.
+Codes rotate every 30 seconds, repeated failures are rate-limited, and a valid
+code creates an HTTP-only signed session cookie. Cloudflare Zero Trust and an
+email provider are not required.
+
+Set these values for the web container before deployment:
+
+```text
+ADMIN_ACCESS_EMAILS=<comma-separated-allowlist>
+ADMIN_SESSION_SECRET=<at-least-32-random-bytes>
+ADMIN_TOTP_SECRETS=<JSON-email-to-base32-secret-map>
+```
+
+Keep `ADMIN_API_TOKEN` enabled for sensitive send/publish actions as a second
+authorization layer.
+
 If the root domain has imported IONOS `A` or `AAAA` records for `@`, delete
 those records after the tunnel route exists. The root domain should resolve
 through the tunnel route, not the old parking/default host.

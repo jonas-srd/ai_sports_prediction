@@ -38,11 +38,16 @@ const secrets = {
   databaseUrl: secretArn("ai-sports-prediction/database-url"),
   redisUrl: secretArn("ai-sports-prediction/redis-url"),
   adminApiToken: secretArn("ai-sports-prediction/admin-api-token"),
+  adminAccessEmails: secretArn("ai-sports-prediction/admin-access-emails"),
+  adminSessionSecret: secretArn("ai-sports-prediction/admin-session-secret"),
+  adminTotpSecrets: secretArn("ai-sports-prediction/admin-totp-secrets"),
   openrouterApiKey: secretArn("ai-sports-prediction/openrouter-api-key"),
   resendApiKey: secretArn("ai-sports-prediction/resend-api-key"),
   theOddsApiKey: secretArn("ai-sports-prediction/the-odds-api-key"),
   theSportsDbApiKey: secretArn("ai-sports-prediction/the-sports-db-api-key"),
-  cloudflareTunnelToken: secretArn("ai-sports-prediction/cloudflare-tunnel-token")
+  cloudflareTunnelToken: secretArn("ai-sports-prediction/cloudflare-tunnel-token"),
+  serpApiKey: secretArn("ai-sports-prediction/serpapi-api-key"),
+  tiktokAccessToken: optionalSecretArn("ai-sports-prediction/tiktok-access-token")
 };
 
 const taskDefinition = {
@@ -72,6 +77,7 @@ const taskDefinition = {
         { name: "SHOW_FULL_SITE", value: env("SHOW_FULL_SITE", "0") },
         { name: "NEXT_PUBLIC_SHOW_FULL_SITE", value: env("NEXT_PUBLIC_SHOW_FULL_SITE", "0") },
         { name: "NEXT_PUBLIC_SITE_URL", value: env("NEXT_PUBLIC_SITE_URL", "https://www.ai-sports-prediction.net") },
+        { name: "ADMIN_SESSION_TTL_HOURS", value: env("ADMIN_SESSION_TTL_HOURS", "168") },
         { name: "OPENROUTER_MODEL_IDS", value: env("OPENROUTER_MODEL_IDS", "openai/gpt-oss-20b:free") },
         { name: "OPENROUTER_SITE_URL", value: env("OPENROUTER_SITE_URL", "https://www.ai-sports-prediction.net") },
         { name: "OPENROUTER_SITE_NAME", value: env("OPENROUTER_SITE_NAME", "AI Sports Prediction") },
@@ -87,15 +93,21 @@ const taskDefinition = {
           value: env("DATABASE_SSL_CA_FILE", "/etc/ssl/certs/aws-rds-global-bundle.pem")
         },
         { name: "WEB_API_CACHE_SECONDS", value: env("WEB_API_CACHE_SECONDS", "60") },
-        { name: "WEB_API_ODDS_CACHE_SECONDS", value: env("WEB_API_ODDS_CACHE_SECONDS", "60") }
+        { name: "WEB_API_ODDS_CACHE_SECONDS", value: env("WEB_API_ODDS_CACHE_SECONDS", "60") },
+        { name: "OUTREACH_SEARCH_PROVIDER", value: env("OUTREACH_SEARCH_PROVIDER", "serpapi") }
       ],
       secrets: [
         { name: "DATABASE_URL", valueFrom: secrets.databaseUrl },
+        { name: "REDIS_URL", valueFrom: secrets.redisUrl },
         { name: "ADMIN_API_TOKEN", valueFrom: secrets.adminApiToken },
+        { name: "ADMIN_ACCESS_EMAILS", valueFrom: secrets.adminAccessEmails },
+        { name: "ADMIN_SESSION_SECRET", valueFrom: secrets.adminSessionSecret },
+        { name: "ADMIN_TOTP_SECRETS", valueFrom: secrets.adminTotpSecrets },
         { name: "OPENROUTER_API_KEY", valueFrom: secrets.openrouterApiKey },
         { name: "RESEND_API_KEY", valueFrom: secrets.resendApiKey },
         { name: "THE_ODDS_API_KEY", valueFrom: secrets.theOddsApiKey },
-        { name: "THE_SPORTS_DB_API_KEY", valueFrom: secrets.theSportsDbApiKey }
+        { name: "THE_SPORTS_DB_API_KEY", valueFrom: secrets.theSportsDbApiKey },
+        { name: "SERPAPI_API_KEY", valueFrom: secrets.serpApiKey }
       ],
       logConfiguration: awslogs("edge-web")
     },
@@ -152,6 +164,14 @@ const taskDefinition = {
         { name: "ODDS_REFRESH_INTERVAL_MINUTES", value: env("ODDS_REFRESH_INTERVAL_MINUTES", "60") },
         { name: "ODDS_REFRESH_MIN_AGE_MINUTES", value: env("ODDS_REFRESH_MIN_AGE_MINUTES", "60") },
         { name: "ODDS_REFRESH_MAX_MATCHES_PER_RUN", value: env("ODDS_REFRESH_MAX_MATCHES_PER_RUN", "250") },
+        { name: "OUTREACH_SEARCH_PROVIDER", value: env("OUTREACH_SEARCH_PROVIDER", "serpapi") },
+        { name: "OUTREACH_SEARCH_COUNTRY", value: env("OUTREACH_SEARCH_COUNTRY", "DE") },
+        { name: "OUTREACH_SEARCH_LANGUAGE", value: env("OUTREACH_SEARCH_LANGUAGE", "de") },
+        { name: "OUTREACH_EMAIL_LANGUAGE", value: env("OUTREACH_EMAIL_LANGUAGE", "de") },
+        { name: "OUTREACH_MAX_DOMAINS_PER_RUN", value: env("OUTREACH_MAX_DOMAINS_PER_RUN", "20") },
+        { name: "OUTREACH_MAX_CRAWL_ATTEMPTS_PER_RUN", value: env("OUTREACH_MAX_CRAWL_ATTEMPTS_PER_RUN", "60") },
+        { name: "MARKETING_PUBLISH_MODE", value: env("MARKETING_PUBLISH_MODE", "review") },
+        { name: "MARKETING_AUTOMATION_ENABLED", value: env("MARKETING_AUTOMATION_ENABLED", "0") },
         { name: "DATABASE_SSL", value: env("DATABASE_SSL", "1") },
         { name: "DATABASE_SSL_REJECT_UNAUTHORIZED", value: env("DATABASE_SSL_REJECT_UNAUTHORIZED", "1") },
         {
@@ -164,7 +184,9 @@ const taskDefinition = {
         { name: "REDIS_URL", valueFrom: secrets.redisUrl },
         { name: "OPENROUTER_API_KEY", valueFrom: secrets.openrouterApiKey },
         { name: "THE_SPORTS_DB_API_KEY", valueFrom: secrets.theSportsDbApiKey },
-        { name: "THE_ODDS_API_KEY", valueFrom: secrets.theOddsApiKey }
+        { name: "THE_ODDS_API_KEY", valueFrom: secrets.theOddsApiKey },
+        { name: "SERPAPI_API_KEY", valueFrom: secrets.serpApiKey },
+        ...(secrets.tiktokAccessToken ? [{ name: "TIKTOK_ACCESS_TOKEN", valueFrom: secrets.tiktokAccessToken }] : [])
       ],
       logConfiguration: awslogs("edge-worker")
     },
@@ -282,6 +304,14 @@ function secretArn(secretName) {
     "--output",
     "text"
   ]);
+}
+
+function optionalSecretArn(secretName) {
+  try {
+    return secretArn(secretName);
+  } catch {
+    return null;
+  }
 }
 
 function awslogs(streamPrefix) {

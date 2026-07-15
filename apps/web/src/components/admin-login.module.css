@@ -1,0 +1,115 @@
+.page {
+  align-items: center;
+  background:
+    radial-gradient(circle at 18% 12%, rgba(68, 217, 158, 0.14), transparent 32rem),
+    #06130f;
+  color: #eefbf5;
+  display: flex;
+  font-family: Arial, sans-serif;
+  justify-content: center;
+  min-height: 100vh;
+  padding: 24px;
+}
+
+.card {
+  background: rgba(13, 31, 25, 0.96);
+  border: 1px solid rgba(111, 240, 187, 0.28);
+  border-radius: 18px;
+  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.32);
+  max-width: 460px;
+  padding: clamp(28px, 5vw, 48px);
+  width: 100%;
+}
+
+.eyebrow {
+  color: #76f0bd;
+  font-family: monospace;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.16em;
+}
+
+.card h1 {
+  font-size: clamp(32px, 7vw, 48px);
+  letter-spacing: -0.05em;
+  margin: 12px 0;
+}
+
+.intro,
+.security,
+.message {
+  color: #adbbb5;
+  line-height: 1.55;
+}
+
+.form {
+  display: grid;
+  gap: 12px;
+  margin-top: 28px;
+}
+
+.form label {
+  color: #dce9e3;
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.form input {
+  background: #071713;
+  border: 1px solid rgba(169, 209, 191, 0.28);
+  border-radius: 10px;
+  color: #fff;
+  font: inherit;
+  min-height: 50px;
+  padding: 0 14px;
+}
+
+.form input:focus {
+  border-color: #76f0bd;
+  box-shadow: 0 0 0 3px rgba(118, 240, 189, 0.14);
+  outline: none;
+}
+
+.codeInput {
+  font-family: monospace !important;
+  font-size: 26px !important;
+  letter-spacing: 0.35em;
+  text-align: center;
+}
+
+.form button {
+  background: #65e5ad;
+  border: 0;
+  border-radius: 10px;
+  color: #06130f;
+  cursor: pointer;
+  font: inherit;
+  font-weight: 900;
+  min-height: 48px;
+  padding: 0 18px;
+}
+
+.form button:disabled {
+  cursor: wait;
+  opacity: 0.58;
+}
+
+.form .secondary {
+  background: transparent;
+  border: 1px solid rgba(169, 209, 191, 0.22);
+  color: #c9d7d1;
+}
+
+.message {
+  background: rgba(118, 240, 189, 0.08);
+  border-left: 3px solid #76f0bd;
+  margin: 20px 0 0;
+  padding: 10px 12px;
+}
+
+.security {
+  border-top: 1px solid rgba(169, 209, 191, 0.14);
+  font-size: 12px;
+  margin: 24px 0 0;
+  padding-top: 18px;
+}

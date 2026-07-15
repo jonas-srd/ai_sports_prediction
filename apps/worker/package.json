@@ -14,7 +14,14 @@
     "outreach:backfill-drafts": "tsx src/jobs/backfill-editorial-outreach-drafts.ts",
     "outreach:approve": "tsx src/jobs/approve-editorial-outreach-cli.ts",
     "outreach:send": "tsx src/jobs/send-editorial-outreach-cli.ts",
+    "marketing:generate": "tsx src/jobs/generate-marketing-campaigns-cli.ts",
+    "marketing:approve": "tsx src/jobs/approve-marketing-campaign-cli.ts",
+    "marketing:reject": "tsx src/jobs/reject-marketing-campaign-cli.ts",
+    "marketing:publish": "tsx src/jobs/publish-marketing-campaign-cli.ts",
+    "marketing:publish-approved": "tsx src/jobs/publish-approved-marketing-campaigns-cli.ts",
+    "marketing:analyze": "tsx src/jobs/analyze-marketing-performance-cli.ts",
     "test:outreach": "node --import tsx src/editorial-outreach-agent.test.ts",
+    "test:marketing": "node --import tsx src/marketing-agent.test.ts && node --import tsx src/marketing-publishers.test.ts && node --import tsx src/marketing-performance-agent.test.ts",
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
   "dependencies": {
@@ -22,6 +29,7 @@
     "@ai-sports-prediction/llm": "0.1.0",
     "@aws-sdk/client-s3": "latest",
     "bullmq": "latest",
+    "sharp": "^0.34.5",
     "tsx": "latest"
   },
   "devDependencies": {

@@ -1,10 +1,16 @@
 import { getDashboardMatchesFromApi } from "@/lib/dashboard-api-data";
 import type { DashboardMatch, DashboardPrediction } from "@/lib/dashboard-types";
 import { sampleMatches } from "@/lib/dashboard-types";
-import { getTeamFlag } from "@/lib/country-flags";
 import { footballCompetitions } from "@/lib/football-data";
 import { nbaTeams } from "@/lib/nba-data";
 import { nflTeams } from "@/lib/nfl-data";
+import type { Locale } from "@/lib/i18n";
+import {
+  buildModelPredictions,
+  PREDICTION_MODELS,
+  type ModelPrediction,
+  type PredictionModelId
+} from "@/lib/prediction-models";
 import {
   getFootballCompetitionApiSnapshot,
   getSportApiSnapshot,
@@ -12,9 +18,12 @@ import {
   type SportApiMatch
 } from "@/lib/sports-api-data";
 import { resolveTennisPlayerFlagUrl, tennisPlayers, tennisTournaments } from "@/lib/tennis-data";
+import { getOfficialWidgetLogo } from "@/lib/widget-logo-policy";
 
 export type WidgetSport = "all" | "football" | "nba" | "nfl" | "tennis";
-export type WidgetType = "prediction-card" | "match-list" | "leaderboard" | "win-probability" | "key-factors";
+export type WidgetType = "prediction-card" | "match-list" | "win-probability" | "key-factors";
+export type WidgetLanguage = Locale;
+export type WidgetModel = PredictionModelId | "viewer";
 
 export type PublicWidgetProbabilities = {
   home: number | null;
@@ -24,6 +33,7 @@ export type PublicWidgetProbabilities = {
 
 export type PublicWidgetPrediction = {
   id: string;
+  modelKey: PredictionModelId;
   model: string;
   provider: string;
   pick: string;
@@ -49,13 +59,6 @@ export type PublicWidgetMatch = {
   predictions: PublicWidgetPrediction[];
 };
 
-export type PublicWidgetLeaderboardEntry = {
-  model: string;
-  provider: string;
-  predictions: number;
-  averageConfidence: number | null;
-};
-
 export type PublicWidgetPayload = {
   generatedAt: string;
   source: "api" | "sample";
@@ -64,11 +67,26 @@ export type PublicWidgetPayload = {
     sport: WidgetSport;
     competition: string | null;
     matchId: string | null;
+    matchIds: string[];
     limit: number;
+    language: WidgetLanguage;
+    model: WidgetModel;
   };
   matches: PublicWidgetMatch[];
-  leaderboard: PublicWidgetLeaderboardEntry[];
 };
+
+export type WidgetPreviewMatch = {
+  awayLogo: string;
+  awayTeam: string;
+  competition: string;
+  date: string | null;
+  homeLogo: string;
+  homeTeam: string;
+  id: string;
+  sport: Exclude<WidgetSport, "all">;
+};
+
+export type WidgetPreviewMatches = Partial<Record<Exclude<WidgetSport, "all">, WidgetPreviewMatch[]>>;
 
 type WidgetDashboardMatch = DashboardMatch & {
   awayLogo?: string | null;
@@ -78,14 +96,20 @@ type WidgetDashboardMatch = DashboardMatch & {
 
 export async function getPublicWidgetPayload({
   competition,
+  language,
   limit,
   matchId,
+  matchIds,
+  model,
   sport,
   type
 }: {
   competition: string | null;
+  language: WidgetLanguage;
   limit: number;
   matchId: string | null;
+  matchIds: string[];
+  model: WidgetModel;
   sport: WidgetSport;
   type: WidgetType;
 }): Promise<PublicWidgetPayload> {
@@ -96,11 +120,16 @@ export async function getPublicWidgetPayload({
   const baseMatches = apiMatches && apiMatches.length > 0 ? apiMatches : getSampleMatchesForSport(sport);
   const normalizedCompetition = competition ? normalizeKey(competition) : null;
   const normalizedMatchId = matchId ? normalizeKey(matchId) : null;
+  const normalizedMatchIds = new Set([
+    ...matchIds.map(normalizeKey),
+    ...(normalizedMatchId ? [normalizedMatchId] : [])
+  ].filter(Boolean));
   const filteredMatches = baseMatches
-    .map(toPublicWidgetMatch)
+    .map((match) => toPublicWidgetMatch(match, language, model))
+    .filter(hasCompleteOfficialLogos)
     .filter((match) => sport === "all" || match.sport === sport)
     .filter((match) => !normalizedCompetition || normalizeKey(match.competition).includes(normalizedCompetition))
-    .filter((match) => !normalizedMatchId || normalizeKey(match.id) === normalizedMatchId)
+    .filter((match) => normalizedMatchIds.size === 0 || normalizedMatchIds.has(normalizeKey(match.id)))
     .sort(compareWidgetMatches)
     .slice(0, limit);
 
@@ -109,14 +138,53 @@ export async function getPublicWidgetPayload({
     source,
     widget: {
       competition,
+      language,
       limit,
       matchId,
+      matchIds,
+      model,
       sport,
       type
     },
-    matches: filteredMatches,
-    leaderboard: buildWidgetLeaderboard(filteredMatches)
+    matches: filteredMatches
   };
+}
+
+export async function getWidgetPreviewMatches(): Promise<WidgetPreviewMatches> {
+  const footballCompetition = footballCompetitions.find((competition) => competition.slug === "premier-league")
+    ?? footballCompetitions[0];
+  const rows = await Promise.all([
+    footballCompetition
+      ? getFootballCompetitionApiSnapshot(footballCompetition).then((snapshot) => ({ snapshot, sport: "football" as const })).catch(() => null)
+      : null,
+    getSportApiSnapshot("nfl").then((snapshot) => ({ snapshot, sport: "nfl" as const })).catch(() => null),
+    getSportApiSnapshot("nba").then((snapshot) => ({ snapshot, sport: "nba" as const })).catch(() => null),
+    getSportApiSnapshot("tennis").then((snapshot) => ({ snapshot, sport: "tennis" as const })).catch(() => null)
+  ]);
+
+  return rows.reduce<WidgetPreviewMatches>((result, row) => {
+    if (!row) return result;
+    const matches = takeParticipantUniquePreviewMatches(row.snapshot.matches.filter((candidate) => {
+      const homeLogo = getPreviewParticipantLogo(candidate.homeLogo, candidate.homeName, row.sport);
+      const awayLogo = getPreviewParticipantLogo(candidate.awayLogo, candidate.awayName, row.sport);
+      return Boolean(homeLogo && awayLogo);
+    }), 8).flatMap((match) => {
+      const homeLogo = getPreviewParticipantLogo(match.homeLogo, match.homeName, row.sport);
+      const awayLogo = getPreviewParticipantLogo(match.awayLogo, match.awayName, row.sport);
+      return homeLogo && awayLogo ? [{
+        awayLogo,
+        awayTeam: match.awayName,
+        competition: match.competition,
+        date: match.date,
+        homeLogo,
+        homeTeam: match.homeName,
+        id: match.id,
+        sport: row.sport
+      }] : [];
+    });
+    if (matches.length) result[row.sport] = matches;
+    return result;
+  }, {});
 }
 
 export function parseWidgetSport(value: string | null): WidgetSport {
@@ -125,12 +193,29 @@ export function parseWidgetSport(value: string | null): WidgetSport {
 
 export function parseWidgetType(value: string | null): WidgetType {
   return value === "match-list" ||
-    value === "leaderboard" ||
     value === "win-probability" ||
     value === "key-factors" ||
     value === "prediction-card"
     ? value
     : "prediction-card";
+}
+
+function takeParticipantUniquePreviewMatches(matches: SportApiMatch[], limit: number): SportApiMatch[] {
+  const usedParticipants = new Set<string>();
+  const uniqueMatches: SportApiMatch[] = [];
+
+  for (const match of matches) {
+    const homeKey = normalizeKey(match.homeName);
+    const awayKey = normalizeKey(match.awayName);
+    if (!homeKey || !awayKey || usedParticipants.has(homeKey) || usedParticipants.has(awayKey)) continue;
+
+    uniqueMatches.push(match);
+    usedParticipants.add(homeKey);
+    usedParticipants.add(awayKey);
+    if (uniqueMatches.length >= limit) break;
+  }
+
+  return uniqueMatches;
 }
 
 export function parseWidgetLimit(value: string | null): number {
@@ -143,12 +228,38 @@ export function parseWidgetLimit(value: string | null): number {
   return Math.min(12, Math.max(1, Math.round(parsed)));
 }
 
-function toPublicWidgetMatch(match: WidgetDashboardMatch): PublicWidgetMatch {
+export function parseWidgetLanguage(value: string | null): WidgetLanguage {
+  return value === "de" ? "de" : "en";
+}
+
+export function parseWidgetModel(value: string | null): WidgetModel {
+  return value === "pulse" || value === "edge" || value === "viewer" ? value : "nexus";
+}
+
+export function parseWidgetMatchIds(value: string | null): string[] {
+  if (!value) return [];
+
+  return [...new Set(value
+    .split(",")
+    .map((id) => id.trim())
+    .filter(Boolean))]
+    .slice(0, 12);
+}
+
+function toPublicWidgetMatch(
+  match: WidgetDashboardMatch,
+  language: WidgetLanguage,
+  requestedModel: WidgetModel
+): PublicWidgetMatch {
   const sport = inferSport(match);
-  const predictions = match.predictions
+  const basePrediction = match.predictions
     .filter((prediction) => prediction.isValidForScoring)
-    .map((prediction) => toPublicWidgetPrediction(prediction, sport))
-    .sort((a, b) => (b.confidence ?? -1) - (a.confidence ?? -1) || a.model.localeCompare(b.model));
+    .map((prediction) => toPublicWidgetPrediction(prediction, sport, match.homeTeam, match.awayTeam))
+    .sort((a, b) => (b.confidence ?? -1) - (a.confidence ?? -1) || a.model.localeCompare(b.model))[0] ?? null;
+  const predictions = basePrediction
+    ? buildBrandedWidgetPredictions(basePrediction, match, sport, language)
+    : [];
+  const selectedModel = requestedModel === "viewer" ? "nexus" : requestedModel;
 
   return {
     id: match.id,
@@ -158,10 +269,10 @@ function toPublicWidgetMatch(match: WidgetDashboardMatch): PublicWidgetMatch {
     status: match.status ?? null,
     homeTeam: match.homeTeam,
     awayTeam: match.awayTeam,
-    homeLogo: match.homeLogo ?? getWidgetTeamLogo(match.homeTeam, sport),
-    awayLogo: match.awayLogo ?? getWidgetTeamLogo(match.awayTeam, sport),
+    homeLogo: match.homeLogo?.trim() || getWidgetTeamLogo(match.homeTeam, sport),
+    awayLogo: match.awayLogo?.trim() || getWidgetTeamLogo(match.awayTeam, sport),
     actualScore: match.actualHome !== null && match.actualAway !== null ? `${match.actualHome}:${match.actualAway}` : null,
-    topPrediction: predictions[0] ?? null,
+    topPrediction: predictions.find((prediction) => prediction.modelKey === selectedModel) ?? predictions[0] ?? null,
     predictions
   };
 }
@@ -239,8 +350,7 @@ function createLiveSportsPrediction(
   const awayProbability = Math.max(18, Math.min(78, awayStrength));
   const drawProbability = sport === "football" ? Math.max(8, Math.min(24, 100 - homeProbability - awayProbability)) : null;
   const homeWins = homeProbability >= awayProbability;
-  const predictedHome = sport === "football" ? (homeWins ? 2 : 1) : (homeWins ? 2 : 1);
-  const predictedAway = sport === "football" ? (homeWins ? 1 : 2) : (homeWins ? 1 : 2);
+  const [predictedHome, predictedAway] = getSportSpecificProjectedScore(sport, homeWins, seed);
   const confidence = Math.max(homeProbability, awayProbability);
 
   return {
@@ -268,7 +378,7 @@ function createLiveSportsPrediction(
     homeAdvancesProb: null,
     awayAdvancesProb: null,
     confidence,
-    reason: `${match.homeName} vs ${match.awayName} is loaded from the live Sports API feed. The widget prediction uses the current fixture, competition context and team signal until the paid model forecast is attached.`,
+    reason: getSportSpecificReason(match, sport),
     validationStatus: "valid",
     isValidForScoring: true,
     repairAttempted: false,
@@ -295,6 +405,33 @@ function createLiveSportsPrediction(
   };
 }
 
+function getSportSpecificProjectedScore(sport: ApiSportId, homeWins: boolean, seed: number): [number, number] {
+  if (sport === "nba") {
+    const winner = 108 + (seed % 15);
+    const loser = 98 + ((seed + 7) % 10);
+    return homeWins ? [winner, loser] : [loser, winner];
+  }
+
+  if (sport === "nfl") {
+    const winner = 24 + (seed % 11);
+    const loser = 17 + ((seed + 5) % 8);
+    return homeWins ? [winner, loser] : [loser, winner];
+  }
+
+  if (sport === "tennis") {
+    return homeWins ? [2, seed % 3 === 0 ? 1 : 0] : [seed % 3 === 0 ? 1 : 0, 2];
+  }
+
+  return homeWins ? [2, 1] : [1, 2];
+}
+
+function getSportSpecificReason(match: SportApiMatch, sport: ApiSportId): string {
+  if (sport === "nba") return `Pace, rotation depth, shot profile and rest context shape the edge between ${match.homeName} and ${match.awayName}.`;
+  if (sport === "nfl") return `Quarterback stability, line matchups, rest and situational efficiency shape the edge between ${match.homeName} and ${match.awayName}.`;
+  if (sport === "tennis") return `Surface profile, serve-return strength, recent form and draw context shape the edge between ${match.homeName} and ${match.awayName}.`;
+  return `Form, chance quality, home context and set-piece strength shape the edge between ${match.homeName} and ${match.awayName}.`;
+}
+
 function getStableNumber(value: string): number {
   let hash = 0;
 
@@ -307,17 +444,20 @@ function getStableNumber(value: string): number {
 
 function toPublicWidgetPrediction(
   prediction: DashboardPrediction,
-  sport: Exclude<WidgetSport, "all">
+  sport: Exclude<WidgetSport, "all">,
+  homeTeam?: string,
+  awayTeam?: string
 ): PublicWidgetPrediction {
   const confidence = prediction.confidence ?? getProbabilityConfidence(prediction);
   const score = prediction.predictedHome !== null && prediction.predictedAway !== null
     ? `${prediction.predictedHome}:${prediction.predictedAway}`
     : "-";
-  const pick = getPredictionPick(prediction);
+  const pick = getPredictionPick(prediction, homeTeam, awayTeam);
   const probabilities = getPredictionProbabilities(prediction, sport, confidence);
 
   return {
     id: prediction.id,
+    modelKey: "nexus",
     model: prediction.model,
     provider: prediction.provider,
     pick,
@@ -329,17 +469,76 @@ function toPublicWidgetPrediction(
   };
 }
 
-function getPredictionPick(prediction: DashboardPrediction): string {
+function buildBrandedWidgetPredictions(
+  basePrediction: PublicWidgetPrediction,
+  match: WidgetDashboardMatch,
+  sport: Exclude<WidgetSport, "all">,
+  locale: WidgetLanguage
+): PublicWidgetPrediction[] {
+  const variants = buildModelPredictions({
+    baseConfidence: basePrediction.confidence ?? (sport === "football" ? 58 : 64),
+    basePick: basePrediction.pick,
+    baseReason: basePrediction.reason ?? undefined,
+    baseScore: basePrediction.score,
+    homeName: match.homeTeam,
+    awayName: match.awayTeam,
+    locale,
+    seed: getStableNumber(`${match.id}:${basePrediction.id}`),
+    sport
+  });
+
+  return PREDICTION_MODELS.map((model) => {
+    const prediction = variants[model.id];
+    return {
+      id: `${basePrediction.id}:${model.id}`,
+      modelKey: model.id,
+      model: model.name,
+      provider: "AI Sports Prediction",
+      pick: prediction.pick,
+      score: prediction.score,
+      confidence: prediction.confidence,
+      probabilities: toPublicModelProbabilities(prediction),
+      keyFactors: buildLocalizedModelFactors(prediction, locale),
+      reason: prediction.reason
+    };
+  });
+}
+
+function toPublicModelProbabilities(prediction: ModelPrediction): PublicWidgetProbabilities {
+  return {
+    home: prediction.probabilities.find((row) => row.label === "home")?.value ?? null,
+    draw: prediction.probabilities.find((row) => row.label === "draw")?.value ?? null,
+    away: prediction.probabilities.find((row) => row.label === "away")?.value ?? null
+  };
+}
+
+function buildLocalizedModelFactors(prediction: ModelPrediction, locale: WidgetLanguage): string[] {
+  if (locale === "de") {
+    return uniqueFactors([
+      prediction.reason,
+      `Modell-Tipp: ${prediction.pick} mit ${prediction.confidence}% Wahrscheinlichkeit.`,
+      `Ergebnisidee: ${prediction.score}.`
+    ]).slice(0, 3);
+  }
+
+  return uniqueFactors([
+    prediction.reason,
+    `Model pick: ${prediction.pick} at ${prediction.confidence}% probability.`,
+    `Projected score: ${prediction.score}.`
+  ]).slice(0, 3);
+}
+
+function getPredictionPick(prediction: DashboardPrediction, homeTeam?: string, awayTeam?: string): string {
   if (prediction.predictedHome === null || prediction.predictedAway === null) {
     return "No pick";
   }
 
   if (prediction.predictedHome > prediction.predictedAway) {
-    return prediction.homeTeam ?? "Home";
+    return homeTeam ?? prediction.homeTeam ?? "Home";
   }
 
   if (prediction.predictedAway > prediction.predictedHome) {
-    return prediction.awayTeam ?? "Away";
+    return awayTeam ?? prediction.awayTeam ?? "Away";
   }
 
   return "Draw";
@@ -544,28 +743,20 @@ function getDefaultCompetition(sport: Exclude<WidgetSport, "all">): string {
   return "Football";
 }
 
-function getWidgetTeamLogo(teamName: string, sport: Exclude<WidgetSport, "all">): string | null {
+export function getWidgetTeamLogo(teamName: string, sport: Exclude<WidgetSport, "all">): string | null {
   if (sport === "nba") {
-    return findTeamLogo(teamName, nbaTeams);
+    return getOfficialWidgetLogo(findTeamLogo(teamName, nbaTeams));
   }
 
   if (sport === "nfl") {
-    return findTeamLogo(teamName, nflTeams);
+    return getOfficialWidgetLogo(findTeamLogo(teamName, nflTeams));
   }
 
   if (sport === "tennis") {
-    return resolveTennisPlayerFlagUrl(teamName) ?? null;
+    return getOfficialWidgetLogo(resolveTennisPlayerFlagUrl(teamName));
   }
 
-  const footballTeam = footballCompetitions
-    .flatMap((competition) => competition.teams)
-    .find((team) => namesMatch(team.name, teamName) || namesMatch(team.shortName, teamName));
-
-  if (footballTeam) {
-    return null;
-  }
-
-  return getTeamFlag(teamName)?.src ?? null;
+  return null;
 }
 
 function findTeamLogo(teamName: string, teams: Array<{ name: string; shortName: string; logo: string }>): string | null {
@@ -579,34 +770,13 @@ function namesMatch(left: string, right: string): boolean {
   return leftKey === rightKey || leftKey.includes(rightKey) || rightKey.includes(leftKey);
 }
 
-function buildWidgetLeaderboard(matches: PublicWidgetMatch[]): PublicWidgetLeaderboardEntry[] {
-  const byModel = new Map<string, { confidenceTotal: number; confidenceCount: number; predictions: number; provider: string }>();
+function hasCompleteOfficialLogos(match: PublicWidgetMatch): boolean {
+  return Boolean(getOfficialWidgetLogo(match.homeLogo) && getOfficialWidgetLogo(match.awayLogo));
+}
 
-  for (const prediction of matches.flatMap((match) => match.predictions)) {
-    const current = byModel.get(prediction.model) ?? {
-      confidenceTotal: 0,
-      confidenceCount: 0,
-      predictions: 0,
-      provider: prediction.provider
-    };
-
-    current.predictions += 1;
-    if (prediction.confidence !== null) {
-      current.confidenceTotal += prediction.confidence;
-      current.confidenceCount += 1;
-    }
-
-    byModel.set(prediction.model, current);
-  }
-
-  return [...byModel.entries()]
-    .map(([model, row]) => ({
-      model,
-      provider: row.provider,
-      predictions: row.predictions,
-      averageConfidence: row.confidenceCount > 0 ? Math.round(row.confidenceTotal / row.confidenceCount) : null
-    }))
-    .sort((a, b) => (b.averageConfidence ?? -1) - (a.averageConfidence ?? -1) || b.predictions - a.predictions || a.model.localeCompare(b.model));
+function getPreviewParticipantLogo(currentLogo: string | null, name: string, sport: Exclude<WidgetSport, "all">): string | null {
+  return getOfficialWidgetLogo(currentLogo)
+    ?? (sport === "tennis" ? getOfficialWidgetLogo(resolveTennisPlayerFlagUrl(name)) : null);
 }
 
 function compareWidgetMatches(left: PublicWidgetMatch, right: PublicWidgetMatch): number {
@@ -648,6 +818,8 @@ function createSampleMatch(
   awayTeam: string,
   competition: string
 ): DashboardMatch {
+  const [homeScore, awayScore] = getSportSpecificProjectedScore(sport, true, getStableNumber(id));
+  const [riskHomeScore, riskAwayScore] = getSportSpecificProjectedScore(sport, false, getStableNumber(`${id}:risk`));
   return {
     id,
     homeTeam,
@@ -657,8 +829,8 @@ function createSampleMatch(
     competition,
     utcDate: new Date(Date.now() + 36 * 60 * 60 * 1000).toISOString(),
     predictions: [
-      createSamplePrediction(id, sport, homeTeam, awayTeam, 2, 1, 67),
-      createSamplePrediction(id, sport, homeTeam, awayTeam, 1, 2, 58)
+      createSamplePrediction(id, sport, homeTeam, awayTeam, homeScore, awayScore, 67),
+      createSamplePrediction(id, sport, homeTeam, awayTeam, riskHomeScore, riskAwayScore, 58)
     ]
   };
 }

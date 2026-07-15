@@ -12,6 +12,7 @@ export type OutreachDraftView = {
   contactId: string | null;
   subject: string;
   textBody: string;
+  emailLanguage: "de" | "en" | "es" | "fr" | "it" | "nl";
   status: "pending_review" | "approved" | "rejected" | "sending" | "sent" | "failed";
   modelId: string | null;
   approvedBy: string | null;
@@ -47,6 +48,7 @@ export type OutreachProspectView = {
 export type OutreachAdminResponse = {
   ok: true;
   prospects: OutreachProspectView[];
+  researchConfigured: boolean;
   sendConfigured: boolean;
   generatedAtUtc: string;
 };

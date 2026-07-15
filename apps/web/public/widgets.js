@@ -26,8 +26,11 @@
     var keys = [
       "type",
       "sport",
+      "language",
+      "model",
       "competition",
       "matchId",
+      "matchIds",
       "limit",
       "title",
       "theme",
@@ -68,7 +71,9 @@
 
     var iframe = document.createElement("iframe");
     iframe.src = buildFrameUrl(origin, target);
-    iframe.title = target.dataset.title || "AI Sports Prediction widget";
+    iframe.title = target.dataset.title || (target.dataset.language === "de"
+      ? "AI Sports Prediction Widget"
+      : "AI Sports Prediction widget");
     iframe.loading = "lazy";
     iframe.style.width = "100%";
     iframe.style.maxWidth = target.dataset.maxWidth || "720px";
@@ -105,7 +110,7 @@
 
       Array.prototype.slice.call(document.querySelectorAll("iframe[src^='" + origin + "/widget-frame.html']")).forEach(function (iframe) {
         if (iframe.contentWindow === event.source) {
-          iframe.style.height = Math.max(180, Math.min(900, Number(event.data.height) || DEFAULT_HEIGHT)) + "px";
+          iframe.style.height = Math.max(180, Math.min(4000, Number(event.data.height) || DEFAULT_HEIGHT)) + "px";
         }
       });
     });

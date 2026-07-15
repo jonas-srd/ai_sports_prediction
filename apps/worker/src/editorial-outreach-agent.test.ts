@@ -1,5 +1,7 @@
 import assert from "node:assert/strict";
 import {
+  buildDefaultSearchQueries,
+  buildFallbackDraftForPublication,
   extractPublicContacts,
   isGenericRoleEmail,
   isLikelyFirstPartyEmail,
@@ -81,6 +83,15 @@ function testAiDraftParsing(): void {
   assert.equal(parsed.textBody, "Guten Tag\n\nText");
 }
 
+function testInternationalResearchAndDrafts(): void {
+  const frenchQueries = buildDefaultSearchQueries("FR", "fr");
+  assert.ok(frenchQueries.some((query) => /France/u.test(query)));
+  assert.ok(frenchQueries.every((query) => /rédaction|média/u.test(query)));
+  const spanishDraft = buildFallbackDraftForPublication("Deporte Hoy", "es");
+  assert.match(spanishDraft.subject, /Deporte Hoy/u);
+  assert.match(spanishDraft.textBody, /Hola, equipo editorial/u);
+}
+
 testRoleAddressFilter();
 testContactExtraction();
 testFirstPartyContactFilter();
@@ -88,4 +99,5 @@ testPublicationNameCleanup();
 testRobotsRules();
 testFitScoring();
 testAiDraftParsing();
+testInternationalResearchAndDrafts();
 console.log("Editorial outreach agent tests passed.");
