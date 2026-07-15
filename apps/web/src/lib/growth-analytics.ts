@@ -1,6 +1,7 @@
 export type GrowthEventName =
   | "pricing_cta_click"
   | "widget_access_request"
+  | "widget_checkout_started"
   | "widget_sales_request"
   | "widget_embed_copied";
 

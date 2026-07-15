@@ -737,6 +737,43 @@
   gap: 16px;
 }
 
+.widgetBillingSwitch {
+  align-items: stretch;
+  background: rgba(255, 255, 255, 0.045);
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  border-radius: 10px;
+  display: inline-grid;
+  gap: 6px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  margin-top: 18px;
+  padding: 6px;
+  width: min(100%, 520px);
+}
+
+.widgetBillingSwitch button {
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 7px;
+  color: rgba(247, 251, 255, 0.72);
+  cursor: pointer;
+  display: grid;
+  font: inherit;
+  font-weight: 900;
+  gap: 2px;
+  justify-items: center;
+  min-height: 48px;
+  padding: 8px 12px;
+}
+
+.widgetBillingSwitch button:hover,
+.widgetBillingSwitch button:focus-visible,
+.widgetBillingSwitch button.isActive {
+  background: rgba(125, 245, 193, 0.1);
+  border-color: rgba(125, 245, 193, 0.42);
+  color: #f7fbff;
+  outline: none;
+}
+
 .widgetsPricingGrid {
   display: grid;
   gap: 12px;
@@ -813,7 +850,507 @@
   justify-content: center;
   min-height: 44px;
   padding: 10px 14px;
+  text-decoration: none;
   transition: filter 160ms ease, transform 160ms ease;
+}
+
+.widgetPricingCheckoutNote {
+  color: rgba(247, 251, 255, 0.58);
+  font-size: 0.82rem;
+  margin: 14px 0 0;
+}
+
+.widgetCheckoutPage {
+  background:
+    radial-gradient(circle at 12% 8%, rgba(125, 245, 193, 0.1), transparent 28%),
+    linear-gradient(180deg, #08131e 0%, #0b1824 100%);
+  min-height: calc(100vh - 140px);
+  padding: 34px clamp(18px, 4vw, 64px) 72px;
+}
+
+.widgetCheckoutTopbar {
+  align-items: center;
+  display: flex;
+  justify-content: space-between;
+  margin: 0 auto 26px;
+  max-width: 1180px;
+}
+
+.widgetCheckoutTopbar a {
+  color: #7df5c1;
+  font-size: 0.85rem;
+  font-weight: 850;
+  text-decoration: none;
+}
+
+.widgetCheckoutTopbar > span {
+  color: rgba(247, 251, 255, 0.55);
+  font-size: 0.75rem;
+  font-weight: 800;
+}
+
+.widgetCheckoutSteps {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  list-style: none;
+  margin: 0 auto 28px;
+  max-width: 720px;
+  padding: 0;
+  position: relative;
+}
+
+.widgetCheckoutSteps::before {
+  background: rgba(255, 255, 255, 0.11);
+  content: "";
+  height: 1px;
+  left: 16.66%;
+  position: absolute;
+  right: 16.66%;
+  top: 16px;
+}
+
+.widgetCheckoutSteps li {
+  align-items: center;
+  color: rgba(247, 251, 255, 0.44);
+  display: flex;
+  flex-direction: column;
+  font-size: 0.72rem;
+  font-weight: 850;
+  gap: 7px;
+  position: relative;
+  text-align: center;
+}
+
+.widgetCheckoutSteps li span {
+  align-items: center;
+  background: #122231;
+  border: 1px solid rgba(255, 255, 255, 0.13);
+  border-radius: 999px;
+  display: flex;
+  height: 33px;
+  justify-content: center;
+  width: 33px;
+}
+
+.widgetCheckoutSteps li.isComplete,
+.widgetCheckoutSteps li.isActive {
+  color: #f7fbff;
+}
+
+.widgetCheckoutSteps li.isComplete span {
+  background: #7df5c1;
+  border-color: #7df5c1;
+  color: #07110d;
+}
+
+.widgetCheckoutSteps li.isActive span {
+  border-color: #ffc857;
+  box-shadow: 0 0 0 4px rgba(255, 200, 87, 0.1);
+  color: #ffc857;
+}
+
+.widgetCheckoutLayout {
+  align-items: start;
+  display: grid;
+  gap: 24px;
+  grid-template-columns: minmax(0, 1.55fr) minmax(320px, 0.8fr);
+  margin: 0 auto;
+  max-width: 1180px;
+}
+
+.widgetCheckoutFormCard,
+.widgetCheckoutSummary {
+  background: rgba(16, 31, 46, 0.94);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 14px;
+  box-shadow: 0 24px 70px rgba(0, 0, 0, 0.22);
+}
+
+.widgetCheckoutFormCard {
+  padding: clamp(20px, 3vw, 34px);
+}
+
+.widgetCheckoutFormCard h1 {
+  color: #f7fbff;
+  font-size: clamp(1.8rem, 4vw, 2.55rem);
+  margin: 6px 0 10px;
+}
+
+.widgetCheckoutIntro {
+  color: rgba(247, 251, 255, 0.65);
+  line-height: 1.55;
+  margin: 0 0 26px;
+  max-width: 720px;
+}
+
+.widgetCheckoutFormCard form {
+  display: grid;
+  gap: 24px;
+}
+
+.widgetCheckoutFormCard fieldset {
+  border: 0;
+  border-top: 1px solid rgba(255, 255, 255, 0.09);
+  margin: 0;
+  padding: 22px 0 0;
+}
+
+.widgetCheckoutFormCard legend {
+  align-items: center;
+  color: #f7fbff;
+  display: flex;
+  font-size: 0.98rem;
+  font-weight: 900;
+  gap: 9px;
+  padding: 0 12px 0 0;
+}
+
+.widgetCheckoutFormCard legend > span {
+  align-items: center;
+  background: rgba(125, 245, 193, 0.11);
+  border: 1px solid rgba(125, 245, 193, 0.24);
+  border-radius: 999px;
+  color: #7df5c1;
+  display: flex;
+  font-size: 0.72rem;
+  height: 26px;
+  justify-content: center;
+  width: 26px;
+}
+
+.widgetCheckoutFormCard legend small {
+  color: rgba(247, 251, 255, 0.42);
+  font-size: 0.7rem;
+  font-weight: 700;
+  margin-left: 4px;
+}
+
+.widgetCheckoutFields {
+  display: grid;
+  gap: 14px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  margin-top: 16px;
+}
+
+.widgetCheckoutFields label {
+  display: grid;
+  gap: 7px;
+}
+
+.widgetCheckoutFields label.isWide {
+  grid-column: 1 / -1;
+}
+
+.widgetCheckoutFields label > span {
+  color: rgba(247, 251, 255, 0.72);
+  font-size: 0.75rem;
+  font-weight: 850;
+}
+
+.widgetCheckoutFields input,
+.widgetCheckoutFields select {
+  background: rgba(3, 8, 14, 0.55);
+  border: 1px solid rgba(255, 255, 255, 0.13);
+  border-radius: 9px;
+  color: #f7fbff;
+  font: inherit;
+  min-height: 48px;
+  padding: 11px 13px;
+  width: 100%;
+}
+
+.widgetCheckoutFields input:focus,
+.widgetCheckoutFields select:focus {
+  border-color: rgba(125, 245, 193, 0.7);
+  box-shadow: 0 0 0 3px rgba(125, 245, 193, 0.1);
+  outline: none;
+}
+
+.widgetCheckoutConfirmations {
+  background: rgba(255, 255, 255, 0.035);
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  border-radius: 10px;
+  display: grid;
+  gap: 12px;
+  padding: 16px;
+}
+
+.widgetCheckoutConfirmations label {
+  align-items: flex-start;
+  color: rgba(247, 251, 255, 0.68);
+  display: flex;
+  font-size: 0.78rem;
+  font-weight: 650;
+  gap: 10px;
+  line-height: 1.5;
+}
+
+.widgetCheckoutConfirmations input {
+  flex: 0 0 auto;
+  margin-top: 3px;
+}
+
+.widgetCheckoutSubmit {
+  align-items: center;
+  background: #7df5c1;
+  border: 0;
+  border-radius: 10px;
+  color: #07110d;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  font: inherit;
+  gap: 3px;
+  justify-content: center;
+  min-height: 62px;
+  padding: 11px 20px;
+  width: 100%;
+}
+
+.widgetCheckoutSubmit > span {
+  font-size: 0.96rem;
+  font-weight: 950;
+}
+
+.widgetCheckoutSubmit small {
+  font-size: 0.66rem;
+  font-weight: 750;
+  opacity: 0.68;
+}
+
+.widgetCheckoutSubmit:disabled {
+  cursor: wait;
+  opacity: 0.62;
+}
+
+.widgetCheckoutLegal {
+  color: rgba(247, 251, 255, 0.48);
+  font-size: 0.7rem;
+  line-height: 1.5;
+  margin: -10px 0 0;
+  text-align: center;
+}
+
+.widgetCheckoutLegal a {
+  color: #7df5c1;
+}
+
+.widgetCheckoutSummary {
+  overflow: hidden;
+  position: sticky;
+  top: 24px;
+}
+
+.widgetCheckoutSummaryHeader {
+  align-items: center;
+  background: rgba(255, 255, 255, 0.035);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  display: flex;
+  justify-content: space-between;
+  padding: 16px 18px;
+}
+
+.widgetCheckoutSummaryHeader p {
+  color: rgba(247, 251, 255, 0.7);
+  font-size: 0.75rem;
+  font-weight: 900;
+  margin: 0;
+  text-transform: uppercase;
+}
+
+.widgetCheckoutSummaryHeader a {
+  color: #7df5c1;
+  font-size: 0.75rem;
+  font-weight: 850;
+}
+
+.widgetCheckoutProduct {
+  padding: 22px 20px 16px;
+}
+
+.widgetCheckoutProduct > span {
+  color: #7df5c1;
+  font-size: 0.68rem;
+  font-weight: 950;
+  letter-spacing: 0.12em;
+}
+
+.widgetCheckoutProduct h2 {
+  color: #f7fbff;
+  font-size: 1.6rem;
+  margin: 5px 0 8px;
+}
+
+.widgetCheckoutProduct strong {
+  color: #ffc857;
+  font-size: 1rem;
+}
+
+.widgetCheckoutSummary > ul {
+  display: grid;
+  gap: 9px;
+  list-style: none;
+  margin: 0;
+  padding: 0 20px 20px;
+}
+
+.widgetCheckoutSummary > ul li {
+  color: rgba(247, 251, 255, 0.67);
+  font-size: 0.82rem;
+  line-height: 1.4;
+}
+
+.widgetCheckoutSummary > ul li::first-letter {
+  color: #7df5c1;
+}
+
+.widgetCheckoutSummary dl {
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  margin: 0;
+  padding: 6px 20px;
+}
+
+.widgetCheckoutSummary dl > div {
+  display: grid;
+  gap: 4px;
+  padding: 11px 0;
+}
+
+.widgetCheckoutSummary dt {
+  color: rgba(247, 251, 255, 0.44);
+  font-size: 0.66rem;
+  font-weight: 850;
+  text-transform: uppercase;
+}
+
+.widgetCheckoutSummary dd {
+  color: #f7fbff;
+  font-size: 0.8rem;
+  font-weight: 750;
+  line-height: 1.45;
+  margin: 0;
+}
+
+.widgetCheckoutSecurity {
+  align-items: center;
+  background: rgba(125, 245, 193, 0.06);
+  border-top: 1px solid rgba(125, 245, 193, 0.13);
+  display: flex;
+  gap: 12px;
+  padding: 15px 18px;
+}
+
+.widgetCheckoutSecurity > span {
+  align-items: center;
+  border: 1px solid rgba(125, 245, 193, 0.28);
+  border-radius: 999px;
+  color: #7df5c1;
+  display: flex;
+  flex: 0 0 auto;
+  height: 32px;
+  justify-content: center;
+  width: 32px;
+}
+
+.widgetCheckoutSecurity p {
+  color: rgba(247, 251, 255, 0.56);
+  display: grid;
+  font-size: 0.7rem;
+  gap: 2px;
+  line-height: 1.4;
+  margin: 0;
+}
+
+.widgetCheckoutSecurity strong {
+  color: #f7fbff;
+}
+
+.widgetCheckoutResult {
+  background: rgba(16, 31, 46, 0.96);
+  border: 1px solid rgba(125, 245, 193, 0.25);
+  border-radius: 14px;
+  box-shadow: 0 24px 70px rgba(0, 0, 0, 0.24);
+  display: grid;
+  gap: 12px;
+  justify-items: center;
+  margin: 60px auto;
+  max-width: 680px;
+  padding: 42px;
+  text-align: center;
+}
+
+.widgetCheckoutResult > span {
+  align-items: center;
+  background: rgba(125, 245, 193, 0.13);
+  border: 1px solid rgba(125, 245, 193, 0.3);
+  border-radius: 999px;
+  color: #7df5c1;
+  display: flex;
+  font-size: 1.4rem;
+  height: 58px;
+  justify-content: center;
+  width: 58px;
+}
+
+.widgetCheckoutResult h1,
+.widgetCheckoutResult p {
+  margin: 0;
+}
+
+.widgetCheckoutResult > p:not(.footballEyebrow) {
+  color: rgba(247, 251, 255, 0.68);
+  line-height: 1.55;
+}
+
+@media (max-width: 900px) {
+  .widgetCheckoutLayout {
+    grid-template-columns: 1fr;
+  }
+
+  .widgetCheckoutSummary {
+    grid-row: 1;
+    position: static;
+  }
+}
+
+@media (max-width: 620px) {
+  .widgetCheckoutPage {
+    padding: 22px 14px 52px;
+  }
+
+  .widgetCheckoutTopbar > span {
+    display: none;
+  }
+
+  .widgetCheckoutSteps {
+    margin-bottom: 20px;
+  }
+
+  .widgetCheckoutFormCard {
+    padding: 20px 16px;
+  }
+
+  .widgetCheckoutFields {
+    grid-template-columns: 1fr;
+  }
+
+  .widgetCheckoutFields label.isWide {
+    grid-column: auto;
+  }
+
+  .widgetCheckoutFormCard legend {
+    align-items: flex-start;
+    flex-wrap: wrap;
+  }
+
+  .widgetCheckoutFormCard legend small {
+    flex-basis: 100%;
+    margin-left: 35px;
+  }
+
+  .widgetCheckoutSubmit small {
+    max-width: 280px;
+  }
 }
 
 .widgetsPricingCta:hover,
@@ -905,10 +1442,134 @@
   text-transform: none;
 }
 
+.widgetOrderSummary {
+  background: rgba(3, 8, 14, 0.48);
+  border: 1px solid rgba(125, 245, 193, 0.22);
+  border-radius: 10px;
+  grid-column: 1 / -1;
+  overflow: hidden;
+}
+
+.widgetOrderSummaryHeading {
+  align-items: center;
+  background: rgba(125, 245, 193, 0.07);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  display: flex;
+  justify-content: space-between;
+  padding: 14px 16px;
+}
+
+.widgetOrderSummaryHeading h4 {
+  color: #f7fbff;
+  font-size: 1rem;
+  margin: 0;
+}
+
+.widgetOrderSummaryHeading p {
+  background: rgba(125, 245, 193, 0.12);
+  border: 1px solid rgba(125, 245, 193, 0.26);
+  border-radius: 999px;
+  color: #7df5c1;
+  font-size: 0.68rem;
+  font-weight: 950;
+  letter-spacing: 0.08em;
+  padding: 5px 8px;
+  text-transform: uppercase;
+}
+
+.widgetOrderSummary dl {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  margin: 0;
+}
+
+.widgetOrderSummary dl > div {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+  display: grid;
+  gap: 5px;
+  padding: 13px 16px;
+}
+
+.widgetOrderSummary dl > div:nth-child(odd) {
+  border-right: 1px solid rgba(255, 255, 255, 0.07);
+}
+
+.widgetOrderSummary dl > div:last-child:nth-child(odd) {
+  border-right: 0;
+  grid-column: 1 / -1;
+}
+
+.widgetOrderSummary dt {
+  color: rgba(247, 251, 255, 0.52);
+  font-size: 0.7rem;
+  font-weight: 900;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.widgetOrderSummary dd {
+  color: #f7fbff;
+  font-size: 0.86rem;
+  font-weight: 750;
+  line-height: 1.45;
+  margin: 0;
+}
+
+.widgetOrderTax {
+  color: rgba(247, 251, 255, 0.62);
+  font-size: 0.75rem;
+  line-height: 1.5;
+  padding: 13px 16px;
+}
+
+.widgetLegalConfirmations {
+  background: rgba(255, 255, 255, 0.035);
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  border-radius: 9px;
+  display: grid;
+  gap: 11px;
+  grid-column: 1 / -1;
+  padding: 14px;
+}
+
+.widgetCheckoutDataNotice {
+  color: rgba(247, 251, 255, 0.64);
+  font-size: 0.78rem;
+  line-height: 1.5;
+}
+
+.widgetCheckoutLegalFooter {
+  color: rgba(247, 251, 255, 0.54);
+  font-size: 0.72rem;
+  grid-column: 1 / -1;
+  line-height: 1.5;
+}
+
+.widgetCheckoutLegalFooter a {
+  color: #7df5c1;
+  font-weight: 800;
+}
+
 .widgetLeadForm .widgetsPricingCta {
   grid-column: 1 / -1;
   justify-self: start;
   min-width: 210px;
+}
+
+@media (max-width: 720px) {
+  .widgetOrderSummaryHeading {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .widgetOrderSummary dl {
+    grid-template-columns: 1fr;
+  }
+
+  .widgetOrderSummary dl > div:nth-child(odd) {
+    border-right: 0;
+  }
 }
 
 .widgetLeadHoneypot {

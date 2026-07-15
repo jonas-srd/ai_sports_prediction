@@ -14,26 +14,34 @@ const pricingPlansByLocale: Record<Locale, Array<{
   features: string[];
   name: string;
   plan: "starter" | "growth" | "enterprise";
-  price: string;
+  annualPrice: string;
+  monthlyMinimumTermTotal: string;
+  monthlyPrice: string;
 }>> = {
   en: [
     {
       name: "Starter",
-      price: "49 EUR / month",
+      monthlyPrice: "49 EUR / month",
+      monthlyMinimumTermTotal: "588 EUR",
+      annualPrice: "539 EUR / first year",
       description: "For small blogs and local editorial teams testing prediction embeds.",
       features: ["50k widget impressions", "2 domains", "Prediction cards, match lists and win probability", "AI Sports Prediction branding"],
       plan: "starter"
     },
     {
       name: "Growth",
-      price: "149 EUR / month",
+      monthlyPrice: "149 EUR / month",
+      monthlyMinimumTermTotal: "1,788 EUR",
+      annualPrice: "1,639 EUR / first year",
       description: "For regular sports desks that need more formats and article integrations.",
       features: ["250k widget impressions", "8 domains", "All widget types including key factors", "Reasoning toggle and color customization"],
       plan: "growth"
     },
     {
       name: "Enterprise",
-      price: "Custom",
+      monthlyPrice: "Custom",
+      monthlyMinimumTermTotal: "Custom",
+      annualPrice: "Custom",
       description: "For high-traffic publishers, agencies and white-label integrations.",
       features: ["Custom traffic volume", "Unlimited approved domains", "White-label option, SLA and priority support", "Custom widgets and commercial data terms"],
       plan: "enterprise"
@@ -42,21 +50,27 @@ const pricingPlansByLocale: Record<Locale, Array<{
   de: [
     {
       name: "Starter",
-      price: "49 EUR / Monat",
+      monthlyPrice: "49 EUR / Monat",
+      monthlyMinimumTermTotal: "588 EUR",
+      annualPrice: "539 EUR / erstes Jahr",
       description: "Für kleine Blogs und lokale Redaktionen, die Prognose-Embeds testen.",
       features: ["50k Widget-Impressions", "2 Domains", "Prognosekarten, Matchlisten und Sieg-Wahrscheinlichkeit", "AI Sports Prediction Branding"],
       plan: "starter"
     },
     {
       name: "Growth",
-      price: "149 EUR / Monat",
+      monthlyPrice: "149 EUR / Monat",
+      monthlyMinimumTermTotal: "1.788 EUR",
+      annualPrice: "1.639 EUR / erstes Jahr",
       description: "Für regelmäßige Sportredaktionen, die mehr Formate und Artikel-Integrationen brauchen.",
       features: ["250k Widget-Impressions", "8 Domains", "Alle Widget-Typen inklusive Schlüsselfaktoren", "Begründungs-Schalter und Farbanpassung"],
       plan: "growth"
     },
     {
       name: "Enterprise",
-      price: "Individuell",
+      monthlyPrice: "Individuell",
+      monthlyMinimumTermTotal: "Individuell",
+      annualPrice: "Individuell",
       description: "Für Publisher mit hohem Traffic, Agenturen und White-Label-Integrationen.",
       features: ["Individuelles Traffic-Volumen", "Unbegrenzt freigegebene Domains", "White-Label-Option, SLA und Prioritäts-Support", "Individuelle Widgets und kommerzielle Datennutzung"],
       plan: "enterprise"
