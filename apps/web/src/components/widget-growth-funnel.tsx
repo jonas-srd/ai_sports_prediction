@@ -22,13 +22,17 @@ const copy = {
     annual: "Annual upfront",
     buttons: { starter: "Choose Starter", growth: "Choose Growth", enterprise: "Contact sales" },
     checkoutNote: "Billing details and payment are completed on the next page.",
-    monthly: "Pay monthly"
+    monthly: "Pay monthly",
+    recommended: "Recommended",
+    enterpriseResponse: "Personal reply within one business day"
   },
   de: {
     annual: "Jährlich im Voraus",
     buttons: { starter: "Starter wählen", growth: "Growth wählen", enterprise: "Vertrieb kontaktieren" },
     checkoutNote: "Rechnungsdaten und Zahlung werden auf der nächsten Seite abgeschlossen.",
-    monthly: "Monatlich bezahlen"
+    monthly: "Monatlich bezahlen",
+    recommended: "Empfohlen",
+    enterpriseResponse: "Persönliche Antwort innerhalb eines Werktags"
   }
 };
 
@@ -47,12 +51,14 @@ export function WidgetGrowthFunnel({ locale, plans }: { locale: Locale; plans: W
         {plans.map((plan) => {
           const href = `${checkoutBase}?plan=${plan.plan}&billing=${billingInterval}`;
           return (
-            <article className="widgetsPricingCard" key={plan.name}>
+            <article className={`widgetsPricingCard${plan.plan === "growth" ? " isRecommended" : ""}`} key={plan.name}>
               <div>
+                {plan.plan === "growth" ? <b className="widgetsRecommendedBadge">{text.recommended}</b> : null}
                 <span>{plan.plan}</span>
                 <h3>{plan.name}</h3>
                 <strong>{billingInterval === "annual" ? plan.annualPrice : plan.monthlyPrice}</strong>
                 <p>{plan.description}</p>
+                {plan.plan === "enterprise" ? <p className="widgetsEnterpriseResponse">{text.enterpriseResponse}</p> : null}
               </div>
               <ul>{plan.features.map((feature) => <li key={feature}>{feature}</li>)}</ul>
               <Link

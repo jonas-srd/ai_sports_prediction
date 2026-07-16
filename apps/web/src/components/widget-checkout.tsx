@@ -2,10 +2,16 @@
 
 import Link from "next/link";
 import { useState, type FormEvent } from "react";
-import { trackGrowthEvent } from "@/lib/growth-analytics";
+import { trackBeginCheckout, trackGrowthEvent } from "@/lib/growth-analytics";
 import { localizePath, type Locale } from "@/lib/i18n";
 import type { WidgetAccessPlan } from "@/lib/widget-access";
 import type { WidgetBillingInterval } from "@/lib/widget-billing";
+import {
+  WIDGET_DPA_VERSION,
+  WIDGET_PRIVACY_VERSION,
+  WIDGET_TERMS_VERSION,
+  type WidgetTaxMode
+} from "@/lib/widget-legal-versions";
 
 type CheckoutStatus = "idle" | "submitting" | "success" | "error";
 
@@ -19,13 +25,13 @@ type CheckoutPlan = {
 
 const plans: Record<Locale, Record<WidgetAccessPlan, CheckoutPlan>> = {
   en: {
-    starter: { name: "Starter", monthlyPrice: "49 EUR / month", annualPrice: "539 EUR / first 12 months", monthlyTermTotal: "588 EUR", features: ["50k widget impressions", "2 approved domains", "All core prediction widgets"] },
-    growth: { name: "Growth", monthlyPrice: "149 EUR / month", annualPrice: "1,639 EUR / first 12 months", monthlyTermTotal: "1,788 EUR", features: ["250k widget impressions", "8 approved domains", "All widget formats and customization"] },
+    starter: { name: "Starter", monthlyPrice: "49 EUR / month", annualPrice: "539 EUR / first 12 months", monthlyTermTotal: "588 EUR", features: ["50k widget requests", "2 approved domains", "All core prediction widgets"] },
+    growth: { name: "Growth", monthlyPrice: "149 EUR / month", annualPrice: "1,639 EUR / first 12 months", monthlyTermTotal: "1,788 EUR", features: ["250k widget requests", "8 approved domains", "All widget formats and customization"] },
     enterprise: { name: "Enterprise", monthlyPrice: "Custom offer", annualPrice: "Custom offer", monthlyTermTotal: "Custom offer", features: ["Custom traffic volume", "White-label and SLA options", "Personal commercial terms"] }
   },
   de: {
-    starter: { name: "Starter", monthlyPrice: "49 EUR / Monat", annualPrice: "539 EUR / erste 12 Monate", monthlyTermTotal: "588 EUR", features: ["50k Widget-Impressions", "2 freigegebene Domains", "Alle zentralen Prognose-Widgets"] },
-    growth: { name: "Growth", monthlyPrice: "149 EUR / Monat", annualPrice: "1.639 EUR / erste 12 Monate", monthlyTermTotal: "1.788 EUR", features: ["250k Widget-Impressions", "8 freigegebene Domains", "Alle Widget-Formate und Anpassungen"] },
+    starter: { name: "Starter", monthlyPrice: "49 EUR / Monat", annualPrice: "539 EUR / erste 12 Monate", monthlyTermTotal: "588 EUR", features: ["50k Widget-Aufrufe", "2 freigegebene Domains", "Alle zentralen Prognose-Widgets"] },
+    growth: { name: "Growth", monthlyPrice: "149 EUR / Monat", annualPrice: "1.639 EUR / erste 12 Monate", monthlyTermTotal: "1.788 EUR", features: ["250k Widget-Aufrufe", "8 freigegebene Domains", "Alle Widget-Formate und Anpassungen"] },
     enterprise: { name: "Enterprise", monthlyPrice: "Individuelles Angebot", annualPrice: "Individuelles Angebot", monthlyTermTotal: "Individuelles Angebot", features: ["Individuelles Traffic-Volumen", "White-Label- und SLA-Optionen", "Persönliche Vertragskonditionen"] }
   }
 };
@@ -78,7 +84,7 @@ const copy = {
     payment: "Payment",
     phone: "Phone (optional)",
     postalCode: "Postal code",
-    privacy: "I have read the information about processing my order and invoice data.",
+    privacy: "I have read the privacy notice.",
     publication: "Publication / brand",
     region: "State / region",
     renewal: "After 12 months: automatic monthly renewal at",
@@ -89,7 +95,7 @@ const copy = {
     submitHelp: "Next, Stripe collects the SEPA mandate and confirms the final total including tax.",
     success: "Your SEPA mandate was submitted. We send the invoice and publisher access after Stripe confirms the payment.",
     summary: "Order summary",
-    taxId: "VAT / tax ID (optional)",
+    taxId: "Business VAT / tax ID (required for cross-border EU orders)",
     title: "Complete your order",
     website: "Website domain"
   },
@@ -120,7 +126,7 @@ const copy = {
     payment: "Zahlung",
     phone: "Telefon (optional)",
     postalCode: "Postleitzahl",
-    privacy: "Ich habe die Hinweise zur Verarbeitung meiner Bestell- und Rechnungsdaten zur Kenntnis genommen.",
+    privacy: "Ich habe die Datenschutzerklärung zur Kenntnis genommen.",
     publication: "Redaktion / Marke",
     region: "Bundesland / Region",
     renewal: "Nach 12 Monaten: automatische monatliche Verlängerung zu",
@@ -131,7 +137,7 @@ const copy = {
     submitHelp: "Im nächsten Schritt erfasst Stripe das SEPA-Mandat und zeigt den Endbetrag einschließlich Steuer.",
     success: "Dein SEPA-Mandat wurde eingereicht. Rechnung und Publisher-Zugang werden nach bestätigter Stripe-Zahlung versendet.",
     summary: "Bestellübersicht",
-    taxId: "USt-ID / Steuer-ID (optional)",
+    taxId: "Unternehmer-USt-ID / betriebliche Steuer-ID (bei EU-Ausland erforderlich)",
     title: "Bestellung abschließen",
     website: "Website-Domain"
   }
@@ -141,12 +147,14 @@ export function WidgetCheckout({
   billingInterval,
   checkoutState,
   locale,
-  selectedPlan
+  selectedPlan,
+  taxMode
 }: {
   billingInterval: WidgetBillingInterval;
   checkoutState: "canceled" | "success" | null;
   locale: Locale;
   selectedPlan: WidgetAccessPlan;
+  taxMode: WidgetTaxMode | null;
 }) {
   const text = copy[locale];
   const plan = plans[locale][selectedPlan];
@@ -171,10 +179,12 @@ export function WidgetCheckout({
           businessCustomerAccepted: data.get("businessCustomerAccepted") === "on",
           city: data.get("city"),
           company: data.get("company"),
-          consent: data.get("consent") === "on",
+          dpaAccepted: isEnterprise || data.get("dpaAccepted") === "on",
+          electronicInvoiceAccepted: isEnterprise || data.get("electronicInvoiceAccepted") === "on",
+          privacyAcknowledged: data.get("privacyAcknowledged") === "on",
           contactFirstName: data.get("contactFirstName"),
           contactLastName: data.get("contactLastName"),
-          contractAccepted: isEnterprise || data.get("contractAccepted") === "on",
+          termsAccepted: isEnterprise || data.get("termsAccepted") === "on",
           country: data.get("country"),
           email: data.get("email"),
           legalCompanyName: data.get("legalCompanyName"),
@@ -190,12 +200,13 @@ export function WidgetCheckout({
         headers: { "content-type": "application/json" },
         method: "POST"
       });
-      const body = await response.json() as { checkoutAvailable?: boolean; checkoutUrl?: string; ok?: boolean };
-      if (!response.ok || !body.ok) throw new Error(text.error);
+      const body = await response.json() as { checkoutAvailable?: boolean; checkoutUrl?: string; error?: string; ok?: boolean };
+      if (!response.ok || !body.ok) throw new Error(checkoutError(body.error, locale, text.error));
 
       trackGrowthEvent(isEnterprise ? "widget_sales_request" : "widget_access_request", { billingInterval, plan: selectedPlan });
       if (body.checkoutUrl) {
         trackGrowthEvent("widget_checkout_started", { billingInterval, plan: selectedPlan });
+        trackBeginCheckout(selectedPlan, billingInterval);
         window.location.assign(body.checkoutUrl);
         return;
       }
@@ -278,16 +289,39 @@ export function WidgetCheckout({
             </fieldset>
 
             <div className="widgetCheckoutConfirmations">
-              <label><input name="consent" required type="checkbox" /><span>{text.privacy}</span></label>
+              <label>
+                <input name="privacyAcknowledged" required type="checkbox" />
+                <span>{text.privacy} <Link href={localizePath("/privacy", locale)} target="_blank">{locale === "de" ? `Datenschutz, Stand ${WIDGET_PRIVACY_VERSION}` : `Privacy notice, version ${WIDGET_PRIVACY_VERSION}`}</Link></span>
+              </label>
               <label><input name="businessCustomerAccepted" required type="checkbox" /><span>{text.business}</span></label>
-              {!isEnterprise ? <label><input name="contractAccepted" required type="checkbox" /><span>{text.contract}</span></label> : null}
+              {!isEnterprise ? (
+                <>
+                  <label>
+                    <input name="termsAccepted" required type="checkbox" />
+                    <span>{text.contract} <Link href={localizePath("/widget-terms", locale)} target="_blank">{locale === "de" ? `Widget-Lizenzbedingungen, Stand ${WIDGET_TERMS_VERSION}` : `Widget terms, version ${WIDGET_TERMS_VERSION}`}</Link></span>
+                  </label>
+                  <label>
+                    <input name="dpaAccepted" required type="checkbox" />
+                    <span>{locale === "de" ? "Ich akzeptiere den AVV für den Fall, dass AI Sports Prediction personenbezogene Daten in meinem Auftrag verarbeitet." : "I accept the DPA where AI Sports Prediction processes personal data on my behalf."} <Link href={localizePath("/data-processing", locale)} target="_blank">{locale === "de" ? `AVV, Stand ${WIDGET_DPA_VERSION}` : `DPA, version ${WIDGET_DPA_VERSION}`}</Link></span>
+                  </label>
+                  <label>
+                    <input name="electronicInvoiceAccepted" required type="checkbox" />
+                    <span>{locale === "de" ? "Ich stimme der elektronischen Rechnungsübermittlung an die angegebene Rechnungs-E-Mail zu." : "I agree to electronic invoice delivery to the billing email provided."}</span>
+                  </label>
+                </>
+              ) : null}
             </div>
 
             <button className="widgetCheckoutSubmit" disabled={status === "submitting"} type="submit">
               <span>{isEnterprise ? text.nextEnterprise : text.next}</span>
               <small>{isEnterprise ? (locale === "de" ? "Unverbindliche Anfrage" : "Non-binding request") : text.submitHelp}</small>
             </button>
-            <p className="widgetCheckoutLegal">{text.legalNote} <Link href={localizePath("/impressum", locale)}>{locale === "de" ? "Impressum" : "Legal notice"}</Link></p>
+            <p className="widgetCheckoutLegal">
+              {taxMode === "small_business"
+                ? (locale === "de" ? "Gemäß § 19 UStG wird keine Umsatzsteuer berechnet." : "No VAT is charged under the German small-business scheme (§ 19 UStG).")
+                : text.legalNote}{" "}
+              <Link href={localizePath("/impressum", locale)}>{locale === "de" ? "Impressum" : "Legal notice"}</Link>
+            </p>
           </form>
         </section>
 
@@ -318,4 +352,15 @@ export function WidgetCheckout({
       </div>
     </main>
   );
+}
+
+function checkoutError(code: string | undefined, locale: Locale, fallback: string): string {
+  const messages: Record<string, [string, string]> = {
+    electronic_invoice_required: ["Please accept electronic invoice delivery.", "Bitte stimme der elektronischen Rechnungsübermittlung zu."],
+    eu_vat_id_required: ["A valid VAT ID is required for cross-border EU orders.", "Für grenzüberschreitende EU-Bestellungen ist eine gültige USt-ID erforderlich."],
+    invalid_eu_vat_id: ["The VAT ID could not be confirmed by VIES.", "Die USt-ID konnte durch VIES nicht bestätigt werden."],
+    vat_validation_unavailable: ["EU VAT validation is temporarily unavailable. Please try again later.", "Die EU-USt-ID-Prüfung ist vorübergehend nicht erreichbar. Bitte versuche es später erneut."]
+  };
+  const message = code ? messages[code] : undefined;
+  return message ? message[locale === "de" ? 1 : 0] : fallback;
 }

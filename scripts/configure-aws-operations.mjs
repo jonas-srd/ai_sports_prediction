@@ -25,7 +25,7 @@ for (const email of (process.env.OPS_ALERT_EMAILS ?? "schroeder.jonas@hotmail.de
 }
 
 aws(["logs", "put-retention-policy", "--log-group-name", logGroup, "--retention-in-days", "30"]);
-putMetricFilter("ai-sports-job-errors", "?ERROR ?Error ?failed ?Failed ?Unhandled", "JobErrors");
+putMetricFilter("ai-sports-job-errors", "\"OPERATIONS_JOB_FAILURE\"", "JobErrors");
 putMetricFilter("ai-sports-worker-heartbeat", "\"Fixture synchronization finished\"", "WorkerHeartbeat");
 putMetricFilter("ai-sports-backup-success", "\"Wrote verified Postgres logical export\"", "BackupSuccess");
 
@@ -54,9 +54,9 @@ putAlarm({
   metricName: "BackupSuccess",
   comparison: "LessThanThreshold",
   threshold: "1",
-  period: "3600",
-  evaluationPeriods: "26",
-  datapointsToAlarm: "26",
+  period: "300",
+  evaluationPeriods: "288",
+  datapointsToAlarm: "288",
   treatMissingData: "breaching"
 });
 

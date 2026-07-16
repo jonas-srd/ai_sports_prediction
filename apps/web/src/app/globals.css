@@ -685,6 +685,58 @@
   margin: 0 0 12px;
 }
 
+.widgetsHero {
+  align-items: center;
+  display: grid;
+  gap: clamp(22px, 4vw, 46px);
+  grid-template-columns: minmax(0, 0.9fr) minmax(360px, 1.1fr);
+}
+
+.widgetsHeroCopy > p:not(.footballEyebrow) {
+  color: rgba(247, 251, 255, 0.78);
+  font-size: 1.08rem;
+  line-height: 1.6;
+  max-width: 620px;
+}
+
+.widgetsHeroCopy ul {
+  display: grid;
+  gap: 8px;
+  list-style: none;
+  margin: 22px 0;
+  padding: 0;
+}
+
+.widgetsHeroCopy li::before {
+  color: #7df5c1;
+  content: "✓";
+  font-weight: 950;
+  margin-right: 9px;
+}
+
+.widgetsHeroActions {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+.widgetsHeroActions > a:last-child {
+  color: #7df5c1;
+  font-weight: 900;
+}
+
+.widgetsHeroPreview > span {
+  color: #7df5c1;
+  display: block;
+  font-family: monospace;
+  font-size: 0.72rem;
+  font-weight: 950;
+  letter-spacing: 0.12em;
+  margin-bottom: 10px;
+  text-transform: uppercase;
+}
+
 .widgetsHero p:last-child,
 .widgetsExample p,
 .widgetsOption span {
@@ -788,6 +840,55 @@
   display: grid;
   gap: 18px;
   padding: 16px;
+}
+
+.widgetsPricingCard.isRecommended {
+  border-color: rgba(125, 245, 193, 0.65);
+  box-shadow: 0 18px 48px rgba(0, 0, 0, 0.25);
+  transform: translateY(-6px);
+}
+
+.widgetsRecommendedBadge {
+  background: #7df5c1;
+  border-radius: 999px;
+  color: #07110d;
+  display: inline-flex;
+  font-size: 0.68rem;
+  letter-spacing: 0.08em;
+  margin-bottom: 12px;
+  padding: 5px 9px;
+  text-transform: uppercase;
+}
+
+.widgetsPricingCard .widgetsEnterpriseResponse {
+  color: #7df5c1;
+  font-size: 0.82rem;
+  font-weight: 850;
+  margin-top: 10px;
+}
+
+.widgetsFaq > div:last-child {
+  display: grid;
+  gap: 10px;
+  margin-top: 18px;
+}
+
+.widgetsFaq details {
+  background: rgba(255, 255, 255, 0.045);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 8px;
+  padding: 14px 16px;
+}
+
+.widgetsFaq summary {
+  cursor: pointer;
+  font-weight: 900;
+}
+
+.widgetsFaq details p {
+  color: rgba(247, 251, 255, 0.72);
+  line-height: 1.55;
+  margin: 12px 0 0;
 }
 
 .widgetsPricingCard.isSelected {
@@ -1088,6 +1189,11 @@
 .widgetCheckoutConfirmations input {
   flex: 0 0 auto;
   margin-top: 3px;
+}
+
+.widgetCheckoutConfirmations a {
+  color: #7df5c1;
+  font-weight: 850;
 }
 
 .widgetCheckoutSubmit {
@@ -2398,12 +2504,17 @@
   }
 
   .widgetsOptionGrid,
+  .widgetsHero,
   .widgetBuilderGrid,
   .widgetsPricingGrid,
   .widgetLeadForm form,
   .widgetBuilderCustomize,
   .widgetsExample {
     grid-template-columns: 1fr;
+  }
+
+  .widgetsPricingCard.isRecommended {
+    transform: none;
   }
 
   .widgetPreviewMetrics,
@@ -3116,6 +3227,7 @@ a {
 }
 
 .siteFooterInner {
+  flex-wrap: wrap;
   margin: 0 auto;
   max-width: 1480px;
   padding: 24px;

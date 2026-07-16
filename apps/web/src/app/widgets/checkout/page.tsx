@@ -3,6 +3,7 @@ import { WidgetCheckout } from "@/components/widget-checkout";
 import type { Locale } from "@/lib/i18n";
 import type { WidgetAccessPlan } from "@/lib/widget-access";
 import { parseWidgetBillingInterval } from "@/lib/widget-billing";
+import { getWidgetSellerDetails } from "@/lib/widget-sales-config";
 
 export const metadata: Metadata = {
   title: "Widget checkout | AI Sports Prediction",
@@ -21,8 +22,9 @@ export async function WidgetCheckoutPageContent({ locale, searchParams }: { loca
   const plan = normalizePlan(single(params.plan));
   const billingInterval = parseWidgetBillingInterval(single(params.billing));
   const checkoutState = normalizeCheckoutState(single(params.checkout));
+  const taxMode = getWidgetSellerDetails().taxMode;
 
-  return <WidgetCheckout billingInterval={billingInterval} checkoutState={checkoutState} locale={locale} selectedPlan={plan} />;
+  return <WidgetCheckout billingInterval={billingInterval} checkoutState={checkoutState} locale={locale} selectedPlan={plan} taxMode={taxMode} />;
 }
 
 function normalizePlan(value: string | undefined): WidgetAccessPlan {

@@ -9,6 +9,14 @@ export const metadata: Metadata = {
 
 const agentGroups = [
   {
+    eyebrow: "Revenue Pipeline",
+    title: "Leads & Checkouts",
+    description: "Neue Interessenten, Outreach-Zuordnung, abgebrochene Checkouts, Prioritäten und automatische Wiedervorlagen in einer Pipeline.",
+    href: "/admin/leads",
+    action: "Lead-Cockpit öffnen",
+    agents: ["Lead Scoring", "Checkout Recovery", "Outreach Linking", "Follow-up"]
+  },
+  {
     eyebrow: "Revenue Operations",
     title: "Widget Customers",
     description: "Aktive Kunden, API-Keys, erlaubte Domains, echte Aufrufe, Tariflimits, Rechnungen, Vertragsstatus und Kündigungen verwalten.",

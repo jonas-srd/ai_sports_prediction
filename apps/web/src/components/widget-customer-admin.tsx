@@ -25,6 +25,8 @@ type Customer = {
   cancellationRequestedAt: string | null;
   cancellationEffectiveAt: string | null;
   currentPeriodEndsAt: string | null;
+  dpaAcceptedAt: string | null;
+  dpaVersion: string | null;
   domainLimit: number;
   domains: Domain[];
   email: string;
@@ -35,8 +37,12 @@ type Customer = {
   monthlyLimit: number;
   plan: "starter" | "growth" | "enterprise";
   publicationName: string;
+  privacyAcknowledgedAt: string | null;
+  privacyVersion: string | null;
   status: string;
   stripeConfigured: boolean;
+  widgetTermsAcceptedAt: string | null;
+  widgetTermsVersion: string | null;
   usage: { daily: Array<{ count: number; date: string }>; lastRequestAt: string | null; monthCount: number };
 };
 type ResponseData = {
@@ -185,6 +191,9 @@ export function WidgetCustomerAdmin() {
                 <div><dt>Aktuelle Periode</dt><dd>{formatDate(selected.currentPeriodEndsAt)}</dd></div>
                 <div><dt>Vertragsstatus</dt><dd>{selected.cancelAtPeriodEnd ? "Kündigung vorgemerkt" : "Automatische Verlängerung"}</dd></div>
                 <div><dt>Kündigung wirksam</dt><dd>{formatDate(selected.cancellationEffectiveAt)}</dd></div>
+                <div><dt>Widget-AGB</dt><dd>{selected.widgetTermsVersion ? `${selected.widgetTermsVersion} · ${formatDate(selected.widgetTermsAcceptedAt)}` : "–"}</dd></div>
+                <div><dt>Datenschutz</dt><dd>{selected.privacyVersion ? `${selected.privacyVersion} · ${formatDate(selected.privacyAcknowledgedAt)}` : "–"}</dd></div>
+                <div><dt>AVV</dt><dd>{selected.dpaVersion ? `${selected.dpaVersion} · ${formatDate(selected.dpaAcceptedAt)}` : "–"}</dd></div>
               </dl>
               <button className={selected.cancelAtPeriodEnd ? undefined : styles.danger} disabled={busy || !selected.stripeConfigured} onClick={() => void act(selected.cancelAtPeriodEnd ? "resume_subscription" : "cancel_subscription")} type="button">
                 {selected.cancelAtPeriodEnd ? "Kündigung zurücknehmen" : "Zum zulässigen Termin kündigen"}

@@ -1,7 +1,7 @@
 import { randomUUID } from "node:crypto";
 import { NextResponse, type NextRequest } from "next/server";
 import { isAdminRequestAuthorized } from "@/lib/admin-request-auth";
-import { updateWidgetStripeCancellation } from "@/lib/widget-billing";
+import { updateWidgetStripeCancellation, updateWidgetStripeScheduleCancellation } from "@/lib/widget-billing";
 import { getWidgetDb } from "@/lib/widget-db";
 import {
   createWidgetApiKey,
@@ -11,14 +11,9 @@ import {
   hashWidgetApiKey
 } from "@/lib/widget-api-keys";
 import type { WidgetAccessPlan } from "@/lib/widget-access";
+import { getWidgetPlanRules } from "@/lib/widget-plans";
 
 export const runtime = "nodejs";
-
-const DOMAIN_LIMITS: Record<WidgetAccessPlan, number> = {
-  starter: 1,
-  growth: 5,
-  enterprise: 25
-};
 
 export async function GET(request: NextRequest) {
   if (!await isAdminRequestAuthorized(request)) {
@@ -39,6 +34,8 @@ export async function GET(request: NextRequest) {
       cancellation_effective_at_utc: Date | null;
       created_at_utc: Date;
       current_period_ends_at_utc: Date | null;
+      dpa_accepted_at_utc: Date | null;
+      dpa_version: string | null;
       domain: string;
       email: string;
       id: string;
@@ -48,10 +45,15 @@ export async function GET(request: NextRequest) {
       monthly_limit: number;
       plan: WidgetAccessPlan;
       publication_name: string;
+      privacy_acknowledged_at_utc: Date | null;
+      privacy_version: string | null;
       request_count: string;
       status: string;
       stripe_customer_id: string | null;
       stripe_subscription_id: string | null;
+      stripe_subscription_schedule_id: string | null;
+      widget_terms_accepted_at_utc: Date | null;
+      widget_terms_version: string | null;
     }>(`
       select c.id, c.email, c.publication_name, c.domain, c.plan, c.status,
              c.monthly_limit, c.access_expires_at_utc, c.billing_interval,
@@ -60,6 +62,9 @@ export async function GET(request: NextRequest) {
              c.cancellation_effective_at_utc,
              c.stripe_customer_id, c.stripe_subscription_id, c.legal_company_name,
              c.billing_email, c.api_key_enabled, c.api_key_preview,
+             c.widget_terms_version, c.widget_terms_accepted_at_utc,
+             c.privacy_version, c.privacy_acknowledged_at_utc,
+             c.dpa_version, c.dpa_accepted_at_utc,
              c.api_key_ciphertext, c.created_at_utc,
              coalesce(u.request_count, 0)::text as request_count,
              u.last_request_at_utc
@@ -115,8 +120,10 @@ export async function GET(request: NextRequest) {
       cancellationEffectiveAt: toIso(row.cancellation_effective_at_utc),
       createdAt: toIso(row.created_at_utc),
       currentPeriodEndsAt: toIso(row.current_period_ends_at_utc),
-      domainLimit: DOMAIN_LIMITS[row.plan],
+      domainLimit: getWidgetPlanRules(row.plan).domainLimit,
       domains: domainsResult.rows.filter((domain) => domain.customer_id === row.id),
+      dpaAcceptedAt: toIso(row.dpa_accepted_at_utc),
+      dpaVersion: row.dpa_version,
       email: row.email,
       id: row.id,
       invoices: invoicesResult.rows.filter((invoice) => invoice.customer_id === row.id).slice(0, 12),
@@ -125,8 +132,12 @@ export async function GET(request: NextRequest) {
       monthlyLimit: row.monthly_limit,
       plan: row.plan,
       publicationName: row.publication_name,
+      privacyAcknowledgedAt: toIso(row.privacy_acknowledged_at_utc),
+      privacyVersion: row.privacy_version,
       status: row.status,
       stripeConfigured: Boolean(row.stripe_customer_id && row.stripe_subscription_id),
+      widgetTermsAcceptedAt: toIso(row.widget_terms_accepted_at_utc),
+      widgetTermsVersion: row.widget_terms_version,
       usage: {
         daily: dailyResult.rows.filter((entry) => entry.customer_id === row.id).map((entry) => ({
           count: Number(entry.request_count),
@@ -169,13 +180,16 @@ export async function POST(request: NextRequest) {
     const db = getWidgetDb();
     const result = await db.query<{
       api_key_ciphertext: string | null;
+      current_period_ends_at_utc: Date | null;
       minimum_term_ends_at_utc: Date | null;
       monthly_limit: number;
       plan: WidgetAccessPlan;
       stripe_subscription_id: string | null;
+      stripe_subscription_schedule_id: string | null;
     }>(`
       select plan, monthly_limit, api_key_ciphertext, minimum_term_ends_at_utc,
-             stripe_subscription_id
+             current_period_ends_at_utc,
+             stripe_subscription_id, stripe_subscription_schedule_id
       from widget_customers where id = $1 limit 1
     `, [customerId]);
     const customer = result.rows[0];
@@ -222,7 +236,7 @@ export async function POST(request: NextRequest) {
         `select count(*)::text as count from widget_customer_domains where customer_id = $1`,
         [customerId]
       );
-      if (Number(count.rows[0]?.count ?? 0) >= DOMAIN_LIMITS[customer.plan]) {
+      if (Number(count.rows[0]?.count ?? 0) >= getWidgetPlanRules(customer.plan).domainLimit) {
         return NextResponse.json({ error: "domain_limit_reached" }, { status: 409 });
       }
       await db.query(`
@@ -251,9 +265,18 @@ export async function POST(request: NextRequest) {
       const cancel = action === "cancel_subscription";
       const minimumTermEnd = customer.minimum_term_ends_at_utc;
       const cancellationAt = cancel
-        ? minimumTermEnd && minimumTermEnd.getTime() > Date.now() ? minimumTermEnd : new Date()
+        ? minimumTermEnd && minimumTermEnd.getTime() > Date.now()
+          ? minimumTermEnd
+          : customer.current_period_ends_at_utc && customer.current_period_ends_at_utc.getTime() > Date.now()
+            ? customer.current_period_ends_at_utc
+            : new Date()
         : null;
-      await updateWidgetStripeCancellation(customer.stripe_subscription_id, cancellationAt);
+      const scheduleHandled = customer.plan !== "enterprise" && await updateWidgetStripeScheduleCancellation({
+        cancellationAt,
+        plan: customer.plan,
+        scheduleId: customer.stripe_subscription_schedule_id
+      });
+      if (!scheduleHandled) await updateWidgetStripeCancellation(customer.stripe_subscription_id, cancellationAt);
       await db.query(`
         update widget_customers
         set cancel_at_period_end = $2,

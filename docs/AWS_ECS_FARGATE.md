@@ -181,6 +181,11 @@ scheduler dependency while Redis is available. RDS point-in-time recovery is
 kept at the maximum permitted by the AWS account plan; the Free Tier currently
 permits one day, while logical S3 backups are retained for 35 days.
 
+The Odds API sync performs the provider's zero-cost sports/quota check before
+requesting paid odds endpoints. If the remaining request count is zero or
+negative, odds calls pause without failing the worker and resume automatically
+after the provider resets the quota.
+
 ## 6. Required Runtime Variables
 
 Web:
@@ -225,7 +230,13 @@ DATABASE_URL=<secret>
 REDIS_URL=<secret>
 OPENROUTER_API_KEY=<secret>
 OPENROUTER_MODEL_IDS=openai/gpt-oss-20b:free
-FOOTBALL_DATA_API_KEY=<secret>
+THE_SPORTS_DB_API_KEY=<secret>
+THE_ODDS_API_KEY=<secret>
+FIXTURE_SYNC_INTERVAL_MINUTES=15
+PREDICTION_AUTOMATION_INTERVAL_MINUTES=60
+ODDS_REFRESH_INTERVAL_MINUTES=60
+BACKUP_AUTOMATION_ENABLED=1
+BACKUP_AUTOMATION_INTERVAL_HOURS=12
 BACKUP_S3_BUCKET=ai-sports-prediction
 BACKUP_S3_REGION=eu-central-1
 BACKUP_S3_PREFIX=ai-sports-prediction/backups
@@ -251,6 +262,20 @@ BACKUP_S3_PREFIX=ai-sports-prediction/backups
 6. Start/update the Cloudflare edge service.
 7. Run one `SERVICE_ROLE=backup` one-off task and verify the S3 object plus
    `backup_artifacts` row.
+
+The deployment and operations checks used by the live environment are:
+
+```bash
+npm run aws:deploy-worker
+npm run aws:configure-operations
+npm run aws:smoke-operations
+```
+
+CloudWatch watches job errors, the recurring fixture-sync heartbeat and the
+verified backup. Backups run every 12 hours, while the alarm tolerates one
+missed run and triggers after 24 hours without a successful verification. Both
+SNS email subscriptions must be confirmed once by their recipients before
+notifications are delivered.
 
 ## 8. Current Local Notes
 

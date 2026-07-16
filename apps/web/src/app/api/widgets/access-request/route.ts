@@ -7,8 +7,16 @@ import {
   createWidgetStripeCustomer,
   getMinimumTermEnd,
   isWidgetCheckoutConfigured,
-  parseWidgetBillingInterval
+  parseWidgetBillingInterval,
+  requiresEuVatId,
+  validateEuVatId
 } from "@/lib/widget-billing";
+import {
+  WIDGET_DPA_VERSION,
+  WIDGET_PRIVACY_VERSION,
+  WIDGET_TERMS_VERSION
+} from "@/lib/widget-legal-versions";
+import { getWidgetSellerDetails } from "@/lib/widget-sales-config";
 
 export const runtime = "nodejs";
 
@@ -42,8 +50,10 @@ export async function POST(request: NextRequest) {
   const country = normalizeText(body.country).toUpperCase();
   const taxId = normalizeText(body.taxId).toUpperCase().replace(/\s+/g, "");
   const businessCustomerAccepted = body.businessCustomerAccepted === true;
-  const consent = body.consent === true;
-  const contractAccepted = body.contractAccepted === true;
+  const privacyAcknowledged = body.privacyAcknowledged === true || body.consent === true;
+  const termsAccepted = body.termsAccepted === true || body.contractAccepted === true;
+  const dpaAccepted = body.dpaAccepted === true;
+  const electronicInvoiceAccepted = body.electronicInvoiceAccepted === true;
   const locale = body.locale === "de" ? "de" : "en";
 
   if (!EMAIL_PATTERN.test(email)) return NextResponse.json({ error: "invalid_email" }, { status: 400 });
@@ -62,18 +72,52 @@ export async function POST(request: NextRequest) {
   if (state.length < 2 || state.length > 100) return NextResponse.json({ error: "invalid_state" }, { status: 400 });
   if (!/^[A-Z]{2}$/.test(country)) return NextResponse.json({ error: "invalid_country" }, { status: 400 });
   if (taxId.length > 40) return NextResponse.json({ error: "invalid_tax_id" }, { status: 400 });
-  if (!consent) return NextResponse.json({ error: "consent_required" }, { status: 400 });
+  if (!privacyAcknowledged) return NextResponse.json({ error: "privacy_acknowledgement_required" }, { status: 400 });
   if (!businessCustomerAccepted) return NextResponse.json({ error: "business_customer_required" }, { status: 400 });
-  if (plan !== "enterprise" && !contractAccepted) return NextResponse.json({ error: "contract_terms_required" }, { status: 400 });
+  if (plan !== "enterprise" && !termsAccepted) return NextResponse.json({ error: "contract_terms_required" }, { status: 400 });
+  if (plan !== "enterprise" && !dpaAccepted) return NextResponse.json({ error: "dpa_terms_required" }, { status: 400 });
+  if (plan !== "enterprise" && !electronicInvoiceAccepted) return NextResponse.json({ error: "electronic_invoice_required" }, { status: 400 });
+  if (plan !== "enterprise" && requiresEuVatId(country) && !taxId) {
+    return NextResponse.json({ error: "eu_vat_id_required" }, { status: 400 });
+  }
+
+  let taxValidationStatus = taxId ? "format_only" : "not_provided";
+  if (plan !== "enterprise" && taxId && getStripeTaxIdTypeForValidation(country)) {
+    try {
+      const valid = await validateEuVatId(taxId, country);
+      if (!valid) return NextResponse.json({ error: "invalid_eu_vat_id" }, { status: 400 });
+      taxValidationStatus = "vies_valid";
+    } catch (error) {
+      console.error("EU VAT validation unavailable", error);
+      return NextResponse.json({ error: "vat_validation_unavailable" }, { status: 503 });
+    }
+  }
 
   const db = getWidgetDb();
   const ipHash = hashIp(getClientIp(request));
   const intent = plan === "enterprise" ? "sales" : "purchase";
   const leadId = randomUUID();
   const minimumTermEnd = plan === "enterprise" ? null : getMinimumTermEnd();
+  const acceptedAt = new Date();
+  const seller = getWidgetSellerDetails();
   const consentText = locale === "de"
-    ? "Hinweis zur Verarbeitung der Bestelldaten zur Kenntnis genommen. Direktkauf ausschließlich als Unternehmer im Sinne des § 14 BGB: 12 Monate Mindestlaufzeit, danach automatische monatliche Verlängerung mit monatlicher Kündigungsmöglichkeit."
-    : "Order-data processing notice acknowledged. Direct purchase for business customers only within the meaning of section 14 BGB: 12-month minimum term, followed by automatic monthly renewal with monthly cancellation.";
+    ? `Datenschutz ${WIDGET_PRIVACY_VERSION} zur Kenntnis genommen. Widget-Lizenzbedingungen ${WIDGET_TERMS_VERSION} und AVV ${WIDGET_DPA_VERSION} akzeptiert, soweit Direktkauf. Ausschließlich Unternehmer: 12 Monate Mindestlaufzeit, danach automatische monatliche Verlängerung mit monatlicher Kündigungsmöglichkeit. Elektronische Rechnungsübermittlung akzeptiert.`
+    : `Privacy notice ${WIDGET_PRIVACY_VERSION} acknowledged. Widget terms ${WIDGET_TERMS_VERSION} and DPA ${WIDGET_DPA_VERSION} accepted where directly purchased. Business customers only: 12-month minimum term, followed by automatic monthly renewal with monthly cancellation. Electronic invoice delivery accepted.`;
+  const contractSnapshot = {
+    acceptedAtUtc: acceptedAt.toISOString(),
+    billingInterval: plan === "enterprise" ? null : billingInterval,
+    currency: "EUR",
+    dpaVersion: plan === "enterprise" ? null : WIDGET_DPA_VERSION,
+    electronicInvoiceAccepted: plan === "enterprise" ? false : electronicInvoiceAccepted,
+    minimumTermMonths: plan === "enterprise" ? null : 12,
+    plan,
+    priceNetCents: getContractPriceCents(plan, billingInterval),
+    privacyVersion: WIDGET_PRIVACY_VERSION,
+    renewal: plan === "enterprise" ? null : "monthly_after_minimum_term",
+    sellerName: seller.name,
+    sellerTaxMode: seller.taxMode,
+    termsVersion: plan === "enterprise" ? null : WIDGET_TERMS_VERSION
+  };
 
   try {
     if (ipHash) {
@@ -93,17 +137,50 @@ export async function POST(request: NextRequest) {
         locale, status, source, ip_hash, user_agent, consent_text, billing_interval,
         minimum_term_ends_at_utc, contact_first_name, contact_last_name, phone,
         legal_company_name, billing_email, billing_address_line1, billing_address_line2,
-        billing_postal_code, billing_city, billing_state, billing_country, billing_tax_id
+        billing_postal_code, billing_city, billing_state, billing_country, billing_tax_id,
+        widget_terms_version, widget_terms_accepted_at_utc, privacy_version,
+        privacy_acknowledged_at_utc, dpa_version, dpa_accepted_at_utc,
+        business_confirmed_at_utc, electronic_invoice_accepted_at_utc,
+        contract_snapshot, tax_id_validation_status, tax_id_validated_at_utc
       ) values ($1, $2, $3, $4, $5, $6, $7, $8, 'new', 'widgets-pricing', $9, $10, $11, $12, $13,
-        $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25)
+        $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25,
+        $26, $27, $28, $29, $30, $31, $32, $33, $34::jsonb, $35, $36)
     `, [
       leadId, email, publicationName, websiteUrl, domain, plan, intent, locale,
       ipHash, normalizeNullableText(request.headers.get("user-agent")), consentText,
       plan === "enterprise" ? null : billingInterval, minimumTermEnd,
       contactFirstName, contactLastName, normalizeNullableText(phone), legalCompanyName,
       billingEmail, addressLine1, normalizeNullableText(addressLine2), postalCode, city,
-      state, country, normalizeNullableText(taxId)
+      state, country, normalizeNullableText(taxId),
+      plan === "enterprise" ? null : WIDGET_TERMS_VERSION,
+      plan === "enterprise" ? null : acceptedAt,
+      WIDGET_PRIVACY_VERSION, acceptedAt,
+      plan === "enterprise" ? null : WIDGET_DPA_VERSION,
+      plan === "enterprise" ? null : acceptedAt,
+      acceptedAt,
+      plan === "enterprise" ? null : acceptedAt,
+      JSON.stringify(contractSnapshot),
+      taxValidationStatus,
+      taxId && taxValidationStatus === "vies_valid" ? acceptedAt : null
     ]);
+    await db.query(`
+      update widget_leads l
+      set priority_score = case when requested_plan = 'enterprise' then 100 when requested_plan = 'growth' then 60 else 30 end,
+          next_follow_up_at_utc = case when requested_plan = 'enterprise' then now() else null end,
+          outreach_prospect_id = (
+            select p.id from editorial_prospects p
+            where lower(p.domain) = lower(l.domain)
+            order by p.fit_score desc limit 1
+          ),
+          updated_at_utc = now()
+      where l.id = $1
+    `, [leadId]);
+    await db.query(`
+      insert into widget_revenue_events (
+        id, idempotency_key, event_name, lead_id, plan, source, payload
+      ) values ($1, $2, 'lead_created', $3, $4, 'server', $5::jsonb)
+      on conflict (idempotency_key) do nothing
+    `, [randomUUID(), `lead_created:${leadId}`, leadId, plan, JSON.stringify({ billingInterval, intent, locale })]);
 
     if (plan === "enterprise") {
       return NextResponse.json({ intent, ok: true }, { headers: { "cache-control": "no-store" } });
@@ -150,9 +227,23 @@ export async function POST(request: NextRequest) {
     });
     await db.query(`
       update widget_leads
-      set stripe_checkout_session_id = $2, updated_at_utc = now()
+      set stripe_checkout_session_id = $2, pipeline_stage = 'checkout',
+          checkout_started_at_utc = now(), next_follow_up_at_utc = now() + interval '24 hours',
+          updated_at_utc = now()
       where id = $1
     `, [leadId, checkout.id]);
+    await db.query(`
+      insert into widget_revenue_events (
+        id, idempotency_key, event_name, lead_id, plan, source, payload
+      ) values ($1, $2, 'begin_checkout', $3, $4, 'server', $5::jsonb)
+      on conflict (idempotency_key) do nothing
+    `, [
+      randomUUID(),
+      `begin_checkout:${checkout.id}`,
+      leadId,
+      plan,
+      JSON.stringify({ billingInterval, checkoutSessionId: checkout.id, locale })
+    ]);
 
     return NextResponse.json({ checkoutAvailable: true, checkoutUrl: checkout.url, intent, ok: true }, { headers: { "cache-control": "no-store" } });
   } catch (error) {
@@ -196,4 +287,18 @@ function hashIp(ip: string | null): string | null {
   if (!ip) return null;
   const salt = process.env.WIDGET_LEAD_IP_HASH_SALT ?? process.env.NEWSLETTER_IP_HASH_SALT ?? "ai-sports-widget-lead";
   return createHash("sha256").update(`${salt}:${ip}`).digest("hex");
+}
+
+function getStripeTaxIdTypeForValidation(country: string): boolean {
+  return [
+    "AT", "BE", "BG", "HR", "CY", "CZ", "DE", "DK", "EE", "ES", "FI", "FR",
+    "GR", "HU", "IE", "IT", "LT", "LU", "LV", "MT", "NL", "PL", "PT", "RO",
+    "SE", "SI", "SK"
+  ].includes(country);
+}
+
+function getContractPriceCents(plan: WidgetAccessPlan, billingInterval: "monthly" | "annual"): number | null {
+  if (plan === "enterprise") return null;
+  if (plan === "starter") return billingInterval === "annual" ? 53_900 : 4_900;
+  return billingInterval === "annual" ? 163_900 : 14_900;
 }

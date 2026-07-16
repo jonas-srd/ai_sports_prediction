@@ -1,14 +1,14 @@
 import type { Metadata } from "next";
-import { ObfuscatedEmail } from "@/components/obfuscated-email";
+import { getWidgetSellerDetails } from "@/lib/widget-sales-config";
 
 export const metadata: Metadata = {
   title: "Legal Notice | AI Sports Prediction",
   description: "Legal notice and provider information for AI Sports Prediction."
 };
 
-const contactEmail = <ObfuscatedEmail reversedDomain="moc.kooltuo" reversedLocalPart="noitciderp-strops-ia" />;
-
 export default function LegalNoticePage() {
+  const seller = getWidgetSellerDetails();
+  const address = [seller.street, `${seller.postalCode} ${seller.city}`.trim(), seller.country].filter(Boolean);
   return (
     <main className="footballDetailShell sportschauFootballPage legalPageShell">
       <section className="competitionHero legalHero">
@@ -28,26 +28,29 @@ export default function LegalNoticePage() {
         <div className="legalPageBlock">
           <h2>Information pursuant to § 5 DDG</h2>
           <p>
-            Jonas Schröder
+            {seller.name}
             <br />
-            AI Sports Prediction
+            {seller.tradingName}
             <br />
-            81541 Munich
-            <br />
-            Germany
-            <br />
-            Postal address on request: {contactEmail}
+            {address.map((line) => <span key={line}>{line}<br /></span>)}
           </p>
         </div>
 
         <div className="legalPageBlock">
           <h2>Contact</h2>
-          <p>Email: {contactEmail}</p>
+          <p>Email: <a href={`mailto:${seller.email}`}>{seller.email}</a></p>
         </div>
+
+        {seller.vatId ? (
+          <div className="legalPageBlock">
+            <h2>VAT</h2>
+            <p>VAT identification number pursuant to § 27a UStG: {seller.vatId}</p>
+          </div>
+        ) : null}
 
         <div className="legalPageBlock">
           <h2>Responsible for content pursuant to § 18 para. 2 MStV</h2>
-          <p>Jonas Schröder (address as above)</p>
+          <p>{seller.name} (address as above)</p>
         </div>
 
         <div className="legalPageBlock">

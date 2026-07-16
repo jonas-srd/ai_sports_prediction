@@ -14,6 +14,7 @@ import {
   getWidgetApiKeyPreview,
   hashWidgetApiKey
 } from "@/lib/widget-api-keys";
+import { getWidgetPlanRules } from "@/lib/widget-plans";
 
 export const runtime = "nodejs";
 
@@ -33,15 +34,22 @@ type WidgetLeadBillingRow = {
   billing_postal_code: string | null;
   billing_state: string | null;
   billing_tax_id: string | null;
+  business_confirmed_at_utc: Date | string | null;
   contact_first_name: string | null;
   contact_last_name: string | null;
+  contract_snapshot: Record<string, unknown> | null;
+  dpa_accepted_at_utc: Date | string | null;
+  dpa_version: string | null;
   domain: string;
+  electronic_invoice_accepted_at_utc: Date | string | null;
   email: string;
   id: string;
   locale: "de" | "en";
   minimum_term_ends_at_utc: Date | string | null;
   legal_company_name: string | null;
   phone: string | null;
+  privacy_acknowledged_at_utc: Date | string | null;
+  privacy_version: string | null;
   publication_name: string;
   requested_plan: WidgetAccessPlan;
   status: string;
@@ -49,6 +57,10 @@ type WidgetLeadBillingRow = {
   stripe_customer_id: string | null;
   stripe_subscription_id: string | null;
   stripe_subscription_schedule_id: string | null;
+  tax_id_validated_at_utc: Date | string | null;
+  tax_id_validation_status: string | null;
+  widget_terms_accepted_at_utc: Date | string | null;
+  widget_terms_version: string | null;
 };
 
 export async function POST(request: NextRequest) {
@@ -92,15 +104,35 @@ async function handleStripeEvent(type: string, object: Record<string, unknown>) 
     if (subscriptionId) {
       const leadId = await activatePaidWidgetSubscription(subscriptionId);
       await upsertWidgetInvoice(object, "paid");
-      if (leadId) await sendWidgetInvoiceEmail(leadId, object);
+      if (leadId) await recordPurchaseEvent(leadId, object);
+      if (leadId) await sendWidgetInvoiceEmailOnce(leadId, object);
     }
+    return;
+  }
+
+  if (type === "invoice.finalized") {
+    await upsertWidgetInvoice(object, "open");
+    const subscriptionId = getInvoiceSubscriptionId(object);
+    const leadId = subscriptionId ? await findLeadIdBySubscription(subscriptionId) : null;
+    if (leadId) await sendWidgetInvoiceEmailOnce(leadId, object);
+    return;
+  }
+
+  if (type === "invoice.finalization_failed") {
+    await upsertWidgetInvoice(object, "finalization_failed");
+    const subscriptionId = getInvoiceSubscriptionId(object);
+    if (subscriptionId) await setWidgetCustomerStatus(subscriptionId, "past_due");
+    console.error("WIDGET_INVOICE_FINALIZATION_FAILURE", getStripeId(object.id));
     return;
   }
 
   if (type === "invoice.payment_failed") {
     await upsertWidgetInvoice(object, "open");
     const subscriptionId = getInvoiceSubscriptionId(object);
-    if (subscriptionId) await setWidgetCustomerStatus(subscriptionId, "past_due");
+    if (subscriptionId) {
+      await setWidgetCustomerStatus(subscriptionId, "past_due");
+      await queuePaymentFailureAutomation(subscriptionId, object);
+    }
     return;
   }
 
@@ -134,15 +166,21 @@ async function recordCompletedCheckout(session: Record<string, unknown>) {
     scheduleId = await configureAnnualToMonthlySchedule(subscriptionId, metadata.plan);
   }
 
-  await getWidgetDb().query(`
+  const updated = await getWidgetDb().query<{ id: string }>(`
     update widget_leads
     set status = 'qualified', stripe_checkout_session_id = coalesce($2, stripe_checkout_session_id),
         stripe_customer_id = coalesce($3, stripe_customer_id),
         stripe_subscription_id = coalesce($4, stripe_subscription_id),
         stripe_subscription_schedule_id = coalesce($5, stripe_subscription_schedule_id),
         updated_at_utc = now()
-    where id = $1
+    where id = $1 and status = 'new'
+    returning id
   `, [leadId, checkoutSessionId, customerId, subscriptionId, scheduleId]);
+  if (updated.rows[0]) {
+    await sendWidgetContractConfirmationEmail(leadId).catch((error) => {
+      console.error("Widget contract confirmation failed", error);
+    });
+  }
 }
 
 async function activatePaidWidgetSubscription(subscriptionId: string) {
@@ -157,7 +195,10 @@ async function activatePaidWidgetSubscription(subscriptionId: string) {
            stripe_subscription_id, stripe_subscription_schedule_id, contact_first_name,
            contact_last_name, phone, legal_company_name, billing_email, billing_address_line1,
            billing_address_line2, billing_postal_code, billing_city, billing_state,
-           billing_country, billing_tax_id
+           billing_country, billing_tax_id, widget_terms_version, widget_terms_accepted_at_utc,
+           privacy_version, privacy_acknowledged_at_utc, dpa_version, dpa_accepted_at_utc,
+           business_confirmed_at_utc, electronic_invoice_accepted_at_utc, contract_snapshot,
+           tax_id_validation_status, tax_id_validated_at_utc
     from widget_leads
     where id = $1
     limit 1
@@ -188,6 +229,12 @@ async function activatePaidWidgetSubscription(subscriptionId: string) {
           legal_company_name = $13, billing_email = $14, billing_address_line1 = $15,
           billing_address_line2 = $16, billing_postal_code = $17, billing_city = $18,
           billing_state = $19, billing_country = $20, billing_tax_id = $21,
+          widget_terms_version = $22, widget_terms_accepted_at_utc = $23,
+          privacy_version = $24, privacy_acknowledged_at_utc = $25,
+          dpa_version = $26, dpa_accepted_at_utc = $27,
+          business_confirmed_at_utc = $28, electronic_invoice_accepted_at_utc = $29,
+          contract_snapshot = $30::jsonb, tax_id_validation_status = $31,
+          tax_id_validated_at_utc = $32,
           updated_at_utc = now()
       where id = $1
     `, [existing.rows[0].id, lead.requested_plan, lead.domain, lead.billing_interval,
@@ -195,7 +242,11 @@ async function activatePaidWidgetSubscription(subscriptionId: string) {
       lead.contact_first_name, lead.contact_last_name, lead.phone, lead.legal_company_name,
       lead.billing_email, lead.billing_address_line1, lead.billing_address_line2,
       lead.billing_postal_code, lead.billing_city, lead.billing_state, lead.billing_country,
-      lead.billing_tax_id]);
+      lead.billing_tax_id, lead.widget_terms_version, lead.widget_terms_accepted_at_utc,
+      lead.privacy_version, lead.privacy_acknowledged_at_utc, lead.dpa_version,
+      lead.dpa_accepted_at_utc, lead.business_confirmed_at_utc,
+      lead.electronic_invoice_accepted_at_utc, JSON.stringify(lead.contract_snapshot),
+      lead.tax_id_validation_status, lead.tax_id_validated_at_utc]);
     if (lead.status !== "won") {
       const replacementApiKey = createWidgetApiKey();
       await getWidgetDb().query(`
@@ -227,16 +278,26 @@ async function activatePaidWidgetSubscription(subscriptionId: string) {
       stripe_subscription_schedule_id, stripe_checkout_session_id, contact_first_name,
       contact_last_name, phone, legal_company_name, billing_email, billing_address_line1,
       billing_address_line2, billing_postal_code, billing_city, billing_state, billing_country,
-      billing_tax_id, api_key_ciphertext, api_key_preview, api_key_enabled
+      billing_tax_id, widget_terms_version, widget_terms_accepted_at_utc, privacy_version,
+      privacy_acknowledged_at_utc, dpa_version, dpa_accepted_at_utc,
+      business_confirmed_at_utc, electronic_invoice_accepted_at_utc, contract_snapshot,
+      tax_id_validation_status, tax_id_validated_at_utc, api_key_ciphertext,
+      api_key_preview, api_key_enabled
     ) values ($1, $2, $3, $4, $5, 'active', $6, $7, $8, $9, $10, $11, $12, $13,
-      $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26, $27, true)
+      $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26, $27,
+      $28, $29, $30, $31, $32, $33, $34::jsonb, $35, $36, $37, $38, true)
   `, [customerRecordId, lead.email, lead.publication_name, lead.domain, lead.requested_plan,
-    apiKeyHash, lead.requested_plan === "growth" ? 250000 : 50000, lead.billing_interval,
+    apiKeyHash, getWidgetPlanRules(lead.requested_plan).monthlyRequestLimit, lead.billing_interval,
     lead.minimum_term_ends_at_utc, customerId, subscriptionId, scheduleId, lead.stripe_checkout_session_id,
     lead.contact_first_name, lead.contact_last_name, lead.phone, lead.legal_company_name,
     lead.billing_email, lead.billing_address_line1, lead.billing_address_line2,
     lead.billing_postal_code, lead.billing_city, lead.billing_state, lead.billing_country,
-    lead.billing_tax_id, encryptWidgetApiKey(apiKey), getWidgetApiKeyPreview(apiKey)]);
+    lead.billing_tax_id, lead.widget_terms_version, lead.widget_terms_accepted_at_utc,
+    lead.privacy_version, lead.privacy_acknowledged_at_utc, lead.dpa_version,
+    lead.dpa_accepted_at_utc, lead.business_confirmed_at_utc,
+    lead.electronic_invoice_accepted_at_utc, JSON.stringify(lead.contract_snapshot),
+    lead.tax_id_validation_status, lead.tax_id_validated_at_utc,
+    encryptWidgetApiKey(apiKey), getWidgetApiKeyPreview(apiKey)]);
   await ensureWidgetCustomerDomain(customerRecordId, lead.domain);
   await syncWidgetSubscriptionDetails(subscriptionId, subscription as Record<string, unknown>);
   await sendWidgetAccessEmail({ apiKey, lead });
@@ -247,9 +308,58 @@ async function activatePaidWidgetSubscription(subscriptionId: string) {
 async function markLeadWon(leadId: string, customerId: string) {
   await getWidgetDb().query(`
     update widget_leads
-    set status = 'won', customer_id = $2, updated_at_utc = now()
+    set status = 'won', pipeline_stage = 'active', customer_id = $2,
+        next_follow_up_at_utc = null, updated_at_utc = now()
     where id = $1
   `, [leadId, customerId]);
+  await getWidgetDb().query(`
+    insert into widget_revenue_events (
+      id, idempotency_key, event_name, lead_id, customer_id, source
+    ) values ($1, $2, 'customer_activated', $3, $4, 'stripe_webhook')
+    on conflict (idempotency_key) do nothing
+  `, [randomUUID(), `customer_activated:${customerId}`, leadId, customerId]);
+}
+
+async function recordPurchaseEvent(leadId: string, invoice: Record<string, unknown>) {
+  const invoiceId = getStripeId(invoice.id);
+  if (!invoiceId) return;
+  await getWidgetDb().query(`
+    insert into widget_revenue_events (
+      id, idempotency_key, event_name, lead_id, customer_id, plan,
+      amount_cents, currency, source, payload
+    )
+    select $1, $2, 'purchase', l.id, l.customer_id, l.requested_plan,
+      $3, $4, 'stripe_webhook', $5::jsonb
+    from widget_leads l where l.id = $6
+    on conflict (idempotency_key) do nothing
+  `, [
+    randomUUID(),
+    `purchase:${invoiceId}`,
+    nullableInteger(invoice.amount_paid),
+    String(invoice.currency ?? "eur").toUpperCase(),
+    JSON.stringify({ invoiceId }),
+    leadId
+  ]);
+}
+
+async function queuePaymentFailureAutomation(subscriptionId: string, invoice: Record<string, unknown>) {
+  const invoiceId = getStripeId(invoice.id) ?? subscriptionId;
+  await getWidgetDb().query(`
+    insert into widget_automation_events (
+      id, dedupe_key, event_type, customer_id, payload
+    )
+    select $1, $2, 'payment_failed', id, $3::jsonb
+    from widget_customers where stripe_subscription_id = $4
+    on conflict (dedupe_key) do nothing
+  `, [
+    randomUUID(),
+    `payment_failed:${invoiceId}`,
+    JSON.stringify({
+      invoiceId: getStripeId(invoice.id),
+      nextPaymentAttempt: invoice.next_payment_attempt ?? null
+    }),
+    subscriptionId
+  ]);
 }
 
 async function setWidgetCustomerStatus(subscriptionId: string, status: "active" | "canceled" | "inactive" | "past_due") {
@@ -266,6 +376,16 @@ async function ensureWidgetCustomerDomain(customerId: string, domain: string) {
     values ($1, $2, lower($3), true)
     on conflict (customer_id, domain) do nothing
   `, [randomUUID(), customerId, domain]);
+}
+
+async function findLeadIdBySubscription(subscriptionId: string): Promise<string | null> {
+  const result = await getWidgetDb().query<{ id: string }>(`
+    select id from widget_leads
+    where stripe_subscription_id = $1
+    order by created_at_utc desc
+    limit 1
+  `, [subscriptionId]);
+  return result.rows[0]?.id ?? null;
 }
 
 async function syncWidgetSubscriptionDetails(subscriptionId: string, subscription: Record<string, unknown>) {
@@ -352,12 +472,50 @@ async function sendWidgetAccessEmail({ apiKey, lead }: { apiKey: string; lead: W
   if (!response.ok) throw new Error(`widget_access_email_failed_${response.status}`);
 }
 
+async function sendWidgetContractConfirmationEmail(leadId: string) {
+  const resendKey = process.env.RESEND_API_KEY?.trim();
+  const from = process.env.WIDGET_ACCESS_FROM_EMAIL?.trim();
+  if (!resendKey || !from) {
+    console.error("Widget contract confirmation not sent: configure RESEND_API_KEY and WIDGET_ACCESS_FROM_EMAIL");
+    return;
+  }
+  const result = await getWidgetDb().query<{
+    billing_interval: WidgetBillingInterval | null;
+    email: string;
+    locale: "de" | "en";
+    minimum_term_ends_at_utc: Date | string | null;
+    requested_plan: WidgetAccessPlan;
+    widget_terms_version: string | null;
+    dpa_version: string | null;
+  }>(`
+    select email, locale, requested_plan, billing_interval, minimum_term_ends_at_utc,
+           widget_terms_version, dpa_version
+    from widget_leads where id = $1 limit 1
+  `, [leadId]);
+  const lead = result.rows[0];
+  if (!lead || !isDirectPlan(lead.requested_plan)) return;
+
+  const isGerman = lead.locale === "de";
+  const base = isGerman ? "https://www.ai-sports-prediction.net/de" : "https://www.ai-sports-prediction.net";
+  const minimumTerm = formatDate(lead.minimum_term_ends_at_utc, lead.locale);
+  const subject = isGerman ? "Bestätigung deiner Widget-Bestellung" : "Confirmation of your widget order";
+  const html = isGerman
+    ? `<h1>Bestellung bestätigt</h1><p>Tarif: <strong>${escapeHtml(lead.requested_plan)}</strong><br>Abrechnung: ${escapeHtml(lead.billing_interval)}<br>Mindestlaufzeit bis: ${escapeHtml(minimumTerm)}</p><p>Danach verlängert sich der Vertrag jeweils um einen Monat und ist monatlich kündbar. Die Freischaltung erfolgt nach bestätigter Zahlung.</p><p><a href="${base}/widget-terms">Widget-Lizenzbedingungen ${escapeHtml(lead.widget_terms_version)}</a> · <a href="${base}/data-processing">AVV ${escapeHtml(lead.dpa_version)}</a> · <a href="${base}/privacy">Datenschutz</a></p>`
+    : `<h1>Order confirmed</h1><p>Plan: <strong>${escapeHtml(lead.requested_plan)}</strong><br>Billing: ${escapeHtml(lead.billing_interval)}<br>Minimum term through: ${escapeHtml(minimumTerm)}</p><p>Afterwards, the contract renews one month at a time and can be cancelled monthly. Access is enabled after payment confirmation.</p><p><a href="${base}/widget-terms">Widget terms ${escapeHtml(lead.widget_terms_version)}</a> · <a href="${base}/data-processing">DPA ${escapeHtml(lead.dpa_version)}</a> · <a href="${base}/privacy">Privacy</a></p>`;
+  const response = await fetch("https://api.resend.com/emails", {
+    body: JSON.stringify({ from, html, subject, to: [lead.email] }),
+    headers: { authorization: `Bearer ${resendKey}`, "content-type": "application/json" },
+    method: "POST"
+  });
+  if (!response.ok) throw new Error(`widget_contract_email_failed_${response.status}`);
+}
+
 async function sendWidgetInvoiceEmail(leadId: string, invoice: Record<string, unknown>) {
   const resendKey = process.env.RESEND_API_KEY?.trim();
   const from = process.env.WIDGET_ACCESS_FROM_EMAIL?.trim();
   if (!resendKey || !from) {
     console.error("Widget invoice email not sent: configure RESEND_API_KEY and WIDGET_ACCESS_FROM_EMAIL");
-    return;
+    throw new Error("widget_invoice_email_not_configured");
   }
 
   const result = await getWidgetDb().query<{
@@ -394,6 +552,28 @@ async function sendWidgetInvoiceEmail(leadId: string, invoice: Record<string, un
     method: "POST"
   });
   if (!response.ok) throw new Error(`widget_invoice_email_failed_${response.status}`);
+}
+
+async function sendWidgetInvoiceEmailOnce(leadId: string, invoice: Record<string, unknown>) {
+  const invoiceId = getStripeId(invoice.id);
+  if (!invoiceId) return;
+  const claimed = await getWidgetDb().query<{ stripe_invoice_id: string }>(`
+    update widget_invoices
+    set delivery_sent_at_utc = now(), delivery_error = null, updated_at_utc = now()
+    where stripe_invoice_id = $1 and delivery_sent_at_utc is null
+    returning stripe_invoice_id
+  `, [invoiceId]);
+  if (!claimed.rows[0]) return;
+  try {
+    await sendWidgetInvoiceEmail(leadId, invoice);
+  } catch (error) {
+    await getWidgetDb().query(`
+      update widget_invoices
+      set delivery_sent_at_utc = null, delivery_error = $2, updated_at_utc = now()
+      where stripe_invoice_id = $1
+    `, [invoiceId, error instanceof Error ? error.message : String(error)]).catch(() => undefined);
+    throw error;
+  }
 }
 
 function getInvoiceSubscriptionId(invoice: Record<string, unknown>): string | null {

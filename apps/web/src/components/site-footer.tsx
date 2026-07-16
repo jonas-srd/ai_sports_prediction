@@ -13,6 +13,9 @@ export function SiteFooter() {
       <div className="siteFooterInner">
         <span>AI Sports Prediction</span>
         <Link href={localizePath("/impressum", locale)}>{text.legalNotice}</Link>
+        <Link href={localizePath("/privacy", locale)}>{locale === "de" ? "Datenschutz" : "Privacy"}</Link>
+        <Link href={localizePath("/widget-terms", locale)}>{locale === "de" ? "Widget-AGB" : "Widget terms"}</Link>
+        <Link href={localizePath("/data-processing", locale)}>{locale === "de" ? "AVV" : "DPA"}</Link>
         <Link href={localizePath("/cookies", locale)}>{locale === "de" ? "Cookies" : "Cookies"}</Link>
       </div>
     </footer>

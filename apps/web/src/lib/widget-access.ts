@@ -1,9 +1,10 @@
-import { createHash, timingSafeEqual } from "node:crypto";
+import { createHash, randomUUID, timingSafeEqual } from "node:crypto";
 import type { NextRequest } from "next/server";
 import type { WidgetType } from "@/lib/widget-data";
 import { getWidgetDb } from "@/lib/widget-db";
+import { getWidgetPlanRules, type WidgetPlan } from "@/lib/widget-plans";
 
-export type WidgetAccessPlan = "starter" | "growth" | "enterprise";
+export type WidgetAccessPlan = WidgetPlan;
 
 export type WidgetAccessCustomer = {
   apiKeyEnabled?: boolean;
@@ -31,21 +32,6 @@ export type WidgetAccessGrant = {
 export type WidgetAccessDecision =
   | { grant: WidgetAccessGrant; ok: true }
   | { code: "missing_key" | "invalid_key" | "inactive_subscription" | "domain_not_allowed" | "feature_not_allowed" | "limit_not_allowed" | "monthly_limit_reached"; message: string; ok: false; status: 401 | 402 | 403 | 429 };
-
-const PLAN_RULES: Record<WidgetAccessPlan, { allowedTypes: WidgetType[]; maxLimit: number }> = {
-  starter: {
-    allowedTypes: ["prediction-card", "match-list", "win-probability"],
-    maxLimit: 3
-  },
-  growth: {
-    allowedTypes: ["prediction-card", "match-list", "win-probability", "key-factors"],
-    maxLimit: 8
-  },
-  enterprise: {
-    allowedTypes: ["prediction-card", "match-list", "win-probability", "key-factors"],
-    maxLimit: 12
-  }
-};
 
 export function verifyWidgetAccess(args: {
   endpoint: "matches" | "predictions";
@@ -80,18 +66,22 @@ async function verifyWidgetAccessAsync(args: {
     return deny("invalid_key", 401, "The widget API key has been disabled.");
   }
 
-  if (!isDomainAllowed(customer, readPublisherOrigin(args.request))) {
+  const publisherOrigin = readPublisherOrigin(args.request);
+  if (!isDomainAllowed(customer, publisherOrigin)) {
+    if (customer.customerId) {
+      await recordDomainFailure(customer.customerId, publisherOrigin).catch(() => undefined);
+    }
     return deny("domain_not_allowed", 403, "This domain is not allowed for the widget API key.");
   }
 
   const plan = customer.plan ?? "starter";
-  const planRules = PLAN_RULES[plan] ?? PLAN_RULES.starter;
+  const planRules = getWidgetPlanRules(plan);
   const allowedTypes = customer.allowedTypes?.length ? customer.allowedTypes : planRules.allowedTypes;
   if (!allowedTypes.includes(args.type)) {
     return deny("feature_not_allowed", 403, "This widget type is not included in the current plan.");
   }
 
-  const maxLimit = planRules.maxLimit;
+  const maxLimit = planRules.maxItems;
   if (args.limit > maxLimit) {
     return deny("limit_not_allowed", 403, "The requested widget limit is not included in the current plan.");
   }
@@ -119,6 +109,15 @@ async function verifyWidgetAccessAsync(args: {
     },
     ok: true
   };
+}
+
+async function recordDomainFailure(customerId: string, origin: string) {
+  let attemptedDomain = origin || null;
+  try { attemptedDomain = origin ? new URL(origin).hostname : null; } catch { /* keep normalized input */ }
+  await getWidgetDb().query(`
+    insert into widget_domain_failures (id, customer_id, attempted_domain, reason)
+    values ($1, $2, $3, 'domain_not_allowed')
+  `, [randomUUID(), customerId, attemptedDomain]);
 }
 
 export function getWidgetAccessHeaders(grant: WidgetAccessGrant): Record<string, string> {

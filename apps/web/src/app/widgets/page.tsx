@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { WidgetBuilder } from "@/components/widget-builder";
 import { WidgetGrowthFunnel } from "@/components/widget-growth-funnel";
 import type { Locale } from "@/lib/i18n";
@@ -6,7 +7,11 @@ import { getWidgetPreviewMatches, type WidgetPreviewMatch, type WidgetPreviewMat
 
 export const metadata: Metadata = {
   title: "AI Sports Prediction | Editorial widgets",
-  description: "Embeddable AI sports prediction widgets for editorial articles."
+  description: "Embeddable AI sports prediction widgets for editorial articles.",
+  alternates: {
+    canonical: "/widgets",
+    languages: { "de-DE": "/de/widgets", "en-US": "/widgets", "x-default": "/widgets" }
+  }
 };
 
 const pricingPlansByLocale: Record<Locale, Array<{
@@ -24,8 +29,8 @@ const pricingPlansByLocale: Record<Locale, Array<{
       monthlyPrice: "49 EUR / month",
       monthlyMinimumTermTotal: "588 EUR",
       annualPrice: "539 EUR / first year",
-      description: "For small blogs and local editorial teams testing prediction embeds.",
-      features: ["50k widget impressions", "2 domains", "Prediction cards, match lists and win probability", "AI Sports Prediction branding"],
+      description: "For small blogs and local editorial teams publishing prediction embeds.",
+      features: ["50k widget requests", "2 domains", "Prediction cards, match lists and win probability", "AI Sports Prediction branding"],
       plan: "starter"
     },
     {
@@ -34,7 +39,7 @@ const pricingPlansByLocale: Record<Locale, Array<{
       monthlyMinimumTermTotal: "1,788 EUR",
       annualPrice: "1,639 EUR / first year",
       description: "For regular sports desks that need more formats and article integrations.",
-      features: ["250k widget impressions", "8 domains", "All widget types including key factors", "Reasoning toggle and color customization"],
+      features: ["250k widget requests", "8 domains", "All widget types including key factors", "Reasoning toggle and color customization"],
       plan: "growth"
     },
     {
@@ -43,7 +48,7 @@ const pricingPlansByLocale: Record<Locale, Array<{
       monthlyMinimumTermTotal: "Custom",
       annualPrice: "Custom",
       description: "For high-traffic publishers, agencies and white-label integrations.",
-      features: ["Custom traffic volume", "Unlimited approved domains", "White-label option, SLA and priority support", "Custom widgets and commercial data terms"],
+      features: ["Custom traffic volume", "Up to 25 approved domains", "White-label option, SLA and priority support", "Custom widgets and commercial data terms"],
       plan: "enterprise"
     }
   ],
@@ -53,8 +58,8 @@ const pricingPlansByLocale: Record<Locale, Array<{
       monthlyPrice: "49 EUR / Monat",
       monthlyMinimumTermTotal: "588 EUR",
       annualPrice: "539 EUR / erstes Jahr",
-      description: "Für kleine Blogs und lokale Redaktionen, die Prognose-Embeds testen.",
-      features: ["50k Widget-Impressions", "2 Domains", "Prognosekarten, Matchlisten und Sieg-Wahrscheinlichkeit", "AI Sports Prediction Branding"],
+      description: "Für kleine Blogs und lokale Redaktionen, die Prognose-Embeds veröffentlichen.",
+      features: ["50k Widget-Aufrufe", "2 Domains", "Prognosekarten, Matchlisten und Sieg-Wahrscheinlichkeit", "AI Sports Prediction Branding"],
       plan: "starter"
     },
     {
@@ -63,7 +68,7 @@ const pricingPlansByLocale: Record<Locale, Array<{
       monthlyMinimumTermTotal: "1.788 EUR",
       annualPrice: "1.639 EUR / erstes Jahr",
       description: "Für regelmäßige Sportredaktionen, die mehr Formate und Artikel-Integrationen brauchen.",
-      features: ["250k Widget-Impressions", "8 Domains", "Alle Widget-Typen inklusive Schlüsselfaktoren", "Begründungs-Schalter und Farbanpassung"],
+      features: ["250k Widget-Aufrufe", "8 Domains", "Alle Widget-Typen inklusive Schlüsselfaktoren", "Begründungs-Schalter und Farbanpassung"],
       plan: "growth"
     },
     {
@@ -72,7 +77,7 @@ const pricingPlansByLocale: Record<Locale, Array<{
       monthlyMinimumTermTotal: "Individuell",
       annualPrice: "Individuell",
       description: "Für Publisher mit hohem Traffic, Agenturen und White-Label-Integrationen.",
-      features: ["Individuelles Traffic-Volumen", "Unbegrenzt freigegebene Domains", "White-Label-Option, SLA und Prioritäts-Support", "Individuelle Widgets und kommerzielle Datennutzung"],
+      features: ["Individuelles Traffic-Volumen", "Bis zu 25 freigegebene Domains", "White-Label-Option, SLA und Prioritäts-Support", "Individuelle Widgets und kommerzielle Datennutzung"],
       plan: "enterprise"
     }
   ]
@@ -97,6 +102,11 @@ const pageText = {
   en: {
     heroEyebrow: "Editorial embeds",
     title: "AI Sports Prediction widgets",
+    heroTitle: "More time on page. More interaction. Publish faster.",
+    heroText: "Add current, explainable sports predictions to articles in a few minutes with one embed code.",
+    heroBenefits: ["Live prediction preview", "API data with quality checks", "No manual match graphics"],
+    livePreview: "Live widget preview",
+    account: "Customer sign-in",
     pricing: "Pricing",
     config: "Config options",
     examplesLabel: "Widget examples",
@@ -116,6 +126,11 @@ const pageText = {
   de: {
     heroEyebrow: "Redaktionelle Embeds",
     title: "AI Sports Prediction Widgets",
+    heroTitle: "Mehr Verweildauer. Mehr Interaktion. Schneller veröffentlichen.",
+    heroText: "Aktuelle, nachvollziehbare Sportprognosen in wenigen Minuten per Embed-Code in Artikel einbauen.",
+    heroBenefits: ["Interaktive Live-Vorschau", "API-Daten mit Qualitätsprüfung", "Keine manuellen Matchgrafiken"],
+    livePreview: "Live-Widget-Vorschau",
+    account: "Kunden-Login",
     pricing: "Preise",
     config: "Konfiguration",
     examplesLabel: "Widget-Beispiele",
@@ -143,12 +158,38 @@ export async function WidgetsPageContent({ locale }: { locale: Locale }) {
   const pricingPlans = pricingPlansByLocale[locale];
   const examples = examplesByLocale[locale];
   const previewMatches = await getWidgetPreviewMatches();
+  const accountHref = locale === "de" ? "/de/widgets/account/login" : "/widgets/account/login";
+  const structuredData = {
+    "@context": "https://schema.org",
+    "@type": "SoftwareApplication",
+    applicationCategory: "BusinessApplication",
+    applicationSubCategory: "Sports publishing widget",
+    name: "AI Sports Prediction Widgets",
+    operatingSystem: "Web",
+    offers: [
+      { "@type": "Offer", price: "49", priceCurrency: "EUR", name: "Starter monthly" },
+      { "@type": "Offer", price: "149", priceCurrency: "EUR", name: "Growth monthly" }
+    ],
+    url: `https://www.ai-sports-prediction.net${locale === "de" ? "/de" : ""}/widgets`
+  };
 
   return (
     <main className="widgetsPage">
       <section className="widgetsHero">
-        <p className="footballEyebrow">{text.heroEyebrow}</p>
-        <h1>{text.title}</h1>
+        <div className="widgetsHeroCopy">
+          <p className="footballEyebrow">{text.heroEyebrow}</p>
+          <h1>{text.heroTitle}</h1>
+          <p>{text.heroText}</p>
+          <ul>{text.heroBenefits.map((benefit) => <li key={benefit}>{benefit}</li>)}</ul>
+          <div className="widgetsHeroActions">
+            <a className="widgetsPricingCta" href="#widget-pricing-title">{locale === "de" ? "Tarife ansehen" : "View plans"}</a>
+            <Link href={accountHref}>{text.account}</Link>
+          </div>
+        </div>
+        <div className="widgetsHeroPreview">
+          <span>{text.livePreview}</span>
+          <WidgetPreview locale={locale} previewMatches={previewMatches} type="prediction" />
+        </div>
       </section>
 
       <section className="widgetsPanel" aria-labelledby="widget-pricing-title">
@@ -181,6 +222,8 @@ export async function WidgetsPageContent({ locale }: { locale: Locale }) {
 
       <WidgetBuilder locale={locale} previewMatches={previewMatches} />
 
+      <WidgetFaq locale={locale} />
+
       <section className="widgetsExamples" aria-label={text.examplesLabel}>
         <div className="widgetsSectionIntro">
           <h2>{text.examplesTitle}</h2>
@@ -196,7 +239,32 @@ export async function WidgetsPageContent({ locale }: { locale: Locale }) {
           </article>
         ))}
       </section>
+      <script dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData).replace(/</g, "\\u003c") }} type="application/ld+json" />
     </main>
+  );
+}
+
+function WidgetFaq({ locale }: { locale: Locale }) {
+  const entries = locale === "de" ? [
+    ["Wie zuverlässig sind Teams, Wettbewerbe, Logos und Flaggen?", "Nur geprüfte Liga-IDs, passende Teams sowie echte API-Logos und Spielerflaggen werden veröffentlicht. Fehlerhafte Spiele werden automatisch ausgeblendet und intern gemeldet."],
+    ["Wie aktuell sind die Widgets?", "Spiele und Prognosen werden regelmäßig synchronisiert. Die eingebettete Ansicht lädt die jeweils freigegebenen aktuellen Daten."],
+    ["Wie aufwendig ist die Integration?", "Spiel auswählen, Gestaltung festlegen und den erzeugten Embed-Code einfügen. Das dauert normalerweise nur wenige Minuten."],
+    ["Kann ich Branding und Modellwahl steuern?", "Je nach Tarif lassen sich Farben, Begründung und Modellwahl konfigurieren. Growth enthält alle Widget-Formate."],
+    ["Wie funktionieren Laufzeit und Kündigung?", "Direkttarife haben zwölf Monate Mindestlaufzeit. Danach verlängern sie sich monatlich. Die Kündigung wird im Kundenkonto zum frühesten zulässigen Termin vorgemerkt."],
+    ["Wie werden Datenschutz und Ladezeit behandelt?", "Das Widget verarbeitet nur die technisch notwendigen Zugriffs- und Domaininformationen. Inhalte werden kompakt ausgeliefert und ohne unnötige Drittanbieter-Skripte eingebettet."]
+  ] : [
+    ["How is data quality protected?", "Only verified league IDs, matching teams, real API logos and player flags are published. Invalid matches are hidden and reported internally."],
+    ["How current are the widgets?", "Fixtures and predictions are synchronized regularly. Embeds load the latest approved data."],
+    ["How much integration work is required?", "Select a match, configure the design and paste the generated embed code. It usually takes only a few minutes."],
+    ["Can I control branding and model selection?", "Depending on the plan, colors, reasoning and model selection can be configured. Growth includes every widget format."],
+    ["How do term and cancellation work?", "Direct plans have a twelve-month minimum term and then renew monthly. Cancellation is scheduled in the customer account for the earliest permitted date."],
+    ["What about privacy and loading time?", "The widget processes only technical access and domain data needed for delivery. It ships compact content without unnecessary third-party scripts."]
+  ];
+  return (
+    <section className="widgetsPanel widgetsFaq" aria-labelledby="widget-faq-title">
+      <div className="widgetsSectionIntro"><p className="footballEyebrow">FAQ</p><h2 id="widget-faq-title">{locale === "de" ? "Häufige Fragen" : "Frequently asked questions"}</h2></div>
+      <div>{entries.map(([question, answer]) => <details key={question}><summary>{question}</summary><p>{answer}</p></details>)}</div>
+    </section>
   );
 }
 

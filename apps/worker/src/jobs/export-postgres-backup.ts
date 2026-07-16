@@ -50,7 +50,11 @@ const EXPORT_TABLES = [
   "widget_billing_events",
   "widget_usage_monthly",
   "widget_usage_daily",
-  "widget_invoices"
+  "widget_invoices",
+  "widget_customer_login_tokens",
+  "widget_revenue_events",
+  "widget_automation_events",
+  "widget_domain_failures"
 ] as const;
 
 type ExportEnvelope = {
@@ -82,13 +86,25 @@ export async function main() {
     const verification = await verifyGzipJsonl(gzPath);
     const sha256 = await sha256File(gzPath);
     const bytes = (await stat(gzPath)).size;
+    console.log(`Backup phase 1/5 complete: local export verified (${bytes} bytes).`);
     const stored = await storeBackupArtifact(gzPath);
-    await downloadStoredArtifact(stored.storageUrl, downloadedPath);
+    console.log(`Backup phase 2/5 complete: stored at ${stored.storageUrl}.`);
+    await withTimeout(
+      downloadStoredArtifact(stored.storageUrl, downloadedPath),
+      60_000,
+      "Stored backup download"
+    );
     const downloadedSha256 = await sha256File(downloadedPath);
     if (downloadedSha256 !== sha256) {
       throw new Error("Stored backup checksum does not match the uploaded artifact.");
     }
-    const restoredRowCounts = await runRestoreDrill(db, downloadedPath);
+    console.log("Backup phase 3/5 complete: stored object downloaded and checksum matched.");
+    const restoredRowCounts = await withTimeout(
+      runRestoreDrill(db, downloadedPath),
+      5 * 60_000,
+      "Temporary-table restore drill"
+    );
+    console.log("Backup phase 4/5 complete: temporary-table restore drill passed.");
     const rowCounts = await getCriticalTableRowCounts(db);
     const artifactId = await insertBackupArtifact(db, {
       artifactType: "logical_export",
@@ -120,6 +136,7 @@ export async function main() {
     };
     await writeFile(manifestPath, `${JSON.stringify(manifest, null, 2)}\n`, "utf8");
 
+    console.log("Backup phase 5/5 complete: audit rows and manifest written.");
     console.log(`Wrote verified Postgres logical export: ${gzPath}`);
     console.log(`Wrote manifest: ${manifestPath}`);
   } finally {
@@ -136,11 +153,11 @@ async function runRestoreDrill(
   const client = await db.connect();
   const restoredCounts: Record<string, number> = {};
   const tempTables = new Map<string, string>();
-  const input = createReadStream(gzPath).pipe(createGunzip());
-  const lines = createInterface({ input, crlfDelay: Infinity });
+  let lines: ReturnType<typeof createInterface> | null = null;
 
   try {
     await client.query("begin");
+    await client.query("set local statement_timeout = '15s'");
     for (const [index, table] of EXPORT_TABLES.entries()) {
       const tempTable = `restore_drill_${index}`;
       tempTables.set(table, tempTable);
@@ -151,6 +168,8 @@ async function runRestoreDrill(
       );
     }
 
+    const input = createReadStream(gzPath).pipe(createGunzip());
+    lines = createInterface({ input, crlfDelay: Infinity });
     for await (const line of lines) {
       if (!line.trim()) continue;
       const parsed = JSON.parse(line) as ExportEnvelope;
@@ -179,8 +198,22 @@ async function runRestoreDrill(
     await client.query("rollback").catch(() => undefined);
     throw error;
   } finally {
-    lines.close();
+    lines?.close();
     client.release();
+  }
+}
+
+async function withTimeout<T>(promise: Promise<T>, milliseconds: number, label: string): Promise<T> {
+  let timer: NodeJS.Timeout | undefined;
+  try {
+    return await Promise.race([
+      promise,
+      new Promise<never>((_resolve, reject) => {
+        timer = setTimeout(() => reject(new Error(`${label} exceeded ${milliseconds}ms.`)), milliseconds);
+      })
+    ]);
+  } finally {
+    if (timer) clearTimeout(timer);
   }
 }
 

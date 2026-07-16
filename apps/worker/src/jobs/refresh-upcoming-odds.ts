@@ -123,10 +123,15 @@ export async function refreshUpcomingOdds(db: PostgresDb) {
 
   const from = new Date().toISOString();
   const to = new Date(Date.now() + lookaheadDays * DAY_MS).toISOString();
-  const activeSports = await fetchOddsSports(oddsApiKey).catch((error) => {
+  const sportsSnapshot = await fetchOddsSports(oddsApiKey).catch((error) => {
     console.warn("Could not load active Odds API sport keys; using configured fallback keys.", error);
-    return [];
+    return { remainingRequests: null, sports: [] };
   });
+  if (sportsSnapshot.remainingRequests !== null && sportsSnapshot.remainingRequests <= 0) {
+    console.log("Odds refresh paused: provider quota is exhausted. The free status check will retry next interval.");
+    return { available: 0, unavailable: 0, errors: 0, unsupported: 0 };
+  }
+  const activeSports = sportsSnapshot.sports;
   const requestedKeys = unique(candidates.flatMap((candidate) => getCandidateOddsKeys(candidate, activeSports)));
   const discovered = new Map<string, { events: TheOddsApiEvent[]; error: string | null }>();
   const fetched = new Map<string, { events: TheOddsApiEvent[]; error: string | null }>();
@@ -307,11 +312,33 @@ async function fetchOddsEvents(apiKey: string, sportKey: string, from: string, t
   }
 }
 
-async function fetchOddsSports(apiKey: string): Promise<TheOddsApiSport[]> {
+async function fetchOddsSports(apiKey: string): Promise<{
+  remainingRequests: number | null;
+  sports: TheOddsApiSport[];
+}> {
   const url = new URL("https://api.the-odds-api.com/v4/sports");
   url.searchParams.set("apiKey", apiKey);
-  const payload = await fetchOddsJson(url);
-  return Array.isArray(payload) ? payload : [];
+  const controller = new AbortController();
+  const timeoutMs = readPositiveNumber(process.env.THE_ODDS_API_FETCH_TIMEOUT_MS, 6000, 1000, 30000);
+  const timeout = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    const response = await fetch(url, {
+      headers: { accept: "application/json" },
+      signal: controller.signal
+    });
+    if (!response.ok) {
+      const message = await response.text().catch(() => "");
+      throw new Error(`Odds API ${response.status}${message ? `: ${message.slice(0, 240)}` : ""}`);
+    }
+    const payload = await response.json();
+    const remaining = Number(response.headers.get("x-requests-remaining"));
+    return {
+      remainingRequests: Number.isFinite(remaining) ? remaining : null,
+      sports: Array.isArray(payload) ? payload : []
+    };
+  } finally {
+    clearTimeout(timeout);
+  }
 }
 
 async function fetchOddsEventCatalog(apiKey: string, sportKey: string, from: string, to: string): Promise<TheOddsApiEvent[]> {

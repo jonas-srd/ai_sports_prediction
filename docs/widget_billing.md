@@ -32,6 +32,12 @@ The webhook converts an annual Checkout subscription to a schedule: the current 
 6. Subscribe it to `checkout.session.completed`, `checkout.session.async_payment_succeeded`, `invoice.paid`, `invoice.payment_failed`, `customer.subscription.updated`, and `customer.subscription.deleted`.
 7. Configure a Resend-verified sender in `WIDGET_ACCESS_FROM_EMAIL`.
 8. Apply migration `0010_widget_invoice_details.sql` so invoice and contact details can be retained for customer support and invoice delivery.
+9. Create a Stripe Customer Portal configuration for invoices, payment methods, billing address
+   and tax IDs. Disable subscription cancellation and plan changes in that portal; set its ID in
+   `STRIPE_CUSTOMER_PORTAL_CONFIGURATION_ID`.
+10. In Stripe Revenue Recovery, enable Smart Retries and Stripe's payment-failure emails. The
+    application additionally consumes `invoice.payment_failed`, marks the customer `past_due`,
+    emails the account link and creates an internal, idempotent automation event.
 
 Widget access is created only after `invoice.paid`. Payment failures mark access `past_due`; canceled or unpaid subscriptions are deactivated. Stripe webhook signatures and event IDs are verified to prevent forged or duplicate processing.
 

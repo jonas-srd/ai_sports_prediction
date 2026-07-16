@@ -19,6 +19,7 @@ const oddsQueue = new Queue("odds-refresh", { connection, prefix: queuePrefix })
 const marketingQueue = new Queue("marketing", { connection, prefix: queuePrefix });
 const fixtureQueue = new Queue("fixture-sync", { connection, prefix: queuePrefix });
 const backupQueue = new Queue("backups", { connection, prefix: queuePrefix });
+const revenueQueue = new Queue("revenue-operations", { connection, prefix: queuePrefix });
 
 const queues = [
   "fixture-sync",
@@ -27,7 +28,8 @@ const queues = [
   "scoring",
   "backups",
   "outreach",
-  "marketing"
+  "marketing",
+  "revenue-operations"
 ];
 
 const workers = queues.map((queueName) => new Worker(
@@ -71,6 +73,10 @@ const workers = queues.map((queueName) => new Worker(
         errorMessage: error instanceof Error ? error.message : String(error),
         errorStack: error instanceof Error ? error.stack ?? null : null
       });
+      console.error(
+        `OPERATIONS_JOB_FAILURE queue=${queueName} job=${job.name}:`,
+        error
+      );
       const { sendOperationsAlert } = await import("./ops-alerts");
       await sendOperationsAlert({ error, jobName: job.name, queueName }).catch((alertError) => {
         console.error("Could not send operations alert:", alertError);
@@ -154,6 +160,13 @@ async function runQueuedJob(queueName: string, jobName: string, data: unknown): 
     const { runMarketingPerformanceAgent } = await import("./marketing-performance-agent");
     const result = await runMarketingPerformanceAgent(db);
     console.log("Marketing performance analysis finished:", result);
+    return;
+  }
+
+  if (queueName === "revenue-operations" && jobName === "run-revenue-operations") {
+    const { runRevenueOperations } = await import("./jobs/run-revenue-operations");
+    const result = await runRevenueOperations(db);
+    console.log("Revenue operations finished:", result);
     return;
   }
 
@@ -297,6 +310,24 @@ async function registerRecurringJobs(): Promise<void> {
       }
     );
   }
+
+  const revenueIntervalMinutes = Number(process.env.REVENUE_AUTOMATION_INTERVAL_MINUTES ?? 60);
+  const revenueEvery = Math.max(
+    15,
+    Number.isFinite(revenueIntervalMinutes) ? revenueIntervalMinutes : 60
+  ) * 60 * 1000;
+  await revenueQueue.add(
+    "run-revenue-operations",
+    {},
+    {
+      jobId: "run-revenue-operations",
+      repeat: { every: revenueEvery },
+      attempts: 3,
+      backoff: { type: "exponential", delay: 60_000 },
+      removeOnComplete: 100,
+      removeOnFail: 100
+    }
+  );
 }
 
 async function shutdown(): Promise<void> {
@@ -307,7 +338,8 @@ async function shutdown(): Promise<void> {
     oddsQueue.close(),
     marketingQueue.close(),
     fixtureQueue.close(),
-    backupQueue.close()
+    backupQueue.close(),
+    revenueQueue.close()
   ]);
   await db.end();
   process.exit(0);

@@ -1,14 +1,14 @@
 import type { Metadata } from "next";
-import { ObfuscatedEmail } from "@/components/obfuscated-email";
+import { getWidgetSellerDetails } from "@/lib/widget-sales-config";
 
 export const metadata: Metadata = {
   title: "Impressum | AI Sports Prediction",
   description: "Impressum und Anbieterinformationen für AI Sports Prediction."
 };
 
-const contactEmail = <ObfuscatedEmail reversedDomain="moc.kooltuo" reversedLocalPart="noitciderp-strops-ia" />;
-
 export default function GermanLegalNoticePage() {
+  const seller = getWidgetSellerDetails();
+  const address = [seller.street, `${seller.postalCode} ${seller.city}`.trim(), seller.country].filter(Boolean);
   return (
     <main className="footballDetailShell sportschauFootballPage legalPageShell">
       <section className="competitionHero legalHero">
@@ -28,26 +28,29 @@ export default function GermanLegalNoticePage() {
         <div className="legalPageBlock">
           <h2>Angaben gemäß § 5 DDG</h2>
           <p>
-            Jonas Schröder
+            {seller.name}
             <br />
-            AI Sports Prediction
+            {seller.tradingName}
             <br />
-            81541 Munich
-            <br />
-            Deutschland
-            <br />
-            Postanschrift auf Anfrage: {contactEmail}
+            {address.map((line) => <span key={line}>{line}<br /></span>)}
           </p>
         </div>
 
         <div className="legalPageBlock">
           <h2>Kontakt</h2>
-          <p>E-Mail: {contactEmail}</p>
+          <p>E-Mail: <a href={`mailto:${seller.email}`}>{seller.email}</a></p>
         </div>
+
+        {seller.vatId ? (
+          <div className="legalPageBlock">
+            <h2>Umsatzsteuer</h2>
+            <p>Umsatzsteuer-Identifikationsnummer gemäß § 27a UStG: {seller.vatId}</p>
+          </div>
+        ) : null}
 
         <div className="legalPageBlock">
           <h2>Verantwortlich für den Inhalt nach § 18 Abs. 2 MStV</h2>
-          <p>Jonas Schröder (Anschrift wie oben)</p>
+          <p>{seller.name} (Anschrift wie oben)</p>
         </div>
 
         <div className="legalPageBlock">
