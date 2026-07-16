@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState, type CSSProperties, type FormEvent } from "react";
+import { useEffect, useMemo, useState, type CSSProperties } from "react";
 import type {
   OutreachAdminResponse,
   OutreachDraftView,
@@ -15,7 +15,6 @@ type ApprovalEdit = {
   reviewer: string;
 };
 
-const TOKEN_STORAGE_KEY = "ai-sports-outreach-admin-token";
 const researchCountries = [
   ["DE", "Deutschland"], ["AT", "Österreich"], ["CH", "Schweiz"], ["GB", "Großbritannien"],
   ["US", "USA"], ["CA", "Kanada"], ["AU", "Australien"], ["ES", "Spanien"],
@@ -23,10 +22,9 @@ const researchCountries = [
 ] as const;
 
 export function OutreachAdmin() {
-  const [token, setToken] = useState("");
   const [data, setData] = useState<OutreachAdminResponse | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
-  const [status, setStatus] = useState("Admin-Token eingeben, um Prospects zu laden.");
+  const [isLoading, setIsLoading] = useState(true);
+  const [status, setStatus] = useState("Prospects werden geladen …");
   const [query, setQuery] = useState("");
   const [filter, setFilter] = useState("active");
   const [draftEdits, setDraftEdits] = useState<Record<string, DraftEdit>>({});
@@ -36,11 +34,7 @@ export function OutreachAdmin() {
   const [emailLanguage, setEmailLanguage] = useState("de");
 
   useEffect(() => {
-    const storedToken = window.sessionStorage.getItem(TOKEN_STORAGE_KEY) ?? "";
-    if (storedToken) {
-      setToken(storedToken);
-      void loadProspects(storedToken);
-    }
+    void loadProspects();
   }, []);
 
   const filteredProspects = useMemo(() => {
@@ -64,23 +58,21 @@ export function OutreachAdmin() {
     };
   }, [data]);
 
-  async function loadProspects(activeToken = token) {
-    if (!activeToken.trim()) {
-      setStatus("Admin-Token fehlt.");
-      return;
-    }
+  async function loadProspects() {
     setIsLoading(true);
     setStatus("Prospects werden geladen …");
     try {
       const response = await fetch("/api/admin/outreach", {
-        headers: { authorization: `Bearer ${activeToken.trim()}` },
         cache: "no-store"
       });
       const body = await response.json() as OutreachAdminResponse & { message?: string };
+      if (response.status === 401) {
+        window.location.assign("/admin/login?next=/admin/outreach");
+        return;
+      }
       if (!response.ok) {
         throw new Error(body.message || "Prospects konnten nicht geladen werden.");
       }
-      window.sessionStorage.setItem(TOKEN_STORAGE_KEY, activeToken.trim());
       setData(body);
       setDraftEdits(buildDraftEdits(body.prospects));
       setStatus(`${body.prospects.length} Prospects geladen.`);
@@ -99,7 +91,6 @@ export function OutreachAdmin() {
       const response = await fetch("/api/admin/outreach", {
         method: "PATCH",
         headers: {
-          authorization: `Bearer ${token.trim()}`,
           "content-type": "application/json"
         },
         body: JSON.stringify(payload)
@@ -123,7 +114,7 @@ export function OutreachAdmin() {
     try {
       const response = await fetch("/api/admin/outreach", {
         method: "PATCH",
-        headers: { authorization: `Bearer ${token.trim()}`, "content-type": "application/json" },
+        headers: { "content-type": "application/json" },
         body: JSON.stringify({ action: "start_research", countries: researchCountriesSelected, emailLanguage })
       });
       const body = await response.json() as { jobs?: number; message?: string };
@@ -136,18 +127,6 @@ export function OutreachAdmin() {
     }
   }
 
-  function submitToken(event: FormEvent) {
-    event.preventDefault();
-    void loadProspects();
-  }
-
-  function logout() {
-    window.sessionStorage.removeItem(TOKEN_STORAGE_KEY);
-    setToken("");
-    setData(null);
-    setStatus("Admin-Token wurde aus dieser Sitzung entfernt.");
-  }
-
   return (
     <main className={styles.shell}>
       <header className={styles.header}>
@@ -156,38 +135,25 @@ export function OutreachAdmin() {
           <h1>Outreach Cockpit</h1>
           <p>Publisher recherchieren, Entwürfe prüfen und ausschließlich freigegebene Kontakte einzeln versenden.</p>
         </div>
-        {data ? (
-          <div className={styles.headerActions}>
-            <button className={styles.secondaryButton} disabled={isLoading} onClick={() => void loadProspects()} type="button">
-              {isLoading ? "Lädt …" : "Aktualisieren"}
-            </button>
-            <button className={styles.ghostButton} onClick={logout} type="button">Abmelden</button>
-          </div>
-        ) : null}
+        <div className={styles.headerActions}>
+          <button className={styles.secondaryButton} disabled={isLoading} onClick={() => void loadProspects()} type="button">
+            {isLoading ? "Lädt …" : "Aktualisieren"}
+          </button>
+        </div>
       </header>
 
       {!data ? (
         <section className={styles.loginCard}>
           <div className={styles.lockIcon}>✦</div>
           <div>
-            <h2>Geschützter Bereich</h2>
-            <p>Der Token bleibt nur für diese Browser-Sitzung gespeichert.</p>
+            <h2>{isLoading ? "Outreach Cockpit wird geladen" : "Outreach ist derzeit nicht verfügbar"}</h2>
+            <p>Der Zugriff erfolgt automatisch über eure geschützte Authenticator-Anmeldung.</p>
           </div>
-          <form onSubmit={submitToken}>
-            <label>
-              <span>Admin-Token</span>
-              <input
-                autoComplete="off"
-                onChange={(event) => setToken(event.target.value)}
-                placeholder="ADMIN_API_TOKEN"
-                type="password"
-                value={token}
-              />
-            </label>
-            <button className={styles.primaryButton} disabled={isLoading} type="submit">
-              {isLoading ? "Verbindung wird geprüft …" : "Cockpit öffnen"}
+          {!isLoading ? (
+            <button className={styles.primaryButton} onClick={() => void loadProspects()} type="button">
+              Erneut versuchen
             </button>
-          </form>
+          ) : null}
           <StatusLine status={status} />
         </section>
       ) : (

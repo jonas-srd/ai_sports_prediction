@@ -24,6 +24,7 @@
 .bar nav {
   display: flex;
   gap: 14px;
+  overflow-x: auto;
 }
 
 .bar a,
@@ -37,17 +38,29 @@
   text-decoration: none;
 }
 
+.bar a[aria-current="page"] {
+  color: #65e5ad;
+}
+
 .bar button {
   color: #9eaca6;
 }
 
 @media (max-width: 560px) {
   .bar {
+    flex-wrap: wrap;
     gap: 10px;
     justify-content: space-between;
+    padding-bottom: 7px;
+    padding-top: 7px;
   }
 
   .lock {
     font-size: 10px;
+  }
+
+  .bar nav {
+    order: 3;
+    width: 100%;
   }
 }

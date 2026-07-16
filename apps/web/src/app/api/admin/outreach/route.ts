@@ -1,6 +1,6 @@
-import { timingSafeEqual } from "node:crypto";
 import { Queue } from "bullmq";
 import { NextResponse, type NextRequest } from "next/server";
+import { isAdminRequestAuthorized } from "@/lib/admin-request-auth";
 import {
   approveOutreachDraft,
   claimOutreachDraftForSend,
@@ -16,8 +16,8 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 export async function GET(request: NextRequest) {
-  if (!isAdminAuthorized(request)) {
-    return json({ error: "unauthorized", message: "Admin-Token fehlt oder ist ungültig." }, 401);
+  if (!await isAdminRequestAuthorized(request)) {
+    return json({ error: "unauthorized", message: "Bitte melde dich im Admin-Cockpit an." }, 401);
   }
 
   try {
@@ -38,8 +38,8 @@ export async function GET(request: NextRequest) {
 }
 
 export async function PATCH(request: NextRequest) {
-  if (!isAdminAuthorized(request)) {
-    return json({ error: "unauthorized", message: "Admin-Token fehlt oder ist ungültig." }, 401);
+  if (!await isAdminRequestAuthorized(request)) {
+    return json({ error: "unauthorized", message: "Bitte melde dich im Admin-Cockpit an." }, 401);
   }
 
   const payload = await request.json().catch(() => null);
@@ -222,17 +222,6 @@ function localizedOptOut(language: "de" | "en" | "es" | "fr" | "it" | "nl", repl
   } as const;
   const selected = translations[language] ?? translations.en;
   return { ...selected, text: `${selected.prefix} ${replyTo}${selected.suffix}` };
-}
-
-function isAdminAuthorized(request: NextRequest): boolean {
-  const expected = process.env.ADMIN_API_TOKEN;
-  const provided = request.headers.get("authorization")?.replace(/^Bearer\s+/i, "") ?? "";
-  if (!expected || !provided) {
-    return false;
-  }
-  const expectedBuffer = Buffer.from(expected);
-  const providedBuffer = Buffer.from(provided);
-  return expectedBuffer.length === providedBuffer.length && timingSafeEqual(expectedBuffer, providedBuffer);
 }
 
 function isSendConfigured(): boolean {

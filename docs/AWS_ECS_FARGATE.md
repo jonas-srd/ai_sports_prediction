@@ -173,6 +173,14 @@ SERVICE_ROLE=backup
 Schedule: daily
 ```
 
+The production worker now registers the verified logical backup as a durable
+BullMQ repeat job by default. It uploads to S3, downloads the stored object,
+checks its SHA-256 digest and restores every exported row into temporary
+Postgres tables before marking the backup verified. This avoids a second
+scheduler dependency while Redis is available. RDS point-in-time recovery is
+kept at the maximum permitted by the AWS account plan; the Free Tier currently
+permits one day, while logical S3 backups are retained for 35 days.
+
 ## 6. Required Runtime Variables
 
 Web:

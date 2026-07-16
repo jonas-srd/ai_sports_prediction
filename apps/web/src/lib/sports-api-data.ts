@@ -8,7 +8,16 @@ import {
   type TheSportsDbLeagueIdentity
 } from "@/lib/sports-league-identity";
 import { findTennisPlayerByName, getTennisFlagUrl, resolveTennisPlayerCountryCode } from "@/lib/tennis-data";
-import { resolveTennisPlayerCountryCodes } from "@/lib/tennis-country-resolver";
+import {
+  getTennisPlayerLookupCandidates,
+  resolveTennisPlayerCountryProfiles,
+  type TennisPlayerCountryProfile
+} from "@/lib/tennis-country-resolver";
+import {
+  auditSportsMatches,
+  emptySportsDataQualityReport,
+  type SportsDataQualityReport
+} from "@/lib/sports-data-quality";
 
 export type ApiSportId = "football" | "nfl" | "nba" | "tennis";
 
@@ -27,6 +36,11 @@ export type SportApiMatch = {
   homeScore: number | null;
   awayScore: number | null;
   status: string | null;
+  leagueId?: string | null;
+  providerCompetition?: string | null;
+  providerCountry?: string | null;
+  providerSport?: string | null;
+  providerStage?: string | null;
   odds?: SportApiOdds | null;
 };
 
@@ -85,6 +99,7 @@ export type SportApiSnapshot = {
   status: "live" | "not_configured" | "error";
   message: string;
   matches: SportApiMatch[];
+  quality: SportsDataQualityReport;
   standings: SportApiStanding[];
   teams: SportApiTeam[];
 };
@@ -109,7 +124,7 @@ const THE_SPORTS_DB_LEAGUES: Record<ApiSportId, TheSportsDbLeagueRef> = {
   football: { id: "4328", name: "English Premier League" },
   nfl: { id: "4391", name: "NFL" },
   nba: { id: "4387", name: "NBA" },
-  tennis: { id: "4464", name: "ATP" }
+  tennis: { id: "4464", name: "ATP", aliases: ["ATP World Tour"], sportName: "Tennis" }
 };
 
 const THE_SPORTS_DB_SPORT_PATHS: Record<ApiSportId, string[]> = {
@@ -157,6 +172,34 @@ const THE_SPORTS_DB_FOOTBALL_LEAGUES: Record<string, TheSportsDbLeagueRef> = {
   "conference-league": { id: "5071", name: "UEFA Conference League", aliases: ["UEFA Europa Conference League", "Europa Conference League"], eventCountry: "Europe", sportName: "Soccer", strictIdentity: true }
 };
 
+export const SUPPORTED_FOOTBALL_COMPETITION_SLUGS = Object.freeze(
+  Object.keys(THE_SPORTS_DB_FOOTBALL_LEAGUES)
+);
+
+export type SportsDataQualityTarget = {
+  competition: string;
+  leagueId: string;
+  slug: string | null;
+  sport: ApiSportId;
+};
+
+export function getSportsDataQualityTargets(): SportsDataQualityTarget[] {
+  return [
+    ...Object.entries(THE_SPORTS_DB_FOOTBALL_LEAGUES).map(([slug, league]) => ({
+      competition: league.name,
+      leagueId: getTheSportsDbLeagueId(league),
+      slug,
+      sport: "football" as const
+    })),
+    ...(["nfl", "nba", "tennis"] as const).map((sport) => ({
+      competition: THE_SPORTS_DB_LEAGUES[sport].name,
+      leagueId: getTheSportsDbLeagueId(THE_SPORTS_DB_LEAGUES[sport]),
+      slug: null,
+      sport
+    }))
+  ];
+}
+
 let theSportsDbLeagueRowsPromise: Promise<any[]> | null = null;
 
 function getFootballLeagueSlug(league: TheSportsDbLeagueRef) {
@@ -172,7 +215,14 @@ export async function getSportApiSnapshot(sport: ApiSportId): Promise<SportApiSn
   const sportsDbLeague = THE_SPORTS_DB_LEAGUES[sport];
   const sportsDbSnapshot = await fetchTheSportsDbSnapshot(sport, sportsDbLeague).catch(() => null);
 
-  if (sportsDbSnapshot && (sportsDbSnapshot.matches.length > 0 || sportsDbSnapshot.teams.length > 0)) {
+  if (
+    sportsDbSnapshot
+    && (
+      sportsDbSnapshot.matches.length > 0
+      || sportsDbSnapshot.teams.length > 0
+      || sportsDbSnapshot.quality.checked > 0
+    )
+  ) {
     return sportsDbSnapshot;
   }
 
@@ -184,6 +234,7 @@ export async function getSportApiSnapshot(sport: ApiSportId): Promise<SportApiSn
       ? `TheSportsDB returned no usable rows for ${sportsDbLeague.name}.`
       : "Set THE_SPORTS_DB_API_KEY to enable live sports data.",
     matches: [],
+    quality: emptySportsDataQualityReport(),
     standings: [],
     teams: []
   };
@@ -196,7 +247,14 @@ export async function getFootballCompetitionApiSnapshot(competition: FootballCom
   };
   const sportsDbSnapshot = await fetchTheSportsDbSnapshot("football", sportsDbLeague).catch(() => null);
 
-  if (sportsDbSnapshot && (sportsDbSnapshot.matches.length > 0 || sportsDbSnapshot.teams.length > 0)) {
+  if (
+    sportsDbSnapshot
+    && (
+      sportsDbSnapshot.matches.length > 0
+      || sportsDbSnapshot.teams.length > 0
+      || sportsDbSnapshot.quality.checked > 0
+    )
+  ) {
     return sportsDbSnapshot;
   }
 
@@ -208,6 +266,7 @@ export async function getFootballCompetitionApiSnapshot(competition: FootballCom
       ? `TheSportsDB returned no usable rows for ${competition.name}.`
       : "Set THE_SPORTS_DB_API_KEY to enable live football data.",
     matches: [],
+    quality: emptySportsDataQualityReport(),
     standings: [],
     teams: []
   };
@@ -435,11 +494,20 @@ async function fetchTheSportsDbSnapshot(
     fetchTheSportsDbTeams(league).catch(() => []),
     fetchTheSportsDbLeagueEvents(sport, league).catch(() => [])
   ]);
-  const leagueEvents = league.strictIdentity ? filterMatchesByLeagueTeams(events, teams) : events;
-  const matchesWithLogos = await hydrateTheSportsDbEventLogos(sport, leagueEvents, teams);
+  const matchesWithLogos = await hydrateTheSportsDbEventLogos(sport, events, teams);
+  const qualityAudit = auditSportsMatches({
+    expectedLeagueId: getTheSportsDbLeagueId(league),
+    league: {
+      ...league,
+      sportName: league.sportName ?? THE_SPORTS_DB_V1_SPORT_NAMES[sport]
+    },
+    matches: matchesWithLogos,
+    sport,
+    teams
+  });
   const matches = await hydrateMatchesWithOdds(
     sport,
-    matchesWithLogos,
+    qualityAudit.matches,
     { footballSlug: getFootballLeagueSlug(league), competitionName: league.name }
   );
   const standings = sport === "football"
@@ -452,6 +520,7 @@ async function fetchTheSportsDbSnapshot(
     status: "live",
     message: `Live data loaded from TheSportsDB Premium for ${league.name}.`,
     matches,
+    quality: qualityAudit.report,
     standings,
     teams
   };
@@ -476,7 +545,7 @@ async function fetchTheSportsDbLeagueEvents(sport: ApiSportId, league: TheSports
   ]);
   const limit = getTheSportsDbMatchLimit();
 
-  const leagueEventRows = filterTheSportsDbRowsForLeague([
+  const leagueEventRows = [
     ...v2LiveEvents,
     ...v2SportLiveEvents,
     ...v2NextEvents,
@@ -485,7 +554,7 @@ async function fetchTheSportsDbLeagueEvents(sport: ApiSportId, league: TheSports
     ...nextEvents,
     ...seasonEvents,
     ...pastEvents
-  ], leagueId, league);
+  ];
   const merged = mergeMatches(leagueEventRows.map((row) => ({
     ...normalizeTheSportsDbEvent(row),
     competition: league.name
@@ -498,7 +567,7 @@ async function fetchTheSportsDbLeagueEvents(sport: ApiSportId, league: TheSports
 
   const dayEvents = await fetchTheSportsDbUpcomingDayEvents(sport, leagueId, league);
   const dayMatches = mergeMatches(
-    filterTheSportsDbRowsForLeague(dayEvents, leagueId, league).map((row) => ({
+    dayEvents.map((row) => ({
       ...normalizeTheSportsDbEvent(row),
       competition: league.name
     })),
@@ -550,22 +619,6 @@ function normalizeTheSportsDbTeam(team: any): SportApiTeam {
       team.logo
     ) || null
   };
-}
-
-function filterMatchesByLeagueTeams(matches: SportApiMatch[], teams: SportApiTeam[]) {
-  if (teams.length === 0) {
-    return [];
-  }
-
-  const participantBelongsToLeague = (teamId: string | null | undefined, teamName: string) =>
-    teams.some((team) =>
-      Boolean(teamId && team.id === teamId) || namesMatch(team.name, teamName)
-    );
-
-  return matches.filter((match) =>
-    participantBelongsToLeague(match.homeId, match.homeName) &&
-    participantBelongsToLeague(match.awayId, match.awayName)
-  );
 }
 
 async function fetchTheSportsDbStandings(
@@ -963,7 +1016,12 @@ function normalizeTheSportsDbEvent(event: any): SportApiMatch {
     awayLogo: getString(event.strAwayTeamBadge || event.strAwayBadge || event.awayBadge || event.awayLogo || event.away?.badge || event.away?.logo) || null,
     homeScore: toNumber(event.intHomeScore ?? event.homeScore ?? event.home_score ?? event.home?.score),
     awayScore: toNumber(event.intAwayScore ?? event.awayScore ?? event.away_score ?? event.away?.score),
-    status: getString(event.strStatus || event.strProgress || event.strResult) || null
+    status: getString(event.strStatus || event.strProgress || event.strResult) || null,
+    leagueId: getString(event.idLeague || event.leagueId || event.league_id) || null,
+    providerCompetition: getString(event.strLeague || event.league || event.leagueName) || null,
+    providerCountry: getString(event.strCountry || event.country) || null,
+    providerSport: getString(event.strSport || event.sport) || null,
+    providerStage: getString(event.strStage || event.stage || event.strDescription) || null
   };
 }
 
@@ -1055,24 +1113,33 @@ function stripGenericTennisTournamentContext(name: string) {
 }
 
 async function hydrateTheSportsDbEventLogos(sport: ApiSportId, matches: SportApiMatch[], teams: SportApiTeam[]) {
-  const tennisCountryCodes = sport === "tennis"
-    ? await resolveTennisPlayerCountryCodes(matches.flatMap((match) => [match.homeName, match.awayName])).catch(() => new Map<string, string>())
-    : new Map<string, string>();
+  const tennisCountryProfiles = sport === "tennis"
+    ? await resolveTennisPlayerCountryProfiles(matches.flatMap((match) => [match.homeName, match.awayName]))
+      .catch(() => new Map<string, TennisPlayerCountryProfile>())
+    : new Map<string, TennisPlayerCountryProfile>();
 
   return matches.map((match) => {
     const home = teams.find((team) => team.id === match.homeId || namesMatch(team.name, match.homeName));
     const away = teams.find((team) => team.id === match.awayId || namesMatch(team.name, match.awayName));
-    const homePlayerCountryCode = sport === "tennis"
-      ? tennisCountryCodes.get(match.homeName) ?? resolveTennisPlayerCountryCode(match.homeName)
-      : null;
-    const awayPlayerCountryCode = sport === "tennis"
-      ? tennisCountryCodes.get(match.awayName) ?? resolveTennisPlayerCountryCode(match.awayName)
-      : null;
+    const homeProfile = sport === "tennis" ? tennisCountryProfiles.get(match.homeName) : null;
+    const awayProfile = sport === "tennis" ? tennisCountryProfiles.get(match.awayName) : null;
+    const homePlayerCountryCode = homeProfile?.countryCode ?? (sport === "tennis"
+      ? resolveTennisPlayerCountryCode(match.homeName)
+      : null);
+    const awayPlayerCountryCode = awayProfile?.countryCode ?? (sport === "tennis"
+      ? resolveTennisPlayerCountryCode(match.awayName)
+      : null);
 
     return {
       ...match,
-      homeLogo: match.homeLogo || home?.logo || getTennisFlagUrl(homePlayerCountryCode) || null,
-      awayLogo: match.awayLogo || away?.logo || getTennisFlagUrl(awayPlayerCountryCode) || null
+      homeName: homeProfile?.canonicalName ?? match.homeName,
+      awayName: awayProfile?.canonicalName ?? match.awayName,
+      homeLogo: sport === "tennis"
+        ? getTennisFlagUrl(homePlayerCountryCode) || null
+        : match.homeLogo || home?.logo || null,
+      awayLogo: sport === "tennis"
+        ? getTennisFlagUrl(awayPlayerCountryCode) || null
+        : match.awayLogo || away?.logo || null
     };
   });
 }

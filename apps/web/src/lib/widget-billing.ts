@@ -206,6 +206,26 @@ export async function retrieveWidgetStripeSubscription(subscriptionId: string) {
   }>(`/v1/subscriptions/${encodeURIComponent(subscriptionId)}`, undefined, "GET");
 }
 
+export async function updateWidgetStripeCancellation(
+  subscriptionId: string,
+  cancellationAt: Date | null
+) {
+  const params = new URLSearchParams();
+  if (!cancellationAt) {
+    params.set("cancel_at_period_end", "false");
+    params.set("cancel_at", "");
+  } else if (cancellationAt.getTime() > Date.now()) {
+    params.set("cancel_at_period_end", "false");
+    params.set("cancel_at", String(Math.floor(cancellationAt.getTime() / 1000)));
+  } else {
+    params.set("cancel_at_period_end", "true");
+  }
+  return widgetStripeRequest<Record<string, unknown>>(
+    `/v1/subscriptions/${encodeURIComponent(subscriptionId)}`,
+    params
+  );
+}
+
 export function verifyWidgetStripeWebhook(payload: string, signatureHeader: string | null, toleranceSeconds = 300): boolean {
   const secret = process.env.STRIPE_WEBHOOK_SECRET?.trim();
   if (!secret || !signatureHeader) return false;

@@ -6,7 +6,10 @@ declare global {
 
 export function getWidgetDb(): PostgresDb {
   if (!globalThis.aiSportsWidgetDb) {
-    globalThis.aiSportsWidgetDb = createPostgresPool(undefined, { connectionTimeoutMillis: 4_000 });
+    globalThis.aiSportsWidgetDb = createPostgresPool(
+      process.env.WIDGET_DATABASE_URL?.trim() || undefined,
+      { connectionTimeoutMillis: 4_000 }
+    );
   }
 
   return globalThis.aiSportsWidgetDb;

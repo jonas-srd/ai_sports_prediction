@@ -70,7 +70,7 @@ export async function POST(request: NextRequest) {
   const session = await createAdminSession(email, sessionSecret, undefined, ttlSeconds);
   const response = json({
     ok: true,
-    redirectTo: isSafeAdminRedirect(nextValue) ? nextValue : "/admin/marketing"
+    redirectTo: isSafeAdminRedirect(nextValue) ? nextValue : "/admin"
   });
   response.cookies.set(ADMIN_SESSION_COOKIE, session, {
     httpOnly: true,

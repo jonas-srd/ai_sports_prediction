@@ -1,0 +1,135 @@
+.page {
+  background:
+    radial-gradient(circle at 15% 5%, rgba(101, 229, 173, 0.12), transparent 32rem),
+    #06130f;
+  color: #eefbf5;
+  font-family: Arial, sans-serif;
+  min-height: calc(100vh - 44px);
+  padding: clamp(34px, 6vw, 82px) clamp(20px, 5vw, 72px);
+}
+
+.hero,
+.grid,
+.security {
+  margin-left: auto;
+  margin-right: auto;
+  max-width: 1120px;
+}
+
+.hero > span,
+.eyebrow {
+  color: #65e5ad;
+  font-family: monospace;
+  font-size: 12px;
+  font-weight: 900;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.hero h1 {
+  font-size: clamp(42px, 7vw, 76px);
+  letter-spacing: -0.06em;
+  line-height: 0.96;
+  margin: 16px 0 20px;
+  max-width: 850px;
+}
+
+.hero p {
+  color: #adbbb5;
+  font-size: clamp(17px, 2vw, 21px);
+  line-height: 1.55;
+  margin: 0;
+  max-width: 760px;
+}
+
+.grid {
+  display: grid;
+  gap: 22px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  margin-top: 48px;
+}
+
+.card {
+  background: linear-gradient(145deg, rgba(18, 44, 35, 0.96), rgba(8, 28, 22, 0.96));
+  border: 1px solid rgba(101, 229, 173, 0.22);
+  border-radius: 22px;
+  box-shadow: 0 22px 60px rgba(0, 0, 0, 0.2);
+  display: flex;
+  flex-direction: column;
+  min-height: 390px;
+  padding: clamp(24px, 4vw, 38px);
+}
+
+.card h2 {
+  font-size: clamp(30px, 4vw, 42px);
+  letter-spacing: -0.04em;
+  margin: 14px 0;
+}
+
+.card p {
+  color: #adbbb5;
+  line-height: 1.6;
+  margin: 0;
+}
+
+.card ul {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 9px;
+  list-style: none;
+  margin: 26px 0 32px;
+  padding: 0;
+}
+
+.card li {
+  background: rgba(101, 229, 173, 0.08);
+  border: 1px solid rgba(101, 229, 173, 0.16);
+  border-radius: 999px;
+  color: #cfddd7;
+  font-size: 12px;
+  font-weight: 800;
+  padding: 8px 11px;
+}
+
+.card > a {
+  align-items: center;
+  background: #65e5ad;
+  border-radius: 11px;
+  color: #06130f;
+  display: flex;
+  font-weight: 900;
+  gap: 14px;
+  justify-content: space-between;
+  margin-top: auto;
+  padding: 15px 17px;
+  text-decoration: none;
+}
+
+.security {
+  align-items: flex-start;
+  background: rgba(101, 229, 173, 0.06);
+  border-left: 3px solid #65e5ad;
+  display: flex;
+  gap: 10px;
+  margin-top: 24px;
+  padding: 16px 18px;
+}
+
+.security span {
+  color: #adbbb5;
+  line-height: 1.5;
+}
+
+@media (max-width: 760px) {
+  .grid {
+    grid-template-columns: 1fr;
+  }
+
+  .card {
+    min-height: 340px;
+  }
+
+  .security {
+    flex-direction: column;
+  }
+}

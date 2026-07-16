@@ -17,6 +17,8 @@ const queuePrefix = process.env.QUEUE_KEY_PREFIX ?? "{ai-sports-prediction}";
 const predictionQueue = new Queue("predictions", { connection, prefix: queuePrefix });
 const oddsQueue = new Queue("odds-refresh", { connection, prefix: queuePrefix });
 const marketingQueue = new Queue("marketing", { connection, prefix: queuePrefix });
+const fixtureQueue = new Queue("fixture-sync", { connection, prefix: queuePrefix });
+const backupQueue = new Queue("backups", { connection, prefix: queuePrefix });
 
 const queues = [
   "fixture-sync",
@@ -69,6 +71,10 @@ const workers = queues.map((queueName) => new Worker(
         errorMessage: error instanceof Error ? error.message : String(error),
         errorStack: error instanceof Error ? error.stack ?? null : null
       });
+      const { sendOperationsAlert } = await import("./ops-alerts");
+      await sendOperationsAlert({ error, jobName: job.name, queueName }).catch((alertError) => {
+        console.error("Could not send operations alert:", alertError);
+      });
       throw error;
     }
   },
@@ -84,6 +90,12 @@ process.on("SIGTERM", () => shutdown());
 process.on("SIGINT", () => shutdown());
 
 async function runQueuedJob(queueName: string, jobName: string, data: unknown): Promise<void> {
+  if (queueName === "fixture-sync" && jobName === "sync-upcoming-sport-fixtures") {
+    const { syncUpcomingSportFixtures } = await import("./jobs/sync-upcoming-sport-fixtures");
+    await syncUpcomingSportFixtures(db);
+    return;
+  }
+
   if (queueName === "predictions" && jobName === "generate-upcoming-sport-api-predictions") {
     const { generateUpcomingSportApiPredictions } = await import("./jobs/generate-upcoming-sport-api-predictions");
     await generateUpcomingSportApiPredictions(db);
@@ -180,6 +192,24 @@ function readRequiredString(data: unknown, key: string): string {
 }
 
 async function registerRecurringJobs(): Promise<void> {
+  const fixtureIntervalMinutes = Number(process.env.FIXTURE_SYNC_INTERVAL_MINUTES ?? 15);
+  const fixtureEvery = Math.max(
+    5,
+    Number.isFinite(fixtureIntervalMinutes) ? fixtureIntervalMinutes : 15
+  ) * 60 * 1000;
+  await fixtureQueue.add(
+    "sync-upcoming-sport-fixtures",
+    {},
+    {
+      jobId: "sync-upcoming-sport-fixtures",
+      repeat: { every: fixtureEvery },
+      attempts: 3,
+      backoff: { type: "exponential", delay: 60_000 },
+      removeOnComplete: 50,
+      removeOnFail: 100
+    }
+  );
+
   const intervalMinutes = Number(process.env.PREDICTION_AUTOMATION_INTERVAL_MINUTES ?? 60);
   const every = Math.max(5, Number.isFinite(intervalMinutes) ? intervalMinutes : 60) * 60 * 1000;
 
@@ -189,6 +219,8 @@ async function registerRecurringJobs(): Promise<void> {
     {
       jobId: "generate-upcoming-sport-api-predictions",
       repeat: { every },
+      attempts: 3,
+      backoff: { type: "exponential", delay: 60_000 },
       removeOnComplete: 20,
       removeOnFail: 50
     }
@@ -203,10 +235,32 @@ async function registerRecurringJobs(): Promise<void> {
     {
       jobId: "refresh-upcoming-bookmaker-odds",
       repeat: { every: oddsEvery },
+      attempts: 3,
+      backoff: { type: "exponential", delay: 60_000 },
       removeOnComplete: 50,
       removeOnFail: 100
     }
   );
+
+  if (readBooleanEnv(process.env.BACKUP_AUTOMATION_ENABLED ?? "1")) {
+    const backupIntervalHours = Number(process.env.BACKUP_AUTOMATION_INTERVAL_HOURS ?? 24);
+    const backupEvery = Math.max(
+      6,
+      Number.isFinite(backupIntervalHours) ? backupIntervalHours : 24
+    ) * 60 * 60 * 1000;
+    await backupQueue.add(
+      "postgres-logical-export",
+      {},
+      {
+        jobId: "postgres-logical-export",
+        repeat: { every: backupEvery },
+        attempts: 3,
+        backoff: { type: "exponential", delay: 5 * 60_000 },
+        removeOnComplete: 30,
+        removeOnFail: 100
+      }
+    );
+  }
 
   if (readBooleanEnv(process.env.MARKETING_AUTOMATION_ENABLED)) {
     const marketingIntervalMinutes = Number(process.env.MARKETING_AUTOMATION_INTERVAL_MINUTES ?? 180);
@@ -251,7 +305,9 @@ async function shutdown(): Promise<void> {
     ...workers.map((worker) => worker.close()),
     predictionQueue.close(),
     oddsQueue.close(),
-    marketingQueue.close()
+    marketingQueue.close(),
+    fixtureQueue.close(),
+    backupQueue.close()
   ]);
   await db.end();
   process.exit(0);

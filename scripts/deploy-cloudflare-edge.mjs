@@ -47,6 +47,7 @@ const secrets = {
   theSportsDbApiKey: secretArn("ai-sports-prediction/the-sports-db-api-key"),
   cloudflareTunnelToken: secretArn("ai-sports-prediction/cloudflare-tunnel-token"),
   serpApiKey: secretArn("ai-sports-prediction/serpapi-api-key"),
+  widgetApiKeyEncryptionKey: optionalSecretArn("ai-sports-prediction/widget-api-key-encryption-key"),
   tiktokAccessToken: optionalSecretArn("ai-sports-prediction/tiktok-access-token")
 };
 
@@ -108,6 +109,9 @@ const taskDefinition = {
         { name: "THE_ODDS_API_KEY", valueFrom: secrets.theOddsApiKey },
         { name: "THE_SPORTS_DB_API_KEY", valueFrom: secrets.theSportsDbApiKey },
         { name: "SERPAPI_API_KEY", valueFrom: secrets.serpApiKey }
+        ,...(secrets.widgetApiKeyEncryptionKey
+          ? [{ name: "WIDGET_API_KEY_ENCRYPTION_KEY", valueFrom: secrets.widgetApiKeyEncryptionKey }]
+          : [])
       ],
       logConfiguration: awslogs("edge-web")
     },
@@ -145,50 +149,6 @@ const taskDefinition = {
         { name: "OPENROUTER_API_KEY", valueFrom: secrets.openrouterApiKey }
       ],
       logConfiguration: awslogs("edge-api")
-    },
-    {
-      name: "worker",
-      image: imageUri,
-      essential: true,
-      environment: [
-        { name: "NODE_ENV", value: "production" },
-        { name: "SERVICE_ROLE", value: "worker" },
-        { name: "OPENROUTER_MODEL_IDS", value: env("OPENROUTER_MODEL_IDS", "openai/gpt-oss-20b:free") },
-        { name: "OPENROUTER_SITE_URL", value: env("OPENROUTER_SITE_URL", "https://www.ai-sports-prediction.net") },
-        { name: "OPENROUTER_SITE_NAME", value: env("OPENROUTER_SITE_NAME", "AI Sports Prediction") },
-        { name: "PREDICTION_AUTOMATION_LOOKAHEAD_DAYS", value: env("PREDICTION_AUTOMATION_LOOKAHEAD_DAYS", "7") },
-        { name: "PREDICTION_AUTOMATION_INTERVAL_MINUTES", value: env("PREDICTION_AUTOMATION_INTERVAL_MINUTES", "60") },
-        { name: "PREDICTION_AUTOMATION_MAX_NEW_PER_RUN", value: env("PREDICTION_AUTOMATION_MAX_NEW_PER_RUN", "50") },
-        { name: "THE_ODDS_API_REGIONS", value: env("THE_ODDS_API_REGIONS", "eu,us") },
-        { name: "ODDS_REFRESH_LOOKAHEAD_DAYS", value: env("ODDS_REFRESH_LOOKAHEAD_DAYS", "7") },
-        { name: "ODDS_REFRESH_INTERVAL_MINUTES", value: env("ODDS_REFRESH_INTERVAL_MINUTES", "60") },
-        { name: "ODDS_REFRESH_MIN_AGE_MINUTES", value: env("ODDS_REFRESH_MIN_AGE_MINUTES", "60") },
-        { name: "ODDS_REFRESH_MAX_MATCHES_PER_RUN", value: env("ODDS_REFRESH_MAX_MATCHES_PER_RUN", "250") },
-        { name: "OUTREACH_SEARCH_PROVIDER", value: env("OUTREACH_SEARCH_PROVIDER", "serpapi") },
-        { name: "OUTREACH_SEARCH_COUNTRY", value: env("OUTREACH_SEARCH_COUNTRY", "DE") },
-        { name: "OUTREACH_SEARCH_LANGUAGE", value: env("OUTREACH_SEARCH_LANGUAGE", "de") },
-        { name: "OUTREACH_EMAIL_LANGUAGE", value: env("OUTREACH_EMAIL_LANGUAGE", "de") },
-        { name: "OUTREACH_MAX_DOMAINS_PER_RUN", value: env("OUTREACH_MAX_DOMAINS_PER_RUN", "20") },
-        { name: "OUTREACH_MAX_CRAWL_ATTEMPTS_PER_RUN", value: env("OUTREACH_MAX_CRAWL_ATTEMPTS_PER_RUN", "60") },
-        { name: "MARKETING_PUBLISH_MODE", value: env("MARKETING_PUBLISH_MODE", "review") },
-        { name: "MARKETING_AUTOMATION_ENABLED", value: env("MARKETING_AUTOMATION_ENABLED", "0") },
-        { name: "DATABASE_SSL", value: env("DATABASE_SSL", "1") },
-        { name: "DATABASE_SSL_REJECT_UNAUTHORIZED", value: env("DATABASE_SSL_REJECT_UNAUTHORIZED", "1") },
-        {
-          name: "DATABASE_SSL_CA_FILE",
-          value: env("DATABASE_SSL_CA_FILE", "/etc/ssl/certs/aws-rds-global-bundle.pem")
-        }
-      ],
-      secrets: [
-        { name: "DATABASE_URL", valueFrom: secrets.databaseUrl },
-        { name: "REDIS_URL", valueFrom: secrets.redisUrl },
-        { name: "OPENROUTER_API_KEY", valueFrom: secrets.openrouterApiKey },
-        { name: "THE_SPORTS_DB_API_KEY", valueFrom: secrets.theSportsDbApiKey },
-        { name: "THE_ODDS_API_KEY", valueFrom: secrets.theOddsApiKey },
-        { name: "SERPAPI_API_KEY", valueFrom: secrets.serpApiKey },
-        ...(secrets.tiktokAccessToken ? [{ name: "TIKTOK_ACCESS_TOKEN", valueFrom: secrets.tiktokAccessToken }] : [])
-      ],
-      logConfiguration: awslogs("edge-worker")
     },
     {
       name: "cloudflared",

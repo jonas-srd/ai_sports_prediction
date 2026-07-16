@@ -1,0 +1,46 @@
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "InspectManagedRuntimeServices",
+      "Effect": "Allow",
+      "Action": [
+        "elasticache:DescribeServerlessCaches",
+        "elasticache:DescribeServerlessCacheSnapshots",
+        "rds:DescribeDBInstances"
+      ],
+      "Resource": "*"
+    },
+    {
+      "Sid": "ConfigureOperationsMonitoring",
+      "Effect": "Allow",
+      "Action": [
+        "cloudwatch:DeleteAlarms",
+        "cloudwatch:DescribeAlarms",
+        "cloudwatch:PutMetricAlarm",
+        "logs:DeleteMetricFilter",
+        "logs:DescribeMetricFilters",
+        "logs:PutMetricFilter",
+        "logs:PutRetentionPolicy",
+        "sns:CreateTopic",
+        "sns:GetTopicAttributes",
+        "sns:ListSubscriptionsByTopic",
+        "sns:Subscribe"
+      ],
+      "Resource": "*"
+    },
+    {
+      "Sid": "ConfigureBackupRetention",
+      "Effect": "Allow",
+      "Action": [
+        "rds:ModifyDBInstance",
+        "s3:GetLifecycleConfiguration",
+        "s3:PutLifecycleConfiguration"
+      ],
+      "Resource": [
+        "arn:aws:rds:eu-central-1:186581960948:db:ai-sports-prediction-db",
+        "arn:aws:s3:::ai-sports-prediction"
+      ]
+    }
+  ]
+}

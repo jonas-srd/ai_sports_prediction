@@ -1,4 +1,4 @@
-import { createHash, randomBytes, randomUUID } from "node:crypto";
+import { randomUUID } from "node:crypto";
 import { NextResponse, type NextRequest } from "next/server";
 import type { WidgetAccessPlan } from "@/lib/widget-access";
 import {
@@ -8,6 +8,12 @@ import {
   verifyWidgetStripeWebhook
 } from "@/lib/widget-billing";
 import { getWidgetDb } from "@/lib/widget-db";
+import {
+  createWidgetApiKey,
+  encryptWidgetApiKey,
+  getWidgetApiKeyPreview,
+  hashWidgetApiKey
+} from "@/lib/widget-api-keys";
 
 export const runtime = "nodejs";
 
@@ -85,12 +91,14 @@ async function handleStripeEvent(type: string, object: Record<string, unknown>) 
     const subscriptionId = getInvoiceSubscriptionId(object);
     if (subscriptionId) {
       const leadId = await activatePaidWidgetSubscription(subscriptionId);
+      await upsertWidgetInvoice(object, "paid");
       if (leadId) await sendWidgetInvoiceEmail(leadId, object);
     }
     return;
   }
 
   if (type === "invoice.payment_failed") {
+    await upsertWidgetInvoice(object, "open");
     const subscriptionId = getInvoiceSubscriptionId(object);
     if (subscriptionId) await setWidgetCustomerStatus(subscriptionId, "past_due");
     return;
@@ -106,6 +114,7 @@ async function handleStripeEvent(type: string, object: Record<string, unknown>) 
     const subscriptionId = getStripeId(object.id);
     const stripeStatus = String(object.status ?? "");
     if (!subscriptionId) return;
+    await syncWidgetSubscriptionDetails(subscriptionId, object);
     if (stripeStatus === "active" || stripeStatus === "trialing") await setWidgetCustomerStatus(subscriptionId, "active");
     else if (stripeStatus === "past_due") await setWidgetCustomerStatus(subscriptionId, "past_due");
     else if (stripeStatus === "canceled" || stripeStatus === "unpaid" || stripeStatus === "incomplete_expired") await setWidgetCustomerStatus(subscriptionId, "inactive");
@@ -190,11 +199,21 @@ async function activatePaidWidgetSubscription(subscriptionId: string) {
     if (lead.status !== "won") {
       const replacementApiKey = createWidgetApiKey();
       await getWidgetDb().query(`
-        update widget_customers set api_key_hash = $2, updated_at_utc = now() where id = $1
-      `, [existing.rows[0].id, hashWidgetApiKey(replacementApiKey)]);
+        update widget_customers
+        set api_key_hash = $2, api_key_ciphertext = $3, api_key_preview = $4,
+            api_key_enabled = true, updated_at_utc = now()
+        where id = $1
+      `, [
+        existing.rows[0].id,
+        hashWidgetApiKey(replacementApiKey),
+        encryptWidgetApiKey(replacementApiKey),
+        getWidgetApiKeyPreview(replacementApiKey)
+      ]);
+      await ensureWidgetCustomerDomain(existing.rows[0].id, lead.domain);
       await sendWidgetAccessEmail({ apiKey: replacementApiKey, lead });
       await markLeadWon(lead.id, existing.rows[0].id);
     }
+    await syncWidgetSubscriptionDetails(subscriptionId, subscription as Record<string, unknown>);
     return lead.id;
   }
 
@@ -208,16 +227,18 @@ async function activatePaidWidgetSubscription(subscriptionId: string) {
       stripe_subscription_schedule_id, stripe_checkout_session_id, contact_first_name,
       contact_last_name, phone, legal_company_name, billing_email, billing_address_line1,
       billing_address_line2, billing_postal_code, billing_city, billing_state, billing_country,
-      billing_tax_id
+      billing_tax_id, api_key_ciphertext, api_key_preview, api_key_enabled
     ) values ($1, $2, $3, $4, $5, 'active', $6, $7, $8, $9, $10, $11, $12, $13,
-      $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25)
+      $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26, $27, true)
   `, [customerRecordId, lead.email, lead.publication_name, lead.domain, lead.requested_plan,
     apiKeyHash, lead.requested_plan === "growth" ? 250000 : 50000, lead.billing_interval,
     lead.minimum_term_ends_at_utc, customerId, subscriptionId, scheduleId, lead.stripe_checkout_session_id,
     lead.contact_first_name, lead.contact_last_name, lead.phone, lead.legal_company_name,
     lead.billing_email, lead.billing_address_line1, lead.billing_address_line2,
     lead.billing_postal_code, lead.billing_city, lead.billing_state, lead.billing_country,
-    lead.billing_tax_id]);
+    lead.billing_tax_id, encryptWidgetApiKey(apiKey), getWidgetApiKeyPreview(apiKey)]);
+  await ensureWidgetCustomerDomain(customerRecordId, lead.domain);
+  await syncWidgetSubscriptionDetails(subscriptionId, subscription as Record<string, unknown>);
   await sendWidgetAccessEmail({ apiKey, lead });
   await markLeadWon(lead.id, customerRecordId);
   return lead.id;
@@ -237,6 +258,75 @@ async function setWidgetCustomerStatus(subscriptionId: string, status: "active" 
     set status = $2, updated_at_utc = now()
     where stripe_subscription_id = $1
   `, [subscriptionId, status]);
+}
+
+async function ensureWidgetCustomerDomain(customerId: string, domain: string) {
+  await getWidgetDb().query(`
+    insert into widget_customer_domains (id, customer_id, domain, is_primary)
+    values ($1, $2, lower($3), true)
+    on conflict (customer_id, domain) do nothing
+  `, [randomUUID(), customerId, domain]);
+}
+
+async function syncWidgetSubscriptionDetails(subscriptionId: string, subscription: Record<string, unknown>) {
+  const currentPeriodEnd = unixSecondsToDate(subscription.current_period_end);
+  const cancelAt = unixSecondsToDate(subscription.cancel_at);
+  const canceledAt = unixSecondsToDate(subscription.canceled_at);
+  await getWidgetDb().query(`
+    update widget_customers
+    set current_period_ends_at_utc = coalesce($2, current_period_ends_at_utc),
+        cancel_at_period_end = ($3 or $4::timestamptz is not null),
+        cancellation_requested_at_utc = case when $3 or $4::timestamptz is not null then coalesce(cancellation_requested_at_utc, now()) else null end,
+        cancellation_effective_at_utc = case when $3 then coalesce($2, cancellation_effective_at_utc) else $4 end,
+        canceled_at_utc = coalesce($5, canceled_at_utc),
+        updated_at_utc = now()
+    where stripe_subscription_id = $1
+  `, [
+    subscriptionId,
+    currentPeriodEnd,
+    subscription.cancel_at_period_end === true,
+    cancelAt,
+    canceledAt
+  ]);
+}
+
+async function upsertWidgetInvoice(invoice: Record<string, unknown>, fallbackStatus: string) {
+  const invoiceId = getStripeId(invoice.id);
+  if (!invoiceId) return;
+  const subscriptionId = getInvoiceSubscriptionId(invoice);
+  await getWidgetDb().query(`
+    insert into widget_invoices (
+      stripe_invoice_id, customer_id, stripe_subscription_id, invoice_number, status,
+      currency, amount_due, amount_paid, hosted_invoice_url, invoice_pdf_url,
+      period_start_utc, period_end_utc
+    )
+    select $1, id, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11
+    from widget_customers
+    where stripe_subscription_id = $2
+    on conflict (stripe_invoice_id) do update set
+      customer_id = excluded.customer_id,
+      invoice_number = excluded.invoice_number,
+      status = excluded.status,
+      amount_due = excluded.amount_due,
+      amount_paid = excluded.amount_paid,
+      hosted_invoice_url = excluded.hosted_invoice_url,
+      invoice_pdf_url = excluded.invoice_pdf_url,
+      period_start_utc = excluded.period_start_utc,
+      period_end_utc = excluded.period_end_utc,
+      updated_at_utc = now()
+  `, [
+    invoiceId,
+    subscriptionId,
+    String(invoice.number ?? "").trim() || null,
+    String(invoice.status ?? fallbackStatus),
+    String(invoice.currency ?? "").toUpperCase() || null,
+    nullableInteger(invoice.amount_due),
+    nullableInteger(invoice.amount_paid),
+    safeHttpsUrl(invoice.hosted_invoice_url),
+    safeHttpsUrl(invoice.invoice_pdf),
+    unixSecondsToDate(invoice.period_start),
+    unixSecondsToDate(invoice.period_end)
+  ]);
 }
 
 async function sendWidgetAccessEmail({ apiKey, lead }: { apiKey: string; lead: WidgetLeadBillingRow }) {
@@ -327,14 +417,6 @@ function isDirectPlan(value: unknown): value is "starter" | "growth" {
   return value === "starter" || value === "growth";
 }
 
-function createWidgetApiKey(): string {
-  return `asp_live_${randomBytes(24).toString("base64url")}`;
-}
-
-function hashWidgetApiKey(value: string): string {
-  return createHash("sha256").update(value).digest("hex");
-}
-
 function formatDate(value: Date | string | null, locale: "de" | "en"): string {
   if (!value) return "-";
   return new Intl.DateTimeFormat(locale === "de" ? "de-DE" : "en-US", { dateStyle: "long", timeZone: "UTC" }).format(new Date(value));
@@ -357,6 +439,16 @@ function safeHttpsUrl(value: unknown): string | null {
   } catch {
     return null;
   }
+}
+
+function unixSecondsToDate(value: unknown) {
+  const seconds = Number(value);
+  return Number.isFinite(seconds) && seconds > 0 ? new Date(seconds * 1000) : null;
+}
+
+function nullableInteger(value: unknown) {
+  const number = Number(value);
+  return Number.isFinite(number) ? Math.round(number) : null;
 }
 
 function escapeHtml(value: unknown): string {

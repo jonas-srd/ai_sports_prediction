@@ -41,7 +41,7 @@ For delivery, use a Resend-verified domain you own. Do not configure a public ma
    npm run outreach:backfill-drafts
    ```
 
-2. Open `/admin/outreach`, enter the local `ADMIN_API_TOKEN`, and review the prospect, source URLs, contact, fit reasons, and draft. The token is kept in browser session storage only. Independently verify that the recipient has opted in or that every condition of the existing-customer exception is met.
+2. Sign in once through `/admin/login` with an allowlisted email address and its authenticator code, then open `/admin/outreach`. The same protected admin session grants access to every agent cockpit; no separate browser token is required. Review the prospect, source URLs, contact, fit reasons, and draft. Independently verify that the recipient has opted in or that every condition of the existing-customer exception is met.
 
 3. Record permission and human approval:
 

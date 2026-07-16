@@ -10,7 +10,7 @@ export async function GET(request: NextRequest) {
   const { searchParams } = request.nextUrl;
   const sport = parseWidgetSport(searchParams.get("sport"));
   const type = parseWidgetType(searchParams.get("type"));
-  const access = await verifyWidgetAccess({ limit: 1, request, type });
+  const access = await verifyWidgetAccess({ endpoint: "matches", limit: 1, request, type });
 
   if (!access.ok) {
     return NextResponse.json({
@@ -68,7 +68,7 @@ export async function GET(request: NextRequest) {
     headers: {
       ...getWidgetAccessHeaders(access.grant),
       "access-control-allow-origin": "*",
-      "cache-control": "public, max-age=60, stale-while-revalidate=300"
+      "cache-control": "private, no-store"
     }
   });
 }

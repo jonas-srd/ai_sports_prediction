@@ -101,4 +101,5 @@ See `docs/backup_and_restore.md`.
 - `docs/worldcup2026_benchmark_protocol.md`
 - `docs/editorial_outreach_agent.md`
 - `docs/marketing_agent.md`
+- `docs/sports_data_quality.md`
 - `docs/widget_billing.md`

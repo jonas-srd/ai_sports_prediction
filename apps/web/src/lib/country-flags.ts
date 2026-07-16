@@ -40,6 +40,7 @@ const TEAM_FLAG_CODES: Record<string, string> = {
   germany: "de",
   ghana: "gh",
   greece: "gr",
+  great_britain: "gb",
   guatemala: "gt",
   haiti: "ht",
   honduras: "hn",
@@ -85,6 +86,7 @@ const TEAM_FLAG_CODES: Record<string, string> = {
   suriname: "sr",
   sweden: "se",
   switzerland: "ch",
+  taiwan: "tw",
   trinidad_and_tobago: "tt",
   tunisia: "tn",
   turkey: "tr",
@@ -217,6 +219,15 @@ export function getTeamFlag(teamName: string): TeamFlag | null {
     srcSet: `https://flagcdn.com/w80/${code}.png 2x`,
     alt: `${teamName} flag`
   };
+}
+
+export function getCountryFlagCode(countryName: string | null | undefined): string | null {
+  const code = TEAM_FLAG_CODES[normalizeTeamName(countryName ?? "")];
+  if (!code) {
+    return null;
+  }
+
+  return code.startsWith("gb-") ? "gb" : code;
 }
 
 export function formatTeamName(teamName: string, locale: Locale): string {

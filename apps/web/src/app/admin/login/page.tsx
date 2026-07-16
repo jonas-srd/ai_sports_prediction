@@ -13,5 +13,5 @@ export default async function AdminLoginPage({
   searchParams: Promise<{ next?: string }>;
 }) {
   const { next } = await searchParams;
-  return <AdminLogin nextPath={isSafeAdminRedirect(next) ? next : "/admin/marketing"} />;
+  return <AdminLogin nextPath={isSafeAdminRedirect(next) ? next : "/admin"} />;
 }

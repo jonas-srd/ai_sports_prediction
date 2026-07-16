@@ -14,7 +14,7 @@ export async function GET(request: NextRequest) {
   const { searchParams } = request.nextUrl;
   const limit = parseWidgetLimit(searchParams.get("limit"));
   const type = parseWidgetType(searchParams.get("type"));
-  const access = await verifyWidgetAccess({ limit, request, type });
+  const access = await verifyWidgetAccess({ endpoint: "predictions", limit, request, type });
 
   if (!access.ok) {
     return NextResponse.json({
@@ -44,7 +44,7 @@ export async function GET(request: NextRequest) {
     headers: {
       ...getWidgetAccessHeaders(access.grant),
       "access-control-allow-origin": "*",
-      "cache-control": "public, max-age=60, stale-while-revalidate=300"
+      "cache-control": "private, no-store"
     }
   });
 }

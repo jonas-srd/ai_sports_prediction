@@ -24,6 +24,8 @@
     "test:special": "node --import tsx packages/llm/src/special-questions.test.ts",
     "load:test": "node scripts/load-test.mjs",
     "aws:deploy-cloudflare-edge": "node scripts/deploy-cloudflare-edge.mjs",
+    "aws:deploy-worker": "node scripts/deploy-aws-worker.mjs",
+    "aws:configure-operations": "node scripts/configure-aws-operations.mjs",
     "typecheck": "npm run typecheck --workspaces --if-present",
     "db:migrate:postgres": "node scripts/run-with-env.mjs node --import tsx apps/worker/src/jobs/migrate-postgres.ts",
     "db:migrate:outreach": "node scripts/run-with-env.mjs node --import tsx apps/worker/src/jobs/migrate-outreach-postgres.ts",
