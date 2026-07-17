@@ -55,6 +55,17 @@ export async function POST(request: NextRequest) {
   const dpaAccepted = body.dpaAccepted === true;
   const electronicInvoiceAccepted = body.electronicInvoiceAccepted === true;
   const locale = body.locale === "de" ? "de" : "en";
+  const acquisition = {
+    campaign: normalizeAttributionValue(body.acquisitionCampaign),
+    content: normalizeAttributionValue(body.acquisitionContent),
+    medium: normalizeAttributionValue(body.acquisitionMedium),
+    referrer: normalizeSafeReferrer(body.referrer),
+    source: normalizeAcquisitionSource(body.acquisitionSource)
+  };
+  const analyticsConsent = request.cookies.get("ai_sp_cookie_consent")?.value === "analytics";
+  const analyticsClientId = analyticsConsent
+    ? parseGaClientId(request.cookies.get("_ga")?.value)
+    : null;
 
   if (!EMAIL_PATTERN.test(email)) return NextResponse.json({ error: "invalid_email" }, { status: 400 });
   if (publicationName.length < 2 || publicationName.length > 120) return NextResponse.json({ error: "invalid_publication" }, { status: 400 });
@@ -142,7 +153,7 @@ export async function POST(request: NextRequest) {
         privacy_acknowledged_at_utc, dpa_version, dpa_accepted_at_utc,
         business_confirmed_at_utc, electronic_invoice_accepted_at_utc,
         contract_snapshot, tax_id_validation_status, tax_id_validated_at_utc
-      ) values ($1, $2, $3, $4, $5, $6, $7, $8, 'new', 'widgets-pricing', $9, $10, $11, $12, $13,
+      ) values ($1, $2, $3, $4, $5, $6, $7, $8, 'new', $37, $9, $10, $11, $12, $13,
         $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25,
         $26, $27, $28, $29, $30, $31, $32, $33, $34::jsonb, $35, $36)
     `, [
@@ -161,7 +172,8 @@ export async function POST(request: NextRequest) {
       plan === "enterprise" ? null : acceptedAt,
       JSON.stringify(contractSnapshot),
       taxValidationStatus,
-      taxId && taxValidationStatus === "vies_valid" ? acceptedAt : null
+      taxId && taxValidationStatus === "vies_valid" ? acceptedAt : null,
+      acquisition.source
     ]);
     await db.query(`
       update widget_leads l
@@ -180,7 +192,14 @@ export async function POST(request: NextRequest) {
         id, idempotency_key, event_name, lead_id, plan, source, payload
       ) values ($1, $2, 'lead_created', $3, $4, 'server', $5::jsonb)
       on conflict (idempotency_key) do nothing
-    `, [randomUUID(), `lead_created:${leadId}`, leadId, plan, JSON.stringify({ billingInterval, intent, locale })]);
+    `, [randomUUID(), `lead_created:${leadId}`, leadId, plan, JSON.stringify({
+      acquisition,
+      analyticsClientId,
+      analyticsConsent,
+      billingInterval,
+      intent,
+      locale
+    })]);
 
     if (plan === "enterprise") {
       return NextResponse.json({ intent, ok: true }, { headers: { "cache-control": "no-store" } });
@@ -242,7 +261,14 @@ export async function POST(request: NextRequest) {
       `begin_checkout:${checkout.id}`,
       leadId,
       plan,
-      JSON.stringify({ billingInterval, checkoutSessionId: checkout.id, locale })
+      JSON.stringify({
+        acquisition,
+        analyticsClientId,
+        analyticsConsent,
+        billingInterval,
+        checkoutSessionId: checkout.id,
+        locale
+      })
     ]);
 
     return NextResponse.json({ checkoutAvailable: true, checkoutUrl: checkout.url, intent, ok: true }, { headers: { "cache-control": "no-store" } });
@@ -263,6 +289,33 @@ function normalizeText(value: unknown): string {
 function normalizeNullableText(value: unknown): string | null {
   const text = normalizeText(value);
   return text || null;
+}
+
+function normalizeAttributionValue(value: unknown): string | null {
+  const text = normalizeText(value).toLowerCase();
+  return text ? text.slice(0, 120) : null;
+}
+
+function normalizeAcquisitionSource(value: unknown): string {
+  return normalizeAttributionValue(value) ?? "direct";
+}
+
+function normalizeSafeReferrer(value: unknown): string | null {
+  const text = normalizeText(value);
+  if (!text) return null;
+  try {
+    const parsed = new URL(text);
+    return /^https?:$/.test(parsed.protocol) ? parsed.origin.slice(0, 240) : null;
+  } catch {
+    return null;
+  }
+}
+
+function parseGaClientId(value: string | undefined): string | null {
+  if (!value) return null;
+  const parts = value.split(".");
+  const clientId = parts.length >= 4 ? parts.slice(-2).join(".") : "";
+  return /^\d+\.\d+$/.test(clientId) ? clientId : null;
 }
 
 function normalizeWebsiteUrl(value: unknown): string | null {

@@ -3,3 +3,4 @@
  */
 export * from "./postgres";
 export * from "./types";
+export * from "./ga4-measurement";

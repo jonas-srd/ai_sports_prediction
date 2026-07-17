@@ -13,7 +13,7 @@ import {
 test("computes Brier score for home/draw/away probabilities", () => {
   const result = brierScore({ home: 0.6, draw: 0.25, away: 0.15 }, "home");
 
-  assert.equal(result, 0.16 + 0.0625 + 0.0225);
+  assert.ok(Math.abs(result - (0.16 + 0.0625 + 0.0225)) < 1e-12);
 });
 
 test("clips log loss to avoid log(0)", () => {

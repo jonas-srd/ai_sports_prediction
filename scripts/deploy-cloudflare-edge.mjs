@@ -47,7 +47,9 @@ const secrets = {
   theSportsDbApiKey: secretArn("ai-sports-prediction/the-sports-db-api-key"),
   cloudflareTunnelToken: secretArn("ai-sports-prediction/cloudflare-tunnel-token"),
   serpApiKey: secretArn("ai-sports-prediction/serpapi-api-key"),
+  ga4ApiSecret: optionalSecretArn("ai-sports-prediction/ga4-api-secret"),
   widgetApiKeyEncryptionKey: optionalSecretArn("ai-sports-prediction/widget-api-key-encryption-key"),
+  widgetCustomerSessionSecret: optionalSecretArn("ai-sports-prediction/widget-customer-session-secret"),
   tiktokAccessToken: optionalSecretArn("ai-sports-prediction/tiktok-access-token")
 };
 
@@ -78,6 +80,7 @@ const taskDefinition = {
         { name: "SHOW_FULL_SITE", value: env("SHOW_FULL_SITE", "0") },
         { name: "NEXT_PUBLIC_SHOW_FULL_SITE", value: env("NEXT_PUBLIC_SHOW_FULL_SITE", "0") },
         { name: "NEXT_PUBLIC_SITE_URL", value: env("NEXT_PUBLIC_SITE_URL", "https://www.ai-sports-prediction.net") },
+        { name: "GA4_MEASUREMENT_ID", value: env("GA4_MEASUREMENT_ID", "G-KSGFX9TKD8") },
         { name: "ADMIN_SESSION_TTL_HOURS", value: env("ADMIN_SESSION_TTL_HOURS", "168") },
         { name: "OPENROUTER_MODEL_IDS", value: env("OPENROUTER_MODEL_IDS", "openai/gpt-oss-20b:free") },
         { name: "OPENROUTER_SITE_URL", value: env("OPENROUTER_SITE_URL", "https://www.ai-sports-prediction.net") },
@@ -96,6 +99,9 @@ const taskDefinition = {
         { name: "WEB_API_CACHE_SECONDS", value: env("WEB_API_CACHE_SECONDS", "60") },
         { name: "WEB_API_ODDS_CACHE_SECONDS", value: env("WEB_API_ODDS_CACHE_SECONDS", "60") },
         { name: "OUTREACH_SEARCH_PROVIDER", value: env("OUTREACH_SEARCH_PROVIDER", "serpapi") }
+        ,{ name: "PUBLIC_SITE_URL", value: env("PUBLIC_SITE_URL", "https://www.ai-sports-prediction.net") }
+        ,{ name: "WIDGET_CUSTOMER_SESSION_TTL_HOURS", value: env("WIDGET_CUSTOMER_SESSION_TTL_HOURS", "720") }
+        ,{ name: "WIDGET_ACCESS_FROM_EMAIL", value: env("WIDGET_ACCESS_FROM_EMAIL", "") }
       ],
       secrets: [
         { name: "DATABASE_URL", valueFrom: secrets.databaseUrl },
@@ -109,8 +115,14 @@ const taskDefinition = {
         { name: "THE_ODDS_API_KEY", valueFrom: secrets.theOddsApiKey },
         { name: "THE_SPORTS_DB_API_KEY", valueFrom: secrets.theSportsDbApiKey },
         { name: "SERPAPI_API_KEY", valueFrom: secrets.serpApiKey }
+        ,...(secrets.ga4ApiSecret
+          ? [{ name: "GA4_API_SECRET", valueFrom: secrets.ga4ApiSecret }]
+          : [])
         ,...(secrets.widgetApiKeyEncryptionKey
           ? [{ name: "WIDGET_API_KEY_ENCRYPTION_KEY", valueFrom: secrets.widgetApiKeyEncryptionKey }]
+          : [])
+        ,...(secrets.widgetCustomerSessionSecret
+          ? [{ name: "WIDGET_CUSTOMER_SESSION_SECRET", valueFrom: secrets.widgetCustomerSessionSecret }]
           : [])
       ],
       logConfiguration: awslogs("edge-web")

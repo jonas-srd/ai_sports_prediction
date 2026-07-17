@@ -1,0 +1,14 @@
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Effect": "Allow",
+      "Principal": { "Federated": "arn:aws:iam::186581960948:oidc-provider/token.actions.githubusercontent.com" },
+      "Action": "sts:AssumeRoleWithWebIdentity",
+      "Condition": {
+        "StringEquals": { "token.actions.githubusercontent.com:aud": "sts.amazonaws.com" },
+        "StringEquals": { "token.actions.githubusercontent.com:sub": "repo:jonas-srd/ai_sports_prediction:environment:production" }
+      }
+    }
+  ]
+}

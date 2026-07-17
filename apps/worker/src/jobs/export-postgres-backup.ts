@@ -54,7 +54,8 @@ const EXPORT_TABLES = [
   "widget_customer_login_tokens",
   "widget_revenue_events",
   "widget_automation_events",
-  "widget_domain_failures"
+  "widget_domain_failures",
+  "widget_acquisition_costs"
 ] as const;
 
 type ExportEnvelope = {

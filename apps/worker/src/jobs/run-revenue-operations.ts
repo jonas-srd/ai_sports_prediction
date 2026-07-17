@@ -1,5 +1,5 @@
 import { randomUUID } from "node:crypto";
-import type { PostgresDb } from "@ai-sports-prediction/db";
+import { sendGa4Purchase, type PostgresDb } from "@ai-sports-prediction/db";
 
 type PendingEvent = {
   billing_interval: "annual" | "monthly" | null;
@@ -16,14 +16,85 @@ type PendingEvent = {
 };
 
 export async function runRevenueOperations(db: PostgresDb) {
-  if (!readBoolean(process.env.REVENUE_AUTOMATION_ENABLED ?? "1")) return { queued: 0, sent: 0 };
+  const analyticsDelivered = await deliverPendingPurchaseAnalytics(db);
+  if (!readBoolean(process.env.REVENUE_AUTOMATION_ENABLED ?? "1")) {
+    return { analyticsDelivered, queued: 0, sent: 0 };
+  }
   await queueAbandonedCheckouts(db);
   await queueEnterpriseFollowUps(db);
   await queueMissingOnboarding(db);
   await queueUsageSignals(db);
   await queueDomainFailureSignals(db);
   const sent = await deliverPendingEvents(db);
-  return { sent };
+  return { analyticsDelivered, sent };
+}
+
+async function deliverPendingPurchaseAnalytics(db: PostgresDb) {
+  const result = await db.query<{
+    amount_cents: number | null;
+    currency: string | null;
+    id: string;
+    lead_id: string | null;
+    payload: Record<string, unknown>;
+    plan: string | null;
+  }>(`
+    select id, lead_id, plan, amount_cents, currency, payload
+    from widget_revenue_events
+    where event_name = 'purchase'
+      and analytics_delivery_status in ('pending', 'failed')
+      and analytics_delivery_attempts < 10
+    order by happened_at_utc
+    limit 100
+  `);
+  let delivered = 0;
+  for (const event of result.rows) {
+    const analyticsConsent = event.payload.analyticsConsent === true;
+    try {
+      const delivery = await sendGa4Purchase({
+        analyticsConsent,
+        clientId: typeof event.payload.analyticsClientId === "string" ? event.payload.analyticsClientId : null,
+        currency: event.currency || "EUR",
+        plan: event.plan || "widget",
+        transactionId: String(event.payload.invoiceId ?? event.id),
+        userId: event.lead_id || event.id,
+        valueCents: event.amount_cents ?? 0
+      });
+      if (delivery.sent) {
+        await updateAnalyticsDelivery(db, event.id, "sent", null, true);
+        delivered += 1;
+      } else if (delivery.reason === "analytics_consent_missing") {
+        await updateAnalyticsDelivery(db, event.id, "skipped", delivery.reason, false);
+      } else {
+        await updateAnalyticsDelivery(db, event.id, "pending", delivery.reason ?? "ga4_not_configured", false);
+      }
+    } catch (error) {
+      await updateAnalyticsDelivery(
+        db,
+        event.id,
+        "failed",
+        error instanceof Error ? error.message : String(error),
+        true
+      );
+    }
+  }
+  return delivered;
+}
+
+async function updateAnalyticsDelivery(
+  db: PostgresDb,
+  eventId: string,
+  status: "failed" | "pending" | "sent" | "skipped",
+  error: string | null,
+  attempted: boolean
+) {
+  await db.query(`
+    update widget_revenue_events
+    set analytics_delivery_status = $2,
+        analytics_delivery_attempts = analytics_delivery_attempts + case when $4 then 1 else 0 end,
+        analytics_delivered_at_utc = case when $2 = 'sent' then now() else analytics_delivered_at_utc end,
+        analytics_last_error = $3
+    where id = $1
+  `, [eventId, status, error, attempted]);
 }
 
 async function queueAbandonedCheckouts(db: PostgresDb) {

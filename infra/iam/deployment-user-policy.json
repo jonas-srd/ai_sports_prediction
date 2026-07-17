@@ -1,0 +1,132 @@
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "ReadDeploymentIdentityAndNetwork",
+      "Effect": "Allow",
+      "Action": [
+        "sts:GetCallerIdentity",
+        "ec2:DescribeSecurityGroups",
+        "ec2:DescribeSubnets",
+        "ec2:DescribeVpcs"
+      ],
+      "Resource": "*"
+    },
+    {
+      "Sid": "ManagePrivateRedisNetwork",
+      "Effect": "Allow",
+      "Action": [
+        "ec2:CreateSecurityGroup",
+        "ec2:AuthorizeSecurityGroupIngress"
+      ],
+      "Resource": "*"
+    },
+    {
+      "Sid": "ManageServerlessRedis",
+      "Effect": "Allow",
+      "Action": [
+        "elasticache:CreateServerlessCache",
+        "elasticache:DescribeServerlessCaches"
+      ],
+      "Resource": "*"
+    },
+    {
+      "Sid": "CreateElasticacheServiceLinkedRole",
+      "Effect": "Allow",
+      "Action": "iam:CreateServiceLinkedRole",
+      "Resource": "arn:aws:iam::*:role/aws-service-role/elasticache.amazonaws.com/AWSServiceRoleForElastiCache",
+      "Condition": {
+        "StringEquals": {
+          "iam:AWSServiceName": "elasticache.amazonaws.com"
+        }
+      }
+    },
+    {
+      "Sid": "ManageApplicationSecrets",
+      "Effect": "Allow",
+      "Action": [
+        "secretsmanager:CreateSecret",
+        "secretsmanager:DescribeSecret",
+        "secretsmanager:GetSecretValue",
+        "secretsmanager:PutSecretValue"
+      ],
+      "Resource": "arn:aws:secretsmanager:eu-central-1:186581960948:secret:ai-sports-prediction/*"
+    },
+    {
+      "Sid": "DeployApplicationServices",
+      "Effect": "Allow",
+      "Action": [
+        "ecs:CreateService",
+        "ecs:DescribeServices",
+        "ecs:DescribeTasks",
+        "ecs:RegisterTaskDefinition",
+        "ecs:RunTask",
+        "ecs:UpdateService"
+      ],
+      "Resource": "*"
+    },
+    {
+      "Sid": "PassOnlyApplicationTaskRoles",
+      "Effect": "Allow",
+      "Action": "iam:PassRole",
+      "Resource": [
+        "arn:aws:iam::186581960948:role/ai-sports-prediction-ecs-execution-role",
+        "arn:aws:iam::186581960948:role/ai-sports-prediction-ecs-task-role"
+      ],
+      "Condition": {
+        "StringEquals": {
+          "iam:PassedToService": "ecs-tasks.amazonaws.com"
+        }
+      }
+    },
+    {
+      "Sid": "PushApplicationImage",
+      "Effect": "Allow",
+      "Action": [
+        "ecr:BatchCheckLayerAvailability",
+        "ecr:BatchGetImage",
+        "ecr:CompleteLayerUpload",
+        "ecr:DescribeImages",
+        "ecr:GetDownloadUrlForLayer",
+        "ecr:InitiateLayerUpload",
+        "ecr:PutImage",
+        "ecr:UploadLayerPart"
+      ],
+      "Resource": "arn:aws:ecr:eu-central-1:186581960948:repository/ai-sports-prediction"
+    },
+    {
+      "Sid": "GetContainerRegistryLogin",
+      "Effect": "Allow",
+      "Action": "ecr:GetAuthorizationToken",
+      "Resource": "*"
+    },
+    {
+      "Sid": "ConfigureOperationsMonitoring",
+      "Effect": "Allow",
+      "Action": [
+        "cloudwatch:PutMetricAlarm",
+        "logs:PutMetricFilter",
+        "logs:PutRetentionPolicy",
+        "sns:CreateTopic",
+        "sns:ListSubscriptionsByTopic",
+        "sns:Subscribe"
+      ],
+      "Resource": "*"
+    },
+    {
+      "Sid": "ConfigureApplicationBackupRetention",
+      "Effect": "Allow",
+      "Action": "s3:PutLifecycleConfiguration",
+      "Resource": "arn:aws:s3:::ai-sports-prediction"
+    },
+    {
+      "Sid": "ProtectApplicationDatabase",
+      "Effect": "Allow",
+      "Action": [
+        "rds:DescribeDBInstances",
+        "rds:ModifyDBInstance"
+      ],
+      "Resource": "*"
+    }
+  ]
+}

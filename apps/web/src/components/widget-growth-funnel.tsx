@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { trackGrowthEvent } from "@/lib/growth-analytics";
 import { localizePath, type Locale } from "@/lib/i18n";
 
@@ -39,7 +39,18 @@ const copy = {
 export function WidgetGrowthFunnel({ locale, plans }: { locale: Locale; plans: WidgetPricingPlan[] }) {
   const text = copy[locale];
   const [billingInterval, setBillingInterval] = useState<BillingInterval>("monthly");
+  const [attributionQuery, setAttributionQuery] = useState("");
   const checkoutBase = localizePath("/widgets/checkout", locale);
+
+  useEffect(() => {
+    const source = new URLSearchParams(window.location.search);
+    const kept = new URLSearchParams();
+    for (const key of ["utm_source", "utm_medium", "utm_campaign", "utm_content"]) {
+      const value = source.get(key);
+      if (value) kept.set(key, value);
+    }
+    setAttributionQuery(kept.toString());
+  }, []);
 
   return (
     <>
@@ -49,7 +60,7 @@ export function WidgetGrowthFunnel({ locale, plans }: { locale: Locale; plans: W
       </div>
       <div className="widgetsPricingGrid">
         {plans.map((plan) => {
-          const href = `${checkoutBase}?plan=${plan.plan}&billing=${billingInterval}`;
+          const href = `${checkoutBase}?plan=${plan.plan}&billing=${billingInterval}${attributionQuery ? `&${attributionQuery}` : ""}`;
           return (
             <article className={`widgetsPricingCard${plan.plan === "growth" ? " isRecommended" : ""}`} key={plan.name}>
               <div>

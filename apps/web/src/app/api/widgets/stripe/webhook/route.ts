@@ -1,5 +1,6 @@
 import { randomUUID } from "node:crypto";
 import { NextResponse, type NextRequest } from "next/server";
+import { sendGa4Purchase } from "@ai-sports-prediction/db";
 import type { WidgetAccessPlan } from "@/lib/widget-access";
 import {
   configureAnnualToMonthlySchedule,
@@ -323,23 +324,95 @@ async function markLeadWon(leadId: string, customerId: string) {
 async function recordPurchaseEvent(leadId: string, invoice: Record<string, unknown>) {
   const invoiceId = getStripeId(invoice.id);
   if (!invoiceId) return;
-  await getWidgetDb().query(`
+  const inserted = await getWidgetDb().query<{
+    amount_cents: number | null;
+    currency: string | null;
+    id: string;
+    lead_id: string | null;
+    payload: Record<string, unknown>;
+    plan: string | null;
+  }>(`
     insert into widget_revenue_events (
       id, idempotency_key, event_name, lead_id, customer_id, plan,
       amount_cents, currency, source, payload
     )
     select $1, $2, 'purchase', l.id, l.customer_id, l.requested_plan,
-      $3, $4, 'stripe_webhook', $5::jsonb
+      $3, $4, 'stripe_webhook',
+      jsonb_build_object('invoiceId', $5::text) || coalesce((
+        select event.payload from widget_revenue_events event
+        where event.lead_id = l.id and event.event_name = 'begin_checkout'
+        order by event.happened_at_utc desc limit 1
+      ), '{}'::jsonb)
     from widget_leads l where l.id = $6
     on conflict (idempotency_key) do nothing
+    returning id, lead_id, plan, amount_cents, currency, payload
   `, [
     randomUUID(),
     `purchase:${invoiceId}`,
     nullableInteger(invoice.amount_paid),
     String(invoice.currency ?? "eur").toUpperCase(),
-    JSON.stringify({ invoiceId }),
+    invoiceId,
     leadId
   ]);
+  if (inserted.rows[0]) {
+    await deliverPurchaseAnalytics(inserted.rows[0]).catch((error) => {
+      console.error("GA4 purchase delivery failed", error);
+    });
+  }
+}
+
+async function deliverPurchaseAnalytics(event: {
+  amount_cents: number | null;
+  currency: string | null;
+  id: string;
+  lead_id: string | null;
+  payload: Record<string, unknown>;
+  plan: string | null;
+}) {
+  const invoiceId = String(event.payload.invoiceId ?? "");
+  const analyticsConsent = event.payload.analyticsConsent === true;
+  try {
+    const result = await sendGa4Purchase({
+      analyticsConsent,
+      clientId: typeof event.payload.analyticsClientId === "string" ? event.payload.analyticsClientId : null,
+      currency: event.currency || "EUR",
+      plan: event.plan || "widget",
+      transactionId: invoiceId,
+      userId: event.lead_id || event.id,
+      valueCents: event.amount_cents ?? 0
+    });
+    if (result.sent) {
+      await updatePurchaseAnalyticsStatus(event.id, "sent", null, true);
+    } else if (result.reason === "analytics_consent_missing") {
+      await updatePurchaseAnalyticsStatus(event.id, "skipped", result.reason, false);
+    } else {
+      await updatePurchaseAnalyticsStatus(event.id, "pending", result.reason ?? "ga4_not_configured", false);
+    }
+  } catch (error) {
+    await updatePurchaseAnalyticsStatus(
+      event.id,
+      "failed",
+      error instanceof Error ? error.message : String(error),
+      true
+    );
+    throw error;
+  }
+}
+
+async function updatePurchaseAnalyticsStatus(
+  eventId: string,
+  status: "failed" | "pending" | "sent" | "skipped",
+  error: string | null,
+  attempted: boolean
+) {
+  await getWidgetDb().query(`
+    update widget_revenue_events
+    set analytics_delivery_status = $2,
+        analytics_delivery_attempts = analytics_delivery_attempts + case when $4 then 1 else 0 end,
+        analytics_delivered_at_utc = case when $2 = 'sent' then now() else analytics_delivered_at_utc end,
+        analytics_last_error = $3
+    where id = $1
+  `, [eventId, status, error, attempted]);
 }
 
 async function queuePaymentFailureAutomation(subscriptionId: string, invoice: Record<string, unknown>) {

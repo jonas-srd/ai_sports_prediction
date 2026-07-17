@@ -23,8 +23,14 @@ export async function WidgetCheckoutPageContent({ locale, searchParams }: { loca
   const billingInterval = parseWidgetBillingInterval(single(params.billing));
   const checkoutState = normalizeCheckoutState(single(params.checkout));
   const taxMode = getWidgetSellerDetails().taxMode;
+  const attribution = {
+    campaign: single(params.utm_campaign),
+    content: single(params.utm_content),
+    medium: single(params.utm_medium),
+    source: single(params.utm_source)
+  };
 
-  return <WidgetCheckout billingInterval={billingInterval} checkoutState={checkoutState} locale={locale} selectedPlan={plan} taxMode={taxMode} />;
+  return <WidgetCheckout attribution={attribution} billingInterval={billingInterval} checkoutState={checkoutState} locale={locale} selectedPlan={plan} taxMode={taxMode} />;
 }
 
 function normalizePlan(value: string | undefined): WidgetAccessPlan {

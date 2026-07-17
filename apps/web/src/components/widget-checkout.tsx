@@ -144,12 +144,14 @@ const copy = {
 };
 
 export function WidgetCheckout({
+  attribution,
   billingInterval,
   checkoutState,
   locale,
   selectedPlan,
   taxMode
 }: {
+  attribution: { campaign?: string; content?: string; medium?: string; source?: string };
   billingInterval: WidgetBillingInterval;
   checkoutState: "canceled" | "success" | null;
   locale: Locale;
@@ -172,6 +174,10 @@ export function WidgetCheckout({
     try {
       const response = await fetch("/api/widgets/access-request", {
         body: JSON.stringify({
+          acquisitionCampaign: attribution.campaign,
+          acquisitionContent: attribution.content,
+          acquisitionMedium: attribution.medium,
+          acquisitionSource: attribution.source,
           addressLine1: data.get("addressLine1"),
           addressLine2: data.get("addressLine2"),
           billingEmail: data.get("billingEmail"),
@@ -193,6 +199,7 @@ export function WidgetCheckout({
           plan: selectedPlan,
           postalCode: data.get("postalCode"),
           publicationName: data.get("publicationName"),
+          referrer: document.referrer,
           state: data.get("state"),
           taxId: data.get("taxId"),
           websiteUrl: data.get("websiteUrl")

@@ -1,0 +1,86 @@
+name: Deploy production
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+concurrency:
+  group: production-deployment
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    name: Controlled production deployment
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    environment: production
+    env:
+      AWS_REGION: eu-central-1
+      ECS_CLUSTER: ai-sports-prediction
+      ECS_EDGE_SERVICE: ai-sports-prediction-edge
+      ECS_WORKER_SERVICE: ai-sports-prediction-worker
+      ECR_REPOSITORY: ai-sports-prediction
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci
+      - run: npm audit --audit-level=high
+      - run: npm run typecheck
+      - run: npm test
+      - run: npm run build
+
+      - name: Configure AWS access via OpenID Connect
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-region: ${{ env.AWS_REGION }}
+          role-to-assume: ${{ secrets.AWS_GITHUB_DEPLOY_ROLE_ARN }}
+          role-session-name: ai-sports-prediction-github-deploy
+
+      - id: previous
+        name: Remember current production versions
+        run: |
+          echo "edge=$(aws ecs describe-services --cluster \"$ECS_CLUSTER\" --services \"$ECS_EDGE_SERVICE\" --query 'services[0].taskDefinition' --output text)" >> "$GITHUB_OUTPUT"
+          echo "worker=$(aws ecs describe-services --cluster \"$ECS_CLUSTER\" --services \"$ECS_WORKER_SERVICE\" --query 'services[0].taskDefinition' --output text)" >> "$GITHUB_OUTPUT"
+
+      - uses: docker/setup-qemu-action@v3
+      - uses: docker/setup-buildx-action@v3
+      - id: ecr
+        uses: aws-actions/amazon-ecr-login@v2
+      - name: Build and publish immutable ARM image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          platforms: linux/arm64
+          push: true
+          tags: |
+            ${{ steps.ecr.outputs.registry }}/${{ env.ECR_REPOSITORY }}:${{ github.sha }}
+            ${{ steps.ecr.outputs.registry }}/${{ env.ECR_REPOSITORY }}:latest
+
+      - name: Deploy worker and migration
+        env:
+          ECR_IMAGE_URI: ${{ steps.ecr.outputs.registry }}/${{ env.ECR_REPOSITORY }}:${{ github.sha }}
+          RUN_MIGRATIONS: "1"
+        run: npm run aws:deploy-worker
+      - name: Deploy public edge
+        env:
+          ECR_IMAGE_URI: ${{ steps.ecr.outputs.registry }}/${{ env.ECR_REPOSITORY }}:${{ github.sha }}
+        run: npm run aws:deploy-cloudflare-edge
+      - name: Verify services and public health
+        run: |
+          aws ecs wait services-stable --cluster "$ECS_CLUSTER" --services "$ECS_WORKER_SERVICE" "$ECS_EDGE_SERVICE"
+          curl --fail --silent --show-error --retry 12 --retry-delay 5 https://www.ai-sports-prediction.net/api/health
+
+      - name: Roll back both services if deployment verification fails
+        if: failure() && steps.previous.outputs.edge != '' && steps.previous.outputs.worker != ''
+        env:
+          PREVIOUS_EDGE_TASK_DEFINITION: ${{ steps.previous.outputs.edge }}
+          PREVIOUS_WORKER_TASK_DEFINITION: ${{ steps.previous.outputs.worker }}
+        run: npm run aws:rollback

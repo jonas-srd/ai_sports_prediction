@@ -9,6 +9,14 @@ export const metadata: Metadata = {
 
 const agentGroups = [
   {
+    eyebrow: "Revenue Intelligence",
+    title: "Umsatz-Cockpit",
+    description: "MRR, ARR, Checkout-Conversion, Umsatzquellen, Länder, Upgrades, Kündigungen, Zahlungsausfälle, Kundenwert und Akquisekosten.",
+    href: "/admin/revenue",
+    action: "Umsatz-Cockpit öffnen",
+    agents: ["MRR & ARR", "Funnel Attribution", "Churn Signals", "GA4 Purchase Sync"]
+  },
+  {
     eyebrow: "Revenue Pipeline",
     title: "Leads & Checkouts",
     description: "Neue Interessenten, Outreach-Zuordnung, abgebrochene Checkouts, Prioritäten und automatische Wiedervorlagen in einer Pipeline.",

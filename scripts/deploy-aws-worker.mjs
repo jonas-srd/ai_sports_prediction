@@ -32,6 +32,8 @@ const secrets = {
   sportsDbApiKey: secretArn("ai-sports-prediction/the-sports-db-api-key"),
   oddsApiKey: secretArn("ai-sports-prediction/the-odds-api-key"),
   serpApiKey: secretArn("ai-sports-prediction/serpapi-api-key")
+  ,resendApiKey: secretArn("ai-sports-prediction/resend-api-key")
+  ,ga4ApiSecret: optionalSecretArn("ai-sports-prediction/ga4-api-secret")
 };
 
 const definition = {
@@ -76,6 +78,12 @@ const definition = {
       ["NEWSLETTER_FROM_EMAIL", env("NEWSLETTER_FROM_EMAIL", "AI Sports Prediction <ai-sports-prediction@outlook.com>")],
       ["MARKETING_AUTOMATION_ENABLED", env("MARKETING_AUTOMATION_ENABLED", "0")],
       ["MARKETING_ANALYTICS_ENABLED", env("MARKETING_ANALYTICS_ENABLED", "1")]
+      ,["GA4_MEASUREMENT_ID", env("GA4_MEASUREMENT_ID", "G-KSGFX9TKD8")]
+      ,["REVENUE_AUTOMATION_ENABLED", env("REVENUE_AUTOMATION_ENABLED", "1")]
+      ,["REVENUE_AUTOMATION_INTERVAL_MINUTES", env("REVENUE_AUTOMATION_INTERVAL_MINUTES", "60")]
+      ,["PUBLIC_SITE_URL", env("PUBLIC_SITE_URL", "https://www.ai-sports-prediction.net")]
+      ,["WIDGET_ACCESS_FROM_EMAIL", env("WIDGET_ACCESS_FROM_EMAIL", "")]
+      ,["SALES_ALERT_EMAILS", env("SALES_ALERT_EMAILS", "")]
     ].map(([name, value]) => ({ name, value })),
     secrets: [
       ["DATABASE_URL", secrets.databaseUrl],
@@ -84,6 +92,8 @@ const definition = {
       ["THE_SPORTS_DB_API_KEY", secrets.sportsDbApiKey],
       ["THE_ODDS_API_KEY", secrets.oddsApiKey],
       ["SERPAPI_API_KEY", secrets.serpApiKey]
+      ,["RESEND_API_KEY", secrets.resendApiKey]
+      ,...(secrets.ga4ApiSecret ? [["GA4_API_SECRET", secrets.ga4ApiSecret]] : [])
     ].map(([name, valueFrom]) => ({ name, valueFrom })),
     logConfiguration: {
       logDriver: "awslogs",
@@ -161,6 +171,9 @@ function register(value) {
 
 function secretArn(name) {
   return aws(["secretsmanager", "describe-secret", "--secret-id", name, "--query", "ARN", "--output", "text"]);
+}
+function optionalSecretArn(name) {
+  try { return secretArn(name); } catch { return null; }
 }
 function env(name, fallback) { return process.env[name] ?? fallback; }
 function aws(args) {

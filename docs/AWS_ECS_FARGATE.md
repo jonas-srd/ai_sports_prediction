@@ -52,6 +52,18 @@ The worker service does not need inbound traffic.
 
 ## 2. Redis Queue
 
+With an AWS profile that can manage EC2 security groups, ElastiCache Serverless
+and Secrets Manager, the complete private setup is automated:
+
+```bash
+npm run aws:provision-redis
+```
+
+The command reuses the ECS VPC and subnets, permits port 6379 only from the ECS
+application security group, stores the TLS URL in
+`ai-sports-prediction/redis-url`, and synchronizes the two widget customer
+secrets. It is safe to run repeatedly.
+
 Create an ElastiCache serverless cache:
 
 ```text
