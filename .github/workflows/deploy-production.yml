@@ -26,7 +26,7 @@ jobs:
       ECS_WORKER_SERVICE: ai-sports-prediction-worker
       ECR_REPOSITORY: ai-sports-prediction
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: actions/setup-node@v4
         with:
           node-version: 20
