@@ -11,10 +11,10 @@
   "dependencies": {
     "@ai-sports-prediction/db": "0.1.0",
     "ioredis": "^5.10.1",
-    "tsx": "latest"
+    "tsx": "*"
   },
   "devDependencies": {
-    "@types/node": "latest",
-    "typescript": "latest"
+    "@types/node": "^26.1.1",
+    "typescript": "^7.0.2"
   }
 }
