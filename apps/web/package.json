@@ -13,16 +13,16 @@
   "dependencies": {
     "@ai-sports-prediction/db": "file:../../packages/db",
     "@types/qrcode": "^1.5.6",
-    "bullmq": "latest",
-    "next": "16.3.0-canary.6",
+    "bullmq": "^5.80.7",
+    "next": "16.3.0-preview.6",
     "qrcode": "^1.5.4",
-    "react": "latest",
-    "react-dom": "latest"
+    "react": "*",
+    "react-dom": "*"
   },
   "devDependencies": {
-    "@types/node": "latest",
-    "@types/react": "latest",
-    "@types/react-dom": "latest",
-    "typescript": "latest"
+    "@types/node": "*",
+    "@types/react": "*",
+    "@types/react-dom": "*",
+    "typescript": "*"
   }
 }
