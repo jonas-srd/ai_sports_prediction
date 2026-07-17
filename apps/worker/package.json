@@ -27,13 +27,13 @@
   "dependencies": {
     "@ai-sports-prediction/db": "0.1.0",
     "@ai-sports-prediction/llm": "0.1.0",
-    "@aws-sdk/client-s3": "latest",
-    "bullmq": "latest",
-    "sharp": "^0.34.5",
-    "tsx": "latest"
+    "@aws-sdk/client-s3": "^3.1089.0",
+    "bullmq": "^5.80.7",
+    "sharp": "^0.35.3",
+    "tsx": "^4.23.1"
   },
   "devDependencies": {
-    "@types/node": "latest",
-    "typescript": "latest"
+    "@types/node": "*",
+    "typescript": "*"
   }
 }
