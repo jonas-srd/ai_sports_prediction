@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { WidgetBuilder } from "@/components/widget-builder";
+import { WidgetFaq } from "@/components/widget-faq";
 import { WidgetGrowthFunnel } from "@/components/widget-growth-funnel";
 import type { Locale } from "@/lib/i18n";
 import { getWidgetPreviewMatches, type WidgetPreviewMatch, type WidgetPreviewMatches } from "@/lib/widget-data";
@@ -222,8 +223,6 @@ export async function WidgetsPageContent({ locale }: { locale: Locale }) {
 
       <WidgetBuilder locale={locale} previewMatches={previewMatches} />
 
-      <WidgetFaq locale={locale} />
-
       <section className="widgetsExamples" aria-label={text.examplesLabel}>
         <div className="widgetsSectionIntro">
           <h2>{text.examplesTitle}</h2>
@@ -239,32 +238,9 @@ export async function WidgetsPageContent({ locale }: { locale: Locale }) {
           </article>
         ))}
       </section>
+      <WidgetFaq locale={locale} />
       <script dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData).replace(/</g, "\\u003c") }} type="application/ld+json" />
     </main>
-  );
-}
-
-function WidgetFaq({ locale }: { locale: Locale }) {
-  const entries = locale === "de" ? [
-    ["Wie zuverlässig sind Teams, Wettbewerbe, Logos und Flaggen?", "Nur geprüfte Liga-IDs, passende Teams sowie echte API-Logos und Spielerflaggen werden veröffentlicht. Fehlerhafte Spiele werden automatisch ausgeblendet und intern gemeldet."],
-    ["Wie aktuell sind die Widgets?", "Spiele und Prognosen werden regelmäßig synchronisiert. Die eingebettete Ansicht lädt die jeweils freigegebenen aktuellen Daten."],
-    ["Wie aufwendig ist die Integration?", "Spiel auswählen, Gestaltung festlegen und den erzeugten Embed-Code einfügen. Das dauert normalerweise nur wenige Minuten."],
-    ["Kann ich Branding und Modellwahl steuern?", "Je nach Tarif lassen sich Farben, Begründung und Modellwahl konfigurieren. Growth enthält alle Widget-Formate."],
-    ["Wie funktionieren Laufzeit und Kündigung?", "Direkttarife haben zwölf Monate Mindestlaufzeit. Danach verlängern sie sich monatlich. Die Kündigung wird im Kundenkonto zum frühesten zulässigen Termin vorgemerkt."],
-    ["Wie werden Datenschutz und Ladezeit behandelt?", "Das Widget verarbeitet nur die technisch notwendigen Zugriffs- und Domaininformationen. Inhalte werden kompakt ausgeliefert und ohne unnötige Drittanbieter-Skripte eingebettet."]
-  ] : [
-    ["How is data quality protected?", "Only verified league IDs, matching teams, real API logos and player flags are published. Invalid matches are hidden and reported internally."],
-    ["How current are the widgets?", "Fixtures and predictions are synchronized regularly. Embeds load the latest approved data."],
-    ["How much integration work is required?", "Select a match, configure the design and paste the generated embed code. It usually takes only a few minutes."],
-    ["Can I control branding and model selection?", "Depending on the plan, colors, reasoning and model selection can be configured. Growth includes every widget format."],
-    ["How do term and cancellation work?", "Direct plans have a twelve-month minimum term and then renew monthly. Cancellation is scheduled in the customer account for the earliest permitted date."],
-    ["What about privacy and loading time?", "The widget processes only technical access and domain data needed for delivery. It ships compact content without unnecessary third-party scripts."]
-  ];
-  return (
-    <section className="widgetsPanel widgetsFaq" aria-labelledby="widget-faq-title">
-      <div className="widgetsSectionIntro"><p className="footballEyebrow">FAQ</p><h2 id="widget-faq-title">{locale === "de" ? "Häufige Fragen" : "Frequently asked questions"}</h2></div>
-      <div>{entries.map(([question, answer]) => <details key={question}><summary>{question}</summary><p>{answer}</p></details>)}</div>
-    </section>
   );
 }
 

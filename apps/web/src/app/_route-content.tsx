@@ -12,6 +12,7 @@ import { nbaTeams } from "@/lib/nba-data";
 import { nflTeams } from "@/lib/nfl-data";
 import { getSportMatchHref } from "@/components/match-detail-page";
 import { SportsNewsCards } from "@/components/sports-news-cards";
+import { HomeFaq } from "@/components/widget-faq";
 import {
   getFootballCompetitionApiSnapshot,
   getSportApiSnapshot,
@@ -458,6 +459,8 @@ export async function HomePageContent({ locale }: { locale: Locale }) {
           ))}
         </div>
       </section>
+
+      <HomeFaq locale={locale} />
     </main>
   );
 }

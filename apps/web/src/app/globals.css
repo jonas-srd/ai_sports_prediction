@@ -28,18 +28,22 @@
 .globalModelBarInner {
   align-items: center;
   display: flex;
-  gap: 24px;
-  justify-content: space-between;
+  flex-direction: column;
+  gap: 8px;
+  justify-content: center;
   margin: 0 auto;
-  max-width: 1480px;
-  padding: 10px 24px;
+  max-width: 1280px;
+  padding: 9px 24px 11px;
 }
 
 .globalModelCopy {
   align-items: baseline;
   display: flex;
   gap: 14px;
+  justify-content: center;
   min-width: 0;
+  text-align: center;
+  width: 100%;
 }
 
 .globalModelCopy > span,
@@ -128,6 +132,16 @@
   font-size: 0.62rem;
   min-height: 26px;
   padding: 3px 8px;
+}
+
+.globalModelBar .predictionModelSelector button {
+  justify-content: center;
+  min-width: 74px;
+}
+
+.globalModelBarInner > .predictionModelControl {
+  justify-content: center;
+  width: 100%;
 }
 
 .selectedModelPrediction {
@@ -245,7 +259,17 @@
   }
 
   .globalModelBarInner {
+    margin-left: auto;
+    margin-right: auto;
+    max-width: 720px;
     padding: 10px 14px;
+  }
+
+  .globalModelBar .predictionModelControl,
+  .globalModelBar .predictionModelSelector {
+    align-items: stretch;
+    justify-content: center;
+    width: 100%;
   }
 
   .predictionModelControl {
@@ -5420,6 +5444,26 @@ a.matchDetailParticipant:focus-visible {
   font-weight: 760;
   line-height: 1.6;
   margin: 0;
+}
+
+.homeSportNews .homeSectionHeader {
+  align-items: start;
+  gap: 12px;
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.homeSportNews .homeSectionHeader > p {
+  max-width: 760px;
+}
+
+.signalSection .sectionHeaderRow {
+  align-items: start;
+  gap: 12px;
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.signalSection .sectionHeaderRow > p {
+  max-width: 760px;
 }
 
 .homeHighlightGrid {

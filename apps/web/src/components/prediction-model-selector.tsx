@@ -50,11 +50,11 @@ export function GlobalPredictionModelBar() {
   return (
     <section className="globalModelBar" style={{ "--model-accent": activeModel.accent } as CSSProperties}>
       <div className="globalModelBarInner">
+        <PredictionModelSelector locale={locale} />
         <div className="globalModelCopy">
           <span>{locale === "de" ? "KI-Modell" : "AI model"}</span>
           <p>{activeModel.description[locale]}</p>
         </div>
-        <PredictionModelSelector locale={locale} />
       </div>
     </section>
   );

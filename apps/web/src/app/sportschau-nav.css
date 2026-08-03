@@ -580,21 +580,27 @@
 .sportschauTopicInner {
   align-items: center;
   display: flex;
-  gap: 8px;
+  gap: 10px;
+  justify-content: center;
   margin: 0 auto;
-  max-width: 1440px;
-  min-height: 48px;
+  max-width: 1280px;
+  min-height: 58px;
   overflow-x: auto;
   padding: 0 28px;
+  scrollbar-width: none;
+}
+
+.sportschauTopicInner::-webkit-scrollbar {
+  display: none;
 }
 
 .sportschauTopicInner.isFootballCompetitionRail {
   display: grid;
-  gap: 18px;
-  grid-template-columns: auto minmax(0, 1fr);
+  gap: 8px;
+  grid-template-columns: minmax(0, 1fr);
   overflow-x: visible;
-  padding-bottom: 0;
-  padding-top: 0;
+  padding-bottom: 8px;
+  padding-top: 8px;
 }
 
 .topicNavPrimaryGroup,
@@ -605,9 +611,11 @@
 }
 
 .topicNavPrimaryGroup {
-  border-right: 1px solid rgba(255, 255, 255, 0.1);
+  border-right: 0;
   gap: 10px;
-  padding-right: 18px;
+  justify-content: center;
+  padding-right: 0;
+  width: 100%;
 }
 
 .sportschauTopicInner.isFootballCompetitionRail .topicNavPrimaryGroup {
@@ -633,10 +641,12 @@
 
 .topicNavCompetitionDropdowns {
   align-items: center;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
   display: flex;
   gap: 10px;
-  justify-content: flex-start;
+  justify-content: center;
   min-width: 0;
+  padding-top: 8px;
 }
 
 .topicNavDropdown {
@@ -718,37 +728,36 @@
 
 .topicNavLink {
   align-items: center;
-  border-bottom: 3px solid transparent;
-  border-radius: 0;
+  border: 1px solid transparent;
+  border-radius: 999px;
   color: rgba(247, 251, 255, 0.82);
   display: inline-flex;
   flex: 0 0 auto;
   font-size: 0.92rem;
   font-weight: 820;
   justify-content: center;
-  min-height: 48px;
-  padding: 0 9px;
+  min-height: 34px;
+  padding: 0 16px;
   text-decoration: none;
-  transition: color 160ms ease, background 160ms ease, border-color 160ms ease;
+  transition: color 160ms ease, background 160ms ease, border-color 160ms ease, transform 160ms ease;
   white-space: nowrap;
 }
 
 .topicNavLink:hover,
 .topicNavLink:focus-visible,
 .topicNavLink.isActive {
-  border-bottom-color: #7df5c1;
+  background: rgba(125, 245, 193, 0.1);
+  border-color: rgba(125, 245, 193, 0.28);
   color: #ffffff;
+  outline: none;
+  transform: translateY(-1px);
 }
 
 .topicNavSportLink {
-  background: rgba(255, 255, 255, 0.14);
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  border-bottom-color: transparent;
-  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.12);
   color: #f8fbff;
   font-weight: 900;
-  min-height: 30px;
-  padding: 0 14px;
 }
 
 .topicNavSportLink:hover,
@@ -769,7 +778,7 @@
   }
 
   .sportschauTopicInner.isFootballCompetitionRail {
-    gap: 0;
+    gap: 8px;
     grid-template-columns: 1fr;
   }
 
@@ -832,6 +841,7 @@
   }
 
   .sportschauTopicInner {
+    justify-content: flex-start;
     padding-left: 14px;
     padding-right: 14px;
   }
@@ -841,21 +851,28 @@
     padding-top: 6px;
   }
 
+  .topicNavPrimaryGroup {
+    justify-content: flex-start;
+  }
+
   .topicNavLink {
     font-size: 0.82rem;
-    padding-left: 8px;
-    padding-right: 8px;
+    padding-left: 12px;
+    padding-right: 12px;
   }
 
   .sportschauTopicInner.isFootballCompetitionRail .topicNavLink {
-    font-size: 0.78rem;
-    padding-left: 6px;
-    padding-right: 6px;
+    font-size: 0.82rem;
+    padding-left: 12px;
+    padding-right: 12px;
   }
 
   .topicNavCompetitionDropdowns {
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+    justify-content: flex-start;
     overflow-x: auto;
     padding-bottom: 4px;
+    padding-top: 6px;
     width: 100%;
   }
 
@@ -871,7 +888,7 @@
   }
 
   .topicNavSportLink {
-    min-height: 28px;
+    min-height: 34px;
     padding-left: 12px;
     padding-right: 12px;
   }

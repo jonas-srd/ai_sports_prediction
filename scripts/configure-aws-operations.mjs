@@ -34,10 +34,11 @@ putAlarm({
   metricName: "JobErrors",
   comparison: "GreaterThanOrEqualToThreshold",
   threshold: "1",
-  period: "300",
-  evaluationPeriods: "1",
-  datapointsToAlarm: "1",
-  treatMissingData: "notBreaching"
+  period: "3600",
+  evaluationPeriods: "3",
+  datapointsToAlarm: "2",
+  treatMissingData: "notBreaching",
+  notifyOnOk: false
 });
 putAlarm({
   name: "ai-sports-worker-heartbeat-missing",
@@ -106,6 +107,11 @@ function putMetricFilter(name, pattern, metricName) {
 }
 
 function putAlarm(input) {
+  const notificationActions = ["--alarm-actions", topicArn];
+  if (input.notifyOnOk !== false) {
+    notificationActions.push("--ok-actions", topicArn);
+  }
+
   aws([
     "cloudwatch", "put-metric-alarm",
     "--alarm-name", input.name,
@@ -118,8 +124,7 @@ function putAlarm(input) {
     "--evaluation-periods", input.evaluationPeriods,
     "--datapoints-to-alarm", input.datapointsToAlarm,
     "--treat-missing-data", input.treatMissingData,
-    "--alarm-actions", topicArn,
-    "--ok-actions", topicArn
+    ...notificationActions
   ]);
 }
 

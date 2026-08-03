@@ -71,7 +71,9 @@ const SPORT_ODDS_KEYS: Record<SportId, string[]> = {
   ],
   nfl: ["americanfootball_nfl", "americanfootball_nfl_preseason"],
   nba: ["basketball_nba", "basketball_nba_summer_league"],
-  tennis: ["tennis_atp", "tennis_wta"]
+  // Tennis keys are tournament-specific and must come from the provider's
+  // active sports catalogue (for example tennis_atp_canadian_open).
+  tennis: []
 };
 
 const COMPETITION_ODDS_KEYS: Array<[RegExp, string]> = [
@@ -86,9 +88,7 @@ const COMPETITION_ODDS_KEYS: Array<[RegExp, string]> = [
   [/europa conference|conference league/i, "soccer_uefa_europa_conference_league"],
   [/europa league/i, "soccer_uefa_europa_league"],
   [/\bnfl\b/i, "americanfootball_nfl"],
-  [/\bnba\b/i, "basketball_nba"],
-  [/\batp\b/i, "tennis_atp"],
-  [/\bwta\b/i, "tennis_wta"]
+  [/\bnba\b/i, "basketball_nba"]
 ];
 
 export async function refreshUpcomingOdds(db: PostgresDb) {
@@ -121,8 +121,9 @@ export async function refreshUpcomingOdds(db: PostgresDb) {
     return { available: 0, unavailable: 0, errors: 0, unsupported: 0 };
   }
 
-  const from = new Date().toISOString();
-  const to = new Date(Date.now() + lookaheadDays * DAY_MS).toISOString();
+  const now = Date.now();
+  const from = formatOddsApiDate(new Date(now));
+  const to = formatOddsApiDate(new Date(now + lookaheadDays * DAY_MS));
   const sportsSnapshot = await fetchOddsSports(oddsApiKey).catch((error) => {
     console.warn("Could not load active Odds API sport keys; using configured fallback keys.", error);
     return { remainingRequests: null, sports: [] };
@@ -182,6 +183,14 @@ export async function refreshUpcomingOdds(db: PostgresDb) {
       });
     }
   }));
+
+  for (const [sportKey, result] of fetched) {
+    if (result.error) {
+      console.error(
+        `Odds provider request failed sport_key=${sportKey}: ${sanitizeProviderError(result.error, oddsApiKey)}`
+      );
+    }
+  }
 
   let available = 0;
   let unavailable = 0;
@@ -373,10 +382,10 @@ async function fetchOddsJson(url: URL): Promise<unknown> {
   }
 }
 
-function getCandidateOddsKeys(candidate: OddsRefreshCandidate, activeSports: TheOddsApiSport[] = []) {
+export function getCandidateOddsKeys(candidate: OddsRefreshCandidate, activeSports: TheOddsApiSport[] = []) {
   const competitionKey = COMPETITION_ODDS_KEYS.find(([pattern]) => pattern.test(candidate.competition))?.[1];
   if (competitionKey) {
-    return [competitionKey];
+    return filterActiveOddsKeys([competitionKey], activeSports);
   }
 
   const sport = normalizeSport(candidate.sport, candidate.competition);
@@ -394,7 +403,29 @@ function getCandidateOddsKeys(candidate: OddsRefreshCandidate, activeSports: The
       .filter((key) => key.startsWith(tourPrefix));
   }
 
-  return sport ? SPORT_ODDS_KEYS[sport] : [];
+  return sport ? filterActiveOddsKeys(SPORT_ODDS_KEYS[sport], activeSports) : [];
+}
+
+function filterActiveOddsKeys(keys: string[], activeSports: TheOddsApiSport[]): string[] {
+  if (activeSports.length === 0) {
+    return keys;
+  }
+
+  const activeKeys = new Set(activeSports
+    .filter((row) => row.active !== false)
+    .map((row) => String(row.key ?? ""))
+    .filter(Boolean));
+  return keys.filter((key) => activeKeys.has(key));
+}
+
+function sanitizeProviderError(message: string, apiKey: string): string {
+  return message
+    .replaceAll(apiKey, "[redacted]")
+    .replace(/(apiKey=)[^&\s]+/giu, "$1[redacted]");
+}
+
+export function formatOddsApiDate(value: Date): string {
+  return value.toISOString().replace(/\.\d{3}Z$/u, "Z");
 }
 
 function normalizeSport(value: string | null, competition: string): SportId | null {
