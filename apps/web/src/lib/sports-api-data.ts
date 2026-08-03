@@ -18,8 +18,10 @@ import {
   emptySportsDataQualityReport,
   type SportsDataQualityReport
 } from "@/lib/sports-data-quality";
+import { getStoredTeamLogo } from "@/lib/team-logo-fallback";
 
 export type ApiSportId = "football" | "nfl" | "nba" | "tennis";
+type SportsApiSnapshotDetail = "full" | "summary";
 
 export type SportApiMatch = {
   id: string;
@@ -201,6 +203,73 @@ export function getSportsDataQualityTargets(): SportsDataQualityTarget[] {
 }
 
 let theSportsDbLeagueRowsPromise: Promise<any[]> | null = null;
+type SportsApiSnapshotCacheEntry = {
+  expiresAt: number;
+  value: Promise<SportApiSnapshot>;
+};
+type SportsDbBaseSnapshot = {
+  matches: SportApiMatch[];
+  quality: SportsDataQualityReport;
+  teams: SportApiTeam[];
+};
+type SportsDbBaseSnapshotCacheEntry = {
+  expiresAt: number;
+  value: Promise<SportsDbBaseSnapshot>;
+};
+
+const sportsApiSnapshotCache = new Map<string, SportsApiSnapshotCacheEntry>();
+const sportsDbBaseSnapshotCache = new Map<string, SportsDbBaseSnapshotCacheEntry>();
+
+function getSportsApiMemoryCacheTtlMs() {
+  const ttlSeconds = Number(process.env.SPORTS_API_MEMORY_CACHE_SECONDS ?? 60);
+  return Number.isFinite(ttlSeconds) && ttlSeconds >= 0 ? ttlSeconds * 1000 : 60_000;
+}
+
+function getCachedSportsApiSnapshot(cacheKey: string, loader: () => Promise<SportApiSnapshot>) {
+  const now = Date.now();
+  const cached = sportsApiSnapshotCache.get(cacheKey);
+
+  if (cached && cached.expiresAt > now) {
+    return cached.value;
+  }
+
+  const entry: SportsApiSnapshotCacheEntry = {
+    expiresAt: now + getSportsApiMemoryCacheTtlMs(),
+    value: loader()
+  };
+
+  sportsApiSnapshotCache.set(cacheKey, entry);
+  entry.value.catch(() => {
+    if (sportsApiSnapshotCache.get(cacheKey) === entry) {
+      sportsApiSnapshotCache.delete(cacheKey);
+    }
+  });
+
+  return entry.value;
+}
+
+function getCachedSportsDbBaseSnapshot(cacheKey: string, loader: () => Promise<SportsDbBaseSnapshot>) {
+  const now = Date.now();
+  const cached = sportsDbBaseSnapshotCache.get(cacheKey);
+
+  if (cached && cached.expiresAt > now) {
+    return cached.value;
+  }
+
+  const entry: SportsDbBaseSnapshotCacheEntry = {
+    expiresAt: now + getSportsApiMemoryCacheTtlMs(),
+    value: loader()
+  };
+
+  sportsDbBaseSnapshotCache.set(cacheKey, entry);
+  entry.value.catch(() => {
+    if (sportsDbBaseSnapshotCache.get(cacheKey) === entry) {
+      sportsDbBaseSnapshotCache.delete(cacheKey);
+    }
+  });
+
+  return entry.value;
+}
 
 function getFootballLeagueSlug(league: TheSportsDbLeagueRef) {
   return Object.entries(THE_SPORTS_DB_FOOTBALL_LEAGUES).find(([, candidate]) => {
@@ -211,9 +280,17 @@ function getFootballLeagueSlug(league: TheSportsDbLeagueRef) {
   })?.[0];
 }
 
-export async function getSportApiSnapshot(sport: ApiSportId): Promise<SportApiSnapshot> {
+export async function getSportApiSnapshot(
+  sport: ApiSportId,
+  options: { detail?: SportsApiSnapshotDetail } = {}
+): Promise<SportApiSnapshot> {
+  const detail = options.detail ?? "full";
+  return getCachedSportsApiSnapshot(`sport:${sport}:${detail}`, () => loadSportApiSnapshot(sport, detail));
+}
+
+async function loadSportApiSnapshot(sport: ApiSportId, detail: SportsApiSnapshotDetail): Promise<SportApiSnapshot> {
   const sportsDbLeague = THE_SPORTS_DB_LEAGUES[sport];
-  const sportsDbSnapshot = await fetchTheSportsDbSnapshot(sport, sportsDbLeague).catch(() => null);
+  const sportsDbSnapshot = await fetchTheSportsDbSnapshot(sport, sportsDbLeague, detail).catch(() => null);
 
   if (
     sportsDbSnapshot
@@ -240,12 +317,26 @@ export async function getSportApiSnapshot(sport: ApiSportId): Promise<SportApiSn
   };
 }
 
-export async function getFootballCompetitionApiSnapshot(competition: FootballCompetition): Promise<SportApiSnapshot> {
+export async function getFootballCompetitionApiSnapshot(
+  competition: FootballCompetition,
+  options: { detail?: SportsApiSnapshotDetail } = {}
+): Promise<SportApiSnapshot> {
+  const detail = options.detail ?? "full";
+  return getCachedSportsApiSnapshot(
+    `football:${competition.slug}:${detail}`,
+    () => loadFootballCompetitionApiSnapshot(competition, detail)
+  );
+}
+
+async function loadFootballCompetitionApiSnapshot(
+  competition: FootballCompetition,
+  detail: SportsApiSnapshotDetail
+): Promise<SportApiSnapshot> {
   const sportsDbLeague = THE_SPORTS_DB_FOOTBALL_LEAGUES[competition.slug] ?? {
     id: "",
     name: competition.name
   };
-  const sportsDbSnapshot = await fetchTheSportsDbSnapshot("football", sportsDbLeague).catch(() => null);
+  const sportsDbSnapshot = await fetchTheSportsDbSnapshot("football", sportsDbLeague, detail).catch(() => null);
 
   if (
     sportsDbSnapshot
@@ -278,20 +369,12 @@ export async function getFootballCompetitionLogos(): Promise<Record<string, stri
   }
 
   const rows = await getTheSportsDbLeagueRowsCached().catch(() => []);
-  const detailedRows = await Promise.all(
-    Object.values(THE_SPORTS_DB_FOOTBALL_LEAGUES).map((league) =>
-      fetchTheSportsDbLeagueDetailRows(league).catch(() => [])
-    )
-  );
-  const detailsBySlug = Object.fromEntries(
-    Object.keys(THE_SPORTS_DB_FOOTBALL_LEAGUES).map((slug, index) => [slug, detailedRows[index]?.[0]])
-  ) as Record<string, any>;
   const logos: Record<string, string> = {};
 
   for (const [slug, league] of Object.entries(THE_SPORTS_DB_FOOTBALL_LEAGUES)) {
     const configuredId = getTheSportsDbLeagueId(league);
     const lookupNames = getTheSportsDbLeagueLookupNames(league);
-    const row = detailsBySlug[slug] ?? rows.find((candidate) => {
+    const row = rows.find((candidate) => {
       const candidateId = getString(candidate.idLeague || candidate.id || candidate.leagueId);
       const candidateName = getTheSportsDbLeagueName(candidate);
 
@@ -483,35 +566,52 @@ export function fallbackTeamsToStandings(teams: FootballTeam[]): SportApiStandin
 
 async function fetchTheSportsDbSnapshot(
   sport: ApiSportId,
-  league: TheSportsDbLeagueRef
+  league: TheSportsDbLeagueRef,
+  detail: SportsApiSnapshotDetail = "full"
 ): Promise<SportApiSnapshot | null> {
   const apiKey = getTheSportsDbKey();
   if (!apiKey) {
     return null;
   }
 
-  const [teams, events] = await Promise.all([
-    fetchTheSportsDbTeams(league).catch(() => []),
-    fetchTheSportsDbLeagueEvents(sport, league).catch(() => [])
-  ]);
-  const matchesWithLogos = await hydrateTheSportsDbEventLogos(sport, events, teams);
-  const qualityAudit = auditSportsMatches({
-    expectedLeagueId: getTheSportsDbLeagueId(league),
-    league: {
-      ...league,
-      sportName: league.sportName ?? THE_SPORTS_DB_V1_SPORT_NAMES[sport]
-    },
-    matches: matchesWithLogos,
-    sport,
-    teams
-  });
-  const matches = await hydrateMatchesWithOdds(
-    sport,
-    qualityAudit.matches,
-    { footballSlug: getFootballLeagueSlug(league), competitionName: league.name }
+  const base = await getCachedSportsDbBaseSnapshot(
+    `${sport}:${getTheSportsDbLeagueId(league) || league.name}:${detail}`,
+    async () => {
+      const [teams, events] = await Promise.all([
+        fetchTheSportsDbTeams(league).catch(() => []),
+        (detail === "summary"
+          ? fetchTheSportsDbLeagueSummaryEvents(sport, league)
+          : fetchTheSportsDbLeagueEvents(sport, league)
+        ).catch(() => [])
+      ]);
+      const matchesWithLogos = await hydrateTheSportsDbEventLogos(sport, events, teams);
+      const qualityAudit = auditSportsMatches({
+        expectedLeagueId: getTheSportsDbLeagueId(league),
+        league: {
+          ...league,
+          sportName: league.sportName ?? THE_SPORTS_DB_V1_SPORT_NAMES[sport]
+        },
+        matches: matchesWithLogos,
+        sport,
+        teams
+      });
+
+      return {
+        matches: qualityAudit.matches,
+        quality: qualityAudit.report,
+        teams
+      };
+    }
   );
-  const standings = sport === "football"
-    ? await fetchTheSportsDbStandings(league, teams, matches).catch(() => [])
+  const matches = detail === "summary"
+    ? base.matches
+    : await hydrateMatchesWithOdds(
+        sport,
+        base.matches,
+        { footballSlug: getFootballLeagueSlug(league), competitionName: league.name }
+      );
+  const standings = detail === "full" && sport === "football"
+    ? await fetchTheSportsDbStandings(league, base.teams, matches).catch(() => [])
     : [];
 
   return {
@@ -520,10 +620,36 @@ async function fetchTheSportsDbSnapshot(
     status: "live",
     message: `Live data loaded from TheSportsDB Premium for ${league.name}.`,
     matches,
-    quality: qualityAudit.report,
+    quality: base.quality,
     standings,
-    teams
+    teams: base.teams
   };
+}
+
+async function fetchTheSportsDbLeagueSummaryEvents(
+  sport: ApiSportId,
+  league: TheSportsDbLeagueRef
+): Promise<SportApiMatch[]> {
+  const leagueId = await resolveTheSportsDbLeagueId(league);
+  if (!leagueId) {
+    return [];
+  }
+
+  const rows = await Promise.all([
+    fetchTheSportsDbV2Events(`livescore/${leagueId}`).catch(() => []),
+    fetchTheSportsDbSportLiveEvents(sport, leagueId, league).catch(() => []),
+    fetchTheSportsDbV2Events(`schedule/next/league/${leagueId}`).catch(() => []),
+    fetchTheSportsDbList<any>("eventsnextleague.php", { id: leagueId }, "events").catch(() => []),
+    fetchTheSportsDbV2Events(`schedule/previous/league/${leagueId}`).catch(() => [])
+  ]);
+
+  return limitMatchesWithUpcomingPriority(
+    mergeMatches(rows.flat().map((row) => ({
+      ...normalizeTheSportsDbEvent(row),
+      competition: league.name
+    })), []).filter((match) => match.homeName && match.awayName),
+    80
+  );
 }
 
 async function fetchTheSportsDbLeagueEvents(sport: ApiSportId, league: TheSportsDbLeagueRef): Promise<SportApiMatch[]> {
@@ -607,10 +733,13 @@ async function fetchTheSportsDbV2TeamRows(leagueId: string): Promise<any[]> {
 }
 
 function normalizeTheSportsDbTeam(team: any): SportApiTeam {
+  const id = getString(team.idTeam || team.id || team.teamId);
+  const name = getString(team.strTeam || team.team || team.name);
+
   return {
-    id: getString(team.idTeam || team.id || team.teamId),
-    name: getString(team.strTeam || team.team || team.name),
-    logo: getString(
+    id,
+    name,
+    logo: getStoredTeamLogo(id, name) || getString(
       team.strBadge ||
       team.strTeamBadge ||
       team.strLogo ||
@@ -664,7 +793,7 @@ function normalizeTheSportsDbStanding(row: any, teams: SportApiTeam[], index: nu
   return {
     rank: toNumber(row.intRank ?? row.rank ?? row.position ?? row.intPosition) ?? index + 1,
     teamName,
-    teamLogo: getString(row.strTeamBadge || row.strBadge || row.strLogo || row.logo || row.badge) || team?.logo || null,
+    teamLogo: getStoredTeamLogo(teamId, teamName) || team?.logo || getString(row.strTeamBadge || row.strBadge || row.strLogo || row.logo || row.badge) || null,
     played: toNumber(row.intPlayed ?? row.played ?? row.matchesPlayed ?? row.gamesPlayed),
     won: toNumber(row.intWin ?? row.intWins ?? row.won ?? row.wins),
     drawn: toNumber(row.intDraw ?? row.intDraws ?? row.drawn ?? row.draws),
@@ -1001,6 +1130,10 @@ function normalizeTheSportsDbEvent(event: any): SportApiMatch {
   const isTennis = isTheSportsDbTennisEvent(event);
   const homeName = getString(event.strHomeTeam || event.homeTeam || event.home_team || event.home?.name) || parsedHome;
   const awayName = getString(event.strAwayTeam || event.awayTeam || event.away_team || event.away?.name) || parsedAway;
+  const homeId = getString(event.idHomeTeam || event.homeTeamId || event.home_id) || null;
+  const awayId = getString(event.idAwayTeam || event.awayTeamId || event.away_id) || null;
+  const cleanHomeName = isTennis ? cleanTheSportsDbTennisParticipantName(homeName) : homeName;
+  const cleanAwayName = isTennis ? cleanTheSportsDbTennisParticipantName(awayName) : awayName;
 
   return {
     id: `tsdb:${getString(event.idEvent || event.id || event.eventId)}`,
@@ -1008,12 +1141,12 @@ function normalizeTheSportsDbEvent(event: any): SportApiMatch {
     round: getString(event.intRound || event.strRound || event.round) || null,
     date,
     venue: getString(event.strVenue || event.venue) || null,
-    homeId: getString(event.idHomeTeam || event.homeTeamId || event.home_id) || null,
-    homeName: isTennis ? cleanTheSportsDbTennisParticipantName(homeName) : homeName,
-    awayId: getString(event.idAwayTeam || event.awayTeamId || event.away_id) || null,
-    awayName: isTennis ? cleanTheSportsDbTennisParticipantName(awayName) : awayName,
-    homeLogo: getString(event.strHomeTeamBadge || event.strHomeBadge || event.homeBadge || event.homeLogo || event.home?.badge || event.home?.logo) || null,
-    awayLogo: getString(event.strAwayTeamBadge || event.strAwayBadge || event.awayBadge || event.awayLogo || event.away?.badge || event.away?.logo) || null,
+    homeId,
+    homeName: cleanHomeName,
+    awayId,
+    awayName: cleanAwayName,
+    homeLogo: isTennis ? null : getStoredTeamLogo(homeId, cleanHomeName) || getString(event.strHomeTeamBadge || event.strHomeBadge || event.homeBadge || event.homeLogo || event.home?.badge || event.home?.logo) || null,
+    awayLogo: isTennis ? null : getStoredTeamLogo(awayId, cleanAwayName) || getString(event.strAwayTeamBadge || event.strAwayBadge || event.awayBadge || event.awayLogo || event.away?.badge || event.away?.logo) || null,
     homeScore: toNumber(event.intHomeScore ?? event.homeScore ?? event.home_score ?? event.home?.score),
     awayScore: toNumber(event.intAwayScore ?? event.awayScore ?? event.away_score ?? event.away?.score),
     status: getString(event.strStatus || event.strProgress || event.strResult) || null,
@@ -1136,10 +1269,10 @@ async function hydrateTheSportsDbEventLogos(sport: ApiSportId, matches: SportApi
       awayName: awayProfile?.canonicalName ?? match.awayName,
       homeLogo: sport === "tennis"
         ? getTennisFlagUrl(homePlayerCountryCode) || null
-        : match.homeLogo || home?.logo || null,
+        : getStoredTeamLogo(match.homeId || home?.id, match.homeName) || home?.logo || match.homeLogo || null,
       awayLogo: sport === "tennis"
         ? getTennisFlagUrl(awayPlayerCountryCode) || null
-        : match.awayLogo || away?.logo || null
+        : getStoredTeamLogo(match.awayId || away?.id, match.awayName) || away?.logo || match.awayLogo || null
     };
   });
 }
@@ -1308,16 +1441,6 @@ async function fetchTheSportsDbLeagueRows() {
 
 async function fetchTheSportsDbV2LeagueRows() {
   const payload = await fetchTheSportsDbV2<Record<string, unknown>>("all/leagues");
-  return findTheSportsDbLeagueRows(payload);
-}
-
-async function fetchTheSportsDbLeagueDetailRows(league: TheSportsDbLeagueRef) {
-  const leagueId = await resolveTheSportsDbLeagueId(league);
-  if (!leagueId) {
-    return [];
-  }
-
-  const payload = await fetchTheSportsDb<Record<string, unknown>>("lookupleague.php", { id: leagueId });
   return findTheSportsDbLeagueRows(payload);
 }
 

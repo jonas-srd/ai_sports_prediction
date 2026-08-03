@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { Suspense } from "react";
 import { WidgetBuilder } from "@/components/widget-builder";
 import { WidgetFaq } from "@/components/widget-faq";
 import { WidgetGrowthFunnel } from "@/components/widget-growth-funnel";
@@ -154,11 +155,9 @@ export default function WidgetsPage() {
   return <WidgetsPageContent locale="en" />;
 }
 
-export async function WidgetsPageContent({ locale }: { locale: Locale }) {
+export function WidgetsPageContent({ locale }: { locale: Locale }) {
   const text = pageText[locale];
   const pricingPlans = pricingPlansByLocale[locale];
-  const examples = examplesByLocale[locale];
-  const previewMatches = await getWidgetPreviewMatches();
   const accountHref = locale === "de" ? "/de/widgets/account/login" : "/widgets/account/login";
   const structuredData = {
     "@context": "https://schema.org",
@@ -187,10 +186,9 @@ export async function WidgetsPageContent({ locale }: { locale: Locale }) {
             <Link href={accountHref}>{text.account}</Link>
           </div>
         </div>
-        <div className="widgetsHeroPreview">
-          <span>{text.livePreview}</span>
-          <WidgetPreview locale={locale} previewMatches={previewMatches} type="prediction" />
-        </div>
+        <Suspense fallback={<WidgetsPreviewLoading label={text.livePreview} locale={locale} />}>
+          <WidgetsHeroPreview label={text.livePreview} locale={locale} />
+        </Suspense>
       </section>
 
       <section className="widgetsPanel" aria-labelledby="widget-pricing-title">
@@ -221,8 +219,33 @@ export async function WidgetsPageContent({ locale }: { locale: Locale }) {
         </div>
       </section>
 
-      <WidgetBuilder locale={locale} previewMatches={previewMatches} />
+      <Suspense fallback={<WidgetsDataLoading locale={locale} />}>
+        <WidgetsInteractiveSections locale={locale} />
+      </Suspense>
+      <WidgetFaq locale={locale} />
+      <script dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData).replace(/</g, "\\u003c") }} type="application/ld+json" />
+    </main>
+  );
+}
 
+async function WidgetsHeroPreview({ label, locale }: { label: string; locale: Locale }) {
+  const previewMatches = await getWidgetPreviewMatches();
+  return (
+    <div className="widgetsHeroPreview">
+      <span>{label}</span>
+      <WidgetPreview locale={locale} previewMatches={previewMatches} type="prediction" />
+    </div>
+  );
+}
+
+async function WidgetsInteractiveSections({ locale }: { locale: Locale }) {
+  const text = pageText[locale];
+  const examples = examplesByLocale[locale];
+  const previewMatches = await getWidgetPreviewMatches();
+
+  return (
+    <>
+      <WidgetBuilder locale={locale} previewMatches={previewMatches} />
       <section className="widgetsExamples" aria-label={text.examplesLabel}>
         <div className="widgetsSectionIntro">
           <h2>{text.examplesTitle}</h2>
@@ -238,9 +261,26 @@ export async function WidgetsPageContent({ locale }: { locale: Locale }) {
           </article>
         ))}
       </section>
-      <WidgetFaq locale={locale} />
-      <script dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData).replace(/</g, "\\u003c") }} type="application/ld+json" />
-    </main>
+    </>
+  );
+}
+
+function WidgetsPreviewLoading({ label, locale }: { label: string; locale: Locale }) {
+  return (
+    <div aria-busy="true" className="widgetsHeroPreview">
+      <span>{label}</span>
+      <WidgetPreviewUnavailable locale={locale} />
+    </div>
+  );
+}
+
+function WidgetsDataLoading({ locale }: { locale: Locale }) {
+  return (
+    <section aria-busy="true" className="widgetsPanel widgetsDataLoading">
+      <span />
+      <span />
+      <p>{locale === "de" ? "Live-Vorschauen werden geladen …" : "Loading live previews …"}</p>
+    </section>
   );
 }
 

@@ -1,5 +1,5 @@
 import Link from "next/link";
-import type { CSSProperties } from "react";
+import { Suspense, type CSSProperties } from "react";
 import { AnalyticsDashboard } from "@/components/analytics-dashboard";
 import { HomeDashboard } from "@/components/home-dashboard";
 import { MatchesSchedule } from "@/components/matches-schedule";
@@ -362,13 +362,9 @@ const sportPageContent: Record<Locale, Record<SportPageId, {
   }
 };
 
-export async function HomePageContent({ locale }: { locale: Locale }) {
+export function HomePageContent({ locale }: { locale: Locale }) {
   const content = homeExperience[locale];
   const homeCopy = getHomeStartCopy(locale);
-  const [matchSections, sportNews] = await Promise.all([
-    getHomeMatchSections(locale),
-    getHomeSportNews(locale)
-  ]);
 
   return (
     <main className="shell homeStartShell">
@@ -380,6 +376,51 @@ export async function HomePageContent({ locale }: { locale: Locale }) {
         </div>
       </section>
 
+      <Suspense fallback={<HomeGamesLoading locale={locale} />}>
+        <HomeGames locale={locale} />
+      </Suspense>
+
+      <Suspense fallback={<HomeNewsLoading locale={locale} />}>
+        <HomeNews locale={locale} />
+      </Suspense>
+
+      <nav className="quickSportsNav homeStartSportsNav" aria-label={content.sportNavLabel}>
+        <span>{content.sportNavLabel}</span>
+        {content.sports.map((sport) => (
+          <Link href={localizePath(`/${sport.id}`, locale)} key={sport.id}>{sport.label}</Link>
+        ))}
+      </nav>
+
+      <section className="signalSection" id="signals">
+        <div className="sectionHeaderRow">
+          <div>
+            <p className="sectionKicker">AI Layer</p>
+            <h2>{content.signalTitle}</h2>
+          </div>
+          <p>{content.signalText}</p>
+        </div>
+        <div className="signalGrid">
+          {content.signals.map((signal) => (
+            <article className="signalCard" key={signal.label}>
+              <span />
+              <h3>{signal.label}</h3>
+              <p>{signal.text}</p>
+            </article>
+          ))}
+        </div>
+      </section>
+
+      <HomeFaq locale={locale} />
+    </main>
+  );
+}
+
+async function HomeGames({ locale }: { locale: Locale }) {
+  const homeCopy = getHomeStartCopy(locale);
+  const matchSections = await getHomeMatchSections(locale);
+
+  return (
+    <>
       {matchSections.live.length > 0 ? (
         <section className="homeTopGames homeLiveGames" id="live">
           <div className="homeSectionHeader">
@@ -413,8 +454,16 @@ export async function HomePageContent({ locale }: { locale: Locale }) {
           ))}
         </div>
       </section>
+    </>
+  );
+}
 
-      <section className="homeTopGames homeSportNews" id="sport-news">
+async function HomeNews({ locale }: { locale: Locale }) {
+  const homeCopy = getHomeStartCopy(locale);
+  const sportNews = await getHomeSportNews(locale);
+
+  return (
+    <section className="homeTopGames homeSportNews" id="sport-news">
         <div className="homeSectionHeader">
           <div>
             <p className="sectionKicker">{homeCopy.newsEyebrow}</p>
@@ -432,36 +481,38 @@ export async function HomePageContent({ locale }: { locale: Locale }) {
             </article>
           ))}
         </div>
-      </section>
+    </section>
+  );
+}
 
-      <nav className="quickSportsNav homeStartSportsNav" aria-label={content.sportNavLabel}>
-        <span>{content.sportNavLabel}</span>
-        {content.sports.map((sport) => (
-          <Link href={localizePath(`/${sport.id}`, locale)} key={sport.id}>{sport.label}</Link>
-        ))}
-      </nav>
-
-      <section className="signalSection" id="signals">
-        <div className="sectionHeaderRow">
-          <div>
-            <p className="sectionKicker">AI Layer</p>
-            <h2>{content.signalTitle}</h2>
-          </div>
-          <p>{content.signalText}</p>
+function HomeGamesLoading({ locale }: { locale: Locale }) {
+  const homeCopy = getHomeStartCopy(locale);
+  return (
+    <section aria-busy="true" className="homeTopGames homeAsyncSection">
+      <div className="homeSectionHeader">
+        <div>
+          <p className="sectionKicker">{homeCopy.topGamesEyebrow}</p>
+          <h2>{homeCopy.topGamesTitle}</h2>
         </div>
-        <div className="signalGrid">
-          {content.signals.map((signal) => (
-            <article className="signalCard" key={signal.label}>
-              <span />
-              <h3>{signal.label}</h3>
-              <p>{signal.text}</p>
-            </article>
-          ))}
-        </div>
-      </section>
+      </div>
+      <div className="homeAsyncGrid"><span /><span /><span /></div>
+    </section>
+  );
+}
 
-      <HomeFaq locale={locale} />
-    </main>
+function HomeNewsLoading({ locale }: { locale: Locale }) {
+  const homeCopy = getHomeStartCopy(locale);
+  return (
+    <section aria-busy="true" className="homeTopGames homeSportNews homeAsyncSection">
+      <div className="homeSectionHeader">
+        <div>
+          <p className="sectionKicker">{homeCopy.newsEyebrow}</p>
+          <h2>{homeCopy.newsTitle}</h2>
+        </div>
+        <p>{homeCopy.newsText}</p>
+      </div>
+      <div className="homeAsyncGrid"><span /><span /><span /><span /></div>
+    </section>
   );
 }
 
@@ -526,11 +577,11 @@ async function getHomeMatchSections(locale: Locale): Promise<{ live: HomeMatchHi
   const [footballSnapshots, nflSnapshot, nbaSnapshot, tennisSnapshot] = await Promise.all([
     Promise.all(footballCompetitions.map(async (competition) => ({
       competitionSlug: competition.slug,
-      snapshot: await getFootballCompetitionApiSnapshot(competition)
+      snapshot: await getFootballCompetitionApiSnapshot(competition, { detail: "summary" })
     }))),
-    getSportApiSnapshot("nfl"),
-    getSportApiSnapshot("nba"),
-    getSportApiSnapshot("tennis")
+    getSportApiSnapshot("nfl", { detail: "summary" }),
+    getSportApiSnapshot("nba", { detail: "summary" }),
+    getSportApiSnapshot("tennis", { detail: "summary" })
   ]);
 
   const rows: Array<{

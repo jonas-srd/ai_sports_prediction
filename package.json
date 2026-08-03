@@ -11,7 +11,7 @@
   ],
   "scripts": {
     "dev": "node scripts/run-with-env.mjs npm run dev --workspace @ai-sports-prediction/web",
-    "dev:frontend": "node scripts/run-with-env.mjs next dev apps/web --webpack -H 127.0.0.1 -p 3000",
+    "dev:frontend": "node scripts/run-with-env.mjs next dev apps/web -H 127.0.0.1 -p 3000",
     "dev:api": "node scripts/run-with-env.mjs node --import tsx apps/api/src/server.ts",
     "build": "npm run build --workspaces --if-present",
     "start": "npm run start:web",
@@ -25,6 +25,7 @@
     "test": "npm run test:web && node --import tsx --test apps/worker/src/*.test.ts packages/llm/src/*.test.ts packages/scorer/src/*.test.ts",
     "test:special": "node --import tsx packages/llm/src/special-questions.test.ts",
     "load:test": "node scripts/load-test.mjs",
+    "sync:sports-logos": "node scripts/run-with-env.mjs node scripts/sync-sports-logos.mjs",
     "aws:deploy-cloudflare-edge": "node scripts/deploy-cloudflare-edge.mjs",
     "aws:deploy-worker": "node scripts/deploy-aws-worker.mjs",
     "aws:rollback": "node scripts/rollback-aws-services.mjs",

@@ -155,11 +155,11 @@ export async function getWidgetPreviewMatches(): Promise<WidgetPreviewMatches> {
     ?? footballCompetitions[0];
   const rows = await Promise.all([
     footballCompetition
-      ? getFootballCompetitionApiSnapshot(footballCompetition).then((snapshot) => ({ snapshot, sport: "football" as const })).catch(() => null)
+      ? getFootballCompetitionApiSnapshot(footballCompetition, { detail: "summary" }).then((snapshot) => ({ snapshot, sport: "football" as const })).catch(() => null)
       : null,
-    getSportApiSnapshot("nfl").then((snapshot) => ({ snapshot, sport: "nfl" as const })).catch(() => null),
-    getSportApiSnapshot("nba").then((snapshot) => ({ snapshot, sport: "nba" as const })).catch(() => null),
-    getSportApiSnapshot("tennis").then((snapshot) => ({ snapshot, sport: "tennis" as const })).catch(() => null)
+    getSportApiSnapshot("nfl", { detail: "summary" }).then((snapshot) => ({ snapshot, sport: "nfl" as const })).catch(() => null),
+    getSportApiSnapshot("nba", { detail: "summary" }).then((snapshot) => ({ snapshot, sport: "nba" as const })).catch(() => null),
+    getSportApiSnapshot("tennis", { detail: "summary" }).then((snapshot) => ({ snapshot, sport: "tennis" as const })).catch(() => null)
   ]);
 
   return rows.reduce<WidgetPreviewMatches>((result, row) => {

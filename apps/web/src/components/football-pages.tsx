@@ -8,13 +8,13 @@ import {
   type FootballCompetition,
   type FootballTeam
 } from "@/lib/football-data";
+import { getStoredCompetitionLogo } from "@/lib/team-logo-fallback";
 import { footballTeamProfiles } from "@/lib/football-team-profiles";
 import { localizePath, type Locale } from "@/lib/i18n";
 import { getSportMatchHref } from "@/components/match-detail-page";
 import { getSportsNewsLinks } from "@/lib/sports-news";
 import {
   fallbackTeamsToStandings,
-  getFootballCompetitionLogos,
   getFootballCompetitionApiSnapshot,
   getFootballTeamSquad,
   type SportApiMatch,
@@ -350,12 +350,12 @@ const teamNameAliases: Record<string, string[]> = {
 
 const knownTeamLogos: Record<string, string> = {};
 
-export async function FootballOverviewPage({ locale }: { locale: Locale }) {
+export function FootballOverviewPage({ locale }: { locale: Locale }) {
   const text = labels[locale];
   const leagues = footballCompetitions.filter((competition) => competition.type === "league" && competition.country !== "Europe");
   const europeanCompetitions = footballCompetitions.filter((competition) => competition.country === "Europe");
   const cups = footballCompetitions.filter((competition) => competition.type === "cup");
-  const competitionLogos = await getFootballCompetitionLogos();
+  const competitionLogos: Record<string, string> = {};
 
   return (
     <main className="shell footballShell">
@@ -416,7 +416,7 @@ function CompetitionLogo({
   competition: FootballCompetition;
   competitionLogos: Record<string, string>;
 }) {
-  const logo = competitionLogos[competition.slug];
+  const logo = getStoredCompetitionLogo(competition.slug) ?? competitionLogos[competition.slug];
 
   if (logo) {
     return <img alt="" className="competitionLogo" src={logo} />;

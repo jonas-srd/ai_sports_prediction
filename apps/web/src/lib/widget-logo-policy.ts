@@ -1,10 +1,15 @@
 export function getOfficialWidgetLogo(value: string | null | undefined): string | null {
   const logo = value?.trim();
-  if (!logo || !isRealRemoteSportsAssetUrl(logo)) {
+  if (!logo || (!isStoredSportsAssetPath(logo) && !isRealRemoteSportsAssetUrl(logo))) {
     return null;
   }
 
   return logo;
+}
+
+export function isStoredSportsAssetPath(value: string | null | undefined): boolean {
+  const candidate = value?.trim();
+  return Boolean(candidate && /^\/sports-logos\/(?:teams|leagues)\/[a-z0-9-]+\.webp$/i.test(candidate));
 }
 
 export function isOfficialWidgetLogoUrl(value: string | null | undefined): boolean {

@@ -92,6 +92,9 @@ export async function getSportsNewsLinks({
 }: SportsNewsOptions): Promise<SportsNewsItem[]> {
   const query = buildNewsQuery(topic, locale, contextName);
   const url = getGoogleNewsRssUrl(query, locale);
+  const controller = new AbortController();
+  const timeoutMs = Number(process.env.NEWS_FETCH_TIMEOUT_MS ?? 4000);
+  const timeout = setTimeout(() => controller.abort(), Number.isFinite(timeoutMs) ? timeoutMs : 4000);
 
   try {
     const response = await fetch(url, {
@@ -99,8 +102,9 @@ export async function getSportsNewsLinks({
         accept: "application/rss+xml, application/xml, text/xml",
         "user-agent": "Mozilla/5.0 (compatible; AI-Sport-Prediction/1.0)"
       },
+      signal: controller.signal,
       next: { revalidate: Number(process.env.NEWS_CACHE_SECONDS ?? 600) }
-    }).catch(() => null);
+    }).catch(() => null).finally(() => clearTimeout(timeout));
 
     if (response?.ok) {
       const xml = await response.text();
@@ -115,6 +119,8 @@ export async function getSportsNewsLinks({
     }
   } catch {
     // Keep the page useful with source links if the feed is unavailable.
+  } finally {
+    clearTimeout(timeout);
   }
 
   return getFallbackNewsLinks(topic, locale, contextName).slice(0, limit);

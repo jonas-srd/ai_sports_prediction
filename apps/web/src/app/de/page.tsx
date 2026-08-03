@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { HomePageContent } from "@/app/_route-content";
 
 export const revalidate = 60;
+export const dynamic = "force-static";
 
 export const metadata: Metadata = {
   title: "AI Sports Prediction",

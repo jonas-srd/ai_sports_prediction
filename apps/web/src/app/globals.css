@@ -12626,3 +12626,121 @@ body {
     align-items: flex-start;
   }
 }
+/* Immediate feedback while a server-rendered route is loading. */
+.routeLoadingShell {
+  margin: 38px auto 80px;
+  max-width: 1180px;
+  min-height: 54vh;
+  padding: 28px 24px;
+  width: calc(100% - 32px);
+}
+
+.routeLoadingHeader,
+.routeLoadingGrid > span {
+  background: linear-gradient(100deg, rgba(255, 255, 255, 0.05) 20%, rgba(125, 245, 193, 0.13) 38%, rgba(255, 255, 255, 0.05) 58%);
+  background-size: 220% 100%;
+  border: 1px solid rgba(125, 245, 193, 0.12);
+  border-radius: 18px;
+  animation: routeLoadingShimmer 1.25s ease-in-out infinite;
+}
+
+.routeLoadingHeader {
+  display: grid;
+  gap: 14px;
+  min-height: 180px;
+  padding: 28px;
+}
+
+.routeLoadingHeader > span {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 999px;
+  display: block;
+  height: 18px;
+  max-width: 620px;
+}
+
+.routeLoadingHeader > span:first-child {
+  background: #7df5c1;
+  height: 8px;
+  max-width: 72px;
+}
+
+.routeLoadingHeader > span:nth-child(2) {
+  height: 34px;
+  max-width: 470px;
+}
+
+.routeLoadingGrid {
+  display: grid;
+  gap: 16px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  margin-top: 20px;
+}
+
+.routeLoadingGrid > span {
+  display: block;
+  min-height: 180px;
+}
+
+@keyframes routeLoadingShimmer {
+  to { background-position: -220% 0; }
+}
+
+@media (max-width: 760px) {
+  .routeLoadingGrid { grid-template-columns: 1fr; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .routeLoadingHeader,
+  .routeLoadingGrid > span { animation: none; }
+}
+
+.homeAsyncGrid {
+  display: grid;
+  gap: 12px;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.homeAsyncGrid > span {
+  animation: routeLoadingShimmer 1.25s ease-in-out infinite;
+  background: linear-gradient(100deg, rgba(255, 255, 255, 0.04) 20%, rgba(125, 245, 193, 0.11) 38%, rgba(255, 255, 255, 0.04) 58%);
+  background-size: 220% 100%;
+  border: 1px solid rgba(125, 245, 193, 0.1);
+  border-radius: 14px;
+  min-height: 190px;
+}
+
+@media (max-width: 920px) {
+  .homeAsyncGrid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+@media (max-width: 600px) {
+  .homeAsyncGrid { grid-template-columns: 1fr; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .homeAsyncGrid > span { animation: none; }
+}
+
+.widgetsDataLoading {
+  display: grid;
+  gap: 12px;
+}
+
+.widgetsDataLoading > span {
+  animation: routeLoadingShimmer 1.25s ease-in-out infinite;
+  background: linear-gradient(100deg, rgba(255, 255, 255, 0.04) 20%, rgba(125, 245, 193, 0.11) 38%, rgba(255, 255, 255, 0.04) 58%);
+  background-size: 220% 100%;
+  border-radius: 12px;
+  display: block;
+  min-height: 90px;
+}
+
+.widgetsDataLoading p {
+  color: rgba(248, 251, 255, 0.64);
+  margin: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .widgetsDataLoading > span { animation: none; }
+}

@@ -75,24 +75,28 @@ export async function hydrateMatchesWithOdds(
   context: OddsSportContext = {}
 ): Promise<SportApiMatch[]> {
   const eligibleMatches = matches.filter(isInsideOddsRefreshWindow);
-  const storedOdds = await fetchStoredOdds(eligibleMatches);
+  const apiKey = getTheOddsApiKey();
+  const sportKeys = apiKey && eligibleMatches.length > 0 ? getOddsSportKeys(sport, context) : [];
+  const from = new Date().toISOString();
+  const to = new Date(Date.now() + getOddsRefreshWindowDays() * DAY_MS).toISOString();
+  const [storedOdds, events] = await Promise.all([
+    fetchStoredOdds(eligibleMatches),
+    sportKeys.length > 0
+      ? Promise.all(sportKeys.map((sportKey) => fetchOddsEvents(sportKey, from, to).catch(() => []))).then((rows) => rows.flat())
+      : Promise.resolve([] as TheOddsApiEvent[])
+  ]);
   const matchesWithStoredOdds = matches.map((match) => ({
     ...match,
     odds: storedOdds.get(getSourceMatchId(match)) ?? match.odds
   }));
-  const apiKey = getTheOddsApiKey();
   if (!apiKey || eligibleMatches.length === 0) {
     return withModelFallbackOdds(sport, matchesWithStoredOdds);
   }
 
-  const sportKeys = getOddsSportKeys(sport, context);
   if (sportKeys.length === 0) {
     return withModelFallbackOdds(sport, matchesWithStoredOdds);
   }
 
-  const from = new Date().toISOString();
-  const to = new Date(Date.now() + getOddsRefreshWindowDays() * DAY_MS).toISOString();
-  const events = (await Promise.all(sportKeys.map((sportKey) => fetchOddsEvents(sportKey, from, to).catch(() => [])))).flat();
   if (events.length === 0) {
     return withModelFallbackOdds(sport, matchesWithStoredOdds);
   }
@@ -157,10 +161,14 @@ async function fetchStoredOdds(matches: SportApiMatch[]) {
 
   const url = new URL(`${apiUrl}/v1/odds`);
   url.searchParams.set("sourceMatchIds", sourceMatchIds.join(","));
+  const controller = new AbortController();
+  const timeoutMs = Number(process.env.WEB_API_FETCH_TIMEOUT_MS ?? 3000);
+  const timeout = setTimeout(() => controller.abort(), Number.isFinite(timeoutMs) ? timeoutMs : 3000);
   const response = await fetch(url, {
     headers: { accept: "application/json" },
-    next: { revalidate: Number(process.env.WEB_API_ODDS_CACHE_SECONDS ?? 60) }
-  }).catch(() => null);
+    next: { revalidate: Number(process.env.WEB_API_ODDS_CACHE_SECONDS ?? 60) },
+    signal: controller.signal
+  }).catch(() => null).finally(() => clearTimeout(timeout));
 
   if (!response?.ok) {
     return stored;
