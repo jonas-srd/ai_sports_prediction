@@ -361,6 +361,46 @@ export async function predictionExists(db: PostgresDb, matchId: string, modelId:
   return Boolean(result.rowCount && result.rowCount > 0);
 }
 
+export async function listLatestMatchPredictionsBySourceMatchIds(
+  db: PostgresDb,
+  sourceMatchIds: string[]
+): Promise<unknown[]> {
+  if (sourceMatchIds.length === 0) {
+    return [];
+  }
+
+  const result = await db.query(
+    `
+      select
+        p.id,
+        p.match_id,
+        p.model_id,
+        p.predicted_home,
+        p.predicted_away,
+        p.confidence,
+        p.reason,
+        p.created_at,
+        m.source_match_id,
+        m.home_team,
+        m.away_team,
+        m.utc_date,
+        pm.name as model_name,
+        pm.provider as model_provider,
+        pm.model_version,
+        pm.model_family
+      from predictions p
+      join matches m on m.id = p.match_id
+      join models pm on pm.id = p.model_id
+      where m.source_match_id = any($1::text[])
+        and lower(pm.provider) = 'openrouter'
+      order by p.created_at desc
+    `,
+    [sourceMatchIds]
+  );
+
+  return result.rows;
+}
+
 export async function listMatchesDueForOddsRefresh(
   db: PostgresDb,
   options: { lookaheadDays: number; minRefreshMinutes: number; limit: number }

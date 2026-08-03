@@ -5,7 +5,6 @@ import { HomeDashboard } from "@/components/home-dashboard";
 import { MatchesSchedule } from "@/components/matches-schedule";
 import { TournamentTreeView } from "@/components/tournament-tree-view";
 import { getDashboardMatchesFromApi, getSpecialPredictionsFromApi } from "@/lib/dashboard-api-data";
-import { sampleMatches } from "@/lib/dashboard-types";
 import { footballCompetitions } from "@/lib/football-data";
 import { localizePath, routeText, type Locale } from "@/lib/i18n";
 import { nbaTeams } from "@/lib/nba-data";
@@ -22,8 +21,10 @@ import {
 import { getSportsNewsLinks, type SportsNewsItem } from "@/lib/sports-news";
 import { isFinishedMatchStatus, isUpcomingPredictionMatch } from "@/lib/home-content-quality";
 import { resolveTennisPlayerFlagUrl } from "@/lib/tennis-data";
-import { buildModelPredictions, type ModelPredictionSet } from "@/lib/prediction-models";
+import { buildStoredModelPredictions, type ModelPredictionSet } from "@/lib/prediction-models";
+import { ensureSportApiMatchPredictions } from "@/lib/stored-sports-predictions";
 import {
+  OpenRouterPredictionPending,
   PredictionModelSelector,
   SelectedHomePrediction,
   SelectedPredictionScore
@@ -520,7 +521,7 @@ type HomeMatchHighlight = {
   accent: string;
   href: string;
   match: SportApiMatch;
-  prediction: ModelPredictionSet;
+  prediction: ModelPredictionSet | null;
   sport: ApiSportId;
   sportLabel: string;
 };
@@ -618,22 +619,27 @@ async function getHomeMatchSections(locale: Locale): Promise<{ live: HomeMatchHi
     }
   ];
 
-  const live = rows.flatMap((row, index) => {
+  const live = (await Promise.all(rows.map((row, index) => {
     const match = pickLiveHomeMatch(row.matches);
-    return match ? [buildHomeHighlight(row, match, locale, index)] : [];
-  }).sort((left, right) => compareHomeHighlights(left.match, right.match)).slice(0, 8);
-  const footballTop = rows
+    return match ? buildHomeHighlight(row, match, locale) : null;
+  }))).filter((entry): entry is HomeMatchHighlight => Boolean(entry))
+    .sort((left, right) => compareHomeHighlights(left.match, right.match)).slice(0, 8);
+  const footballTopCandidate = rows
     .filter((row) => row.sport === "football")
-    .flatMap((row, index) => {
+    .map((row) => {
       const match = pickTopHomeMatch(row.matches, live);
-      return match ? [buildHomeHighlight(row, match, locale, index)] : [];
+      return match ? [{ match, row }] : [];
     })
-    .sort((left, right) => compareHomeHighlights(left.match, right.match))[0];
-  const otherTop = (["nfl", "nba", "tennis"] as ApiSportId[]).flatMap((sport, index) => {
+    .flat()
+    .sort((left, right) => compareSportMatchesByDate(left.match, right.match))[0];
+  const footballTop = footballTopCandidate
+    ? await buildHomeHighlight(footballTopCandidate.row, footballTopCandidate.match, locale)
+    : null;
+  const otherTop = (await Promise.all((["nfl", "nba", "tennis"] as ApiSportId[]).map((sport, index) => {
     const row = rows.find((entry) => entry.sport === sport);
     const match = row ? pickTopHomeMatch(row.matches, live) : null;
-    return row && match ? [buildHomeHighlight(row, match, locale, index + 20)] : [];
-  });
+    return row && match ? buildHomeHighlight(row, match, locale) : null;
+  }))).filter((entry): entry is HomeMatchHighlight => Boolean(entry));
 
   return {
     live,
@@ -641,7 +647,7 @@ async function getHomeMatchSections(locale: Locale): Promise<{ live: HomeMatchHi
   };
 }
 
-function buildHomeHighlight(
+async function buildHomeHighlight(
   row: {
     accent: string;
     competitionSlug?: string;
@@ -650,16 +656,17 @@ function buildHomeHighlight(
     sportLabel: string;
   },
   match: SportApiMatch,
-  locale: Locale,
-  index: number
-): HomeMatchHighlight {
+  locale: Locale
+): Promise<HomeMatchHighlight> {
   const hydratedMatch = hydrateHomeHighlightMatch(row.sport, match);
+  const [matchWithPredictions] = await ensureSportApiMatchPredictions([hydratedMatch], row.sport).catch(() => [hydratedMatch]);
+  const resolvedMatch = matchWithPredictions ?? hydratedMatch;
 
   return {
     accent: row.accent,
     href: getSportMatchHref({ competitionSlug: row.competitionSlug, locale, match: hydratedMatch, sport: row.sport }),
-    match: hydratedMatch,
-    prediction: buildHomePrediction(row.sport, hydratedMatch, locale, index),
+    match: resolvedMatch,
+    prediction: buildStoredModelPredictions(resolvedMatch, row.sport, locale),
     sport: row.sport,
     sportLabel: row.sportLabel
   };
@@ -849,75 +856,6 @@ function compareSportMatchesByDate(left: SportApiMatch, right: SportApiMatch) {
   return (Number.isNaN(leftTime) ? Number.MAX_SAFE_INTEGER : leftTime) - (Number.isNaN(rightTime) ? Number.MAX_SAFE_INTEGER : rightTime);
 }
 
-function buildHomePrediction(sport: ApiSportId, match: SportApiMatch, locale: Locale, index: number) {
-  const seed = getStringSeed(`${sport}:${match.homeName}:${match.awayName}:${match.competition}`);
-  const confidence = 57 + ((seed + index * 5) % 18);
-  const homeEdge = ((seed % 11) - 5) / 10;
-  const favorite = homeEdge >= 0 ? match.homeName : match.awayName;
-  let base: { confidence: number; pick: string; reason: string; score: string };
-
-  if (sport === "nfl") {
-    const home = 20 + (seed % 14);
-    const away = 17 + ((seed + 6) % 13);
-    base = {
-      confidence,
-      pick: favorite,
-      reason: locale === "de"
-        ? "Quarterback-Stabilität, Erholungstage und Defensivdruck geben dem Modell den Ausschlag."
-        : "Quarterback stability, rest days and defensive pressure create the model edge.",
-      score: `${home}:${away}`
-    };
-  } else if (sport === "nba") {
-    const home = 102 + (seed % 18);
-    const away = 99 + ((seed + 9) % 17);
-    base = {
-      confidence,
-      pick: favorite,
-      reason: locale === "de"
-        ? "Pace, Rotationstiefe und Rest-Kontext sprechen knapp für diesen Tipp."
-        : "Pace, rotation depth and rest context point narrowly toward this pick.",
-      score: `${home}:${away}`
-    };
-  } else if (sport === "tennis") {
-    const score = seed % 3 === 0 ? "2:1" : seed % 3 === 1 ? "2:0" : "1:2";
-    base = {
-      confidence,
-      pick: favorite,
-      reason: locale === "de"
-        ? "Belagprofil, aktuelle Form und Return-Stabilität liefern den stärksten Ausschlag."
-        : "Surface profile, recent form and return stability create the strongest edge.",
-      score
-    };
-  } else {
-    const homeGoals = 1 + (seed % 3);
-    const awayGoals = (seed + 1) % 3;
-    base = {
-      confidence,
-      pick: favorite,
-      reason: locale === "de"
-        ? "Formkurve, Heimkontext und Chancenqualität ergeben einen messbaren Vorteil."
-        : "Form curve, home context and chance quality create a measurable edge.",
-      score: `${homeGoals}:${awayGoals}`
-    };
-  }
-
-  return buildModelPredictions({
-    baseConfidence: base.confidence,
-    basePick: base.pick,
-    baseReason: base.reason,
-    baseScore: base.score,
-    homeName: match.homeName,
-    awayName: match.awayName,
-    locale,
-    seed,
-    sport
-  });
-}
-
-function getStringSeed(value: string) {
-  return value.split("").reduce((total, char) => total + char.charCodeAt(0), 0);
-}
-
 function HomeHighlightCard({ highlight, locale }: { highlight: HomeMatchHighlight; locale: Locale }) {
   const copy = getHomeStartCopy(locale);
   const actualScore = highlight.match.homeScore !== null && highlight.match.awayScore !== null
@@ -935,17 +873,21 @@ function HomeHighlightCard({ highlight, locale }: { highlight: HomeMatchHighligh
           <SportTeamLogo logo={highlight.match.homeLogo} name={highlight.match.homeName} />
           <strong>{highlight.match.homeName}</strong>
         </div>
-        <SelectedPredictionScore actualScore={actualScore} variants={highlight.prediction} />
+        {highlight.prediction
+          ? <SelectedPredictionScore actualScore={actualScore} variants={highlight.prediction} />
+          : <em>{actualScore ?? "–"}</em>}
         <div>
           <SportTeamLogo logo={highlight.match.awayLogo} name={highlight.match.awayName} />
           <strong>{highlight.match.awayName}</strong>
         </div>
       </div>
-      <SelectedHomePrediction
-        labels={{ prediction: copy.prediction, probability: copy.probability, reason: copy.reason }}
-        locale={locale}
-        variants={highlight.prediction}
-      />
+      {highlight.prediction ? (
+        <SelectedHomePrediction
+          labels={{ prediction: copy.prediction, probability: copy.probability, reason: copy.reason }}
+          locale={locale}
+          variants={highlight.prediction}
+        />
+      ) : <OpenRouterPredictionPending className="homeHighlightPrediction" locale={locale} />}
     </Link>
   );
 }
@@ -1190,10 +1132,10 @@ export async function TournamentTreePageContent({ locale }: { locale: Locale }) 
 
 async function getDashboardMatches() {
   try {
-    return await getDashboardMatchesFromApi() ?? sampleMatches;
+    return await getDashboardMatchesFromApi() ?? [];
   } catch (error) {
     console.error(error);
-    return sampleMatches;
+    return [];
   }
 }
 

@@ -23,8 +23,9 @@ import {
   type SportApiTeam
 } from "@/lib/sports-api-data";
 import { SportsNewsCards } from "@/components/sports-news-cards";
-import { PredictionModelSelector, SelectedModelPrediction } from "@/components/prediction-model-selector";
-import { buildModelPredictions } from "@/lib/prediction-models";
+import { OpenRouterPredictionPending, PredictionModelSelector, SelectedModelPrediction } from "@/components/prediction-model-selector";
+import { buildStoredModelPredictions } from "@/lib/prediction-models";
+import { ensureSportApiMatchPredictions } from "@/lib/stored-sports-predictions";
 
 const labels = {
   en: {
@@ -1916,20 +1917,13 @@ function FixtureTeam({
   return <span className={`fixtureTeam fixtureTeam-${align}`}>{content}</span>;
 }
 
-function FixturePredictionCard({ competition, fixture, locale }: { competition: FootballCompetition; fixture: SportApiMatch; locale: Locale }) {
+async function FixturePredictionCard({ competition, fixture, locale }: { competition: FootballCompetition; fixture: SportApiMatch; locale: Locale }) {
   const text = labels[locale];
-  const prediction = buildFixturePrediction(fixture, competition, locale);
-  const variants = buildModelPredictions({
-    baseConfidence: Number.parseInt(prediction.confidence, 10),
-    basePick: prediction.pick,
-    baseReason: prediction.reasoning,
-    baseScore: prediction.score,
-    homeName: fixture.homeName,
-    awayName: fixture.awayName,
-    locale,
-    seed: getPredictionSeed(`${fixture.id}:${fixture.homeName}:${fixture.awayName}`),
-    sport: "football"
-  });
+  void competition;
+  const [matchWithPredictions = fixture] = await ensureSportApiMatchPredictions([fixture], "football").catch(() => [fixture]);
+  const variants = buildStoredModelPredictions(matchWithPredictions, "football", locale);
+
+  if (!variants) return <OpenRouterPredictionPending locale={locale} />;
 
   return (
     <SelectedModelPrediction
@@ -1944,10 +1938,6 @@ function FixturePredictionCard({ competition, fixture, locale }: { competition: 
       variants={variants}
     />
   );
-}
-
-function getPredictionSeed(value: string) {
-  return value.split("").reduce((total, character) => total + character.charCodeAt(0), 0);
 }
 
 function FixtureCompactOddsLine({ fixture, locale }: { fixture: SportApiMatch; locale: Locale }) {
@@ -2224,81 +2214,6 @@ function isFinalFixture(fixture: SportApiMatch) {
   const status = (fixture.status ?? "").toLowerCase();
 
   return ["ft", "aet", "pen", "match finished"].some((value) => status.includes(value));
-}
-
-function buildFixturePrediction(fixture: SportApiMatch, competition: FootballCompetition, locale: Locale) {
-  const homeTeam = findCompetitionTeamByName(competition, fixture.homeName);
-  const awayTeam = findCompetitionTeamByName(competition, fixture.awayName);
-
-  if (!homeTeam || !awayTeam) {
-    return {
-      confidence: "52%",
-      pick: locale === "de" ? "Knappes Spiel" : "Tight game",
-      reasoning: locale === "de"
-        ? "Ohne vollständiges Teamprofil sieht das Modell nur einen leichten Ausschlag und bewertet die Partie eng."
-        : "With only a partial team profile, the model sees a limited edge and keeps the matchup tight.",
-      score: "1:1"
-    };
-  }
-
-  const homeStrength = getTeamStrength(homeTeam, true);
-  const awayStrength = getTeamStrength(awayTeam, false);
-  const edge = homeStrength - awayStrength;
-  const confidence = Math.min(74, Math.max(52, Math.round(54 + Math.abs(edge) * 7)));
-  const favorite = edge >= 0 ? homeTeam : awayTeam;
-  const underdog = edge >= 0 ? awayTeam : homeTeam;
-  const favoriteContext = buildFixtureReasoning(favorite, underdog, edge >= 0, Math.abs(edge), locale);
-
-  if (Math.abs(edge) < 0.28) {
-    return {
-      confidence: `${confidence}%`,
-      pick: locale === "de" ? "Remis" : "Draw",
-      reasoning: locale === "de"
-        ? `Die Profile liegen nah beieinander: ${homeTeam.name} hat Heimvorteil, ${awayTeam.name} hält mit Form- und Punktesignal dagegen.`
-        : `The profiles are close: ${homeTeam.name} has the home edge, while ${awayTeam.name} counters with form and points signal.`,
-      score: "1:1"
-    };
-  }
-
-  if (edge > 0) {
-    const score = edge > 1.4 ? "2:0" : "2:1";
-    return {
-      confidence: `${confidence}%`,
-      pick: homeTeam.name,
-      reasoning: favoriteContext,
-      score
-    };
-  }
-
-  const score = edge < -1.4 ? "0:2" : "1:2";
-  return {
-    confidence: `${confidence}%`,
-    pick: awayTeam.name,
-    reasoning: favoriteContext,
-    score
-  };
-}
-
-function buildFixtureReasoning(
-  favorite: FootballTeam,
-  underdog: FootballTeam,
-  favoriteIsHome: boolean,
-  edge: number,
-  locale: Locale
-) {
-  const isStrongEdge = edge > 1.4;
-
-  if (locale === "de") {
-    const homeNote = favoriteIsHome ? "Dazu kommt der Heimvorteil." : "Trotz Auswärtsspiel bleibt der Modellvorteil sichtbar.";
-    const edgeNote = isStrongEdge ? "Der Strength-Score ist klar vorne." : "Der Vorteil ist knapp, aber messbar.";
-
-    return `${favorite.name} liegt vor ${underdog.name}: Rang ${favorite.rank}, ${favorite.points} Punkte und Form ${favorite.form} wiegen stärker. ${homeNote} ${edgeNote}`;
-  }
-
-  const homeNote = favoriteIsHome ? "The home edge adds to that." : "The model edge remains visible even away from home.";
-  const edgeNote = isStrongEdge ? "The strength score is clearly ahead." : "The edge is narrow, but measurable.";
-
-  return `${favorite.name} rates ahead of ${underdog.name}: rank ${favorite.rank}, ${favorite.points} points and form ${favorite.form} grade stronger. ${homeNote} ${edgeNote}`;
 }
 
 function getTeamStrength(team: FootballTeam, isHome: boolean) {

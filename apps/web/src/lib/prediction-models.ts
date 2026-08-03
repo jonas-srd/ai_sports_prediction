@@ -1,4 +1,4 @@
-import type { ApiSportId } from "@/lib/sports-api-data";
+import type { ApiSportId, SportApiMatch, SportApiPrediction } from "@/lib/sports-api-data";
 import type { Locale } from "@/lib/i18n";
 
 export type PredictionModelId = "nexus" | "pulse" | "edge";
@@ -16,6 +16,8 @@ export type ModelPrediction = {
   probabilities: PredictionProbability[];
   reason: string;
   score: string;
+  source?: "openrouter" | "generated";
+  modelVersion?: string | null;
 };
 
 export type ModelPredictionSet = Record<PredictionModelId, ModelPrediction>;
@@ -98,6 +100,91 @@ export function buildModelPredictions(input: {
 
 export function getPredictionModel(modelId: PredictionModelId) {
   return PREDICTION_MODELS.find((model) => model.id === modelId) ?? PREDICTION_MODELS[0];
+}
+
+export function buildStoredModelPredictions(
+  match: SportApiMatch,
+  sport: ApiSportId,
+  locale: Locale
+): ModelPredictionSet | null {
+  const byProfile = new Map((match.predictions ?? []).map((prediction) => [prediction.modelKey, prediction]));
+  if (!PREDICTION_MODELS.every((model) => byProfile.has(model.id))) return null;
+
+  return Object.fromEntries(PREDICTION_MODELS.map((model) => {
+    const stored = byProfile.get(model.id) as SportApiPrediction;
+    const score = `${stored.predictedHome}:${stored.predictedAway}`;
+    const outcome = stored.predictedHome > stored.predictedAway
+      ? "home"
+      : stored.predictedAway > stored.predictedHome
+        ? "away"
+        : "draw";
+    const pick = outcome === "home"
+      ? match.homeName
+      : outcome === "away"
+        ? match.awayName
+        : locale === "de" ? "Remis" : "Draw";
+    const probabilities = buildStoredProbabilities({
+      confidence: stored.confidence ?? 50,
+      homeName: match.homeName,
+      awayName: match.awayName,
+      outcome,
+      sport
+    });
+    const selected = probabilities.find((probability) => probability.label === outcome)
+      ?? probabilities.reduce((best, row) => row.value > best.value ? row : best);
+
+    return [model.id, {
+      confidence: selected.value,
+      model: model.id,
+      pick,
+      probabilities,
+      reason: stored.reason ?? (locale === "de" ? "OpenRouter-Prognose" : "OpenRouter prediction"),
+      score,
+      source: "openrouter",
+      modelVersion: stored.modelVersion
+    } satisfies ModelPrediction];
+  })) as ModelPredictionSet;
+}
+
+function buildStoredProbabilities({
+  awayName,
+  confidence,
+  homeName,
+  outcome,
+  sport
+}: {
+  awayName: string;
+  confidence: number;
+  homeName: string;
+  outcome: "home" | "draw" | "away";
+  sport: ApiSportId;
+}): PredictionProbability[] {
+  if (sport !== "football") {
+    const selected = clamp(Math.round(confidence), 50, 90);
+    return [
+      { label: "home", name: homeName, value: outcome === "home" ? selected : 100 - selected },
+      { label: "away", name: awayName, value: outcome === "away" ? selected : 100 - selected }
+    ];
+  }
+
+  if (outcome === "draw") {
+    const draw = clamp(Math.round(confidence), 30, 55);
+    const home = Math.round((100 - draw) / 2);
+    return [
+      { label: "home", name: homeName, value: home },
+      { label: "draw", name: "Draw", value: draw },
+      { label: "away", name: awayName, value: 100 - draw - home }
+    ];
+  }
+
+  const selected = clamp(Math.round(confidence), 34, 75);
+  const draw = clamp(Math.round((100 - selected) * 0.4), 12, 28);
+  const other = 100 - selected - draw;
+  return [
+    { label: "home", name: homeName, value: outcome === "home" ? selected : other },
+    { label: "draw", name: "Draw", value: draw },
+    { label: "away", name: awayName, value: outcome === "away" ? selected : other }
+  ];
 }
 
 function buildDistinctConfidences(baseConfidence: number, seed: number, sport: ApiSportId): Record<PredictionModelId, number> {

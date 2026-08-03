@@ -5,8 +5,9 @@ import { getSportsNewsLinks } from "@/lib/sports-news";
 import { getSportApiSnapshot, type ApiSportId, type SportApiMatch, type SportApiTeam } from "@/lib/sports-api-data";
 import { getSportMatchHref } from "@/components/match-detail-page";
 import { SportsNewsCards } from "@/components/sports-news-cards";
-import { PredictionModelSelector, SelectedModelPrediction } from "@/components/prediction-model-selector";
-import { buildModelPredictions } from "@/lib/prediction-models";
+import { OpenRouterPredictionPending, PredictionModelSelector, SelectedModelPrediction } from "@/components/prediction-model-selector";
+import { buildStoredModelPredictions } from "@/lib/prediction-models";
+import { ensureSportApiMatchPredictions } from "@/lib/stored-sports-predictions";
 
 type LeagueTeam = {
   slug: string;
@@ -439,32 +440,12 @@ function LeagueMatchesSection<TTeam extends LeagueTeam>({
   );
 }
 
-function LeaguePredictionCard<TTeam extends LeagueTeam>({ config, locale, match }: { config: LeagueSportConfig<TTeam>; locale: Locale; match: SportApiMatch }) {
+async function LeaguePredictionCard<TTeam extends LeagueTeam>({ config, locale, match }: { config: LeagueSportConfig<TTeam>; locale: Locale; match: SportApiMatch }) {
   const text = labels[locale];
-  const home = findLocalTeam(config.teams, match.homeName);
-  const away = findLocalTeam(config.teams, match.awayName);
-  const homeStrength = home ? home.wins * 2 - home.losses + home.rank * -0.6 : 50;
-  const awayStrength = away ? away.wins * 2 - away.losses + away.rank * -0.6 : 50;
-  const edge = homeStrength - awayStrength + 3;
-  const winner = edge >= 0 ? match.homeName : match.awayName;
-  const confidence = Math.min(78, Math.max(55, Math.round(58 + Math.abs(edge) * 0.6)));
-  const homeScore = config.apiSport === "nba" ? 108 + Math.round(edge / 3) : 24 + Math.round(edge / 6);
-  const awayScore = config.apiSport === "nba" ? 105 - Math.round(edge / 4) : 21 - Math.round(edge / 8);
-  const score = `${Math.max(config.scoreStep, homeScore)}:${Math.max(config.scoreStep, awayScore)}`;
-  const reasoning = locale === "de"
-    ? `${winner} liegt im Modell vorne: Bilanz, Formkurve, Heimvorteil und ${config.modelFocus.de.toLowerCase()} geben den Ausschlag.`
-    : `${winner} leads the model: record, form trend, home edge and ${config.modelFocus.en.toLowerCase()} drive the projection.`;
-  const variants = buildModelPredictions({
-    baseConfidence: confidence,
-    basePick: winner,
-    baseReason: reasoning,
-    baseScore: score,
-    homeName: match.homeName,
-    awayName: match.awayName,
-    locale,
-    seed: getLeaguePredictionSeed(`${match.id}:${match.homeName}:${match.awayName}`),
-    sport: config.apiSport
-  });
+  const [matchWithPredictions = match] = await ensureSportApiMatchPredictions([match], config.apiSport).catch(() => [match]);
+  const variants = buildStoredModelPredictions(matchWithPredictions, config.apiSport, locale);
+
+  if (!variants) return <OpenRouterPredictionPending locale={locale} />;
 
   return (
     <SelectedModelPrediction
@@ -479,10 +460,6 @@ function LeaguePredictionCard<TTeam extends LeagueTeam>({ config, locale, match 
       variants={variants}
     />
   );
-}
-
-function getLeaguePredictionSeed(value: string) {
-  return value.split("").reduce((total, character) => total + character.charCodeAt(0), 0);
 }
 
 function LeagueCompactOddsLine({ locale, match }: { locale: Locale; match: SportApiMatch }) {

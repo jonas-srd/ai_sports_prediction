@@ -7,8 +7,9 @@ import { findTennisPlayerByName, getTennisFlagUrl, getTennisPlayer, getTennisTou
 import { getAtpRankingSnapshot, type TennisRankingRow, type TennisRankingSnapshot } from "@/lib/tennis-rankings";
 import { getSportMatchHref } from "@/components/match-detail-page";
 import { SportsNewsCards } from "@/components/sports-news-cards";
-import { PredictionModelSelector, SelectedModelPrediction } from "@/components/prediction-model-selector";
-import { buildModelPredictions } from "@/lib/prediction-models";
+import { OpenRouterPredictionPending, PredictionModelSelector, SelectedModelPrediction } from "@/components/prediction-model-selector";
+import { buildStoredModelPredictions } from "@/lib/prediction-models";
+import { ensureSportApiMatchPredictions } from "@/lib/stored-sports-predictions";
 
 export type TennisTab = "news" | "matches" | "tournaments" | "rankings" | "players";
 export type TennisTournamentTab = "results" | "info" | "players";
@@ -602,30 +603,12 @@ function TennisApiEmptySection({
   );
 }
 
-function TennisPrediction({ locale, match }: { locale: Locale; match: SportApiMatch }) {
+async function TennisPrediction({ locale, match }: { locale: Locale; match: SportApiMatch }) {
   const copy = text[locale];
-  const home = findPlayer(match.homeName);
-  const away = findPlayer(match.awayName);
-  const homeIndex = home ? home.rank * -1 + home.hard * 0.4 + home.clay * 0.25 + home.grass * 0.2 : 55;
-  const awayIndex = away ? away.rank * -1 + away.hard * 0.4 + away.clay * 0.25 + away.grass * 0.2 : 55;
-  const edge = homeIndex - awayIndex;
-  const winner = edge >= 0 ? match.homeName : match.awayName;
-  const confidence = Math.min(78, Math.max(54, Math.round(58 + Math.abs(edge) * 1.2)));
-  const score = Math.abs(edge) > 8 ? "2:0" : "2:1";
-  const reasoning = locale === "de"
-    ? `${winner} liegt vorne, weil Ranking, Belagprofil, Form und Return-Stabilitat im Modell besser zusammenpassen.`
-    : `${winner} leads because ranking, surface profile, form and return stability fit the model better.`;
-  const variants = buildModelPredictions({
-    baseConfidence: confidence,
-    basePick: winner,
-    baseReason: reasoning,
-    baseScore: score,
-    homeName: match.homeName,
-    awayName: match.awayName,
-    locale,
-    seed: getTennisPredictionSeed(`${match.id}:${match.homeName}:${match.awayName}`),
-    sport: "tennis"
-  });
+  const [matchWithPredictions = match] = await ensureSportApiMatchPredictions([match], "tennis").catch(() => [match]);
+  const variants = buildStoredModelPredictions(matchWithPredictions, "tennis", locale);
+
+  if (!variants) return <OpenRouterPredictionPending className="fixturePredictionMain tennisPredictionMain" locale={locale} />;
 
   return (
     <SelectedModelPrediction
@@ -641,10 +624,6 @@ function TennisPrediction({ locale, match }: { locale: Locale; match: SportApiMa
       variants={variants}
     />
   );
-}
-
-function getTennisPredictionSeed(value: string) {
-  return value.split("").reduce((total, character) => total + character.charCodeAt(0), 0);
 }
 
 function TennisCompactOddsLine({ locale, match }: { locale: Locale; match: SportApiMatch }) {

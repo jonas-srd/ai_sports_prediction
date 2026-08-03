@@ -125,7 +125,7 @@ export function SelectedModelPrediction({
       <div className="selectedModelPredictionHeader">
         <div className="selectedModelPredictionTitle">
           <span>{labels.prediction} · {metadata.name}</span>
-          <small>{metadata.description[locale]}</small>
+          <small>{metadata.description[locale]}{prediction.source === "openrouter" ? " · OpenRouter" : ""}</small>
         </div>
         {showSelector ? <PredictionModelSelector compact locale={locale} /> : null}
       </div>
@@ -165,11 +165,29 @@ export function SelectedHomePrediction({
 
   return (
     <div className="homeHighlightPrediction selectedHomePrediction" style={{ "--model-accent": metadata.accent } as CSSProperties}>
-      <span>{labels.prediction} · {metadata.name}</span>
+      <span>{labels.prediction} · {metadata.name}{prediction.source === "openrouter" ? " · OpenRouter" : ""}</span>
       <strong>{prediction.pick}</strong>
       <small>{labels.probability}: {prediction.confidence}%</small>
       <ProbabilityBreakdown compact locale={locale} prediction={prediction} />
       <p><span>{labels.reason}</span> {prediction.reason}</p>
+    </div>
+  );
+}
+
+export function OpenRouterPredictionPending({
+  className = "fixturePredictionMain",
+  locale
+}: {
+  className?: string;
+  locale: Locale;
+}) {
+  return (
+    <div aria-live="polite" className={`${className} openRouterPredictionPending`}>
+      <span>OpenRouter</span>
+      <strong>{locale === "de" ? "Prognose wird erstellt" : "Prediction is being generated"}</strong>
+      <p>{locale === "de"
+        ? "Für dieses Spiel wird automatisch eine neue KI-Prognose erzeugt. Es werden keine Ersatzwerte angezeigt."
+        : "A new AI prediction is generated automatically for this match. No substitute values are shown."}</p>
     </div>
   );
 }

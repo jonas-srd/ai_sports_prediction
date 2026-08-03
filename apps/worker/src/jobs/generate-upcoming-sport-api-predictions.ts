@@ -8,7 +8,7 @@ import {
   upsertPredictionModel,
   upsertStoredPrediction
 } from "@ai-sports-prediction/db";
-import { OpenRouterClient } from "@ai-sports-prediction/llm";
+import { generatePublicSportsPredictions, OpenRouterClient } from "@ai-sports-prediction/llm";
 
 export type SportId = "football" | "nfl" | "nba" | "tennis";
 
@@ -54,6 +54,7 @@ const LEAGUES: LeagueRef[] = [
   { sport: "tennis", id: "4464", competition: "ATP" },
   { sport: "tennis", id: "4465", competition: "WTA" }
 ];
+const PUBLIC_PREDICTION_PROFILES = ["nexus", "pulse", "edge"] as const;
 
 export async function generateUpcomingSportApiPredictions(db: PostgresDb) {
   const apiKey = getFirstEnv(["THE_SPORTS_DB_API_KEY", "THE_SPORTSDB_API_KEY", "THESPORTSDB_API_KEY"]);
@@ -68,15 +69,15 @@ export async function generateUpcomingSportApiPredictions(db: PostgresDb) {
   }
 
   const modelId = getOpenRouterModelId();
-  await upsertPredictionModel(db, {
-    id: `openrouter:${modelId}`,
-    name: modelId,
+  await Promise.all(PUBLIC_PREDICTION_PROFILES.map((profile) => upsertPredictionModel(db, {
+    id: getPublicPredictionModelId(modelId, profile),
+    name: profile.toUpperCase(),
     provider: "OpenRouter",
     modelVersion: modelId,
     modelFamily: "openrouter",
     supportsToolAccess: false,
     isOpenWeight: modelId.includes("gpt-oss")
-  });
+  })));
 
   const client = new OpenRouterClient({
     apiKey: openRouterApiKey,
@@ -110,23 +111,34 @@ export async function generateUpcomingSportApiPredictions(db: PostgresDb) {
       matchday: fixture.matchday
     });
 
-    if (await predictionExists(db, matchId, `openrouter:${modelId}`)) {
-      skipped += 1;
+    const missingProfiles: Array<typeof PUBLIC_PREDICTION_PROFILES[number]> = [];
+    for (const profile of PUBLIC_PREDICTION_PROFILES) {
+      if (await predictionExists(db, matchId, getPublicPredictionModelId(modelId, profile))) {
+        skipped += 1;
+      } else {
+        missingProfiles.push(profile);
+      }
+    }
+    if (missingProfiles.length === 0) {
       continue;
     }
 
+    if (created + missingProfiles.length > limit && created > 0) break;
+
     try {
-      const prediction = await client.predictScore(modelId, buildSportPredictionPrompt(fixture));
-      await upsertStoredPrediction(db, {
-        matchId,
-        modelId: `openrouter:${modelId}`,
-        predictedHome: prediction.home,
-        predictedAway: prediction.away,
-        confidence: prediction.confidence ?? null,
-        reason: prediction.reason ?? null,
-        rawResponse: prediction.rawResponse
-      });
-      created += 1;
+      const predictions = await generatePublicSportsPredictions(client, modelId, fixture);
+      await Promise.all(predictions
+        .filter((prediction) => missingProfiles.includes(prediction.profile))
+        .map((prediction) => upsertStoredPrediction(db, {
+          matchId,
+          modelId: getPublicPredictionModelId(modelId, prediction.profile),
+          predictedHome: prediction.predictedHome,
+          predictedAway: prediction.predictedAway,
+          confidence: prediction.confidence,
+          reason: prediction.reason,
+          rawResponse: prediction.rawResponse
+        })));
+      created += missingProfiles.length;
     } catch (error) {
       failed += 1;
       console.error(`Prediction generation failed for ${fixture.id}:`, error);
@@ -134,6 +146,10 @@ export async function generateUpcomingSportApiPredictions(db: PostgresDb) {
   }
 
   console.log(`Upcoming prediction job finished: ${created} created, ${skipped} skipped, ${failed} failed.`);
+}
+
+function getPublicPredictionModelId(modelId: string, profile: typeof PUBLIC_PREDICTION_PROFILES[number]) {
+  return `openrouter:${modelId}:${profile}`;
 }
 
 export async function fetchUpcomingFixtures(

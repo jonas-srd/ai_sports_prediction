@@ -3532,6 +3532,39 @@ a {
   margin: 0;
 }
 
+.openRouterPredictionPending {
+  align-content: center;
+  background:
+    linear-gradient(135deg, rgba(125, 245, 193, 0.1), transparent 62%),
+    rgba(255, 255, 255, 0.035);
+  border: 1px solid rgba(125, 245, 193, 0.18);
+  border-radius: 8px;
+  min-height: 148px;
+  padding: 18px;
+}
+
+.openRouterPredictionPending > span {
+  color: #7df5c1;
+  font-size: 0.68rem;
+  font-weight: 950;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.openRouterPredictionPending > strong {
+  color: #f8fbff;
+  font-size: clamp(1rem, 1.5vw, 1.25rem);
+  line-height: 1.2;
+}
+
+.openRouterPredictionPending > p {
+  color: rgba(248, 251, 255, 0.62);
+  font-size: 0.78rem;
+  line-height: 1.55;
+  margin: 0;
+  max-width: 58ch;
+}
+
 .matchDetailGrid {
   align-items: stretch;
 }

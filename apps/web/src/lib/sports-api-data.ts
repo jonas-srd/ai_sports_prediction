@@ -19,6 +19,7 @@ import {
   type SportsDataQualityReport
 } from "@/lib/sports-data-quality";
 import { getStoredTeamLogo } from "@/lib/team-logo-fallback";
+import { hydrateMatchesWithStoredPredictions } from "@/lib/stored-sports-predictions";
 
 export type ApiSportId = "football" | "nfl" | "nba" | "tennis";
 type SportsApiSnapshotDetail = "full" | "summary";
@@ -44,6 +45,20 @@ export type SportApiMatch = {
   providerSport?: string | null;
   providerStage?: string | null;
   odds?: SportApiOdds | null;
+  predictions?: SportApiPrediction[];
+};
+
+export type SportApiPrediction = {
+  id: string;
+  modelKey: "nexus" | "pulse" | "edge";
+  modelName: string;
+  modelVersion: string | null;
+  provider: "OpenRouter";
+  predictedHome: number;
+  predictedAway: number;
+  confidence: number | null;
+  reason: string | null;
+  createdAt: string | null;
 };
 
 export type SportApiOddsOutcome = {
@@ -585,13 +600,14 @@ async function fetchTheSportsDbSnapshot(
         ).catch(() => [])
       ]);
       const matchesWithLogos = await hydrateTheSportsDbEventLogos(sport, events, teams);
+      const matchesWithPredictions = await hydrateMatchesWithStoredPredictions(matchesWithLogos).catch(() => matchesWithLogos);
       const qualityAudit = auditSportsMatches({
         expectedLeagueId: getTheSportsDbLeagueId(league),
         league: {
           ...league,
           sportName: league.sportName ?? THE_SPORTS_DB_V1_SPORT_NAMES[sport]
         },
-        matches: matchesWithLogos,
+        matches: matchesWithPredictions,
         sport,
         teams
       });

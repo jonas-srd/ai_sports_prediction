@@ -21,8 +21,9 @@ import {
 } from "@/lib/sports-api-data";
 import { findTennisPlayerByName, resolveTennisPlayerFlagUrl } from "@/lib/tennis-data";
 import { SportsNewsCards } from "@/components/sports-news-cards";
-import { SelectedModelPrediction, SelectedModelSignal } from "@/components/prediction-model-selector";
-import { buildModelPredictions, type ModelPredictionSet } from "@/lib/prediction-models";
+import { OpenRouterPredictionPending, SelectedModelPrediction, SelectedModelSignal } from "@/components/prediction-model-selector";
+import { buildStoredModelPredictions, type ModelPredictionSet } from "@/lib/prediction-models";
+import { ensureSportApiMatchPredictions } from "@/lib/stored-sports-predictions";
 
 export type MatchDetailTab = "overview" | "comparison" | "stats" | "signal";
 
@@ -131,26 +132,20 @@ export async function SportMatchDetailPage({
   tab?: MatchDetailTab;
 }) {
   const decodedMatchId = decodeURIComponent(matchId);
-  const context = await getMatchContext({ competitionSlug, locale, matchId: decodedMatchId, searchParams, sport });
+  const loadedContext = await getMatchContext({ competitionSlug, locale, matchId: decodedMatchId, searchParams, sport });
 
-  if (!context) {
+  if (!loadedContext) {
     notFound();
   }
+
+  const [matchWithPredictions = loadedContext.match] = await ensureSportApiMatchPredictions([loadedContext.match], loadedContext.sport)
+    .catch(() => [loadedContext.match]);
+  const context = { ...loadedContext, match: matchWithPredictions };
 
   const text = copy[locale];
   const activeTab = isMatchTab(tab) ? tab : "overview";
   const prediction = buildPrediction(context);
-  const predictionVariants = buildModelPredictions({
-    baseConfidence: Number.parseInt(prediction.confidence, 10),
-    basePick: prediction.pick,
-    baseReason: prediction.reason,
-    baseScore: prediction.score,
-    homeName: context.match.homeName,
-    awayName: context.match.awayName,
-    locale,
-    seed: stringSeed(`${context.match.id}:${context.match.homeName}:${context.match.awayName}`),
-    sport: context.sport
-  });
+  const predictionVariants = buildStoredModelPredictions(context.match, context.sport, locale);
   const metrics = buildMetrics(context);
   const backHref = getBackHref(context);
   const matchNews = activeTab === "overview" ? await getMatchNews(context) : [];
@@ -211,7 +206,9 @@ export async function SportMatchDetailPage({
       {activeTab === "overview" ? (
         <>
           <section className="footballPanel matchDetailGrid">
-            <PredictionPanel context={context} locale={locale} variants={predictionVariants} />
+            {predictionVariants
+              ? <PredictionPanel context={context} locale={locale} variants={predictionVariants} />
+              : <OpenRouterPredictionPending className="matchDetailPrediction" locale={locale} />}
             <ComparisonPanel locale={locale} metrics={metrics.slice(0, 4)} />
           </section>
           <MatchNewsPanel locale={locale} newsItems={matchNews} />
@@ -226,9 +223,11 @@ export async function SportMatchDetailPage({
         <StatsPanel context={context} locale={locale} metrics={metrics} />
       ) : null}
 
-      {activeTab === "signal" ? (
-        <SignalPanel context={context} locale={locale} prediction={prediction} variants={predictionVariants} />
-      ) : null}
+      {activeTab === "signal"
+        ? predictionVariants
+          ? <SignalPanel context={context} locale={locale} prediction={prediction} variants={predictionVariants} />
+          : <OpenRouterPredictionPending className="footballPanel matchDetailSignalPanel" locale={locale} />
+        : null}
     </main>
   );
 }
