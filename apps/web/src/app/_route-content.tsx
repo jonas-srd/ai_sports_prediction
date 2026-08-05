@@ -868,7 +868,6 @@ function HomeHighlightCard({ highlight, locale }: { highlight: HomeMatchHighligh
         <SelectedHomePrediction
           labels={{
             prediction: isLive ? copy.preMatchPrediction : copy.prediction,
-            probability: copy.probability,
             reason: copy.reason,
             score: copy.score
           }}

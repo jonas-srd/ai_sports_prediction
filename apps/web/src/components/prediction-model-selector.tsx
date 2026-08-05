@@ -159,7 +159,7 @@ export function SelectedHomePrediction({
   locale,
   variants
 }: {
-  labels: { prediction: string; probability: string; reason: string; score: string };
+  labels: { prediction: string; reason: string; score: string };
   locale: Locale;
   variants: ModelPredictionSet;
 }) {
@@ -170,8 +170,16 @@ export function SelectedHomePrediction({
   return (
     <div className="homeHighlightPrediction selectedHomePrediction" style={{ "--model-accent": metadata.accent } as CSSProperties}>
       <span>{labels.prediction} · {metadata.name}{prediction.source === "openrouter" ? " · OpenRouter" : ""}</span>
-      <strong>{prediction.pick}</strong>
-      <small>{labels.score}: {prediction.score} · {labels.probability}: {prediction.confidence}%</small>
+      <div className="homePredictionSummary">
+        <div>
+          <small>{locale === "de" ? "Tipp" : "Pick"}</small>
+          <strong>{formatPredictionPick(prediction.pick, locale)}</strong>
+        </div>
+        <div className="isScore">
+          <small>{labels.score}</small>
+          <strong>{prediction.score}</strong>
+        </div>
+      </div>
       <ProbabilityBreakdown compact locale={locale} prediction={prediction} />
       <p><span>{labels.reason}</span> {prediction.reason}</p>
     </div>
@@ -295,4 +303,12 @@ function ProbabilityBreakdown({
 
 function isPredictionModelId(value: string | null): value is PredictionModelId {
   return value === "nexus" || value === "pulse" || value === "edge";
+}
+
+function formatPredictionPick(pick: string, locale: Locale) {
+  if (["draw", "remis", "unentschieden"].includes(pick.trim().toLowerCase())) {
+    return locale === "de" ? "Unentschieden" : "Draw";
+  }
+
+  return locale === "de" ? `${pick} gewinnt` : `${pick} wins`;
 }
