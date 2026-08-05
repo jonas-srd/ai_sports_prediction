@@ -213,10 +213,10 @@ export function OpenRouterPredictionPending({
   return (
     <div aria-live="polite" className={`${className} openRouterPredictionPending`}>
       <span>OpenRouter</span>
-      <strong>{locale === "de" ? "Prognose wird erstellt" : "Prediction is being generated"}</strong>
+      <strong>{locale === "de" ? "Prognose eine Woche vor Spielbeginn" : "Prediction one week before kickoff"}</strong>
       <p>{locale === "de"
-        ? "Für dieses Spiel wird automatisch eine neue KI-Prognose erzeugt. Es werden keine Ersatzwerte angezeigt."
-        : "A new AI prediction is generated automatically for this match. No substitute values are shown."}</p>
+        ? "Die Prognose wird automatisch sieben Tage vor Spielbeginn erstellt. Dann stehen aktuellere Team-, Form- und Spieldaten zur Verfügung – für eine möglichst aussagekräftige und verlässliche Einschätzung."
+        : "The prediction is generated automatically seven days before kickoff. By then, more up-to-date team, form and match data is available for the most useful and reliable analysis possible."}</p>
     </div>
   );
 }
