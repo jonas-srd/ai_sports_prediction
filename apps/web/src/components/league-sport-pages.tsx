@@ -8,6 +8,7 @@ import { SportsNewsCards } from "@/components/sports-news-cards";
 import { OpenRouterPredictionPending, PredictionModelSelector, SelectedModelPrediction } from "@/components/prediction-model-selector";
 import { buildStoredModelPredictions } from "@/lib/prediction-models";
 import { ensureSportApiMatchPredictions } from "@/lib/stored-sports-predictions";
+import { getStoredTeamLogo } from "@/lib/team-logo-fallback";
 
 type LeagueTeam = {
   slug: string;
@@ -870,7 +871,10 @@ function SportLogo({ logo, name }: { logo: string | null; name: string }) {
 function buildDisplayTeams<TTeam extends LeagueTeam>(teams: TTeam[], apiTeams: SportApiTeam[]): DisplayLeagueTeam[] {
   return teams.map((team) => ({
     ...team,
-    apiLogo: findApiTeam(apiTeams, team)?.logo ?? null
+    apiLogo: getStoredTeamLogo(null, team.name)
+      ?? getStoredTeamLogo(null, team.fullName)
+      ?? findApiTeam(apiTeams, team)?.logo
+      ?? null
   }));
 }
 
