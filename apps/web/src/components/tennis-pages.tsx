@@ -54,7 +54,8 @@ const text = {
     modelPoints: "Model points",
     updated: "Updated",
     officialLive: "Official ATP live",
-    officialSnapshot: "Official ATP snapshot",
+    latestStored: "Last successful ATP ranking",
+    rankingUnavailable: "No successful ATP ranking has been stored yet.",
     latestSignals: "Latest signals",
     upcomingPredictions: "Next 5 predictions",
     source: "Source",
@@ -121,7 +122,8 @@ const text = {
     modelPoints: "Modellpunkte",
     updated: "Stand",
     officialLive: "Offiziell live",
-    officialSnapshot: "Offizieller ATP-Snapshot",
+    latestStored: "Letzter erfolgreicher ATP-Stand",
+    rankingUnavailable: "Es wurde noch kein erfolgreicher ATP-Stand gespeichert.",
     latestSignals: "Aktuelle Signale",
     upcomingPredictions: "Nächste 5 Prognosen",
     source: "Quelle",
@@ -809,8 +811,15 @@ function TennisRankingsSection({
   const availableCountryCodes = getAvailableRankingCountryCodes(atpRanking.rows, wtaRows);
   const rankingHref = getTennisRankingHref(locale);
   const selectedCountryLabel = selectedCountry ? getCountryLabel(selectedCountry, locale) : copy.allCountries;
-  const atpPointsLabel = atpRanking.status === "live" || atpRanking.status === "snapshot" ? copy.officialPoints : copy.modelPoints;
-  const atpStatusLabel = atpRanking.status === "live" ? copy.officialLive : copy.officialSnapshot;
+  const atpPointsLabel = copy.officialPoints;
+  const atpStatusLabel = atpRanking.status === "live"
+    ? copy.officialLive
+    : atpRanking.status === "stored"
+      ? copy.latestStored
+      : copy.rankingUnavailable;
+  const atpStatusWithDate = atpRanking.asOf
+    ? `${atpStatusLabel} · ${copy.updated} ${atpRanking.asOf}`
+    : atpStatusLabel;
 
   return (
     <section className="footballPanel sportschauTablePanel tennisRankingPanel tennisOfficialRankingPanel">
@@ -854,7 +863,7 @@ function TennisRankingsSection({
             ))}
           </div>
         </details>
-        <span className={`tennisRankingStatus is-${atpRanking.status}`}>{atpStatusLabel}</span>
+        <span className={`tennisRankingStatus is-${atpRanking.status}`}>{atpStatusWithDate}</span>
       </div>
       <div className="leagueStandingGroup tennisStandingGroup">
         <h3>ATP</h3>
@@ -870,9 +879,9 @@ function TennisRankingsSection({
             <small>{copy.dropping}</small>
             <em>{copy.nextBest}</em>
           </div>
-          {filteredAtpRows.map((row) => (
+          {filteredAtpRows.length > 0 ? filteredAtpRows.map((row) => (
             <TennisOfficialRankingRow key={`atp-${row.rank}-${row.playerName}`} locale={locale} row={row} />
-          ))}
+          )) : <p className="tennisRankingUnavailable">{copy.rankingUnavailable}</p>}
         </div>
       </div>
       <div className="leagueStandingGroup tennisStandingGroup tennisSecondaryRanking">

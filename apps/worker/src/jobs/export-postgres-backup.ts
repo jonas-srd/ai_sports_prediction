@@ -46,6 +46,7 @@ const EXPORT_TABLES = [
   "marketing_post_metrics",
   "marketing_performance_reports",
   "tennis_player_country_profiles",
+  "tennis_ranking_snapshots",
   "widget_customers",
   "widget_customer_domains",
   "widget_leads",

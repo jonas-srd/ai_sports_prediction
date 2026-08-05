@@ -6933,23 +6933,30 @@ a.matchDetailParticipant:focus-visible {
   margin-left: auto;
 }
 
-.tennisRankingStatus.is-snapshot {
+.tennisRankingStatus.is-stored {
   background: rgba(125, 245, 193, 0.1);
   border-color: rgba(125, 245, 193, 0.2);
   color: #7df5c1;
   margin-left: auto;
 }
 
-.tennisRankingStatus.is-fallback {
+.tennisRankingStatus.is-unavailable {
   background: rgba(255, 255, 255, 0.05);
   color: rgba(248, 251, 255, 0.72);
   margin-left: auto;
 }
 
+.tennisRankingUnavailable {
+  color: rgba(248, 251, 255, 0.68);
+  font-weight: 760;
+  margin: 0;
+  padding: 18px;
+}
+
 @media (max-width: 760px) {
   .tennisRankingStatus.is-live,
-  .tennisRankingStatus.is-snapshot,
-  .tennisRankingStatus.is-fallback {
+  .tennisRankingStatus.is-stored,
+  .tennisRankingStatus.is-unavailable {
     margin-left: 0;
   }
 

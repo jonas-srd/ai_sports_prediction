@@ -1,5 +1,10 @@
 import type { SportApiMatch } from "@/lib/sports-api-data";
 import { findTennisPlayerByName } from "@/lib/tennis-data";
+import {
+  loadLatestTennisRankingSnapshot,
+  storeLatestTennisRankingSnapshot,
+  type StoredTennisRankingSnapshot
+} from "@/lib/tennis-ranking-db";
 
 export type TennisRankingRow = {
   age: number | null;
@@ -17,80 +22,90 @@ export type TennisRankingRow = {
 export type TennisRankingSnapshot = {
   asOf: string;
   rows: TennisRankingRow[];
-  status: "live" | "snapshot";
+  status: "live" | "stored" | "unavailable";
 };
 
 const ATP_RANKINGS_URL = "https://www.atptour.com/en/rankings/singles";
-const ATP_OFFICIAL_SNAPSHOT_DATE = "2026.07.08";
-const ATP_OFFICIAL_SNAPSHOT_ROWS = [
-  { age: 24, countryCode: "it", dropping: 2000, movement: null, name: "Jannik Sinner", nextBest: null, points: 13450, rank: 1, tournamentsPlayed: 18 },
-  { age: 23, countryCode: "es", dropping: 1300, movement: null, name: "Carlos Alcaraz", nextBest: null, points: 9460, rank: 2, tournamentsPlayed: 17 },
-  { age: 29, countryCode: "de", dropping: 10, movement: null, name: "Alexander Zverev", nextBest: 40, points: 7190, rank: 3, tournamentsPlayed: 20 },
-  { age: 25, countryCode: "ca", dropping: 50, movement: -50, name: "Felix Auger-Aliassime", nextBest: 50, points: 4390, rank: 4, tournamentsPlayed: 23 },
-  { age: 23, countryCode: "us", dropping: 400, movement: null, name: "Ben Shelton", nextBest: 10, points: 4160, rank: 5, tournamentsPlayed: 22 },
-  { age: 27, countryCode: "au", dropping: 200, movement: null, name: "Alex de Minaur", nextBest: 50, points: 4110, rank: 6, tournamentsPlayed: 24 },
-  { age: 28, countryCode: "us", dropping: 800, movement: -150, name: "Taylor Fritz", nextBest: 35, points: 3765, rank: 7, tournamentsPlayed: 22 },
-  { age: 39, countryCode: "rs", dropping: 800, movement: null, name: "Novak Djokovic", nextBest: null, points: 3760, rank: 8, tournamentsPlayed: 16 },
-  { age: 30, countryCode: "ru", dropping: 10, movement: null, name: "Daniil Medvedev", nextBest: 50, points: 3580, rank: 9, tournamentsPlayed: 24 },
-  { age: 24, countryCode: "it", dropping: 400, movement: null, name: "Flavio Cobolli", nextBest: 10, points: 3460, rank: 10, tournamentsPlayed: 26 },
-  { age: 29, countryCode: "kz", dropping: 10, movement: null, name: "Alexander Bublik", nextBest: 50, points: 2620, rank: 11, tournamentsPlayed: 26 },
-  { age: 27, countryCode: "no", dropping: null, movement: null, name: "Casper Ruud", nextBest: null, points: 2425, rank: 12, tournamentsPlayed: 22 },
-  { age: 28, countryCode: "ru", dropping: 200, movement: null, name: "Andrey Rublev", nextBest: null, points: 2420, rank: 13, tournamentsPlayed: 23 },
-  { age: 24, countryCode: "cz", dropping: 50, movement: null, name: "Jiri Lehecka", nextBest: 10, points: 2360, rank: 14, tournamentsPlayed: 21 },
-  { age: 24, countryCode: "it", dropping: 10, movement: null, name: "Lorenzo Musetti", nextBest: 10, points: 2325, rank: 15, tournamentsPlayed: 22 },
-  { age: 24, countryCode: "it", dropping: 100, movement: null, name: "Luciano Darderi", nextBest: 50, points: 2300, rank: 16, tournamentsPlayed: 30 },
-  { age: 20, countryCode: "us", dropping: 50, movement: -20, name: "Learner Tien", nextBest: 25, points: 2270, rank: 17, tournamentsPlayed: 22 },
-  { age: 20, countryCode: "cz", dropping: 100, movement: -40, name: "Jakub Mensik", nextBest: 10, points: 2255, rank: 18, tournamentsPlayed: 20 },
-  { age: 28, countryCode: "us", dropping: 50, movement: null, name: "Frances Tiafoe", nextBest: 50, points: 2180, rank: 19, tournamentsPlayed: 22 },
-  { age: 27, countryCode: "mc", dropping: null, movement: null, name: "Valentin Vacherot", nextBest: null, points: 2138, rank: 20, tournamentsPlayed: 20 },
-  { age: 27, countryCode: "ar", dropping: 10, movement: null, name: "Francisco Cerundolo", nextBest: 50, points: 2110, rank: 21, tournamentsPlayed: 24 },
-  { age: 30, countryCode: "ru", dropping: 400, movement: null, name: "Karen Khachanov", nextBest: null, points: 2080, rank: 22, tournamentsPlayed: 23 },
-  { age: 27, countryCode: "es", dropping: 100, movement: 150, name: "Alejandro Davidovich Fokina", nextBest: 50, points: 2060, rank: 23, tournamentsPlayed: 25 },
-  { age: 22, countryCode: "fr", dropping: null, movement: null, name: "Arthur Fils", nextBest: null, points: 1940, rank: 24, tournamentsPlayed: 17 },
-  { age: 29, countryCode: "us", dropping: 50, movement: null, name: "Tommy Paul", nextBest: 50, points: 1925, rank: 25, tournamentsPlayed: 22 }
-] satisfies Array<{
-  age: number;
-  countryCode: string;
-  dropping: null | number;
-  movement: null | number;
-  name: string;
-  nextBest: null | number;
-  points: number;
-  rank: number;
-  tournamentsPlayed: number;
-}>;
+const MINIMUM_VALID_RANKING_ROWS = 10;
 
-export async function getAtpRankingSnapshot(_matches: SportApiMatch[]): Promise<TennisRankingSnapshot> {
+declare global {
+  var aiSportsLatestAtpRankingSnapshot: StoredTennisRankingSnapshot | undefined;
+}
+
+type AtpRankingDependencies = {
+  fetchHtml?: () => Promise<null | string>;
+  loadLatest?: () => Promise<null | StoredTennisRankingSnapshot>;
+  now?: () => Date;
+  storeLatest?: (snapshot: StoredTennisRankingSnapshot) => Promise<void>;
+};
+
+export async function getAtpRankingSnapshot(
+  _matches: SportApiMatch[],
+  dependencies: AtpRankingDependencies = {}
+): Promise<TennisRankingSnapshot> {
+  const now = dependencies.now?.() ?? new Date();
+  const refreshSeconds = getRankingRefreshSeconds();
+  const latestStored = dependencies.loadLatest
+    ? await dependencies.loadLatest().catch(() => null)
+    : globalThis.aiSportsLatestAtpRankingSnapshot
+      ?? await loadLatestTennisRankingSnapshot("ATP").catch(() => null);
+
+  if (latestStored && isFreshRankingSnapshot(latestStored, now, refreshSeconds)) {
+    globalThis.aiSportsLatestAtpRankingSnapshot = latestStored;
+    return toStoredRankingSnapshot(latestStored);
+  }
+
   try {
-    const response = await fetch(ATP_RANKINGS_URL, {
-      headers: {
-        accept: "text/html,application/xhtml+xml",
-        "user-agent": "Mozilla/5.0 (compatible; AI-Sport-Prediction/1.0)"
-      },
-      next: { revalidate: Number(process.env.THE_SPORTS_DB_CACHE_SECONDS ?? 300) }
-    }).catch(() => null);
+    const html = dependencies.fetchHtml
+      ? await dependencies.fetchHtml()
+      : await fetchAtpRankingHtml();
 
-    if (response?.ok) {
-      const html = await response.text();
+    if (html) {
       const rows = parseAtpRankingRows(html);
 
-      if (rows.length >= 10) {
+      if (rows.length >= MINIMUM_VALID_RANKING_ROWS) {
+        const storedSnapshot = {
+          fetchedAtUtc: now.toISOString(),
+          rows
+        } satisfies StoredTennisRankingSnapshot;
+        globalThis.aiSportsLatestAtpRankingSnapshot = storedSnapshot;
+        const storeLatest = dependencies.storeLatest
+          ?? ((snapshot: StoredTennisRankingSnapshot) => storeLatestTennisRankingSnapshot("ATP", ATP_RANKINGS_URL, snapshot));
+        await storeLatest(storedSnapshot).catch(() => undefined);
+
         return {
-          asOf: formatRankingDate(new Date()),
+          asOf: formatRankingDate(now),
           rows,
           status: "live"
         };
       }
     }
   } catch {
-    // Fall through to local live fallback.
+    // Fall through to the latest successful stored ranking.
+  }
+
+  if (latestStored && latestStored.rows.length >= MINIMUM_VALID_RANKING_ROWS) {
+    globalThis.aiSportsLatestAtpRankingSnapshot = latestStored;
+    return toStoredRankingSnapshot(latestStored);
   }
 
   return {
-    asOf: ATP_OFFICIAL_SNAPSHOT_DATE,
-    rows: buildOfficialSnapshotRows(),
-    status: "snapshot"
+    asOf: "",
+    rows: [],
+    status: "unavailable"
   };
+}
+
+async function fetchAtpRankingHtml() {
+  const response = await fetch(ATP_RANKINGS_URL, {
+    cache: "no-store",
+    headers: {
+      accept: "text/html,application/xhtml+xml",
+      "user-agent": "Mozilla/5.0 (compatible; AI-Sport-Prediction/1.0)"
+    }
+  }).catch(() => null);
+
+  return response?.ok ? response.text() : null;
 }
 
 function parseAtpRankingRows(html: string): TennisRankingRow[] {
@@ -129,23 +144,24 @@ function parseAtpRankingRows(html: string): TennisRankingRow[] {
   return rows;
 }
 
-function buildOfficialSnapshotRows(): TennisRankingRow[] {
-  return ATP_OFFICIAL_SNAPSHOT_ROWS.map((row) => {
-    const localPlayer = findLocalPlayer(row.name);
+function getRankingRefreshSeconds() {
+  const configured = Number(process.env.TENNIS_RANKING_REFRESH_SECONDS ?? 300);
+  return Number.isFinite(configured) && configured >= 60 ? configured : 300;
+}
 
-    return {
-      age: row.age,
-      countryCode: localPlayer?.countryCode ?? row.countryCode,
-      dropping: row.dropping,
-      movement: row.movement,
-      nextBest: row.nextBest,
-      playerName: localPlayer?.name ?? row.name,
-      playerSlug: localPlayer?.slug ?? null,
-      points: row.points,
-      rank: row.rank,
-      tournamentsPlayed: row.tournamentsPlayed
-    };
-  });
+function isFreshRankingSnapshot(snapshot: StoredTennisRankingSnapshot, now: Date, refreshSeconds: number) {
+  const fetchedAt = Date.parse(snapshot.fetchedAtUtc);
+  return snapshot.rows.length >= MINIMUM_VALID_RANKING_ROWS
+    && Number.isFinite(fetchedAt)
+    && now.getTime() - fetchedAt < refreshSeconds * 1000;
+}
+
+function toStoredRankingSnapshot(snapshot: StoredTennisRankingSnapshot): TennisRankingSnapshot {
+  return {
+    asOf: formatRankingDate(new Date(snapshot.fetchedAtUtc)),
+    rows: snapshot.rows,
+    status: "stored"
+  };
 }
 
 function htmlToText(html: string) {

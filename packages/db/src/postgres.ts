@@ -1227,6 +1227,7 @@ export async function getCriticalTableRowCounts(db: PostgresDb): Promise<Record<
     "prediction_evaluations",
     "special_predictions",
     "special_prediction_options",
+    "tennis_ranking_snapshots",
     "job_attempts",
     "backup_artifacts"
   ];
