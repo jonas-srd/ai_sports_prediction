@@ -96,6 +96,12 @@ process.on("SIGTERM", () => shutdown());
 process.on("SIGINT", () => shutdown());
 
 async function runQueuedJob(queueName: string, jobName: string, data: unknown): Promise<void> {
+  if (queueName === "fixture-sync" && jobName === "sync-live-sport-scores") {
+    const { syncLiveSportScores } = await import("./jobs/sync-live-sport-scores");
+    await syncLiveSportScores(db);
+    return;
+  }
+
   if (queueName === "fixture-sync" && jobName === "sync-upcoming-sport-fixtures") {
     const { syncUpcomingSportFixtures } = await import("./jobs/sync-upcoming-sport-fixtures");
     await syncUpcomingSportFixtures(db);
@@ -205,6 +211,24 @@ function readRequiredString(data: unknown, key: string): string {
 }
 
 async function registerRecurringJobs(): Promise<void> {
+  const liveScoreIntervalMinutes = Number(process.env.LIVE_SCORE_SYNC_INTERVAL_MINUTES ?? 2);
+  const liveScoreEvery = Math.max(
+    2,
+    Number.isFinite(liveScoreIntervalMinutes) ? liveScoreIntervalMinutes : 2
+  ) * 60 * 1000;
+  await fixtureQueue.add(
+    "sync-live-sport-scores",
+    {},
+    {
+      jobId: "sync-live-sport-scores",
+      repeat: { every: liveScoreEvery },
+      attempts: 3,
+      backoff: { type: "exponential", delay: 30_000 },
+      removeOnComplete: 50,
+      removeOnFail: 100
+    }
+  );
+
   const fixtureIntervalMinutes = Number(process.env.FIXTURE_SYNC_INTERVAL_MINUTES ?? 15);
   const fixtureEvery = Math.max(
     5,

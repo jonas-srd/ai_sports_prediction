@@ -5479,6 +5479,37 @@ a.matchDetailParticipant:focus-visible {
   margin: 0;
 }
 
+.homeLiveRefresh {
+  align-items: center;
+  display: inline-flex;
+  gap: 9px;
+  justify-self: end;
+}
+
+.homeLiveRefresh span {
+  background: var(--mint);
+  border-radius: 999px;
+  box-shadow: 0 0 10px color-mix(in srgb, var(--mint) 64%, transparent);
+  height: 7px;
+  width: 7px;
+}
+
+.homeLivePhase {
+  align-items: center;
+  color: #f8fbff !important;
+  display: inline-flex;
+  gap: 7px;
+  white-space: nowrap;
+}
+
+.homeLivePhase i {
+  background: #ff304d;
+  border-radius: 999px;
+  box-shadow: 0 0 8px rgba(255, 48, 77, 0.72);
+  height: 7px;
+  width: 7px;
+}
+
 .homeSportNews .homeSectionHeader {
   align-items: start;
   gap: 12px;
@@ -5536,6 +5567,38 @@ a.matchDetailParticipant:focus-visible {
   line-height: 1.22;
   min-height: 2.44em;
   width: 100%;
+}
+
+.homeLiveGames .homeHighlightTeams .homeLiveScoreBox {
+  align-content: center;
+  align-self: center;
+  background: rgba(255, 255, 255, 0.095);
+  border: 1px solid rgba(125, 245, 193, 0.24);
+  border-radius: 10px;
+  display: grid;
+  gap: 2px;
+  grid-template-rows: auto auto;
+  justify-items: center;
+  margin-top: 30px;
+  min-height: 78px;
+  padding: 10px 14px;
+}
+
+.homeLiveScoreBox > span {
+  color: #f8fbff;
+  font-size: 1.45rem;
+  font-weight: 950;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.homeLiveScoreBox > small {
+  color: var(--mint);
+  font-size: 0.58rem;
+  font-weight: 950;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  white-space: nowrap;
 }
 
 .homeHighlightCard {
@@ -5687,6 +5750,14 @@ a.matchDetailParticipant:focus-visible {
   .homeHighlightTeams em {
     justify-self: center;
     margin-top: 0;
+  }
+
+  .homeLiveGames .homeHighlightTeams .homeLiveScoreBox {
+    margin-top: 0;
+  }
+
+  .homeLiveRefresh {
+    justify-self: start;
   }
 
   .homeHighlightGrid {

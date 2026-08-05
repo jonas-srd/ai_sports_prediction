@@ -13,7 +13,7 @@ import { generatePublicSportsPredictions, OpenRouterClient } from "@ai-sports-pr
 
 export type SportId = "football" | "nfl" | "nba" | "tennis";
 
-type LeagueRef = {
+export type LeagueRef = {
   aliases?: string[];
   competition: string;
   eventCountry?: string;
@@ -34,10 +34,13 @@ export type SportFixture = {
   status: string;
   round: string | null;
   matchday: number | null;
+  homeScore?: number | null;
+  awayScore?: number | null;
+  liveProgress?: string | null;
   sourcePayload?: unknown;
 };
 
-const LEAGUES: LeagueRef[] = [
+export const SPORT_API_LEAGUES: LeagueRef[] = [
   { sport: "football", id: "4331", competition: "German Bundesliga" },
   { sport: "football", id: "4485", competition: "DFB-Pokal", aliases: ["DFB Pokal"], eventCountry: "Germany", strictIdentity: true },
   { sport: "football", id: "4328", competition: "English Premier League" },
@@ -177,7 +180,7 @@ export async function fetchUpcomingFixtures(
   apiKey: string,
   lookaheadDays = AUTOMATIC_PREDICTION_LEAD_DAYS
 ) {
-  const rows = (await Promise.all(LEAGUES.map((league) => fetchLeagueFixtures(apiKey, league)))).flat();
+  const rows = (await Promise.all(SPORT_API_LEAGUES.map((league) => fetchLeagueFixtures(apiKey, league)))).flat();
   const now = Date.now();
   const safeLookaheadDays = Number.isFinite(lookaheadDays) ? Math.max(1, Math.min(90, lookaheadDays)) : AUTOMATIC_PREDICTION_LEAD_DAYS;
   const seen = new Set<string>();
@@ -216,7 +219,7 @@ async function fetchLeagueFixtures(apiKey: string, league: LeagueRef): Promise<S
   return rows
     .flat()
     .filter((row) => matchesLeagueFixtureRow(row, league))
-    .map((row) => normalizeFixture(row, league))
+    .map((row) => normalizeSportFixture(row, league))
     .filter((fixture): fixture is SportFixture => Boolean(fixture));
 }
 
@@ -319,7 +322,7 @@ async function fetchJsonRows(url: URL, headers: Record<string, string>): Promise
   return findArrays(payload).find((rows) => rows.some((row) => row && typeof row === "object")) ?? [];
 }
 
-function normalizeFixture(row: any, league: LeagueRef): SportFixture | null {
+export function normalizeSportFixture(row: any, league: LeagueRef): SportFixture | null {
   const id = readString(row.idEvent ?? row.id ?? row.eventId);
   const eventName = readString(row.strEvent ?? row.event ?? row.name);
   const parsed = eventName.includes(" vs ") ? eventName.split(" vs ").map((part) => part.trim()) : ["", ""];
@@ -342,6 +345,9 @@ function normalizeFixture(row: any, league: LeagueRef): SportFixture | null {
     status: readString(row.strStatus ?? row.status ?? row.strProgress) || "SCHEDULED",
     round: readString(row.intRound ?? row.strRound ?? row.round) || null,
     matchday: readNumber(row.intRound ?? row.round),
+    homeScore: readNumber(row.intHomeScore ?? row.homeScore ?? row.home_score),
+    awayScore: readNumber(row.intAwayScore ?? row.awayScore ?? row.away_score),
+    liveProgress: readString(row.strProgress ?? row.progress) || null,
     sourcePayload: row
   };
 }
@@ -356,6 +362,9 @@ export function toNormalizedFixtureSnapshot(fixture: SportFixture) {
     awayTeam: fixture.awayTeam,
     venue: fixture.venue,
     status: fixture.status,
+    homeScore: fixture.homeScore ?? null,
+    awayScore: fixture.awayScore ?? null,
+    liveProgress: fixture.liveProgress ?? null,
     round: fixture.round,
     matchday: fixture.matchday
   };
@@ -442,6 +451,9 @@ function normalizeComparableName(value: string) {
 }
 
 function readNumber(value: unknown) {
+  if (value === null || value === undefined || value === "") {
+    return null;
+  }
   const parsed = Number(value);
   return Number.isFinite(parsed) ? parsed : null;
 }

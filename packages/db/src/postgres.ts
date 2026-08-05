@@ -97,6 +97,13 @@ export type MatchPredictionInput = {
   matchday?: number | null;
 };
 
+export type MatchFinalResultInput = {
+  matchId: string;
+  status: string;
+  homeScore: number;
+  awayScore: number;
+};
+
 export type OddsRefreshCandidate = {
   matchId: string;
   sourceMatchId: string | null;
@@ -377,6 +384,21 @@ export async function upsertPredictionMatch(db: PostgresDb, input: MatchPredicti
       input.stage ?? null,
       input.matchday ?? null
     ]
+  );
+}
+
+export async function updatePredictionMatchFinalResult(db: PostgresDb, input: MatchFinalResultInput): Promise<void> {
+  await db.query(
+    `
+      update matches
+      set
+        status = $2,
+        home_score = $3,
+        away_score = $4,
+        updated_at = now()
+      where id = $1
+    `,
+    [input.matchId, input.status, input.homeScore, input.awayScore]
   );
 }
 

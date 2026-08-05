@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { isFinishedMatchStatus, isUpcomingPredictionMatch, isUnavailableMatchStatus } from "./home-content-quality";
+import { isFinishedMatchStatus, isLiveSportMatch, isUpcomingPredictionMatch, isUnavailableMatchStatus } from "./home-content-quality";
 
 const now = new Date("2026-07-15T12:00:00.000Z").getTime();
 
@@ -26,4 +26,24 @@ test("normalizes common final and unavailable statuses", () => {
   assert.equal(isFinishedMatchStatus("Match Finished"), true);
   assert.equal(isFinishedMatchStatus("AET"), true);
   assert.equal(isUnavailableMatchStatus("Cancelled"), true);
+});
+
+test("uses provider status and progress for live games", () => {
+  assert.equal(isLiveSportMatch({
+    date: "2026-07-15T11:00:00.000Z",
+    homeScore: 0,
+    awayScore: 1,
+    status: "HT",
+    liveProgress: "45+2"
+  }, now), true);
+});
+
+test("does not treat stale not-started rows with scores as live", () => {
+  assert.equal(isLiveSportMatch({
+    date: "2026-07-15T11:00:00.000Z",
+    homeScore: 2,
+    awayScore: 1,
+    status: "NS",
+    liveProgress: null
+  }, now), false);
 });

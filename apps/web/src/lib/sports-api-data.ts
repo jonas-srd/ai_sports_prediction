@@ -39,6 +39,7 @@ export type SportApiMatch = {
   homeScore: number | null;
   awayScore: number | null;
   status: string | null;
+  liveProgress?: string | null;
   leagueId?: string | null;
   providerCompetition?: string | null;
   providerCountry?: string | null;
@@ -1165,7 +1166,8 @@ function normalizeTheSportsDbEvent(event: any): SportApiMatch {
     awayLogo: isTennis ? null : getStoredTeamLogo(awayId, cleanAwayName) || getString(event.strAwayTeamBadge || event.strAwayBadge || event.awayBadge || event.awayLogo || event.away?.badge || event.away?.logo) || null,
     homeScore: toNumber(event.intHomeScore ?? event.homeScore ?? event.home_score ?? event.home?.score),
     awayScore: toNumber(event.intAwayScore ?? event.awayScore ?? event.away_score ?? event.away?.score),
-    status: getString(event.strStatus || event.strProgress || event.strResult) || null,
+    status: getString(event.strStatus || event.status || event.strProgress || event.strResult) || null,
+    liveProgress: getString(event.strProgress || event.progress) || null,
     leagueId: getString(event.idLeague || event.leagueId || event.league_id) || null,
     providerCompetition: getString(event.strLeague || event.league || event.leagueName) || null,
     providerCountry: getString(event.strCountry || event.country) || null,

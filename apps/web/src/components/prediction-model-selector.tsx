@@ -159,7 +159,7 @@ export function SelectedHomePrediction({
   locale,
   variants
 }: {
-  labels: { prediction: string; probability: string; reason: string };
+  labels: { prediction: string; probability: string; reason: string; score: string };
   locale: Locale;
   variants: ModelPredictionSet;
 }) {
@@ -171,7 +171,7 @@ export function SelectedHomePrediction({
     <div className="homeHighlightPrediction selectedHomePrediction" style={{ "--model-accent": metadata.accent } as CSSProperties}>
       <span>{labels.prediction} · {metadata.name}{prediction.source === "openrouter" ? " · OpenRouter" : ""}</span>
       <strong>{prediction.pick}</strong>
-      <small>{labels.probability}: {prediction.confidence}%</small>
+      <small>{labels.score}: {prediction.score} · {labels.probability}: {prediction.confidence}%</small>
       <ProbabilityBreakdown compact locale={locale} prediction={prediction} />
       <p><span>{labels.reason}</span> {prediction.reason}</p>
     </div>

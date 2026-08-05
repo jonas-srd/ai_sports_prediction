@@ -11,6 +11,7 @@ import { nbaTeams } from "@/lib/nba-data";
 import { nflTeams } from "@/lib/nfl-data";
 import { getSportMatchHref } from "@/components/match-detail-page";
 import { SportsNewsCards } from "@/components/sports-news-cards";
+import { LiveScoreRefresh } from "@/components/live-score-refresh";
 import { HomeFaq } from "@/components/widget-faq";
 import {
   getFootballCompetitionApiSnapshot,
@@ -19,7 +20,7 @@ import {
   type SportApiMatch
 } from "@/lib/sports-api-data";
 import { getSportsNewsLinks, type SportsNewsItem } from "@/lib/sports-news";
-import { isFinishedMatchStatus, isUpcomingPredictionMatch } from "@/lib/home-content-quality";
+import { isLiveSportMatch, isUpcomingPredictionMatch } from "@/lib/home-content-quality";
 import { resolveTennisPlayerFlagUrl } from "@/lib/tennis-data";
 import { buildStoredModelPredictions, type ModelPredictionSet } from "@/lib/prediction-models";
 import { ensureSportApiMatchPredictions } from "@/lib/stored-sports-predictions";
@@ -422,6 +423,7 @@ async function HomeGames({ locale }: { locale: Locale }) {
 
   return (
     <>
+      {matchSections.live.length === 0 ? <LiveScoreRefresh /> : null}
       {matchSections.live.length > 0 ? (
         <section className="homeTopGames homeLiveGames" id="live">
           <div className="homeSectionHeader">
@@ -432,6 +434,7 @@ async function HomeGames({ locale }: { locale: Locale }) {
               </p>
               <h2>{homeCopy.liveGamesTitle}</h2>
             </div>
+            <LiveScoreRefresh label={homeCopy.liveRefresh} />
           </div>
           <div className="homeHighlightGrid">
             {matchSections.live.map((highlight) => (
@@ -543,14 +546,18 @@ function getHomeStartCopy(locale: Locale) {
       secondaryCta: "Jump to sport",
       liveGamesEyebrow: "Live now",
       liveGamesTitle: "Live games",
+      liveRefresh: "Live scores refresh automatically",
       newsEyebrow: "Top news",
       newsText: "Sporting stories only: teams, players, form, injuries and tournament context. The feed refreshes regularly.",
       newsTitle: "What matters before the next games",
       topGamesEyebrow: "Next AI predictions",
       topGamesTitle: "One top game per sport",
       prediction: "AI prediction",
+      preMatchPrediction: "Pre-match AI prediction",
       confidence: "Confidence",
       probability: "Win probability",
+      score: "Predicted score",
+      currentScore: "Current score",
       reason: "Reasoning"
     },
     de: {
@@ -561,14 +568,18 @@ function getHomeStartCopy(locale: Locale) {
       secondaryCta: "Zur Sportart springen",
       liveGamesEyebrow: "Jetzt live",
       liveGamesTitle: "Live-Spiele",
+      liveRefresh: "Spielstände werden automatisch aktualisiert",
       newsEyebrow: "Topnews",
       newsText: "Nur sportliche Themen: Teams, Spieler, Form, Verletzungen und Turnierkontext. Der Feed aktualisiert sich regelmäßig.",
       newsTitle: "Was vor den nächsten Spielen wichtig ist",
       topGamesEyebrow: "Nächste KI-Prognosen",
       topGamesTitle: "Ein Topspiel pro Sportart",
       prediction: "KI-Prognose",
+      preMatchPrediction: "KI-Prognose vor Anpfiff",
       confidence: "Sicherheit",
       probability: "Siegchance",
+      score: "Prognose-Ergebnis",
+      currentScore: "Aktueller Stand",
       reason: "Begründung"
     }
   }[locale];
@@ -730,40 +741,7 @@ function isUpcomingHomeMatch(match: SportApiMatch, now: number) {
 }
 
 function isLiveHomeMatch(match: SportApiMatch, now: number) {
-  if (isFinishedHomeMatch(match.status)) {
-    return false;
-  }
-
-  const status = (match.status ?? "").toLowerCase();
-  const statusLooksLive = [
-    "live",
-    "in play",
-    "in progress",
-    "1h",
-    "2h",
-    "ht",
-    "q1",
-    "q2",
-    "q3",
-    "q4",
-    "period",
-    "set"
-  ].some((label) => status === label || status.includes(label));
-
-  if (statusLooksLive) {
-    return true;
-  }
-
-  if (!match.date) {
-    return false;
-  }
-
-  const time = new Date(match.date).getTime();
-  if (Number.isNaN(time)) {
-    return false;
-  }
-
-  return time <= now && time >= now - 3 * 60 * 60 * 1000;
+  return isLiveSportMatch(match, now);
 }
 
 function compareHomeHighlights(left: SportApiMatch, right: SportApiMatch) {
@@ -776,10 +754,6 @@ function compareHomeHighlights(left: SportApiMatch, right: SportApiMatch) {
   }
 
   return compareSportMatchesByDate(left, right);
-}
-
-function isFinishedHomeMatch(status: string | null | undefined) {
-  return isFinishedMatchStatus(status);
 }
 
 function hydrateHomeHighlightMatch(sport: ApiSportId, match: SportApiMatch): SportApiMatch {
@@ -858,22 +832,31 @@ function compareSportMatchesByDate(left: SportApiMatch, right: SportApiMatch) {
 
 function HomeHighlightCard({ highlight, locale }: { highlight: HomeMatchHighlight; locale: Locale }) {
   const copy = getHomeStartCopy(locale);
+  const isLive = isLiveHomeMatch(highlight.match, Date.now());
   const actualScore = highlight.match.homeScore !== null && highlight.match.awayScore !== null
     ? `${highlight.match.homeScore}:${highlight.match.awayScore}`
     : null;
+  const livePhase = isLive ? formatHomeLivePhase(highlight.match, locale) : null;
 
   return (
     <Link className="homeHighlightCard" href={highlight.href} style={{ "--accent": highlight.accent } as CSSProperties}>
       <div className="homeHighlightHeader">
         <span>{highlight.sportLabel}</span>
-        <small>{formatSportMatchDate(highlight.match.date, locale)}</small>
+        {isLive ? (
+          <small className="homeLivePhase"><i aria-hidden="true" />{livePhase}</small>
+        ) : <small>{formatSportMatchDate(highlight.match.date, locale)}</small>}
       </div>
       <div className="homeHighlightTeams">
         <div>
           <SportTeamLogo logo={highlight.match.homeLogo} name={highlight.match.homeName} />
           <strong>{highlight.match.homeName}</strong>
         </div>
-        {highlight.prediction
+        {isLive ? (
+          <div className="homeLiveScoreBox" aria-label={`${copy.currentScore}: ${actualScore ?? "–"}`}>
+            <span>{actualScore ?? "–"}</span>
+            <small>{copy.currentScore}</small>
+          </div>
+        ) : highlight.prediction
           ? <SelectedPredictionScore actualScore={actualScore} variants={highlight.prediction} />
           : <em>{actualScore ?? "–"}</em>}
         <div>
@@ -883,13 +866,40 @@ function HomeHighlightCard({ highlight, locale }: { highlight: HomeMatchHighligh
       </div>
       {highlight.prediction ? (
         <SelectedHomePrediction
-          labels={{ prediction: copy.prediction, probability: copy.probability, reason: copy.reason }}
+          labels={{
+            prediction: isLive ? copy.preMatchPrediction : copy.prediction,
+            probability: copy.probability,
+            reason: copy.reason,
+            score: copy.score
+          }}
           locale={locale}
           variants={highlight.prediction}
         />
       ) : <OpenRouterPredictionPending className="homeHighlightPrediction" locale={locale} />}
     </Link>
   );
+}
+
+function formatHomeLivePhase(match: SportApiMatch, locale: Locale) {
+  const status = (match.status ?? "").trim().toUpperCase();
+  const progress = (match.liveProgress ?? "").trim();
+  const progressLabel = /^\d+(?:\+\d+)?$/.test(progress) ? `${progress}′` : progress;
+  const statusLabels: Record<string, { de: string; en: string }> = {
+    "1H": { de: "1. Halbzeit", en: "First half" },
+    "2H": { de: "2. Halbzeit", en: "Second half" },
+    HT: { de: "Halbzeit", en: "Half-time" },
+    ET: { de: "Verlängerung", en: "Extra time" },
+    OT: { de: "Verlängerung", en: "Overtime" },
+    Q1: { de: "1. Viertel", en: "1st quarter" },
+    Q2: { de: "2. Viertel", en: "2nd quarter" },
+    Q3: { de: "3. Viertel", en: "3rd quarter" },
+    Q4: { de: "4. Viertel", en: "4th quarter" }
+  };
+  const statusLabel = statusLabels[status]?.[locale] ?? (status && status !== "LIVE" ? status : "");
+
+  return [statusLabel, progressLabel && progressLabel.toUpperCase() !== status ? progressLabel : ""]
+    .filter(Boolean)
+    .join(" · ") || (locale === "de" ? "Live" : "Live");
 }
 
 export async function SportPageContent({ locale, sport }: { locale: Locale; sport: SportPageId }) {
