@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { listMatchesDueForOddsRefresh, type PostgresDb } from "@ai-sports-prediction/db";
 import { formatOddsApiDate, getCandidateOddsKeys } from "./jobs/refresh-upcoming-odds";
 
 const baseCandidate = {
@@ -8,7 +9,8 @@ const baseCandidate = {
   utcDate: "2026-08-02T12:00:00.000Z",
   competition: "ATP Canadian Open",
   homeTeam: "Player One",
-  awayTeam: "Player Two"
+  awayTeam: "Player Two",
+  refreshReason: "daily" as const
 };
 
 const activeSports = [
@@ -48,5 +50,38 @@ assert.equal(
   formatOddsApiDate(new Date("2026-08-01T18:27:51.765Z")),
   "2026-08-01T18:27:51Z"
 );
+
+let capturedSql = "";
+let capturedParameters: unknown[] = [];
+const fakeDb = {
+  async query(sql: string, parameters: unknown[]) {
+    capturedSql = sql;
+    capturedParameters = parameters;
+    return {
+      rows: [{
+        match_id: "match-2",
+        source_match_id: "source-2",
+        sport: "football",
+        utc_date: new Date("2026-08-10T18:00:00.000Z"),
+        competition: "Bundesliga",
+        home_team: "Home",
+        away_team: "Away",
+        refresh_reason: "pre_match"
+      }]
+    };
+  }
+} as unknown as PostgresDb;
+
+const scheduled = await listMatchesDueForOddsRefresh(fakeDb, {
+  lookaheadDays: 7,
+  dailyRefreshMinutes: 1440,
+  preMatchMinutes: 60,
+  limit: 250
+});
+
+assert.deepEqual(capturedParameters, [7, 1440, 60, 250]);
+assert.match(capturedSql, /latest_check\.checked_at_utc <= now\(\) - \(\$2::int/);
+assert.match(capturedSql, /m\.utc_date - \(\$3::int/);
+assert.equal(scheduled[0]?.refreshReason, "pre_match");
 
 console.log("Odds refresh tests passed.");

@@ -105,7 +105,10 @@ export type OddsRefreshCandidate = {
   competition: string;
   homeTeam: string;
   awayTeam: string;
+  refreshReason: OddsRefreshReason;
 };
+
+export type OddsRefreshReason = "initial" | "daily" | "pre_match";
 
 export type StoredMatchOddsInput = {
   matchId: string;
@@ -127,6 +130,7 @@ export type OddsRefreshCheckInput = {
   providerEventId?: string | null;
   bookmakerCount?: number;
   checkedAtUtc: string;
+  checkType?: OddsRefreshReason | "manual";
   errorMessage?: string | null;
 };
 
@@ -433,7 +437,12 @@ export async function listLatestMatchPredictionsBySourceMatchIds(
 
 export async function listMatchesDueForOddsRefresh(
   db: PostgresDb,
-  options: { lookaheadDays: number; minRefreshMinutes: number; limit: number }
+  options: {
+    lookaheadDays: number;
+    dailyRefreshMinutes: number;
+    preMatchMinutes: number;
+    limit: number;
+  }
 ): Promise<OddsRefreshCandidate[]> {
   const result = await db.query<{
     match_id: string;
@@ -443,6 +452,7 @@ export async function listMatchesDueForOddsRefresh(
     competition: string;
     home_team: string;
     away_team: string;
+    refresh_reason: OddsRefreshReason;
   }>(
     `
       select
@@ -452,7 +462,14 @@ export async function listMatchesDueForOddsRefresh(
         m.utc_date,
         m.competition,
         m.home_team,
-        m.away_team
+        m.away_team,
+        case
+          when m.utc_date <= now() + ($3::int * interval '1 minute')
+            and pre_match_check.checked_at_utc is null
+            then 'pre_match'
+          when latest_check.checked_at_utc is null then 'initial'
+          else 'daily'
+        end as refresh_reason
       from matches m
       left join lateral (
         select checked_at_utc
@@ -462,6 +479,16 @@ export async function listMatchesDueForOddsRefresh(
         order by checked_at_utc desc
         limit 1
       ) latest_check on true
+      left join lateral (
+        select checked_at_utc
+        from odds_refresh_checks
+        where match_id = m.id
+          and provider = 'The Odds API'
+          and checked_at_utc >= m.utc_date - ($3::int * interval '1 minute')
+          and checked_at_utc <= now()
+        order by checked_at_utc desc
+        limit 1
+      ) pre_match_check on true
       where m.utc_date > now()
         and m.utc_date <= now() + ($1::int * interval '1 day')
         and lower(coalesce(m.status, '')) not like '%final%'
@@ -470,11 +497,20 @@ export async function listMatchesDueForOddsRefresh(
         and (
           latest_check.checked_at_utc is null
           or latest_check.checked_at_utc <= now() - ($2::int * interval '1 minute')
+          or (
+            m.utc_date <= now() + ($3::int * interval '1 minute')
+            and pre_match_check.checked_at_utc is null
+          )
         )
       order by m.utc_date asc
-      limit $3
+      limit $4
     `,
-    [options.lookaheadDays, options.minRefreshMinutes, options.limit]
+    [
+      options.lookaheadDays,
+      options.dailyRefreshMinutes,
+      options.preMatchMinutes,
+      options.limit
+    ]
   );
 
   return result.rows.map((row) => ({
@@ -484,7 +520,8 @@ export async function listMatchesDueForOddsRefresh(
     utcDate: row.utc_date.toISOString(),
     competition: row.competition,
     homeTeam: row.home_team,
-    awayTeam: row.away_team
+    awayTeam: row.away_team,
+    refreshReason: row.refresh_reason
   }));
 }
 
@@ -547,9 +584,10 @@ export async function insertOddsRefreshCheck(db: PostgresDb, input: OddsRefreshC
         provider_event_id,
         bookmaker_count,
         checked_at_utc,
+        check_type,
         error_message
       )
-      values ($1, $2, $3, $4, $5, $6, $7, $8)
+      values ($1, $2, $3, $4, $5, $6, $7, $8, $9)
     `,
     [
       id,
@@ -559,6 +597,7 @@ export async function insertOddsRefreshCheck(db: PostgresDb, input: OddsRefreshC
       input.providerEventId ?? null,
       input.bookmakerCount ?? 0,
       input.checkedAtUtc,
+      input.checkType ?? "manual",
       input.errorMessage ?? null
     ]
   );

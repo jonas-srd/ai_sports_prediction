@@ -105,7 +105,13 @@ export async function refreshUpcomingOdds(db: PostgresDb) {
   }
 
   const lookaheadDays = readPositiveNumber(process.env.ODDS_REFRESH_LOOKAHEAD_DAYS, 7, 1, 30);
-  const minRefreshMinutes = readPositiveNumber(process.env.ODDS_REFRESH_MIN_AGE_MINUTES, 60, 5, 24 * 60);
+  const dailyRefreshMinutes = readPositiveNumber(
+    process.env.ODDS_REFRESH_DAILY_INTERVAL_MINUTES,
+    24 * 60,
+    60,
+    7 * 24 * 60
+  );
+  const preMatchMinutes = readPositiveNumber(process.env.ODDS_REFRESH_PRE_MATCH_MINUTES, 60, 15, 24 * 60);
   const maxMatches = readPositiveNumber(process.env.ODDS_REFRESH_MAX_MATCHES_PER_RUN, 250, 1, 2000);
   const fixtures = await fetchUpcomingFixtures(sportsApiKey, lookaheadDays);
 
@@ -113,7 +119,8 @@ export async function refreshUpcomingOdds(db: PostgresDb) {
 
   const candidates = await listMatchesDueForOddsRefresh(db, {
     lookaheadDays,
-    minRefreshMinutes,
+    dailyRefreshMinutes,
+    preMatchMinutes,
     limit: maxMatches
   });
 
@@ -209,6 +216,7 @@ export async function refreshUpcomingOdds(db: PostgresDb) {
         provider: PROVIDER,
         status: "unsupported",
         checkedAtUtc,
+        checkType: candidate.refreshReason,
         errorMessage: `No Odds API sport key is configured for ${candidate.competition}.`
       });
       continue;
@@ -241,6 +249,7 @@ export async function refreshUpcomingOdds(db: PostgresDb) {
         eventTimeUtc: candidate.utcDate,
         rawPayload: resolved.event,
         normalizedPayload: {
+          refreshReason: candidate.refreshReason,
           bookmakerCount: resolved.bookmakerCount,
           outcomes: resolved.outcomes,
           providerLastUpdatedAtUtc: resolved.providerLastUpdatedAtUtc,
@@ -253,7 +262,8 @@ export async function refreshUpcomingOdds(db: PostgresDb) {
         status: "available",
         providerEventId: resolved.event.id ?? null,
         bookmakerCount: resolved.bookmakerCount,
-        checkedAtUtc
+        checkedAtUtc,
+        checkType: candidate.refreshReason
       });
       continue;
     }
@@ -264,7 +274,8 @@ export async function refreshUpcomingOdds(db: PostgresDb) {
         matchId: candidate.matchId,
         provider: PROVIDER,
         status: "unavailable",
-        checkedAtUtc
+        checkedAtUtc,
+        checkType: candidate.refreshReason
       });
       continue;
     }
@@ -275,6 +286,7 @@ export async function refreshUpcomingOdds(db: PostgresDb) {
       provider: PROVIDER,
       status: "error",
       checkedAtUtc,
+      checkType: candidate.refreshReason,
       errorMessage: keys.map((key) => `${key}: ${fetched.get(key)?.error ?? "request failed"}`).join("; ")
     });
   }
