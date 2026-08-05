@@ -55,6 +55,7 @@ const LEAGUES: LeagueRef[] = [
   { sport: "tennis", id: "4465", competition: "WTA" }
 ];
 const PUBLIC_PREDICTION_PROFILES = ["nexus", "pulse", "edge"] as const;
+export const AUTOMATIC_PREDICTION_LEAD_DAYS = 7;
 
 export async function generateUpcomingSportApiPredictions(db: PostgresDb) {
   const apiKey = getFirstEnv(["THE_SPORTS_DB_API_KEY", "THE_SPORTSDB_API_KEY", "THESPORTSDB_API_KEY"]);
@@ -85,13 +86,14 @@ export async function generateUpcomingSportApiPredictions(db: PostgresDb) {
     siteName: process.env.OPENROUTER_SITE_NAME
   });
   const fixtures = await fetchUpcomingFixtures(apiKey);
-  const limit = Number(process.env.PREDICTION_AUTOMATION_MAX_NEW_PER_RUN ?? 50);
+  const fixtureLimit = readPositiveInteger(process.env.PREDICTION_AUTOMATION_MAX_FIXTURES_PER_RUN, 50);
   let created = 0;
+  let attemptedFixtures = 0;
   let skipped = 0;
   let failed = 0;
 
   for (const fixture of fixtures) {
-    if (created >= limit) {
+    if (attemptedFixtures >= fixtureLimit) {
       break;
     }
 
@@ -123,8 +125,7 @@ export async function generateUpcomingSportApiPredictions(db: PostgresDb) {
       continue;
     }
 
-    if (created + missingProfiles.length > limit && created > 0) break;
-
+    attemptedFixtures += 1;
     try {
       const predictions = await generatePublicSportsPredictions(client, modelId, fixture);
       await Promise.all(predictions
@@ -154,12 +155,11 @@ function getPublicPredictionModelId(modelId: string, profile: typeof PUBLIC_PRED
 
 export async function fetchUpcomingFixtures(
   apiKey: string,
-  lookaheadDays = Number(process.env.PREDICTION_AUTOMATION_LOOKAHEAD_DAYS ?? 7)
+  lookaheadDays = AUTOMATIC_PREDICTION_LEAD_DAYS
 ) {
   const rows = (await Promise.all(LEAGUES.map((league) => fetchLeagueFixtures(apiKey, league)))).flat();
   const now = Date.now();
-  const safeLookaheadDays = Number.isFinite(lookaheadDays) ? Math.max(1, Math.min(90, lookaheadDays)) : 7;
-  const horizonMs = safeLookaheadDays * 24 * 60 * 60 * 1000;
+  const safeLookaheadDays = Number.isFinite(lookaheadDays) ? Math.max(1, Math.min(90, lookaheadDays)) : AUTOMATIC_PREDICTION_LEAD_DAYS;
   const seen = new Set<string>();
 
   return rows
@@ -169,13 +169,22 @@ export async function fetchUpcomingFixtures(
       }
 
       seen.add(fixture.id);
-      const timestamp = new Date(fixture.utcDate).getTime();
-      return Number.isFinite(timestamp) &&
-        timestamp >= now &&
-        timestamp <= now + horizonMs &&
-        !isFinishedStatus(fixture.status);
+      return isFixtureWithinUpcomingWindow(fixture, now, safeLookaheadDays);
     })
     .sort((left, right) => new Date(left.utcDate).getTime() - new Date(right.utcDate).getTime());
+}
+
+export function shouldCreateAutomaticPrediction(fixture: SportFixture, now = Date.now()) {
+  return isFixtureWithinUpcomingWindow(fixture, now, AUTOMATIC_PREDICTION_LEAD_DAYS);
+}
+
+function isFixtureWithinUpcomingWindow(fixture: SportFixture, now: number, lookaheadDays: number) {
+  const timestamp = new Date(fixture.utcDate).getTime();
+  const horizonMs = lookaheadDays * 24 * 60 * 60 * 1000;
+  return Number.isFinite(timestamp) &&
+    timestamp >= now &&
+    timestamp <= now + horizonMs &&
+    !isFinishedStatus(fixture.status);
 }
 
 async function fetchLeagueFixtures(apiKey: string, league: LeagueRef): Promise<SportFixture[]> {
@@ -399,6 +408,11 @@ function normalizeComparableName(value: string) {
 function readNumber(value: unknown) {
   const parsed = Number(value);
   return Number.isFinite(parsed) ? parsed : null;
+}
+
+function readPositiveInteger(value: unknown, fallback: number) {
+  const parsed = Number(value);
+  return Number.isInteger(parsed) && parsed > 0 ? parsed : fallback;
 }
 
 function getFirstEnv(names: string[]) {

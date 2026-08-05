@@ -1,6 +1,7 @@
 "use client";
 
 import { createContext, useContext, useEffect, useMemo, useState, type CSSProperties, type ReactNode } from "react";
+import { useRouter } from "next/navigation";
 import { useLocale } from "@/components/locale-provider";
 import type { Locale } from "@/lib/i18n";
 import {
@@ -11,6 +12,9 @@ import {
 } from "@/lib/prediction-models";
 
 const STORAGE_KEY = "ai-sports-prediction:model";
+let pendingPredictionConsumers = 0;
+let pendingPredictionRefresh: (() => void) | null = null;
+let pendingPredictionRefreshTimer: ReturnType<typeof setInterval> | null = null;
 
 const PredictionModelContext = createContext<{
   model: PredictionModelId;
@@ -181,6 +185,23 @@ export function OpenRouterPredictionPending({
   className?: string;
   locale: Locale;
 }) {
+  const router = useRouter();
+
+  useEffect(() => {
+    pendingPredictionConsumers += 1;
+    pendingPredictionRefresh = () => router.refresh();
+    pendingPredictionRefreshTimer ??= setInterval(() => pendingPredictionRefresh?.(), 8000);
+
+    return () => {
+      pendingPredictionConsumers = Math.max(0, pendingPredictionConsumers - 1);
+      if (pendingPredictionConsumers === 0 && pendingPredictionRefreshTimer) {
+        clearInterval(pendingPredictionRefreshTimer);
+        pendingPredictionRefreshTimer = null;
+        pendingPredictionRefresh = null;
+      }
+    };
+  }, [router]);
+
   return (
     <div aria-live="polite" className={`${className} openRouterPredictionPending`}>
       <span>OpenRouter</span>
