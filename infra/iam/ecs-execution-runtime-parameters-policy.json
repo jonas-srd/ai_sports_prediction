@@ -1,0 +1,11 @@
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "ReadApplicationRuntimeParameters",
+      "Effect": "Allow",
+      "Action": "ssm:GetParameters",
+      "Resource": "arn:aws:ssm:eu-central-1:186581960948:parameter/ai-sports-prediction/*"
+    }
+  ]
+}

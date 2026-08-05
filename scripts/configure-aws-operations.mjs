@@ -81,14 +81,21 @@ const databases = JSON.parse(aws([
   "--output", "json"
 ]));
 if (databases.length) {
+  const publiclyAccessible = readBoolean(process.env.RDS_PUBLICLY_ACCESSIBLE ?? "0");
   aws([
     "rds", "modify-db-instance",
     "--db-instance-identifier", "ai-sports-prediction-db",
     "--backup-retention-period", process.env.RDS_BACKUP_RETENTION_DAYS ?? "1",
+    "--storage-type", process.env.RDS_STORAGE_TYPE ?? "gp3",
+    publiclyAccessible ? "--publicly-accessible" : "--no-publicly-accessible",
     "--deletion-protection",
     "--apply-immediately",
     "--output", "text"
   ]);
+}
+
+function readBoolean(value) {
+  return ["1", "true", "yes", "on"].includes(String(value).trim().toLowerCase());
 }
 
 console.log(`Operations alerts topic: ${topicArn}`);

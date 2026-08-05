@@ -64,19 +64,28 @@ jobs:
             ${{ steps.ecr.outputs.registry }}/${{ env.ECR_REPOSITORY }}:${{ github.sha }}
             ${{ steps.ecr.outputs.registry }}/${{ env.ECR_REPOSITORY }}:latest
 
-      - name: Deploy worker and migration
+      - name: Run database migration
         env:
           ECR_IMAGE_URI: ${{ steps.ecr.outputs.registry }}/${{ env.ECR_REPOSITORY }}:${{ github.sha }}
           RUN_MIGRATIONS: "1"
+          DEPLOY_WORKER_SERVICE: "0"
         run: npm run aws:deploy-worker
-      - name: Deploy public edge
+      - name: Deploy public edge with worker
         env:
           ECR_IMAGE_URI: ${{ steps.ecr.outputs.registry }}/${{ env.ECR_REPOSITORY }}:${{ github.sha }}
         run: npm run aws:deploy-cloudflare-edge
-      - name: Verify services and public health
+      - name: Verify consolidated service and public health
         run: |
-          aws ecs wait services-stable --cluster "$ECS_CLUSTER" --services "$ECS_WORKER_SERVICE" "$ECS_EDGE_SERVICE"
+          aws ecs wait services-stable --cluster "$ECS_CLUSTER" --services "$ECS_EDGE_SERVICE"
+          EDGE_TASK_ARN=$(aws ecs list-tasks --cluster "$ECS_CLUSTER" --service-name "$ECS_EDGE_SERVICE" --desired-status RUNNING --query 'taskArns[0]' --output text)
+          WORKER_STATUS=$(aws ecs describe-tasks --cluster "$ECS_CLUSTER" --tasks "$EDGE_TASK_ARN" --query 'tasks[0].containers[?name==`worker`].lastStatus | [0]' --output text)
+          test "$WORKER_STATUS" = "RUNNING"
           curl --fail --silent --show-error --retry 12 --retry-delay 5 https://www.ai-sports-prediction.net/api/health
+
+      - name: Retire standalone worker after successful verification
+        run: |
+          aws ecs update-service --cluster "$ECS_CLUSTER" --service "$ECS_WORKER_SERVICE" --desired-count 0
+          aws ecs wait services-stable --cluster "$ECS_CLUSTER" --services "$ECS_WORKER_SERVICE"
 
       - name: Roll back both services if deployment verification fails
         if: failure() && steps.previous.outputs.edge != '' && steps.previous.outputs.worker != ''

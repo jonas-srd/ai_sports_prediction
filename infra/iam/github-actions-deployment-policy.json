@@ -8,6 +8,7 @@
         "sts:GetCallerIdentity",
         "ecs:DescribeServices",
         "ecs:DescribeTasks",
+        "ecs:ListTasks",
         "ecs:RegisterTaskDefinition",
         "ecs:RunTask",
         "ecs:UpdateService"
@@ -35,6 +36,12 @@
       "Resource": "arn:aws:secretsmanager:eu-central-1:186581960948:secret:ai-sports-prediction/*"
     },
     {
+      "Sid": "ReadRuntimeParameterMetadata",
+      "Effect": "Allow",
+      "Action": "ssm:GetParameter",
+      "Resource": "arn:aws:ssm:eu-central-1:186581960948:parameter/ai-sports-prediction/*"
+    },
+    {
       "Sid": "PushApplicationImages",
       "Effect": "Allow",
       "Action": [
@@ -44,6 +51,7 @@
         "ecr:DescribeImages",
         "ecr:GetDownloadUrlForLayer",
         "ecr:InitiateLayerUpload",
+        "ecr:GetLifecyclePolicy",
         "ecr:PutImage",
         "ecr:UploadLayerPart"
       ],

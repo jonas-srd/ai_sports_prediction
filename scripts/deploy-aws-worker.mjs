@@ -26,14 +26,14 @@ const taskRoleArn = env(
 );
 
 const secrets = {
-  databaseUrl: secretArn("ai-sports-prediction/database-url"),
-  redisUrl: secretArn("ai-sports-prediction/redis-url"),
-  openrouterApiKey: secretArn("ai-sports-prediction/openrouter-api-key"),
-  sportsDbApiKey: secretArn("ai-sports-prediction/the-sports-db-api-key"),
-  oddsApiKey: secretArn("ai-sports-prediction/the-odds-api-key"),
-  serpApiKey: secretArn("ai-sports-prediction/serpapi-api-key")
-  ,resendApiKey: secretArn("ai-sports-prediction/resend-api-key")
-  ,ga4ApiSecret: optionalSecretArn("ai-sports-prediction/ga4-api-secret")
+  databaseUrl: runtimeSecretReference("ai-sports-prediction/database-url"),
+  redisUrl: runtimeSecretReference("ai-sports-prediction/redis-url"),
+  openrouterApiKey: runtimeSecretReference("ai-sports-prediction/openrouter-api-key"),
+  sportsDbApiKey: runtimeSecretReference("ai-sports-prediction/the-sports-db-api-key"),
+  oddsApiKey: runtimeSecretReference("ai-sports-prediction/the-odds-api-key"),
+  serpApiKey: runtimeSecretReference("ai-sports-prediction/serpapi-api-key")
+  ,resendApiKey: runtimeSecretReference("ai-sports-prediction/resend-api-key")
+  ,ga4ApiSecret: optionalRuntimeSecretReference("ai-sports-prediction/ga4-api-secret")
 };
 
 const definition = {
@@ -108,9 +108,15 @@ const definition = {
 
 const taskDefinitionArn = register(definition);
 if (env("RUN_MIGRATIONS", "1") === "1") runMigration(taskDefinitionArn);
-upsertService(taskDefinitionArn);
+if (env("DEPLOY_WORKER_SERVICE", "1") === "1") {
+  upsertService(taskDefinitionArn);
+} else {
+  console.log("Standalone worker service deployment skipped; the worker is part of the edge task.");
+}
 console.log(`Worker task definition: ${taskDefinitionArn}`);
-console.log(`Worker service: ${cluster}/${serviceName}`);
+if (env("DEPLOY_WORKER_SERVICE", "1") === "1") {
+  console.log(`Worker service: ${cluster}/${serviceName}`);
+}
 
 function runMigration(taskDefinitionArn) {
   const taskArn = aws([
@@ -172,8 +178,15 @@ function register(value) {
 function secretArn(name) {
   return aws(["secretsmanager", "describe-secret", "--secret-id", name, "--query", "ARN", "--output", "text"]);
 }
-function optionalSecretArn(name) {
-  try { return secretArn(name); } catch { return null; }
+function runtimeSecretReference(name) {
+  try {
+    return aws(["ssm", "get-parameter", "--name", `/${name}`, "--query", "Parameter.ARN", "--output", "text"]);
+  } catch {
+    return secretArn(name);
+  }
+}
+function optionalRuntimeSecretReference(name) {
+  try { return runtimeSecretReference(name); } catch { return null; }
 }
 function env(name, fallback) { return process.env[name] ?? fallback; }
 function aws(args) {

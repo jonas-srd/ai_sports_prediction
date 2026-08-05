@@ -30,6 +30,7 @@
     "aws:deploy-worker": "node scripts/deploy-aws-worker.mjs",
     "aws:rollback": "node scripts/rollback-aws-services.mjs",
     "aws:configure-operations": "node scripts/configure-aws-operations.mjs",
+    "aws:migrate-runtime-secrets": "node scripts/migrate-runtime-secrets-to-ssm.mjs",
     "aws:provision-redis": "node scripts/run-with-env.mjs node scripts/provision-aws-redis.mjs",
     "aws:smoke-operations": "node scripts/run-aws-operations-smoke.mjs",
     "typecheck": "npm run typecheck --workspaces --if-present",

@@ -35,22 +35,22 @@ const taskRoleArn = env(
 );
 
 const secrets = {
-  databaseUrl: secretArn("ai-sports-prediction/database-url"),
-  redisUrl: secretArn("ai-sports-prediction/redis-url"),
-  adminApiToken: secretArn("ai-sports-prediction/admin-api-token"),
-  adminAccessEmails: secretArn("ai-sports-prediction/admin-access-emails"),
-  adminSessionSecret: secretArn("ai-sports-prediction/admin-session-secret"),
-  adminTotpSecrets: secretArn("ai-sports-prediction/admin-totp-secrets"),
-  openrouterApiKey: secretArn("ai-sports-prediction/openrouter-api-key"),
-  resendApiKey: secretArn("ai-sports-prediction/resend-api-key"),
-  theOddsApiKey: secretArn("ai-sports-prediction/the-odds-api-key"),
-  theSportsDbApiKey: secretArn("ai-sports-prediction/the-sports-db-api-key"),
-  cloudflareTunnelToken: secretArn("ai-sports-prediction/cloudflare-tunnel-token"),
-  serpApiKey: secretArn("ai-sports-prediction/serpapi-api-key"),
-  ga4ApiSecret: optionalSecretArn("ai-sports-prediction/ga4-api-secret"),
-  widgetApiKeyEncryptionKey: optionalSecretArn("ai-sports-prediction/widget-api-key-encryption-key"),
-  widgetCustomerSessionSecret: optionalSecretArn("ai-sports-prediction/widget-customer-session-secret"),
-  tiktokAccessToken: optionalSecretArn("ai-sports-prediction/tiktok-access-token")
+  databaseUrl: runtimeSecretReference("ai-sports-prediction/database-url"),
+  redisUrl: runtimeSecretReference("ai-sports-prediction/redis-url"),
+  adminApiToken: runtimeSecretReference("ai-sports-prediction/admin-api-token"),
+  adminAccessEmails: runtimeSecretReference("ai-sports-prediction/admin-access-emails"),
+  adminSessionSecret: runtimeSecretReference("ai-sports-prediction/admin-session-secret"),
+  adminTotpSecrets: runtimeSecretReference("ai-sports-prediction/admin-totp-secrets"),
+  openrouterApiKey: runtimeSecretReference("ai-sports-prediction/openrouter-api-key"),
+  resendApiKey: runtimeSecretReference("ai-sports-prediction/resend-api-key"),
+  theOddsApiKey: runtimeSecretReference("ai-sports-prediction/the-odds-api-key"),
+  theSportsDbApiKey: runtimeSecretReference("ai-sports-prediction/the-sports-db-api-key"),
+  cloudflareTunnelToken: runtimeSecretReference("ai-sports-prediction/cloudflare-tunnel-token"),
+  serpApiKey: runtimeSecretReference("ai-sports-prediction/serpapi-api-key"),
+  ga4ApiSecret: optionalRuntimeSecretReference("ai-sports-prediction/ga4-api-secret"),
+  widgetApiKeyEncryptionKey: optionalRuntimeSecretReference("ai-sports-prediction/widget-api-key-encryption-key"),
+  widgetCustomerSessionSecret: optionalRuntimeSecretReference("ai-sports-prediction/widget-customer-session-secret"),
+  tiktokAccessToken: optionalRuntimeSecretReference("ai-sports-prediction/tiktok-access-token")
 };
 
 const taskDefinition = {
@@ -161,6 +161,63 @@ const taskDefinition = {
         { name: "OPENROUTER_API_KEY", valueFrom: secrets.openrouterApiKey }
       ],
       logConfiguration: awslogs("edge-api")
+    },
+    {
+      name: "worker",
+      image: imageUri,
+      essential: false,
+      restartPolicy: {
+        enabled: true,
+        ignoredExitCodes: [],
+        restartAttemptPeriod: 60
+      },
+      environment: [
+        ["NODE_ENV", "production"],
+        ["SERVICE_ROLE", "worker"],
+        ["QUEUE_KEY_PREFIX", "{ai-sports-prediction}"],
+        ["DATABASE_SSL", "1"],
+        ["DATABASE_SSL_REJECT_UNAUTHORIZED", env("DATABASE_SSL_REJECT_UNAUTHORIZED", "1")],
+        ["DATABASE_SSL_CA_FILE", "/etc/ssl/certs/aws-rds-global-bundle.pem"],
+        ["OPENROUTER_MODEL_IDS", env("OPENROUTER_MODEL_IDS", "openai/gpt-oss-20b:free")],
+        ["OPENROUTER_SITE_URL", env("OPENROUTER_SITE_URL", "https://www.ai-sports-prediction.net")],
+        ["OPENROUTER_SITE_NAME", env("OPENROUTER_SITE_NAME", "AI Sports Prediction")],
+        ["FIXTURE_SYNC_INTERVAL_MINUTES", env("FIXTURE_SYNC_INTERVAL_MINUTES", "15")],
+        ["PREDICTION_AUTOMATION_INTERVAL_MINUTES", env("PREDICTION_AUTOMATION_INTERVAL_MINUTES", "60")],
+        ["PREDICTION_AUTOMATION_MAX_FIXTURES_PER_RUN", env("PREDICTION_AUTOMATION_MAX_FIXTURES_PER_RUN", "50")],
+        ["ODDS_REFRESH_LOOKAHEAD_DAYS", env("ODDS_REFRESH_LOOKAHEAD_DAYS", "7")],
+        ["ODDS_REFRESH_INTERVAL_MINUTES", env("ODDS_REFRESH_INTERVAL_MINUTES", "60")],
+        ["ODDS_REFRESH_DAILY_INTERVAL_MINUTES", env("ODDS_REFRESH_DAILY_INTERVAL_MINUTES", "1440")],
+        ["ODDS_REFRESH_PRE_MATCH_MINUTES", env("ODDS_REFRESH_PRE_MATCH_MINUTES", "60")],
+        ["ODDS_REFRESH_MAX_MATCHES_PER_RUN", env("ODDS_REFRESH_MAX_MATCHES_PER_RUN", "250")],
+        ["BACKUP_AUTOMATION_ENABLED", env("BACKUP_AUTOMATION_ENABLED", "1")],
+        ["BACKUP_AUTOMATION_INTERVAL_HOURS", env("BACKUP_AUTOMATION_INTERVAL_HOURS", "12")],
+        ["BACKUP_S3_BUCKET", env("BACKUP_S3_BUCKET", "ai-sports-prediction")],
+        ["BACKUP_S3_REGION", region],
+        ["BACKUP_S3_PREFIX", env("BACKUP_S3_PREFIX", "ai-sports-prediction/backups")],
+        ["POSTGRES_BACKUP_DIR", "/tmp/postgres-backups"],
+        ["OPS_ALERT_EMAILS", env("OPS_ALERT_EMAILS", "")],
+        ["OPS_ALERT_FROM_EMAIL", env("OPS_ALERT_FROM_EMAIL", "AI Sports Prediction <ai-sports-prediction@outlook.com>")],
+        ["NEWSLETTER_FROM_EMAIL", env("NEWSLETTER_FROM_EMAIL", "AI Sports Prediction <ai-sports-prediction@outlook.com>")],
+        ["MARKETING_AUTOMATION_ENABLED", env("MARKETING_AUTOMATION_ENABLED", "0")],
+        ["MARKETING_ANALYTICS_ENABLED", env("MARKETING_ANALYTICS_ENABLED", "1")],
+        ["GA4_MEASUREMENT_ID", env("GA4_MEASUREMENT_ID", "G-KSGFX9TKD8")],
+        ["REVENUE_AUTOMATION_ENABLED", env("REVENUE_AUTOMATION_ENABLED", "1")],
+        ["REVENUE_AUTOMATION_INTERVAL_MINUTES", env("REVENUE_AUTOMATION_INTERVAL_MINUTES", "60")],
+        ["PUBLIC_SITE_URL", env("PUBLIC_SITE_URL", "https://www.ai-sports-prediction.net")],
+        ["WIDGET_ACCESS_FROM_EMAIL", env("WIDGET_ACCESS_FROM_EMAIL", "")],
+        ["SALES_ALERT_EMAILS", env("SALES_ALERT_EMAILS", "")]
+      ].map(([name, value]) => ({ name, value })),
+      secrets: [
+        ["DATABASE_URL", secrets.databaseUrl],
+        ["REDIS_URL", secrets.redisUrl],
+        ["OPENROUTER_API_KEY", secrets.openrouterApiKey],
+        ["THE_SPORTS_DB_API_KEY", secrets.theSportsDbApiKey],
+        ["THE_ODDS_API_KEY", secrets.theOddsApiKey],
+        ["SERPAPI_API_KEY", secrets.serpApiKey],
+        ["RESEND_API_KEY", secrets.resendApiKey],
+        ...(secrets.ga4ApiSecret ? [["GA4_API_SECRET", secrets.ga4ApiSecret]] : [])
+      ].map(([name, valueFrom]) => ({ name, valueFrom })),
+      logConfiguration: awslogs("edge-worker")
     },
     {
       name: "cloudflared",
@@ -278,9 +335,26 @@ function secretArn(secretName) {
   ]);
 }
 
-function optionalSecretArn(secretName) {
+function runtimeSecretReference(secretName) {
   try {
+    return aws([
+      "ssm",
+      "get-parameter",
+      "--name",
+      `/${secretName}`,
+      "--query",
+      "Parameter.ARN",
+      "--output",
+      "text"
+    ]);
+  } catch {
     return secretArn(secretName);
+  }
+}
+
+function optionalRuntimeSecretReference(secretName) {
+  try {
+    return runtimeSecretReference(secretName);
   } catch {
     return null;
   }

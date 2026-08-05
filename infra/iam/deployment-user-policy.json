@@ -53,12 +53,24 @@
       "Resource": "arn:aws:secretsmanager:eu-central-1:186581960948:secret:ai-sports-prediction/*"
     },
     {
+      "Sid": "ManageApplicationRuntimeParameters",
+      "Effect": "Allow",
+      "Action": [
+        "ssm:AddTagsToResource",
+        "ssm:GetParameter",
+        "ssm:GetParameters",
+        "ssm:PutParameter"
+      ],
+      "Resource": "arn:aws:ssm:eu-central-1:186581960948:parameter/ai-sports-prediction/*"
+    },
+    {
       "Sid": "DeployApplicationServices",
       "Effect": "Allow",
       "Action": [
         "ecs:CreateService",
         "ecs:DescribeServices",
         "ecs:DescribeTasks",
+        "ecs:ListTasks",
         "ecs:RegisterTaskDefinition",
         "ecs:RunTask",
         "ecs:UpdateService"
@@ -89,6 +101,10 @@
         "ecr:DescribeImages",
         "ecr:GetDownloadUrlForLayer",
         "ecr:InitiateLayerUpload",
+        "ecr:GetLifecyclePolicy",
+        "ecr:GetLifecyclePolicyPreview",
+        "ecr:PutLifecyclePolicy",
+        "ecr:StartLifecyclePolicyPreview",
         "ecr:PutImage",
         "ecr:UploadLayerPart"
       ],

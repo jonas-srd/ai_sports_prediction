@@ -12,18 +12,19 @@ if (!edgeTaskDefinition || !workerTaskDefinition) {
   throw new Error("PREVIOUS_EDGE_TASK_DEFINITION and PREVIOUS_WORKER_TASK_DEFINITION are required for a rollback.");
 }
 
-rollback(workerService, workerTaskDefinition);
-rollback(edgeService, edgeTaskDefinition);
+rollback(workerService, workerTaskDefinition, "1");
+rollback(edgeService, edgeTaskDefinition, "1");
 console.log(`Rollback started for ${cluster}. Waiting for both services to stabilize.`);
 aws(["ecs", "wait", "services-stable", "--cluster", cluster, "--services", workerService, edgeService]);
 console.log("Rollback completed.");
 
-function rollback(service, taskDefinition) {
+function rollback(service, taskDefinition, desiredCount) {
   aws([
     "ecs", "update-service",
     "--cluster", cluster,
     "--service", service,
     "--task-definition", taskDefinition,
+    "--desired-count", desiredCount,
     "--force-new-deployment",
     "--output", "text"
   ]);

@@ -271,7 +271,9 @@ BACKUP_S3_PREFIX=ai-sports-prediction/backups
 1. Create/update secrets.
 2. Push image to ECR.
 3. Run `SERVICE_ROLE=migrate` one-off task.
-4. Start/update worker service.
+4. Run the database migration task. The queue worker is deployed as an
+   independently restarted sidecar in the edge service so the separate worker
+   service can be scaled to zero after health verification.
 5. Create the Cloudflare tunnel and store its token in Secrets Manager.
 6. Start/update the Cloudflare edge service.
 7. Run one `SERVICE_ROLE=backup` one-off task and verify the S3 object plus
@@ -284,6 +286,10 @@ npm run aws:deploy-worker
 npm run aws:configure-operations
 npm run aws:smoke-operations
 ```
+
+The production workflow deploys and verifies the consolidated edge task before
+it retires the standalone worker. See `docs/AWS_COST_OPTIMIZATION.md` for the
+cost rollout and rollback sequence.
 
 CloudWatch watches job errors, the recurring fixture-sync heartbeat and the
 verified backup. Backups run every 12 hours, while the alarm tolerates one

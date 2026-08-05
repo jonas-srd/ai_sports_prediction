@@ -1,0 +1,37 @@
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "ManageApplicationImageRetention",
+      "Effect": "Allow",
+      "Action": [
+        "ecr:GetLifecyclePolicy",
+        "ecr:GetLifecyclePolicyPreview",
+        "ecr:PutLifecyclePolicy",
+        "ecr:StartLifecyclePolicyPreview"
+      ],
+      "Resource": "arn:aws:ecr:eu-central-1:186581960948:repository/ai-sports-prediction"
+    },
+    {
+      "Sid": "ManageApplicationParameters",
+      "Effect": "Allow",
+      "Action": [
+        "ssm:AddTagsToResource",
+        "ssm:GetParameter",
+        "ssm:GetParameters",
+        "ssm:PutParameter"
+      ],
+      "Resource": "arn:aws:ssm:eu-central-1:186581960948:parameter/ai-sports-prediction/*"
+    },
+    {
+      "Sid": "InspectCostData",
+      "Effect": "Allow",
+      "Action": [
+        "ce:GetCostAndUsage",
+        "ce:GetRightsizingRecommendation",
+        "pricing:GetProducts"
+      ],
+      "Resource": "*"
+    }
+  ]
+}

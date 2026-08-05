@@ -1,4 +1,4 @@
-FROM node:20-bookworm-slim
+FROM node:20-bookworm-slim AS build
 
 WORKDIR /app
 
@@ -21,6 +21,20 @@ RUN npm ci
 COPY . .
 
 RUN npm run build
+
+RUN npm prune --omit=dev \
+  && npm cache clean --force
+
+FROM node:20-bookworm-slim AS runtime
+
+WORKDIR /app
+
+RUN apt-get update \
+  && apt-get install -y --no-install-recommends ca-certificates \
+  && rm -rf /var/lib/apt/lists/*
+
+COPY --from=build /etc/ssl/certs/aws-rds-global-bundle.pem /etc/ssl/certs/aws-rds-global-bundle.pem
+COPY --from=build /app /app
 
 ENV NODE_ENV=production
 ENV PORT=3000
