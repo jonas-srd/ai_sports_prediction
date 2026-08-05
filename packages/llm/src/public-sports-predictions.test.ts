@@ -26,6 +26,11 @@ test("reads all three OpenRouter profiles without creating substitute values", a
   assert.deepEqual(predictions.map((prediction) => prediction.profile), ["nexus", "pulse", "edge"]);
   assert.deepEqual(predictions.map((prediction) => prediction.predictedHome), [2, 1, 1]);
   assert.equal(predictions[1]?.confidence, 42);
+  assert.match(predictions[0]?.promptText ?? "", /Test League/);
+  assert.equal(predictions[0]?.providerResponseId, "response-1");
+  assert.equal(predictions[0]?.inputTokens, 10);
+  assert.equal(predictions[0]?.outputTokens, 20);
+  assert.ok(!Number.isNaN(Date.parse(predictions[0]?.generatedAtUtc ?? "")));
 });
 
 test("rejects an incomplete response instead of fabricating a missing profile", async () => {

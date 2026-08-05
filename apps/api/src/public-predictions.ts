@@ -1,6 +1,7 @@
 import {
   listLatestMatchPredictionsBySourceMatchIds,
   predictionExists,
+  storeMatchDataSnapshot,
   type PostgresDb,
   upsertPredictionMatch,
   upsertPredictionModel,
@@ -61,6 +62,15 @@ export async function ensurePublicPredictions(db: PostgresDb, fixtureInputs: unk
       sport: fixture.sport,
       stage: fixture.round
     });
+    await storeMatchDataSnapshot(db, {
+      matchId,
+      provider: "Web fixture request",
+      sourceMatchId: fixture.sourceMatchId,
+      snapshotType: "normalized_fixture",
+      eventTimeUtc: fixture.utcDate,
+      rawPayload: fixture,
+      normalizedPayload: fixture
+    });
 
     const missingProfiles: Array<typeof PROFILES[number]> = [];
     for (const profile of PROFILES) {
@@ -78,7 +88,16 @@ export async function ensurePublicPredictions(db: PostgresDb, fixtureInputs: unk
         predictedAway: prediction.predictedAway,
         confidence: prediction.confidence,
         reason: prediction.reason,
-        rawResponse: prediction.rawResponse
+        modelVersion: modelId,
+        promptText: prediction.promptText,
+        inputContext: fixture,
+        rawResponse: prediction.rawResponse,
+        providerResponseId: prediction.providerResponseId,
+        latencyMs: prediction.latencyMs,
+        inputTokens: prediction.inputTokens,
+        outputTokens: prediction.outputTokens,
+        costUsd: prediction.costUsd,
+        generatedAtUtc: prediction.generatedAtUtc
       })));
   });
 

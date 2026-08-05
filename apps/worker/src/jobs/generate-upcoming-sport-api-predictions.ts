@@ -3,6 +3,7 @@
  */
 import {
   predictionExists,
+  storeMatchDataSnapshot,
   type PostgresDb,
   upsertPredictionMatch,
   upsertPredictionModel,
@@ -33,6 +34,7 @@ export type SportFixture = {
   status: string;
   round: string | null;
   matchday: number | null;
+  sourcePayload?: unknown;
 };
 
 const LEAGUES: LeagueRef[] = [
@@ -112,6 +114,15 @@ export async function generateUpcomingSportApiPredictions(db: PostgresDb) {
       stage: fixture.round,
       matchday: fixture.matchday
     });
+    await storeMatchDataSnapshot(db, {
+      matchId,
+      provider: "TheSportsDB",
+      sourceMatchId: fixture.id,
+      snapshotType: "fixture",
+      eventTimeUtc: fixture.utcDate,
+      rawPayload: fixture.sourcePayload ?? fixture,
+      normalizedPayload: toNormalizedFixtureSnapshot(fixture)
+    });
 
     const missingProfiles: Array<typeof PUBLIC_PREDICTION_PROFILES[number]> = [];
     for (const profile of PUBLIC_PREDICTION_PROFILES) {
@@ -137,7 +148,16 @@ export async function generateUpcomingSportApiPredictions(db: PostgresDb) {
           predictedAway: prediction.predictedAway,
           confidence: prediction.confidence,
           reason: prediction.reason,
-          rawResponse: prediction.rawResponse
+          modelVersion: modelId,
+          promptText: prediction.promptText,
+          inputContext: toNormalizedFixtureSnapshot(fixture),
+          rawResponse: prediction.rawResponse,
+          providerResponseId: prediction.providerResponseId,
+          latencyMs: prediction.latencyMs,
+          inputTokens: prediction.inputTokens,
+          outputTokens: prediction.outputTokens,
+          costUsd: prediction.costUsd,
+          generatedAtUtc: prediction.generatedAtUtc
         })));
       created += missingProfiles.length;
     } catch (error) {
@@ -321,7 +341,23 @@ function normalizeFixture(row: any, league: LeagueRef): SportFixture | null {
     venue: readString(row.strVenue ?? row.venue) || null,
     status: readString(row.strStatus ?? row.status ?? row.strProgress) || "SCHEDULED",
     round: readString(row.intRound ?? row.strRound ?? row.round) || null,
-    matchday: readNumber(row.intRound ?? row.round)
+    matchday: readNumber(row.intRound ?? row.round),
+    sourcePayload: row
+  };
+}
+
+export function toNormalizedFixtureSnapshot(fixture: SportFixture) {
+  return {
+    id: fixture.id,
+    competition: fixture.competition,
+    sport: fixture.sport,
+    utcDate: fixture.utcDate,
+    homeTeam: fixture.homeTeam,
+    awayTeam: fixture.awayTeam,
+    venue: fixture.venue,
+    status: fixture.status,
+    round: fixture.round,
+    matchday: fixture.matchday
   };
 }
 

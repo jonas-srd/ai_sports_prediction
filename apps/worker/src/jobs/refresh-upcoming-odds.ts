@@ -4,12 +4,13 @@
 import {
   insertOddsRefreshCheck,
   listMatchesDueForOddsRefresh,
+  storeMatchDataSnapshot,
   type OddsRefreshCandidate,
   type PostgresDb,
   upsertPredictionMatch,
   upsertStoredMatchOdds
 } from "@ai-sports-prediction/db";
-import { fetchUpcomingFixtures, type SportFixture, type SportId } from "./generate-upcoming-sport-api-predictions";
+import { fetchUpcomingFixtures, toNormalizedFixtureSnapshot, type SportFixture, type SportId } from "./generate-upcoming-sport-api-predictions";
 
 type TheOddsApiEvent = {
   id?: string;
@@ -231,6 +232,21 @@ export async function refreshUpcomingOdds(db: PostgresDb) {
         providerLastUpdatedAtUtc: resolved.providerLastUpdatedAtUtc,
         checkedAtUtc
       });
+      await storeMatchDataSnapshot(db, {
+        matchId: candidate.matchId,
+        provider: PROVIDER,
+        sourceMatchId: resolved.event.id ?? candidate.sourceMatchId,
+        snapshotType: "bookmaker_odds",
+        observedAtUtc: checkedAtUtc,
+        eventTimeUtc: candidate.utcDate,
+        rawPayload: resolved.event,
+        normalizedPayload: {
+          bookmakerCount: resolved.bookmakerCount,
+          outcomes: resolved.outcomes,
+          providerLastUpdatedAtUtc: resolved.providerLastUpdatedAtUtc,
+          sportKey: resolved.event.sport_key ?? null
+        }
+      });
       await insertOddsRefreshCheck(db, {
         matchId: candidate.matchId,
         provider: PROVIDER,
@@ -273,8 +289,9 @@ export async function refreshUpcomingOdds(db: PostgresDb) {
 }
 
 async function upsertFixture(db: PostgresDb, fixture: SportFixture) {
+  const matchId = `sport-api:${fixture.id}`;
   await upsertPredictionMatch(db, {
-    id: `sport-api:${fixture.id}`,
+    id: matchId,
     utcDate: fixture.utcDate,
     competition: fixture.competition,
     homeTeam: fixture.homeTeam,
@@ -286,6 +303,15 @@ async function upsertFixture(db: PostgresDb, fixture: SportFixture) {
     sport: fixture.sport,
     stage: fixture.round,
     matchday: fixture.matchday
+  });
+  await storeMatchDataSnapshot(db, {
+    matchId,
+    provider: "TheSportsDB",
+    sourceMatchId: fixture.id,
+    snapshotType: "fixture",
+    eventTimeUtc: fixture.utcDate,
+    rawPayload: fixture.sourcePayload ?? fixture,
+    normalizedPayload: toNormalizedFixtureSnapshot(fixture)
   });
 }
 

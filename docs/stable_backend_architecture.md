@@ -35,6 +35,10 @@ Postgres is the only database implementation in this rebuild.
 - API and workers use Postgres only.
 - Public API should use least-privilege credentials where possible.
 - Worker writes must be idempotent and audited.
+- `matches` and `predictions` hold the current readable state.
+- `match_data_snapshots` retains deduplicated raw and normalized provider payloads over time.
+- `prediction_revisions` retains every generated score, reasoning, prompt, input context, raw response, model version, token usage, latency and cost record.
+- A regenerated prediction may update the current row but must never erase its prior revision.
 
 ## Job Rules
 

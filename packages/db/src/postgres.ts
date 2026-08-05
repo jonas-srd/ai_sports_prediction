@@ -133,11 +133,31 @@ export type OddsRefreshCheckInput = {
 export type StoredPredictionInput = {
   matchId: string;
   modelId: string;
+  modelVersion?: string | null;
   predictedHome: number;
   predictedAway: number;
   confidence?: number | null;
   reason?: string | null;
+  promptText?: string | null;
+  inputContext?: unknown;
   rawResponse: unknown;
+  providerResponseId?: string | null;
+  latencyMs?: number | null;
+  inputTokens?: number | null;
+  outputTokens?: number | null;
+  costUsd?: number | null;
+  generatedAtUtc?: string | null;
+};
+
+export type MatchDataSnapshotInput = {
+  matchId: string;
+  provider: string;
+  sourceMatchId?: string | null;
+  snapshotType: string;
+  observedAtUtc?: string | null;
+  eventTimeUtc?: string | null;
+  rawPayload: unknown;
+  normalizedPayload?: unknown;
 };
 
 export function createPostgresPool(
@@ -379,6 +399,16 @@ export async function listLatestMatchPredictionsBySourceMatchIds(
         p.predicted_away,
         p.confidence,
         p.reason,
+        p.model_version as prediction_model_version,
+        p.prompt_text,
+        p.input_context,
+        p.provider_response_id,
+        p.latency_ms,
+        p.input_tokens,
+        p.output_tokens,
+        p.cost_usd,
+        p.generated_at_utc,
+        p.updated_at,
         p.created_at,
         m.source_match_id,
         m.home_team,
@@ -562,8 +592,14 @@ export async function listLatestMatchOddsBySourceMatchIds(db: PostgresDb, source
 
 export async function upsertStoredPrediction(db: PostgresDb, input: StoredPredictionInput): Promise<string> {
   const id = randomUUID();
-  const rawResponse = typeof input.rawResponse === "string" ? input.rawResponse : JSON.stringify(input.rawResponse);
-  const result = await db.query<{ id: string }>(
+  const generatedAtUtc = input.generatedAtUtc ?? new Date().toISOString();
+  const rawResponseJson = serializeJson(input.rawResponse);
+  const inputContextJson = input.inputContext === undefined ? null : serializeJson(input.inputContext);
+  const client = await db.connect();
+
+  try {
+    await client.query("begin");
+    const result = await client.query<{ id: string }>(
     `
       insert into predictions (
         id,
@@ -573,15 +609,35 @@ export async function upsertStoredPrediction(db: PostgresDb, input: StoredPredic
         predicted_away,
         confidence,
         reason,
-        raw_response
+        raw_response,
+        model_version,
+        prompt_text,
+        input_context,
+        provider_response_id,
+        latency_ms,
+        input_tokens,
+        output_tokens,
+        cost_usd,
+        generated_at_utc,
+        updated_at
       )
-      values ($1, $2, $3, $4, $5, $6, $7, $8)
+      values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11::jsonb, $12, $13, $14, $15, $16, $17, now())
       on conflict (match_id, model_id) do update set
         predicted_home = excluded.predicted_home,
         predicted_away = excluded.predicted_away,
         confidence = excluded.confidence,
         reason = excluded.reason,
-        raw_response = excluded.raw_response
+        raw_response = excluded.raw_response,
+        model_version = excluded.model_version,
+        prompt_text = excluded.prompt_text,
+        input_context = excluded.input_context,
+        provider_response_id = excluded.provider_response_id,
+        latency_ms = excluded.latency_ms,
+        input_tokens = excluded.input_tokens,
+        output_tokens = excluded.output_tokens,
+        cost_usd = excluded.cost_usd,
+        generated_at_utc = excluded.generated_at_utc,
+        updated_at = now()
       returning id
     `,
     [
@@ -592,11 +648,119 @@ export async function upsertStoredPrediction(db: PostgresDb, input: StoredPredic
       input.predictedAway,
       input.confidence ?? null,
       input.reason ?? null,
-      rawResponse
+      rawResponseJson,
+      input.modelVersion ?? null,
+      input.promptText ?? null,
+      inputContextJson,
+      input.providerResponseId ?? null,
+      input.latencyMs ?? null,
+      input.inputTokens ?? null,
+      input.outputTokens ?? null,
+      input.costUsd ?? null,
+      generatedAtUtc
     ]
   );
 
+    const predictionId = result.rows[0]?.id ?? id;
+    const revisionContent = {
+      matchId: input.matchId,
+      modelId: input.modelId,
+      modelVersion: input.modelVersion ?? null,
+      predictedHome: input.predictedHome,
+      predictedAway: input.predictedAway,
+      confidence: input.confidence ?? null,
+      reason: input.reason ?? null,
+      promptText: input.promptText ?? null,
+      inputContext: input.inputContext ?? null,
+      rawResponse: JSON.parse(rawResponseJson),
+      providerResponseId: input.providerResponseId ?? null
+    };
+    const contentHash = createHash("sha256").update(serializeJson(revisionContent)).digest("hex");
+    await client.query(
+    `
+      insert into prediction_revisions (
+        id, prediction_id, match_id, model_id, model_version,
+        predicted_home, predicted_away, confidence, reason,
+        prompt_text, input_context, raw_response, provider_response_id,
+        latency_ms, input_tokens, output_tokens, cost_usd,
+        generated_at_utc, content_hash
+      )
+      values (
+        $1, $2, $3, $4, $5,
+        $6, $7, $8, $9,
+        $10, $11::jsonb, $12::jsonb, $13,
+        $14, $15, $16, $17,
+        $18, $19
+      )
+      on conflict (prediction_id, content_hash) do nothing
+    `,
+    [
+      randomUUID(), predictionId, input.matchId, input.modelId, input.modelVersion ?? null,
+      input.predictedHome, input.predictedAway, input.confidence ?? null, input.reason ?? null,
+      input.promptText ?? null, inputContextJson, rawResponseJson, input.providerResponseId ?? null,
+      input.latencyMs ?? null, input.inputTokens ?? null, input.outputTokens ?? null, input.costUsd ?? null,
+      generatedAtUtc, contentHash
+    ]
+  );
+
+    await client.query("commit");
+    return predictionId;
+  } catch (error) {
+    await client.query("rollback").catch(() => undefined);
+    throw error;
+  } finally {
+    client.release();
+  }
+}
+
+export async function storeMatchDataSnapshot(db: PostgresDb, input: MatchDataSnapshotInput): Promise<string> {
+  const rawPayloadJson = serializeJson(input.rawPayload);
+  const normalizedPayloadJson = input.normalizedPayload === undefined ? null : serializeJson(input.normalizedPayload);
+  const contentHash = createHash("sha256")
+    .update(`${input.provider}:${input.snapshotType}:${rawPayloadJson}:${normalizedPayloadJson ?? ""}`)
+    .digest("hex");
+  const id = randomUUID();
+  const result = await db.query<{ id: string }>(
+    `
+      insert into match_data_snapshots (
+        id, match_id, provider, source_match_id, snapshot_type,
+        observed_at_utc, last_observed_at_utc, event_time_utc,
+        raw_payload, normalized_payload, content_hash
+      )
+      values ($1, $2, $3, $4, $5, $6, $6, $7, $8::jsonb, $9::jsonb, $10)
+      on conflict (match_id, provider, snapshot_type, content_hash) do update set
+        last_observed_at_utc = greatest(
+          match_data_snapshots.last_observed_at_utc,
+          excluded.last_observed_at_utc
+        ),
+        event_time_utc = coalesce(excluded.event_time_utc, match_data_snapshots.event_time_utc)
+      returning id
+    `,
+    [
+      id,
+      input.matchId,
+      input.provider,
+      input.sourceMatchId ?? null,
+      input.snapshotType,
+      input.observedAtUtc ?? new Date().toISOString(),
+      input.eventTimeUtc ?? null,
+      rawPayloadJson,
+      normalizedPayloadJson,
+      contentHash
+    ]
+  );
   return result.rows[0]?.id ?? id;
+}
+
+function serializeJson(value: unknown): string {
+  if (typeof value === "string") {
+    try {
+      return JSON.stringify(JSON.parse(value));
+    } catch {
+      return JSON.stringify({ text: value });
+    }
+  }
+  return JSON.stringify(value ?? null) ?? "null";
 }
 
 export async function listBackupArtifacts(db: PostgresDb): Promise<unknown[]> {
@@ -993,6 +1157,9 @@ export async function getCriticalTableRowCounts(db: PostgresDb): Promise<Record<
   const tables = [
     "models",
     "matches",
+    "match_data_snapshots",
+    "predictions",
+    "prediction_revisions",
     "match_odds",
     "odds_refresh_checks",
     "benchmark_predictions",

@@ -1,5 +1,5 @@
-import { type PostgresDb, upsertPredictionMatch } from "@ai-sports-prediction/db";
-import { fetchUpcomingFixtures } from "./generate-upcoming-sport-api-predictions";
+import { storeMatchDataSnapshot, type PostgresDb, upsertPredictionMatch } from "@ai-sports-prediction/db";
+import { fetchUpcomingFixtures, toNormalizedFixtureSnapshot } from "./generate-upcoming-sport-api-predictions";
 
 export async function syncUpcomingSportFixtures(db: PostgresDb) {
   const apiKey = [
@@ -11,8 +11,9 @@ export async function syncUpcomingSportFixtures(db: PostgresDb) {
 
   const fixtures = await fetchUpcomingFixtures(apiKey);
   for (const fixture of fixtures) {
+    const matchId = `sport-api:${fixture.id}`;
     await upsertPredictionMatch(db, {
-      id: `sport-api:${fixture.id}`,
+      id: matchId,
       utcDate: fixture.utcDate,
       competition: fixture.competition,
       homeTeam: fixture.homeTeam,
@@ -24,6 +25,15 @@ export async function syncUpcomingSportFixtures(db: PostgresDb) {
       sport: fixture.sport,
       stage: fixture.round,
       matchday: fixture.matchday
+    });
+    await storeMatchDataSnapshot(db, {
+      matchId,
+      provider: "TheSportsDB",
+      sourceMatchId: fixture.id,
+      snapshotType: "fixture",
+      eventTimeUtc: fixture.utcDate,
+      rawPayload: fixture.sourcePayload ?? fixture,
+      normalizedPayload: toNormalizedFixtureSnapshot(fixture)
     });
   }
   console.log(`Fixture synchronization finished: ${fixtures.length} upcoming fixtures stored.`);

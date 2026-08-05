@@ -18,6 +18,13 @@ export type GeneratedPublicPrediction = {
   predictedAway: number;
   confidence: number;
   reason: string;
+  promptText: string;
+  providerResponseId: string | null;
+  latencyMs: number;
+  inputTokens: number | null;
+  outputTokens: number | null;
+  costUsd: number | null;
+  generatedAtUtc: string;
   rawResponse: unknown;
 };
 
@@ -28,13 +35,15 @@ export async function generatePublicSportsPredictions(
   modelId: string,
   fixture: PublicPredictionFixture
 ): Promise<GeneratedPublicPrediction[]> {
-  const completion = await client.createChatCompletion(modelId, buildPublicPredictionPrompt(fixture), {
+  const promptText = buildPublicPredictionPrompt(fixture);
+  const completion = await client.createChatCompletion(modelId, promptText, {
     temperature: 0.15,
     maxTokens: 1200,
     responseFormat: { type: "json_object" }
   });
   const parsed = parseJsonObject(completion.content);
   const predictions = readRecord(parsed.predictions);
+  const generatedAtUtc = new Date().toISOString();
 
   return PROFILE_KEYS.map((profile) => {
     const row = readRecord(predictions[profile]);
@@ -53,6 +62,13 @@ export async function generatePublicSportsPredictions(
       predictedAway,
       confidence,
       reason,
+      promptText,
+      providerResponseId: completion.responseId,
+      latencyMs: completion.latencyMs,
+      inputTokens: completion.inputTokens,
+      outputTokens: completion.outputTokens,
+      costUsd: completion.costUsd,
+      generatedAtUtc,
       rawResponse: {
         profile,
         responseId: completion.responseId,

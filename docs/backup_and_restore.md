@@ -41,7 +41,7 @@ Run restore drills during active tournament periods:
 1. Restore a managed Postgres snapshot or PITR target into a temporary database.
 2. Apply migrations.
 3. Import or inspect the latest logical export.
-4. Check row counts for `matches`, `benchmark_predictions`, `prediction_evaluations`, `special_predictions`, and `backup_artifacts`.
+4. Check row counts for `matches`, `match_data_snapshots`, `predictions`, `prediction_revisions`, `benchmark_predictions`, `prediction_evaluations`, `special_predictions`, and `backup_artifacts`.
 5. Point API at the temporary database and call `/health`.
 6. Record the drill result.
 

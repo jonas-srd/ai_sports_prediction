@@ -68,7 +68,55 @@ export type PredictionRow = {
   predicted_away: number;
   confidence: number | null;
   reason: string | null;
+  model_version?: string | null;
+  prompt_text?: string | null;
+  input_context?: unknown;
   raw_response: unknown;
+  provider_response_id?: string | null;
+  latency_ms?: number | null;
+  input_tokens?: number | null;
+  output_tokens?: number | null;
+  cost_usd?: number | null;
+  generated_at_utc?: string | null;
+  updated_at?: string;
+  created_at: string;
+};
+
+export type MatchDataSnapshotRow = {
+  id: string;
+  match_id: string;
+  provider: string;
+  source_match_id: string | null;
+  snapshot_type: string;
+  observed_at_utc: string;
+  last_observed_at_utc: string;
+  event_time_utc: string | null;
+  raw_payload: unknown;
+  normalized_payload: unknown;
+  content_hash: string;
+  created_at: string;
+};
+
+export type PredictionRevisionRow = {
+  id: string;
+  prediction_id: string;
+  match_id: string;
+  model_id: string;
+  model_version: string | null;
+  predicted_home: number;
+  predicted_away: number;
+  confidence: number | null;
+  reason: string | null;
+  prompt_text: string | null;
+  input_context: unknown;
+  raw_response: unknown;
+  provider_response_id: string | null;
+  latency_ms: number | null;
+  input_tokens: number | null;
+  output_tokens: number | null;
+  cost_usd: number | null;
+  generated_at_utc: string;
+  content_hash: string;
   created_at: string;
 };
 
