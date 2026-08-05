@@ -1,5 +1,8 @@
 #!/usr/bin/env node
 import { execFileSync } from "node:child_process";
+import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 
 const region = process.env.AWS_REGION ?? "eu-central-1";
 const requiredSecrets = [
@@ -91,20 +94,26 @@ function aws(args) {
 }
 
 function putParameter(input) {
-  execFileSync("aws", [
-    "--region",
-    region,
-    "--cli-connect-timeout",
-    "5",
-    "--cli-read-timeout",
-    "60",
-    "ssm",
-    "put-parameter",
-    "--cli-input-json",
-    "file:///dev/stdin"
-  ], {
-    encoding: "utf8",
-    input: JSON.stringify(input),
-    stdio: ["pipe", "pipe", "pipe"]
-  });
+  const directory = mkdtempSync(join(tmpdir(), "ai-sports-ssm-"));
+  const inputFile = join(directory, "parameter.json");
+  writeFileSync(inputFile, JSON.stringify(input), { encoding: "utf8", mode: 0o600 });
+  try {
+    execFileSync("aws", [
+      "--region",
+      region,
+      "--cli-connect-timeout",
+      "5",
+      "--cli-read-timeout",
+      "60",
+      "ssm",
+      "put-parameter",
+      "--cli-input-json",
+      `file://${inputFile}`
+    ], {
+      encoding: "utf8",
+      stdio: ["ignore", "pipe", "pipe"]
+    });
+  } finally {
+    rmSync(directory, { recursive: true, force: true });
+  }
 }
