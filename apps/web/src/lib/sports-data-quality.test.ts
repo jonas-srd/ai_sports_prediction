@@ -124,7 +124,7 @@ test("requires confirmed flag URLs for tennis players", () => {
     expectedLeagueId: "4464",
     league: { id: "4464", name: "ATP", sportName: "Tennis" },
     matches: [match({
-      awayLogo: "https://flagcdn.com/w80/it.png",
+      awayLogo: "/sports-logos/flags/it.webp",
       awayName: "Jannik Sinner",
       competition: "ATP",
       homeLogo: null,

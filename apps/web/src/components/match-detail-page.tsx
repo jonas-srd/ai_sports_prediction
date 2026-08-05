@@ -532,6 +532,14 @@ function isSyntheticMatchId(matchId: string) {
 }
 
 function hydrateMatchLogos(sport: ApiSportId, match: SportApiMatch): SportApiMatch {
+  if (sport === "tennis") {
+    return {
+      ...match,
+      awayLogo: resolveTennisPlayerFlagUrl(match.awayName, match.awayLogo),
+      homeLogo: resolveTennisPlayerFlagUrl(match.homeName, match.homeLogo)
+    };
+  }
+
   return {
     ...match,
     awayLogo: match.awayLogo ?? findParticipantLogo(sport, match.awayName),

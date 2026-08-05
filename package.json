@@ -26,6 +26,7 @@
     "test:special": "node --import tsx packages/llm/src/special-questions.test.ts",
     "load:test": "node scripts/load-test.mjs",
     "sync:sports-logos": "node scripts/run-with-env.mjs node scripts/sync-sports-logos.mjs",
+    "sync:tennis-flags": "node scripts/sync-tennis-flags.mjs",
     "aws:deploy-cloudflare-edge": "node scripts/deploy-cloudflare-edge.mjs",
     "aws:deploy-worker": "node scripts/deploy-aws-worker.mjs",
     "aws:rollback": "node scripts/rollback-aws-services.mjs",

@@ -208,15 +208,16 @@ export function resolveTennisPlayerCountryCode(name: null | string | undefined) 
 export function getTennisFlagUrl(countryCode: null | string | undefined) {
   const normalized = countryCode?.trim().toLowerCase();
 
-  if (!normalized || normalized === "un" || normalized === "xx") {
+  if (!normalized || normalized === "un" || normalized === "xx" || !/^[a-z]{2}$/.test(normalized)) {
     return null;
   }
 
-  return `https://flagcdn.com/w80/${normalized}.png`;
+  return `/sports-logos/flags/${normalized}.webp`;
 }
 
 export function resolveTennisPlayerFlagUrl(name: null | string | undefined, currentLogo?: null | string) {
-  return currentLogo || getTennisFlagUrl(resolveTennisPlayerCountryCode(name));
+  const countryCode = resolveTennisPlayerCountryCode(name) ?? getCountryCodeFromTennisFlagUrl(currentLogo);
+  return getTennisFlagUrl(countryCode);
 }
 
 export function getTennisTournament(slug: string) {
@@ -255,6 +256,28 @@ function normalizeTennisPlayerName(value: string) {
     .replace(/[^a-zA-Z0-9]+/g, " ")
     .trim()
     .toLowerCase();
+}
+
+function getCountryCodeFromTennisFlagUrl(value: null | string | undefined) {
+  const candidate = value?.trim();
+  if (!candidate) {
+    return null;
+  }
+
+  const localMatch = candidate.match(/^\/sports-logos\/flags\/([a-z]{2})\.webp$/i);
+  if (localMatch) {
+    return localMatch[1].toLowerCase();
+  }
+
+  try {
+    const url = new URL(candidate);
+    if (url.hostname !== "flagcdn.com" && !url.hostname.endsWith(".flagcdn.com")) {
+      return null;
+    }
+    return url.pathname.match(/\/([a-z]{2})\.(?:png|svg|webp)$/i)?.[1]?.toLowerCase() ?? null;
+  } catch {
+    return null;
+  }
 }
 
 function buildUniqueLastNameCountryAliases() {

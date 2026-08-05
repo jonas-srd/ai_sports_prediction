@@ -3,7 +3,7 @@ import { notFound } from "next/navigation";
 import { localizePath, type Locale } from "@/lib/i18n";
 import { getSportsNewsLinks } from "@/lib/sports-news";
 import { getSportApiSnapshot, type SportApiMatch } from "@/lib/sports-api-data";
-import { findTennisPlayerByName, getTennisFlagUrl, getTennisPlayer, getTennisTournament, resolveTennisPlayerCountryCode, tennisPlayers, tennisTournaments, type TennisPlayer, type TennisTournament } from "@/lib/tennis-data";
+import { findTennisPlayerByName, getTennisFlagUrl, getTennisPlayer, getTennisTournament, resolveTennisPlayerCountryCode, resolveTennisPlayerFlagUrl, tennisPlayers, tennisTournaments, type TennisPlayer, type TennisTournament } from "@/lib/tennis-data";
 import { getAtpRankingSnapshot, type TennisRankingRow, type TennisRankingSnapshot } from "@/lib/tennis-rankings";
 import { getSportMatchHref } from "@/components/match-detail-page";
 import { SportsNewsCards } from "@/components/sports-news-cards";
@@ -983,7 +983,7 @@ function TennisPlayerAvatar({ className = "", player }: { className?: string; pl
 }
 
 function TennisNameMark({ logo, name }: { logo?: null | string; name: string }) {
-  const resolvedLogo = logo || getTennisFlagUrl(resolveTennisPlayerCountryCode(name));
+  const resolvedLogo = resolveTennisPlayerFlagUrl(name, logo);
 
   if (resolvedLogo) {
     return (
@@ -1112,9 +1112,9 @@ function hydrateTennisMatches(matches: SportApiMatch[]) {
 
     return {
       ...match,
-      homeLogo: match.homeLogo || getTennisFlagUrl(homeCountryCode),
+      homeLogo: resolveTennisPlayerFlagUrl(match.homeName, match.homeLogo) || getTennisFlagUrl(homeCountryCode),
       homeName: home?.name ?? match.homeName,
-      awayLogo: match.awayLogo || getTennisFlagUrl(awayCountryCode),
+      awayLogo: resolveTennisPlayerFlagUrl(match.awayName, match.awayLogo) || getTennisFlagUrl(awayCountryCode),
       awayName: away?.name ?? match.awayName
     };
   });

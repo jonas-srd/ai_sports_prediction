@@ -13,15 +13,17 @@ test("does not match a different player just because a known surname appears as 
 });
 
 test("returns tennis flag urls for national players only", () => {
-  assert.equal(getTennisFlagUrl("gb"), "https://flagcdn.com/w80/gb.png");
+  assert.equal(getTennisFlagUrl("gb"), "/sports-logos/flags/gb.webp");
   assert.equal(getTennisFlagUrl("un"), null);
   assert.equal(getTennisFlagUrl("xx"), null);
+  assert.equal(getTennisFlagUrl("invalid"), null);
 });
 
 test("resolves live API tennis names through one shared flag fallback", () => {
   assert.equal(resolveTennisPlayerCountryCode("Pellegrino"), "it");
   assert.equal(resolveTennisPlayerCountryCode("Yannick Hanfmann"), "de");
-  assert.equal(resolveTennisPlayerFlagUrl("Andrey Rublev"), "https://flagcdn.com/w80/ru.png");
-  assert.equal(resolveTennisPlayerFlagUrl("Pellegrino"), "https://flagcdn.com/w80/it.png");
-  assert.equal(resolveTennisPlayerFlagUrl("Hanfmann"), "https://flagcdn.com/w80/de.png");
+  assert.equal(resolveTennisPlayerFlagUrl("Andrey Rublev"), "/sports-logos/flags/ru.webp");
+  assert.equal(resolveTennisPlayerFlagUrl("Pellegrino"), "/sports-logos/flags/it.webp");
+  assert.equal(resolveTennisPlayerFlagUrl("Hanfmann"), "/sports-logos/flags/de.webp");
+  assert.equal(resolveTennisPlayerFlagUrl("New Player", "https://flagcdn.com/w80/fr.png"), "/sports-logos/flags/fr.webp");
 });

@@ -697,8 +697,12 @@ function hasCompleteOfficialLogos(match: PublicWidgetMatch): boolean {
 }
 
 function getPreviewParticipantLogo(currentLogo: string | null, name: string, sport: Exclude<WidgetSport, "all">): string | null {
+  if (sport === "tennis") {
+    return getOfficialWidgetLogo(resolveTennisPlayerFlagUrl(name, currentLogo));
+  }
+
   return getOfficialWidgetLogo(currentLogo)
-    ?? (sport === "tennis" ? getOfficialWidgetLogo(resolveTennisPlayerFlagUrl(name)) : null);
+    ?? null;
 }
 
 function compareWidgetMatches(left: PublicWidgetMatch, right: PublicWidgetMatch): number {

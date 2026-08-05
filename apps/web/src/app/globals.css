@@ -5590,7 +5590,7 @@ a.matchDetailParticipant:focus-visible {
   width: 48px;
 }
 
-.homeLiveGames .homeHighlightTeams img.sportLiveLogo[src*="flagcdn.com"] {
+.homeLiveGames .homeHighlightTeams img.sportLiveLogo[src^="/sports-logos/flags/"] {
   border: 1px solid rgba(255, 255, 255, 0.16);
   border-radius: 3px;
   box-shadow: 0 5px 14px rgba(0, 0, 0, 0.22);

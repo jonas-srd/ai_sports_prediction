@@ -9,7 +9,7 @@ export function getOfficialWidgetLogo(value: string | null | undefined): string 
 
 export function isStoredSportsAssetPath(value: string | null | undefined): boolean {
   const candidate = value?.trim();
-  return Boolean(candidate && /^\/sports-logos\/(?:teams|leagues)\/[a-z0-9-]+\.webp$/i.test(candidate));
+  return Boolean(candidate && /^\/sports-logos\/(?:teams|leagues|flags)\/[a-z0-9-]+\.webp$/i.test(candidate));
 }
 
 export function isOfficialWidgetLogoUrl(value: string | null | undefined): boolean {
@@ -46,16 +46,5 @@ export function isRealRemoteSportsAssetUrl(value: string | null | undefined): bo
 
 export function isVerifiedTennisFlagUrl(value: string | null | undefined): boolean {
   const candidate = value?.trim();
-  if (!candidate) {
-    return false;
-  }
-
-  try {
-    const url = new URL(candidate);
-    return url.protocol === "https:"
-      && (url.hostname === "flagcdn.com" || url.hostname.endsWith(".flagcdn.com"))
-      && /\/[a-z]{2}\.(?:png|svg)$/i.test(url.pathname);
-  } catch {
-    return false;
-  }
+  return Boolean(candidate && /^\/sports-logos\/flags\/[a-z]{2}\.webp$/i.test(candidate));
 }

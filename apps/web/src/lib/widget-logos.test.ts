@@ -10,6 +10,7 @@ test("accepts external HTTPS API logos", () => {
 test("accepts locally stored sports logos", () => {
   assert.equal(isOfficialWidgetLogoUrl("/sports-logos/teams/133602.webp"), true);
   assert.equal(isOfficialWidgetLogoUrl("/sports-logos/leagues/premier-league.webp"), true);
+  assert.equal(isOfficialWidgetLogoUrl("/sports-logos/flags/de.webp"), true);
   assert.equal(isOfficialWidgetLogoUrl("/sports-logos/../private.webp"), false);
 });
 
