@@ -38,7 +38,7 @@ jobs:
       - run: npm run build
 
       - name: Configure AWS access via OpenID Connect
-        uses: aws-actions/configure-aws-credentials@v4
+        uses: aws-actions/configure-aws-credentials@v6
         with:
           aws-region: ${{ env.AWS_REGION }}
           role-to-assume: ${{ secrets.AWS_GITHUB_DEPLOY_ROLE_ARN }}
