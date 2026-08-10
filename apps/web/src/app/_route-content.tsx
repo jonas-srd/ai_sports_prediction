@@ -27,8 +27,7 @@ import { ensureSportApiMatchPredictions } from "@/lib/stored-sports-predictions"
 import {
   OpenRouterPredictionPending,
   PredictionModelSelector,
-  SelectedHomePrediction,
-  SelectedPredictionScore
+  SelectedHomePrediction
 } from "@/components/prediction-model-selector";
 
 const homeExperience = {
@@ -856,9 +855,7 @@ function HomeHighlightCard({ highlight, locale }: { highlight: HomeMatchHighligh
             <span>{actualScore ?? "–"}</span>
             <small>{copy.currentScore}</small>
           </div>
-        ) : highlight.prediction
-          ? <SelectedPredictionScore actualScore={actualScore} variants={highlight.prediction} />
-          : <em>{actualScore ?? "–"}</em>}
+        ) : <span aria-hidden="true" className="homeScorePlaceholder" />}
         <div>
           <SportTeamLogo logo={highlight.match.awayLogo} name={highlight.match.awayName} />
           <strong>{highlight.match.awayName}</strong>

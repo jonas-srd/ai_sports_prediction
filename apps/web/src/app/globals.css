@@ -5431,16 +5431,11 @@ a.matchDetailParticipant:focus-visible {
   width: 42px;
 }
 
-.homeHighlightTeams em {
-  background: rgba(255, 255, 255, 0.09);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 8px;
-  color: #f8fbff;
-  font-style: normal;
-  font-weight: 950;
+.homeScorePlaceholder {
+  align-self: start;
+  height: 1px;
   margin-top: 52px;
-  padding: 10px 14px;
-  white-space: nowrap;
+  width: 78px;
 }
 
 .homeHighlightCard p {
@@ -5787,9 +5782,8 @@ a.matchDetailParticipant:focus-visible {
     min-height: 0;
   }
 
-  .homeHighlightTeams em {
-    justify-self: center;
-    margin-top: 0;
+  .homeScorePlaceholder {
+    display: none;
   }
 
   .homeLiveGames .homeHighlightTeams .homeLiveScoreBox {

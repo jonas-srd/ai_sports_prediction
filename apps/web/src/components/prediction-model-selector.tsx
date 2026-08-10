@@ -221,17 +221,6 @@ export function OpenRouterPredictionPending({
   );
 }
 
-export function SelectedPredictionScore({
-  actualScore,
-  variants
-}: {
-  actualScore?: string | null;
-  variants: ModelPredictionSet;
-}) {
-  const { model } = usePredictionModel();
-  return <em>{actualScore ?? variants[model].score}</em>;
-}
-
 export function SelectedModelSignal({
   eyebrow,
   locale,
