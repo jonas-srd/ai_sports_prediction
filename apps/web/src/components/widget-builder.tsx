@@ -781,7 +781,7 @@ function buildEmbedCode({
     `  data-show-reasoning="${showReasoning ? "1" : "0"}"`,
     `  data-show-branding="${showBranding ? "1" : "0"}"`,
     "></div>",
-    '<script async src="https://www.ai-sports-prediction.net/widgets.js"></script>'
+    '<script async src="https://residualsports.com/widgets.js"></script>'
   ].filter(Boolean);
 
   return lines.join("\n");

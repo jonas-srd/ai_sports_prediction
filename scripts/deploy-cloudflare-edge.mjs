@@ -79,13 +79,13 @@ const taskDefinition = {
         { name: "INTERNAL_API_URL", value: env("WEB_INTERNAL_API_URL", "http://127.0.0.1:3001") },
         { name: "SHOW_FULL_SITE", value: env("SHOW_FULL_SITE", "0") },
         { name: "NEXT_PUBLIC_SHOW_FULL_SITE", value: env("NEXT_PUBLIC_SHOW_FULL_SITE", "0") },
-        { name: "NEXT_PUBLIC_SITE_URL", value: env("NEXT_PUBLIC_SITE_URL", "https://www.ai-sports-prediction.net") },
+        { name: "NEXT_PUBLIC_SITE_URL", value: env("NEXT_PUBLIC_SITE_URL", "https://residualsports.com") },
         { name: "GA4_MEASUREMENT_ID", value: env("GA4_MEASUREMENT_ID", "G-KSGFX9TKD8") },
         { name: "ADMIN_SESSION_TTL_HOURS", value: env("ADMIN_SESSION_TTL_HOURS", "168") },
         { name: "OPENROUTER_MODEL_IDS", value: env("OPENROUTER_MODEL_IDS", "openai/gpt-oss-20b:free") },
-        { name: "OPENROUTER_SITE_URL", value: env("OPENROUTER_SITE_URL", "https://www.ai-sports-prediction.net") },
+        { name: "OPENROUTER_SITE_URL", value: env("OPENROUTER_SITE_URL", "https://residualsports.com") },
         { name: "OPENROUTER_SITE_NAME", value: env("OPENROUTER_SITE_NAME", "Residual Sports") },
-        { name: "NEWSLETTER_FROM_EMAIL", value: env("NEWSLETTER_FROM_EMAIL", "Residual Sports <ai-sports-prediction@outlook.com>") },
+        { name: "NEWSLETTER_FROM_EMAIL", value: env("NEWSLETTER_FROM_EMAIL", "Residual Sports <hello@residualsports.com>") },
         { name: "THE_ODDS_API_REGIONS", value: env("THE_ODDS_API_REGIONS", "eu,us") },
         { name: "ODDS_REFRESH_LOOKAHEAD_DAYS", value: env("ODDS_REFRESH_LOOKAHEAD_DAYS", "7") },
         { name: "THE_SPORTS_DB_CACHE_SECONDS", value: env("THE_SPORTS_DB_CACHE_SECONDS", "300") },
@@ -99,7 +99,7 @@ const taskDefinition = {
         { name: "WEB_API_CACHE_SECONDS", value: env("WEB_API_CACHE_SECONDS", "60") },
         { name: "WEB_API_ODDS_CACHE_SECONDS", value: env("WEB_API_ODDS_CACHE_SECONDS", "60") },
         { name: "OUTREACH_SEARCH_PROVIDER", value: env("OUTREACH_SEARCH_PROVIDER", "serpapi") }
-        ,{ name: "PUBLIC_SITE_URL", value: env("PUBLIC_SITE_URL", "https://www.ai-sports-prediction.net") }
+        ,{ name: "PUBLIC_SITE_URL", value: env("PUBLIC_SITE_URL", "https://residualsports.com") }
         ,{ name: "WIDGET_CUSTOMER_SESSION_TTL_HOURS", value: env("WIDGET_CUSTOMER_SESSION_TTL_HOURS", "720") }
         ,{ name: "WIDGET_ACCESS_FROM_EMAIL", value: env("WIDGET_ACCESS_FROM_EMAIL", "") }
       ],
@@ -143,7 +143,7 @@ const taskDefinition = {
           name: "DATABASE_SSL_CA_FILE",
           value: env("DATABASE_SSL_CA_FILE", "/etc/ssl/certs/aws-rds-global-bundle.pem")
         },
-        { name: "API_CORS_ORIGIN", value: env("API_CORS_ORIGIN", "https://www.ai-sports-prediction.net") },
+        { name: "API_CORS_ORIGIN", value: env("API_CORS_ORIGIN", "https://residualsports.com") },
         { name: "API_CACHE_ENABLED", value: env("API_CACHE_ENABLED", "1") },
         { name: "API_CACHE_MATCHES_TTL_SECONDS", value: env("API_CACHE_MATCHES_TTL_SECONDS", "300") },
         { name: "API_CACHE_ODDS_TTL_SECONDS", value: env("API_CACHE_ODDS_TTL_SECONDS", "60") },
@@ -151,7 +151,7 @@ const taskDefinition = {
         { name: "API_CACHE_SPECIAL_TTL_SECONDS", value: env("API_CACHE_SPECIAL_TTL_SECONDS", "300") },
         { name: "API_CACHE_HEALTH_TTL_SECONDS", value: env("API_CACHE_HEALTH_TTL_SECONDS", "2") },
         { name: "OPENROUTER_MODEL_IDS", value: env("OPENROUTER_MODEL_IDS", "openai/gpt-oss-20b:free") },
-        { name: "OPENROUTER_SITE_URL", value: env("OPENROUTER_SITE_URL", "https://www.ai-sports-prediction.net") },
+        { name: "OPENROUTER_SITE_URL", value: env("OPENROUTER_SITE_URL", "https://residualsports.com") },
         { name: "OPENROUTER_SITE_NAME", value: env("OPENROUTER_SITE_NAME", "Residual Sports") }
       ],
       secrets: [
@@ -179,7 +179,7 @@ const taskDefinition = {
         ["DATABASE_SSL_REJECT_UNAUTHORIZED", env("DATABASE_SSL_REJECT_UNAUTHORIZED", "1")],
         ["DATABASE_SSL_CA_FILE", "/etc/ssl/certs/aws-rds-global-bundle.pem"],
         ["OPENROUTER_MODEL_IDS", env("OPENROUTER_MODEL_IDS", "openai/gpt-oss-20b:free")],
-        ["OPENROUTER_SITE_URL", env("OPENROUTER_SITE_URL", "https://www.ai-sports-prediction.net")],
+        ["OPENROUTER_SITE_URL", env("OPENROUTER_SITE_URL", "https://residualsports.com")],
         ["OPENROUTER_SITE_NAME", env("OPENROUTER_SITE_NAME", "Residual Sports")],
         ["FIXTURE_SYNC_INTERVAL_MINUTES", env("FIXTURE_SYNC_INTERVAL_MINUTES", "15")],
         ["LIVE_SCORE_SYNC_INTERVAL_MINUTES", env("LIVE_SCORE_SYNC_INTERVAL_MINUTES", "2")],
@@ -197,14 +197,14 @@ const taskDefinition = {
         ["BACKUP_S3_PREFIX", env("BACKUP_S3_PREFIX", "ai-sports-prediction/backups")],
         ["POSTGRES_BACKUP_DIR", "/tmp/postgres-backups"],
         ["OPS_ALERT_EMAILS", env("OPS_ALERT_EMAILS", "")],
-        ["OPS_ALERT_FROM_EMAIL", env("OPS_ALERT_FROM_EMAIL", "Residual Sports <ai-sports-prediction@outlook.com>")],
-        ["NEWSLETTER_FROM_EMAIL", env("NEWSLETTER_FROM_EMAIL", "Residual Sports <ai-sports-prediction@outlook.com>")],
+        ["OPS_ALERT_FROM_EMAIL", env("OPS_ALERT_FROM_EMAIL", "Residual Sports <ops@residualsports.com>")],
+        ["NEWSLETTER_FROM_EMAIL", env("NEWSLETTER_FROM_EMAIL", "Residual Sports <hello@residualsports.com>")],
         ["MARKETING_AUTOMATION_ENABLED", env("MARKETING_AUTOMATION_ENABLED", "0")],
         ["MARKETING_ANALYTICS_ENABLED", env("MARKETING_ANALYTICS_ENABLED", "1")],
         ["GA4_MEASUREMENT_ID", env("GA4_MEASUREMENT_ID", "G-KSGFX9TKD8")],
         ["REVENUE_AUTOMATION_ENABLED", env("REVENUE_AUTOMATION_ENABLED", "1")],
         ["REVENUE_AUTOMATION_INTERVAL_MINUTES", env("REVENUE_AUTOMATION_INTERVAL_MINUTES", "60")],
-        ["PUBLIC_SITE_URL", env("PUBLIC_SITE_URL", "https://www.ai-sports-prediction.net")],
+        ["PUBLIC_SITE_URL", env("PUBLIC_SITE_URL", "https://residualsports.com")],
         ["WIDGET_ACCESS_FROM_EMAIL", env("WIDGET_ACCESS_FROM_EMAIL", "")],
         ["SALES_ALERT_EMAILS", env("SALES_ALERT_EMAILS", "")]
       ].map(([name, value]) => ({ name, value })),

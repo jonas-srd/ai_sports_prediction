@@ -170,7 +170,7 @@ export function WidgetsPageContent({ locale }: { locale: Locale }) {
       { "@type": "Offer", price: "49", priceCurrency: "EUR", name: "Starter monthly" },
       { "@type": "Offer", price: "149", priceCurrency: "EUR", name: "Growth monthly" }
     ],
-    url: `https://www.ai-sports-prediction.net${locale === "de" ? "/de" : ""}/widgets`
+    url: `https://residualsports.com${locale === "de" ? "/de" : ""}/widgets`
   };
 
   return (

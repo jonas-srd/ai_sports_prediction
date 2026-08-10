@@ -8,11 +8,11 @@
       try {
         return new URL(currentScript.src).origin;
       } catch (_error) {
-        return "https://www.ai-sports-prediction.net";
+        return "https://residualsports.com";
       }
     }
 
-    return "https://www.ai-sports-prediction.net";
+    return "https://residualsports.com";
   }
 
   function normalizeBoolean(value, fallback) {

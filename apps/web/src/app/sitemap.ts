@@ -1,6 +1,6 @@
 import type { MetadataRoute } from "next";
 
-const base = "https://www.ai-sports-prediction.net";
+const base = "https://residualsports.com";
 
 const paths = [
   "",

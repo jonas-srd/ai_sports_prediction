@@ -12,7 +12,7 @@ import "./sportschau-nav.css";
 import "./prediction-layout.css";
 
 export const metadata: Metadata = {
-  metadataBase: new URL("https://www.ai-sports-prediction.net"),
+  metadataBase: new URL("https://residualsports.com"),
   title: "Residual Sports",
   description: "AI predictions, match signals and model analytics for football, NFL, NBA and tennis.",
   openGraph: {

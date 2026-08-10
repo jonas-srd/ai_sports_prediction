@@ -71,8 +71,8 @@ ai-sports-prediction/resend-api-key
 In the Cloudflare tunnel settings, add public hostnames:
 
 ```text
-www.ai-sports-prediction.net  -> HTTP -> http://127.0.0.1:3000
-api.ai-sports-prediction.net  -> HTTP -> http://127.0.0.1:3001
+residualsports.com  -> HTTP -> http://127.0.0.1:3000
+api.residualsports.com  -> HTTP -> http://127.0.0.1:3001
 ```
 
 Do not expose admin backup endpoints as a public hostname.
@@ -82,7 +82,7 @@ Do not expose admin backup endpoints as a public hostname.
 Add a dedicated tunnel hostname:
 
 ```text
-cockpit.ai-sports-prediction.net -> HTTP -> http://127.0.0.1:3000
+cockpit.residualsports.com -> HTTP -> http://127.0.0.1:3000
 ```
 
 The application protects `/admin/*` and `/api/admin/*` with its own authenticator
@@ -119,7 +119,7 @@ Website HTML:
 ```text
 Name: Cache public website pages
 When incoming requests match:
-  Hostname equals www.ai-sports-prediction.net
+  Hostname equals residualsports.com
   URI Path does not start with /api/
 Then:
   Eligible for cache: true
@@ -131,7 +131,7 @@ Public API reads:
 ```text
 Name: Cache public API reads
 When incoming requests match:
-  Hostname equals api.ai-sports-prediction.net
+  Hostname equals api.residualsports.com
   URI Path starts with /v1/
 Then:
   Eligible for cache: true
@@ -201,14 +201,14 @@ Networks -> Tunnels -> ai-sports-prediction -> Status: Healthy
 Check the app:
 
 ```bash
-curl -I https://www.ai-sports-prediction.net
-curl -I https://api.ai-sports-prediction.net/health
+curl -I https://residualsports.com
+curl -I https://api.residualsports.com/health
 ```
 
 For cache verification:
 
 ```bash
-npm run load:test -- --url https://api.ai-sports-prediction.net/v1/matches --requests 100 --concurrency 10
+npm run load:test -- --url https://api.residualsports.com/v1/matches --requests 100 --concurrency 10
 ```
 
 Expected after warmup:

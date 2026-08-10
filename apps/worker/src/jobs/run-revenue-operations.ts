@@ -229,7 +229,7 @@ async function insertEvent(
 
 async function sendCustomerEmail(event: PendingEvent) {
   const german = event.locale === "de";
-  const site = (process.env.PUBLIC_SITE_URL ?? "https://www.ai-sports-prediction.net").replace(/\/$/, "");
+  const site = (process.env.PUBLIC_SITE_URL ?? "https://residualsports.com").replace(/\/$/, "");
   const account = `${site}${german ? "/de" : ""}/widgets/account`;
   const checkout = `${site}${german ? "/de" : ""}/widgets/checkout?plan=${event.plan ?? "starter"}&billing=${event.billing_interval ?? "monthly"}`;
   const copy = getCustomerCopy(event.event_type, german, { account, checkout, percent: Number(event.payload.percent ?? 0) });
@@ -242,7 +242,7 @@ async function sendInternalAlert(event: PendingEvent) {
   await sendEmail(
     recipients,
     `Enterprise-Lead wartet: ${event.publication_name ?? event.email}`,
-    `Ein Enterprise-Lead benötigt eine Antwort.\n\nPublikation: ${event.publication_name ?? "-"}\nE-Mail: ${event.email ?? "-"}\nLead-ID: ${event.lead_id ?? "-"}\n\nIm Admin-Cockpit öffnen: ${(process.env.PUBLIC_SITE_URL ?? "https://www.ai-sports-prediction.net").replace(/\/$/, "")}/admin/leads`
+    `Ein Enterprise-Lead benötigt eine Antwort.\n\nPublikation: ${event.publication_name ?? "-"}\nE-Mail: ${event.email ?? "-"}\nLead-ID: ${event.lead_id ?? "-"}\n\nIm Admin-Cockpit öffnen: ${(process.env.PUBLIC_SITE_URL ?? "https://residualsports.com").replace(/\/$/, "")}/admin/leads`
   );
 }
 

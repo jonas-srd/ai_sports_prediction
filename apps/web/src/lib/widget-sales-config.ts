@@ -20,7 +20,7 @@ export function getWidgetSellerDetails(): WidgetSellerDetails {
     city: read("LEGAL_SELLER_CITY", "München"),
     country: read("LEGAL_SELLER_COUNTRY", "Deutschland"),
     countryCode: read("LEGAL_SELLER_COUNTRY_CODE", "DE").toUpperCase(),
-    email: read("LEGAL_SELLER_EMAIL", "ai-sports-prediction@outlook.com"),
+    email: read("LEGAL_SELLER_EMAIL", "hello@residualsports.com"),
     name: read("LEGAL_SELLER_NAME", "Jonas Schröder"),
     postalCode: read("LEGAL_SELLER_POSTAL_CODE", "81541"),
     street: read("LEGAL_SELLER_STREET", ""),

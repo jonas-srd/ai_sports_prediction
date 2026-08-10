@@ -8,7 +8,7 @@ import { OpenRouterClient } from "@ai-sports-prediction/llm";
 
 const BOT_NAME = "Residual-Sports-OutreachBot";
 const BOT_CONTACT_URL = process.env.OUTREACH_BOT_CONTACT_URL
-  ?? "https://www.ai-sports-prediction.net/de/impressum";
+  ?? "https://residualsports.com/de/impressum";
 const BOT_USER_AGENT = `${BOT_NAME}/1.0 (+${BOT_CONTACT_URL})`;
 export type OutreachEmailLanguage = "de" | "en" | "es" | "fr" | "it" | "nl";
 export type OutreachResearchOptions = {

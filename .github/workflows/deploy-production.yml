@@ -80,7 +80,7 @@ jobs:
           EDGE_TASK_ARN=$(aws ecs list-tasks --cluster "$ECS_CLUSTER" --service-name "$ECS_EDGE_SERVICE" --desired-status RUNNING --query 'taskArns[0]' --output text)
           WORKER_STATUS=$(aws ecs describe-tasks --cluster "$ECS_CLUSTER" --tasks "$EDGE_TASK_ARN" --query 'tasks[0].containers[?name==`worker`].lastStatus | [0]' --output text)
           test "$WORKER_STATUS" = "RUNNING"
-          curl --fail --silent --show-error --retry 12 --retry-delay 5 https://www.ai-sports-prediction.net/api/health
+          curl --fail --silent --show-error --retry 12 --retry-delay 5 https://residualsports.com/api/health
 
       - name: Retire standalone worker after successful verification
         run: |

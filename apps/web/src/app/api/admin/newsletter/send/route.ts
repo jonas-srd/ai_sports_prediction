@@ -152,7 +152,7 @@ async function sendWithResend({
 }
 
 function buildUnsubscribeUrl(token: string): string {
-  const origin = process.env.NEXT_PUBLIC_SITE_URL ?? "https://www.ai-sports-prediction.net";
+  const origin = process.env.NEXT_PUBLIC_SITE_URL ?? "https://residualsports.com";
   return `${origin.replace(/\/$/, "")}/api/newsletter/unsubscribe?token=${encodeURIComponent(token)}`;
 }
 

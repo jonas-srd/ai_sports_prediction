@@ -469,7 +469,7 @@ function buildMarketingPosts(
   const story = findAsset("instagram_story");
   const landscape = findAsset("social_landscape");
   const tiktokPhoto = findAsset("tiktok_photo");
-  const websiteUrl = process.env.MARKETING_PREDICTION_URL?.trim() || "https://www.ai-sports-prediction.net";
+  const websiteUrl = process.env.MARKETING_PREDICTION_URL?.trim() || "https://residualsports.com";
   const posts: Array<{
     campaignId: string;
     platform: MarketingPlatform;

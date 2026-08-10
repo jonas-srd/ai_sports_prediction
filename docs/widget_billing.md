@@ -28,7 +28,7 @@ The webhook converts an annual Checkout subscription to a schedule: the current 
 2. Configure all `STRIPE_*` and `WIDGET_*` variables documented in `.env.example`.
 3. Enable SEPA Direct Debit in Stripe and make sure every configured price is in EUR.
 4. Activate Stripe Tax, configure the seller's German tax registration and assign the correct tax code to the widget products. Checkout requires the billing address, supports business tax IDs and calculates applicable VAT automatically.
-5. Register `https://www.ai-sports-prediction.net/api/widgets/stripe/webhook` as a Stripe webhook endpoint.
+5. Register `https://residualsports.com/api/widgets/stripe/webhook` as a Stripe webhook endpoint.
 6. Subscribe it to `checkout.session.completed`, `checkout.session.async_payment_succeeded`, `invoice.paid`, `invoice.payment_failed`, `customer.subscription.updated`, and `customer.subscription.deleted`.
 7. Configure a Resend-verified sender in `WIDGET_ACCESS_FROM_EMAIL`.
 8. Apply migration `0010_widget_invoice_details.sql` so invoice and contact details can be retained for customer support and invoice delivery.

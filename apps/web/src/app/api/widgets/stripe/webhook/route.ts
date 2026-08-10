@@ -534,8 +534,8 @@ async function sendWidgetAccessEmail({ apiKey, lead }: { apiKey: string; lead: W
   const subject = isGerman ? "Dein Residual Sports Widget-Zugang" : "Your Residual Sports widget access";
   const minimumTerm = formatDate(lead.minimum_term_ends_at_utc, lead.locale);
   const html = isGerman
-    ? `<h1>Widget-Zugang aktiviert</h1><p>Dein bezahlter ${escapeHtml(lead.requested_plan)}-Tarif ist aktiv.</p><p><strong>Publisher-Key:</strong></p><pre>${escapeHtml(apiKey)}</pre><p>Freigegebene Domain: ${escapeHtml(lead.domain)}</p><p>Mindestlaufzeit bis ${escapeHtml(minimumTerm)}. Danach verlängert sich der Vertrag monatlich und ist monatlich kündbar.</p><p>Builder: <a href="https://www.ai-sports-prediction.net/de/widgets">Widgets öffnen</a></p>`
-    : `<h1>Widget access activated</h1><p>Your paid ${escapeHtml(lead.requested_plan)} plan is active.</p><p><strong>Publisher key:</strong></p><pre>${escapeHtml(apiKey)}</pre><p>Approved domain: ${escapeHtml(lead.domain)}</p><p>Minimum term through ${escapeHtml(minimumTerm)}. Afterwards, the contract renews monthly and can be cancelled monthly.</p><p>Builder: <a href="https://www.ai-sports-prediction.net/widgets">Open widgets</a></p>`;
+    ? `<h1>Widget-Zugang aktiviert</h1><p>Dein bezahlter ${escapeHtml(lead.requested_plan)}-Tarif ist aktiv.</p><p><strong>Publisher-Key:</strong></p><pre>${escapeHtml(apiKey)}</pre><p>Freigegebene Domain: ${escapeHtml(lead.domain)}</p><p>Mindestlaufzeit bis ${escapeHtml(minimumTerm)}. Danach verlängert sich der Vertrag monatlich und ist monatlich kündbar.</p><p>Builder: <a href="https://residualsports.com/de/widgets">Widgets öffnen</a></p>`
+    : `<h1>Widget access activated</h1><p>Your paid ${escapeHtml(lead.requested_plan)} plan is active.</p><p><strong>Publisher key:</strong></p><pre>${escapeHtml(apiKey)}</pre><p>Approved domain: ${escapeHtml(lead.domain)}</p><p>Minimum term through ${escapeHtml(minimumTerm)}. Afterwards, the contract renews monthly and can be cancelled monthly.</p><p>Builder: <a href="https://residualsports.com/widgets">Open widgets</a></p>`;
 
   const response = await fetch("https://api.resend.com/emails", {
     body: JSON.stringify({ from, html, subject, to: [lead.email] }),
@@ -569,7 +569,7 @@ async function sendWidgetContractConfirmationEmail(leadId: string) {
   if (!lead || !isDirectPlan(lead.requested_plan)) return;
 
   const isGerman = lead.locale === "de";
-  const base = isGerman ? "https://www.ai-sports-prediction.net/de" : "https://www.ai-sports-prediction.net";
+  const base = isGerman ? "https://residualsports.com/de" : "https://residualsports.com";
   const minimumTerm = formatDate(lead.minimum_term_ends_at_utc, lead.locale);
   const subject = isGerman ? "Bestätigung deiner Widget-Bestellung" : "Confirmation of your widget order";
   const html = isGerman

@@ -7,6 +7,6 @@ export default function robots(): MetadataRoute.Robots {
       disallow: ["/admin/", "/api/", "/widgets/account/", "/widgets/checkout", "/de/widgets/account/", "/de/widgets/checkout"],
       userAgent: "*"
     },
-    sitemap: "https://www.ai-sports-prediction.net/sitemap.xml"
+    sitemap: "https://residualsports.com/sitemap.xml"
   };
 }

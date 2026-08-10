@@ -57,7 +57,7 @@ const definition = {
       ["DATABASE_SSL_REJECT_UNAUTHORIZED", env("DATABASE_SSL_REJECT_UNAUTHORIZED", "1")],
       ["DATABASE_SSL_CA_FILE", "/etc/ssl/certs/aws-rds-global-bundle.pem"],
       ["OPENROUTER_MODEL_IDS", env("OPENROUTER_MODEL_IDS", "openai/gpt-oss-20b:free")],
-      ["OPENROUTER_SITE_URL", "https://www.ai-sports-prediction.net"],
+      ["OPENROUTER_SITE_URL", "https://residualsports.com"],
       ["OPENROUTER_SITE_NAME", "Residual Sports"],
       ["FIXTURE_SYNC_INTERVAL_MINUTES", env("FIXTURE_SYNC_INTERVAL_MINUTES", "15")],
       ["LIVE_SCORE_SYNC_INTERVAL_MINUTES", env("LIVE_SCORE_SYNC_INTERVAL_MINUTES", "2")],
@@ -75,14 +75,14 @@ const definition = {
       ["BACKUP_S3_PREFIX", env("BACKUP_S3_PREFIX", "ai-sports-prediction/backups")],
       ["POSTGRES_BACKUP_DIR", "/tmp/postgres-backups"],
       ["OPS_ALERT_EMAILS", env("OPS_ALERT_EMAILS", "")],
-      ["OPS_ALERT_FROM_EMAIL", env("OPS_ALERT_FROM_EMAIL", "Residual Sports <ai-sports-prediction@outlook.com>")],
-      ["NEWSLETTER_FROM_EMAIL", env("NEWSLETTER_FROM_EMAIL", "Residual Sports <ai-sports-prediction@outlook.com>")],
+      ["OPS_ALERT_FROM_EMAIL", env("OPS_ALERT_FROM_EMAIL", "Residual Sports <ops@residualsports.com>")],
+      ["NEWSLETTER_FROM_EMAIL", env("NEWSLETTER_FROM_EMAIL", "Residual Sports <hello@residualsports.com>")],
       ["MARKETING_AUTOMATION_ENABLED", env("MARKETING_AUTOMATION_ENABLED", "0")],
       ["MARKETING_ANALYTICS_ENABLED", env("MARKETING_ANALYTICS_ENABLED", "1")]
       ,["GA4_MEASUREMENT_ID", env("GA4_MEASUREMENT_ID", "G-KSGFX9TKD8")]
       ,["REVENUE_AUTOMATION_ENABLED", env("REVENUE_AUTOMATION_ENABLED", "1")]
       ,["REVENUE_AUTOMATION_INTERVAL_MINUTES", env("REVENUE_AUTOMATION_INTERVAL_MINUTES", "60")]
-      ,["PUBLIC_SITE_URL", env("PUBLIC_SITE_URL", "https://www.ai-sports-prediction.net")]
+      ,["PUBLIC_SITE_URL", env("PUBLIC_SITE_URL", "https://residualsports.com")]
       ,["WIDGET_ACCESS_FROM_EMAIL", env("WIDGET_ACCESS_FROM_EMAIL", "")]
       ,["SALES_ALERT_EMAILS", env("SALES_ALERT_EMAILS", "")]
     ].map(([name, value]) => ({ name, value })),
