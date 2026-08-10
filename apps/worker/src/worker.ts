@@ -87,7 +87,7 @@ const workers = queues.map((queueName) => new Worker(
   { connection, prefix: queuePrefix }
 ));
 
-console.log(`AI Sport Prediction worker listening on queues: ${queues.join(", ")}`);
+console.log(`Residual Sports worker listening on queues: ${queues.join(", ")}`);
 void registerRecurringJobs().catch((error) => {
   console.error("Could not register recurring worker jobs:", error);
 });
@@ -148,7 +148,7 @@ async function runQueuedJob(queueName: string, jobName: string, data: unknown): 
     if ((process.env.MARKETING_PUBLISH_MODE ?? "review").trim().toLowerCase() === "auto") {
       const { approveMarketingCampaign, publishMarketingCampaign } = await import("./marketing-publishers");
       for (const campaignId of result.campaignIds) {
-        await approveMarketingCampaign(db, campaignId, "marketing-agent:auto");
+        await approveMarketingCampaign(db, campaignId, "residual-sports:marketing-agent:auto");
         await publishMarketingCampaign(db, campaignId);
       }
     }
@@ -355,7 +355,7 @@ async function registerRecurringJobs(): Promise<void> {
 }
 
 async function shutdown(): Promise<void> {
-  console.log("Shutting down AI Sport Prediction worker");
+  console.log("Shutting down Residual Sports worker");
   await Promise.all([
     ...workers.map((worker) => worker.close()),
     predictionQueue.close(),

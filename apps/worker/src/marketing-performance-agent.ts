@@ -448,7 +448,7 @@ function shorten(value: string, max: number): string {
 }
 
 function redditUserAgent(): string {
-  return process.env.REDDIT_USER_AGENT?.trim() || "web:ai-sports-prediction-marketing:v1.0 (by /u/configure-owner)";
+  return process.env.REDDIT_USER_AGENT?.trim() || "web:residual-sports-marketing:v1.0 (by /u/configure-owner)";
 }
 
 function requireEnv(name: string): string {

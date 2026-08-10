@@ -43,7 +43,7 @@ function testAiCopyParsingAndLimits(): void {
     redditBody: "How do you rate this prediction?",
     tiktokCaption: `${"Long TikTok copy ".repeat(300)} AI prediction, not a guarantee.`,
     visualHook: "Arsenal with the model edge",
-    hashtags: ["#AI Sports", "football", "football"]
+    hashtags: ["#Residual Sports", "football", "football"]
   });
   const parsed = parseMarketingCopy(raw, prediction);
   assert.ok(Array.from(parsed.instagramCaption).length <= 2200);
@@ -51,7 +51,7 @@ function testAiCopyParsingAndLimits(): void {
   assert.match(parsed.xText, /AI prediction, not a guarantee\.$/u);
   assert.ok(Array.from(parsed.tiktokCaption).length <= 4000);
   assert.match(parsed.tiktokCaption, /AI prediction, not a guarantee\.$/u);
-  assert.deepEqual(parsed.hashtags, ["AISports", "football"]);
+  assert.deepEqual(parsed.hashtags, ["ResidualSports", "football"]);
 }
 
 function testBlockedClaims(): void {
@@ -72,7 +72,7 @@ function testSubredditAllowlist(): void {
 }
 
 async function testRenderedJpegs(): Promise<void> {
-  process.env.MARKETING_ASSET_DIR = `/tmp/ai-sports-marketing-test-${process.pid}`;
+  process.env.MARKETING_ASSET_DIR = `/tmp/residual-sports-marketing-test-${process.pid}`;
   delete process.env.MARKETING_ASSET_S3_BUCKET;
   const assets = await renderMarketingAssets("campaign-test", prediction, "Arsenal with 68% model confidence");
   assert.equal(assets.length, 4);

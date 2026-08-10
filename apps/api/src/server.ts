@@ -1,5 +1,5 @@
 /**
- * Purpose: Dedicated production API for AI Sport Prediction.
+ * Purpose: Dedicated production API for Residual Sports.
  */
 import { createServer, type IncomingMessage, type ServerResponse } from "node:http";
 import {
@@ -42,7 +42,7 @@ const server = createServer(async (request, response) => {
 });
 
 server.listen(port, host, () => {
-  console.log(`AI Sport Prediction API listening on ${host}:${port}`);
+  console.log(`Residual Sports API listening on ${host}:${port}`);
 });
 
 process.on("SIGTERM", () => shutdown());
@@ -76,7 +76,7 @@ async function routeRequest(request: IncomingMessage, response: ServerResponse):
     const cached = await cache.getOrSet(
       "health",
       CACHE_TTLS.health,
-      async () => ({ ok: true, service: "ai-sports-prediction-api", postgres: await checkPostgresHealth(db) })
+      async () => ({ ok: true, service: "residual-sports-api", postgres: await checkPostgresHealth(db) })
     );
     sendJson(response, 200, cached.value, cacheHeaders(cached.hit));
     return;
@@ -233,7 +233,7 @@ function cacheHeaders(hit: boolean): Record<string, string> {
 }
 
 async function shutdown(): Promise<void> {
-  console.log("Shutting down AI Sport Prediction API");
+  console.log("Shutting down Residual Sports API");
   server.close();
   await cache.close();
   await db.end();

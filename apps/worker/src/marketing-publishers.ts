@@ -343,7 +343,7 @@ export async function publishReddit(post: MarketingPostRow): Promise<PublishedPo
   const clientSecret = requireEnv("REDDIT_CLIENT_SECRET");
   const refreshToken = requireEnv("REDDIT_REFRESH_TOKEN");
   const userAgent = process.env.REDDIT_USER_AGENT?.trim()
-    || "web:ai-sports-prediction-marketing:v1.0 (by /u/configure-owner)";
+    || "web:residual-sports-marketing:v1.0 (by /u/configure-owner)";
   const tokenResponse = await fetchJson("https://www.reddit.com/api/v1/access_token", {
     method: "POST",
     headers: {
