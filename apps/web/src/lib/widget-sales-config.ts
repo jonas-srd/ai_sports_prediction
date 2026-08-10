@@ -27,7 +27,7 @@ export function getWidgetSellerDetails(): WidgetSellerDetails {
     taxId: read("LEGAL_SELLER_VAT_ID") || read("LEGAL_SELLER_TAX_NUMBER"),
     taxNumber: read("LEGAL_SELLER_TAX_NUMBER"),
     taxMode: parseWidgetTaxMode(process.env.WIDGET_TAX_MODE),
-    tradingName: read("LEGAL_SELLER_TRADING_NAME", "AI Sports Prediction"),
+    tradingName: read("LEGAL_SELLER_TRADING_NAME", "Residual Sports"),
     vatId: read("LEGAL_SELLER_VAT_ID")
   };
 }

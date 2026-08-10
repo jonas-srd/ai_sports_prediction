@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { TennisPage } from "@/components/tennis-pages";
 
 export const metadata: Metadata = {
-  title: "Tennis Prognosen | AI Sports Prediction",
+  title: "Tennis Prognosen | Residual Sports",
   description: "Tennis-Prognosen für Match Winner, Satzscores, Beläge, Serve-/Return-Splits und Draw-Pfade."
 };
 

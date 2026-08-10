@@ -13,12 +13,12 @@ import "./prediction-layout.css";
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://www.ai-sports-prediction.net"),
-  title: "AI Sports Prediction",
+  title: "Residual Sports",
   description: "AI predictions, match signals and model analytics for football, NFL, NBA and tennis.",
   openGraph: {
-    title: "AI Sports Prediction",
+    title: "Residual Sports",
     description: "AI predictions, match signals and model analytics for football, NFL, NBA and tennis.",
-    images: [{ url: "/site-icon.png", width: 1254, height: 1254, alt: "AI Sports Prediction" }]
+    images: [{ url: "/site-icon.png", width: 1254, height: 1254, alt: "Residual Sports" }]
   },
   twitter: {
     card: "summary",

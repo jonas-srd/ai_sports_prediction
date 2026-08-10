@@ -34,7 +34,7 @@ FOOTBALL_DATA_API_KEY=
 AI_SPORTS_API_URL=
 ADMIN_API_TOKEN=
 RESEND_API_KEY=
-NEWSLETTER_FROM_EMAIL="AI Sports Prediction <ai-sports-prediction@outlook.com>"
+NEWSLETTER_FROM_EMAIL="Residual Sports <ai-sports-prediction@outlook.com>"
 API_CACHE_ENABLED=1
 WEB_API_CACHE_SECONDS=60
 ```

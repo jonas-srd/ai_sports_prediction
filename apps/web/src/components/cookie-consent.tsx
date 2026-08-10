@@ -26,7 +26,7 @@ export function CookieConsent({ measurementId }: CookieConsentProps) {
   const copy = locale === "de"
     ? {
         accept: "Alle akzeptieren",
-        body: "Wir verwenden Cookies, um diese Website bereitzustellen. Mit deiner Zustimmung nutzen wir außerdem Analytics-Cookies, um zu verstehen, wie AI Sports Prediction genutzt wird.",
+        body: "Wir verwenden Cookies, um diese Website bereitzustellen. Mit deiner Zustimmung nutzen wir außerdem Analytics-Cookies, um zu verstehen, wie Residual Sports genutzt wird.",
         manage: "Auswahl anpassen",
         policy: "Cookie-Einstellungen",
         reject: "Alle ablehnen",
@@ -34,7 +34,7 @@ export function CookieConsent({ measurementId }: CookieConsentProps) {
       }
     : {
         accept: "Accept all",
-        body: "We use cookies to provide this website. With your consent, we also use analytics cookies to understand how AI Sports Prediction is used.",
+        body: "We use cookies to provide this website. With your consent, we also use analytics cookies to understand how Residual Sports is used.",
         manage: "Manage choices",
         policy: "Cookie settings",
         reject: "Reject all",

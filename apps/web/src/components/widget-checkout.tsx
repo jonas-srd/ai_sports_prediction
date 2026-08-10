@@ -309,7 +309,7 @@ export function WidgetCheckout({
                   </label>
                   <label>
                     <input name="dpaAccepted" required type="checkbox" />
-                    <span>{locale === "de" ? "Ich akzeptiere den AVV für den Fall, dass AI Sports Prediction personenbezogene Daten in meinem Auftrag verarbeitet." : "I accept the DPA where AI Sports Prediction processes personal data on my behalf."} <Link href={localizePath("/data-processing", locale)} target="_blank">{locale === "de" ? `AVV, Stand ${WIDGET_DPA_VERSION}` : `DPA, version ${WIDGET_DPA_VERSION}`}</Link></span>
+                    <span>{locale === "de" ? "Ich akzeptiere den AVV für den Fall, dass Residual Sports personenbezogene Daten in meinem Auftrag verarbeitet." : "I accept the DPA where Residual Sports processes personal data on my behalf."} <Link href={localizePath("/data-processing", locale)} target="_blank">{locale === "de" ? `AVV, Stand ${WIDGET_DPA_VERSION}` : `DPA, version ${WIDGET_DPA_VERSION}`}</Link></span>
                   </label>
                   <label>
                     <input name="electronicInvoiceAccepted" required type="checkbox" />

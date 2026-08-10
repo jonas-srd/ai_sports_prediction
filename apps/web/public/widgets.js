@@ -72,8 +72,8 @@
     var iframe = document.createElement("iframe");
     iframe.src = buildFrameUrl(origin, target);
     iframe.title = target.dataset.title || (target.dataset.language === "de"
-      ? "AI Sports Prediction Widget"
-      : "AI Sports Prediction widget");
+      ? "Residual Sports Widget"
+      : "Residual Sports widget");
     iframe.loading = "lazy";
     iframe.style.width = "100%";
     iframe.style.maxWidth = target.dataset.maxWidth || "720px";

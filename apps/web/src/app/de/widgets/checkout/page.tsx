@@ -2,8 +2,8 @@ import type { Metadata } from "next";
 import { WidgetCheckoutPageContent } from "../../../widgets/checkout/page";
 
 export const metadata: Metadata = {
-  title: "Widget-Checkout | AI Sports Prediction",
-  description: "Rechnungsdaten für AI Sports Prediction Widgets vervollständigen.",
+  title: "Widget-Checkout | Residual Sports",
+  description: "Rechnungsdaten für Residual Sports Widgets vervollständigen.",
   robots: { index: false, follow: false }
 };
 

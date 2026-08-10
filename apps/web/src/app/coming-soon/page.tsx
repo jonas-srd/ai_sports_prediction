@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "AI Sports Prediction | Stay Tuned",
+  title: "Residual Sports | Stay Tuned",
   description: "AI predictions for football, NFL, NBA and tennis are getting ready for launch."
 };
 
@@ -12,7 +12,7 @@ export default function ComingSoonPage() {
     <main className="comingSoonShell" aria-labelledby="coming-soon-title">
       <section className="comingSoonHero">
         <img className="comingSoonMark" src="/site-icon.png" alt="" aria-hidden="true" />
-        <p className="comingSoonEyebrow">AI Sports Prediction</p>
+        <p className="comingSoonEyebrow">Residual Sports</p>
         <h1 id="coming-soon-title">Stay tuned</h1>
         <p className="comingSoonText">Football, NFL, NBA and tennis predictions are getting ready.</p>
       </section>

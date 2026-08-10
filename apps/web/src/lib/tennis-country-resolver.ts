@@ -21,7 +21,7 @@ const CACHE_SECONDS = 60 * 60 * 24 * 30;
 const MAX_PARALLEL_SEARCHES = 6;
 const MAX_DETAILED_PROVIDER_SEARCHES = 60;
 const DEFAULT_MAX_ITF_SEARCHES_PER_RUN = 40;
-const WIKIMEDIA_USER_AGENT = "AI-Sports-Prediction/1.0 (tennis flag enrichment)";
+const WIKIMEDIA_USER_AGENT = "Residual-Sports/1.0 (tennis flag enrichment)";
 const WIKIPEDIA_SOURCES = [
   { language: "en", querySuffix: "tennis player" },
   { language: "es", querySuffix: "tenista" },

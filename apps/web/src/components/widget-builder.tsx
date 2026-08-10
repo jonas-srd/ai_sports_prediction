@@ -504,7 +504,7 @@ function WidgetBuilderLivePreview({
   const copy = language === "de"
     ? {
         away: "FC Beispiel",
-        branding: "Daten von AI Sports Prediction",
+        branding: "Daten von Residual Sports",
         confidence: "Sicherheit",
         home: "Sporting Musterstadt",
         pick: "Modell-Tipp",
@@ -514,7 +514,7 @@ function WidgetBuilderLivePreview({
       }
     : {
         away: "Example FC",
-        branding: "Data by AI Sports Prediction",
+        branding: "Data by Residual Sports",
         confidence: "Confidence",
         home: "Sporting Sample",
         pick: "Model pick",
@@ -527,7 +527,7 @@ function WidgetBuilderLivePreview({
   const away = match?.awayTeam ?? copy.away;
   const homeLogo = match?.homeLogo ?? null;
   const awayLogo = match?.awayLogo ?? null;
-  const competition = match?.competition ?? "AI Sports Prediction";
+  const competition = match?.competition ?? "Residual Sports";
   const previewHeaderLabel = type === "match-list" ? getMatchListHeaderLabel(sport, language) : competition;
   const selectedPreviewMatches = matches.flatMap((entry) => entry.homeLogo && entry.awayLogo ? [{
     awayLogo: entry.awayLogo,

@@ -35,7 +35,7 @@ test("loads per-user secrets and builds an authenticator URI", () => {
   assert.equal(secrets.get("owner@example.com"), rfcSecret);
   const uri = buildTotpUri("owner@example.com", rfcSecret);
   assert.match(uri, /^otpauth:\/\/totp\//);
-  assert.match(uri, /issuer=AI\+Sports\+Prediction/);
+  assert.match(uri, /issuer=Residual\+Sports/);
   assert.match(uri, new RegExp(`secret=${rfcSecret}`));
 });
 

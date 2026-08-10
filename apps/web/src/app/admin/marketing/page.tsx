@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { MarketingStudioPreview } from "@/components/marketing-studio-preview";
 
 export const metadata: Metadata = {
-  title: "Marketing Studio | AI Sports Prediction",
+  title: "Marketing Studio | Residual Sports",
   robots: { index: false, follow: false }
 };
 

@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>AI Sports Prediction Widget</title>
+    <title>Residual Sports Widget</title>
     <style>
       :root {
         color-scheme: dark;
@@ -549,7 +549,7 @@
   </head>
   <body>
     <main id="root" class="widget">
-      <p class="empty">Loading AI Sports Prediction widget...</p>
+      <p class="empty">Loading Residual Sports widget...</p>
     </main>
     <script>
       var params = new URLSearchParams(location.search);
@@ -560,13 +560,13 @@
       var currentPayload = null;
       var translations = {
         en: {
-          accessRequired: "This AI Sports Prediction widget requires an active publisher plan.",
+          accessRequired: "This Residual Sports widget requires an active publisher plan.",
           allSports: "Sports",
           confidence: "Confidence",
           draw: "Draw",
           football: "Football",
           keyFactorsUnavailable: "No key factors available for this widget configuration.",
-          loading: "Loading AI Sports Prediction widget...",
+          loading: "Loading Residual Sports widget...",
           model: "Choose model",
           modelPredictionUnavailable: "No model prediction available.",
           modelProbabilitiesUnavailable: "No model probabilities available.",
@@ -574,23 +574,23 @@
           noMatches: "No matches available for this widget configuration.",
           open: "Open",
           pick: "Pick",
-          poweredBy: "Powered by AI Sports Prediction",
+          poweredBy: "Powered by Residual Sports",
           predictions: "predictions",
           probabilityUnavailable: "No probability data available for this widget configuration.",
           projectedScore: "Projected score",
           result: "Result",
-          temporarilyUnavailable: "AI Sports Prediction widget is temporarily unavailable.",
+          temporarilyUnavailable: "Residual Sports widget is temporarily unavailable.",
           versus: "VS",
           widget: "Widget"
         },
         de: {
-          accessRequired: "Dieses AI Sports Prediction Widget benötigt einen aktiven Publisher-Tarif.",
+          accessRequired: "Dieses Residual Sports Widget benötigt einen aktiven Publisher-Tarif.",
           allSports: "Sport",
           confidence: "Konfidenz",
           draw: "Remis",
           football: "Fußball",
           keyFactorsUnavailable: "Für diese Widget-Konfiguration sind keine Schlüsselfaktoren verfügbar.",
-          loading: "AI Sports Prediction Widget wird geladen...",
+          loading: "Residual Sports Widget wird geladen...",
           model: "Modell wählen",
           modelPredictionUnavailable: "Keine Modellprognose verfügbar.",
           modelProbabilitiesUnavailable: "Keine Modellwahrscheinlichkeiten verfügbar.",
@@ -598,12 +598,12 @@
           noMatches: "Für diese Widget-Konfiguration sind keine Spiele verfügbar.",
           open: "Öffnen",
           pick: "Tipp",
-          poweredBy: "Bereitgestellt von AI Sports Prediction",
+          poweredBy: "Bereitgestellt von Residual Sports",
           predictions: "Prognosen",
           probabilityUnavailable: "Für diese Widget-Konfiguration sind keine Wahrscheinlichkeiten verfügbar.",
           projectedScore: "Ergebnisidee",
           result: "Ergebnis",
-          temporarilyUnavailable: "Das AI Sports Prediction Widget ist vorübergehend nicht verfügbar.",
+          temporarilyUnavailable: "Das Residual Sports Widget ist vorübergehend nicht verfügbar.",
           versus: "VS",
           widget: "Widget"
         }
@@ -670,7 +670,7 @@
       function render(payload) {
         var type = payload.widget.type;
         var title = cleanTitle(params.get("title"));
-        var eyebrow = type === "match-list" ? matchListHeaderLabel(payload.widget.sport) : "AI Sports Prediction";
+        var eyebrow = type === "match-list" ? matchListHeaderLabel(payload.widget.sport) : "Residual Sports";
         var html = [
           '<header class="head"><div><p class="eyebrow">' + escapeHtml(eyebrow) + '</p>',
           title ? '<h1>' + escapeHtml(title) + "</h1>" : "",
@@ -735,7 +735,7 @@
           : copy.temporarilyUnavailable;
 
         return [
-          '<header class="head"><div><p class="eyebrow">AI Sports Prediction</p></div><span class="badge">' + escapeHtml(copy.widget) + "</span></header>",
+          '<header class="head"><div><p class="eyebrow">Residual Sports</p></div><span class="badge">' + escapeHtml(copy.widget) + "</span></header>",
           '<p class="empty">',
           escapeHtml(message),
           "</p>"

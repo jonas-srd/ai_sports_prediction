@@ -531,7 +531,7 @@ async function sendWidgetAccessEmail({ apiKey, lead }: { apiKey: string; lead: W
   }
 
   const isGerman = lead.locale === "de";
-  const subject = isGerman ? "Dein AI Sports Prediction Widget-Zugang" : "Your AI Sports Prediction widget access";
+  const subject = isGerman ? "Dein Residual Sports Widget-Zugang" : "Your Residual Sports widget access";
   const minimumTerm = formatDate(lead.minimum_term_ends_at_utc, lead.locale);
   const html = isGerman
     ? `<h1>Widget-Zugang aktiviert</h1><p>Dein bezahlter ${escapeHtml(lead.requested_plan)}-Tarif ist aktiv.</p><p><strong>Publisher-Key:</strong></p><pre>${escapeHtml(apiKey)}</pre><p>Freigegebene Domain: ${escapeHtml(lead.domain)}</p><p>Mindestlaufzeit bis ${escapeHtml(minimumTerm)}. Danach verlängert sich der Vertrag monatlich und ist monatlich kündbar.</p><p>Builder: <a href="https://www.ai-sports-prediction.net/de/widgets">Widgets öffnen</a></p>`
@@ -610,7 +610,7 @@ async function sendWidgetInvoiceEmail(leadId: string, invoice: Record<string, un
   const invoiceNumber = String(invoice.number ?? "").trim() || "-";
   const amount = formatInvoiceAmount(invoice.amount_paid, invoice.currency, lead.locale);
   const isGerman = lead.locale === "de";
-  const subject = isGerman ? `Rechnung ${invoiceNumber} · AI Sports Prediction` : `Invoice ${invoiceNumber} · AI Sports Prediction`;
+  const subject = isGerman ? `Rechnung ${invoiceNumber} · Residual Sports` : `Invoice ${invoiceNumber} · Residual Sports`;
   const links = [
     hostedUrl ? `<a href="${escapeHtml(hostedUrl)}">${isGerman ? "Rechnung ansehen" : "View invoice"}</a>` : "",
     pdfUrl ? `<a href="${escapeHtml(pdfUrl)}">${isGerman ? "PDF herunterladen" : "Download PDF"}</a>` : ""

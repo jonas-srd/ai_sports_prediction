@@ -78,7 +78,7 @@ export async function createWidgetStripeCustomer(input: StripeCustomerInput): Pr
   const params = new URLSearchParams({
     name: input.legalCompanyName,
     email: input.billingEmail,
-    description: `${input.legalCompanyName} · AI Sports Prediction widgets`,
+    description: `${input.legalCompanyName} · Residual Sports widgets`,
     "address[line1]": input.addressLine1,
     "address[city]": input.city,
     "address[postal_code]": input.postalCode,

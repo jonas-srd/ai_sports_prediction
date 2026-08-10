@@ -26,7 +26,7 @@ export async function sendOperationsAlert(input: {
     body: JSON.stringify({
       from,
       to: recipients,
-      subject: `AI Sports Prediction · Job fehlgeschlagen: ${input.jobName}`,
+      subject: `Residual Sports · Job fehlgeschlagen: ${input.jobName}`,
       text: [
         `Queue: ${input.queueName}`,
         `Job: ${input.jobName}`,

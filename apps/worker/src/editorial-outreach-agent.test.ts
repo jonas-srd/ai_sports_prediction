@@ -55,19 +55,19 @@ function testRobotsRules(): void {
     Disallow: /intern
     Allow: /intern/presse
   `;
-  assert.equal(robotsAllows(robots, "/sport", "AI-Sports-Prediction-OutreachBot"), true);
-  assert.equal(robotsAllows(robots, "/intern/daten", "AI-Sports-Prediction-OutreachBot"), false);
-  assert.equal(robotsAllows(robots, "/intern/presse", "AI-Sports-Prediction-OutreachBot"), true);
+  assert.equal(robotsAllows(robots, "/sport", "Residual-Sports-OutreachBot"), true);
+  assert.equal(robotsAllows(robots, "/intern/daten", "Residual-Sports-OutreachBot"), false);
+  assert.equal(robotsAllows(robots, "/intern/presse", "Residual-Sports-OutreachBot"), true);
 
   const specific = `
     User-agent: *
     Disallow: /allgemein
-    User-agent: AI-Sports-Prediction-OutreachBot
+    User-agent: Residual-Sports-OutreachBot
     User-agent: PartnerBot
     Disallow: /privat
   `;
-  assert.equal(robotsAllows(specific, "/allgemein", "AI-Sports-Prediction-OutreachBot"), true);
-  assert.equal(robotsAllows(specific, "/privat", "AI-Sports-Prediction-OutreachBot"), false);
+  assert.equal(robotsAllows(specific, "/allgemein", "Residual-Sports-OutreachBot"), true);
+  assert.equal(robotsAllows(specific, "/privat", "Residual-Sports-OutreachBot"), false);
 }
 
 function testFitScoring(): void {

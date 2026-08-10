@@ -165,13 +165,13 @@ function withUnsubscribeFooter(html: string, unsubscribeUrl: string): string {
   return `${body}
     <hr style="border:0;border-top:1px solid #d8e0dc;margin:32px 0 16px" />
     <p style="color:#64736c;font-size:12px;line-height:1.5">
-      You receive this email because you subscribed to AI Sports Prediction.
+      You receive this email because you subscribed to Residual Sports.
       <a href="${unsubscribeUrl}">Unsubscribe</a>
     </p>`;
 }
 
 function withUnsubscribeText(text: string | null, unsubscribeUrl: string): string {
-  const body = (text || "AI Sports Prediction newsletter").replaceAll("{{unsubscribeUrl}}", unsubscribeUrl);
+  const body = (text || "Residual Sports newsletter").replaceAll("{{unsubscribeUrl}}", unsubscribeUrl);
   if (body.includes(unsubscribeUrl)) {
     return body;
   }

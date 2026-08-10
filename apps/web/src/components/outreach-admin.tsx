@@ -131,7 +131,7 @@ export function OutreachAdmin() {
     <main className={styles.shell}>
       <header className={styles.header}>
         <div>
-          <span className={styles.eyebrow}>AI Sports Prediction · Sales Operations</span>
+          <span className={styles.eyebrow}>Residual Sports · Sales Operations</span>
           <h1>Outreach Cockpit</h1>
           <p>Publisher recherchieren, Entwürfe prüfen und ausschließlich freigegebene Kontakte einzeln versenden.</p>
         </div>

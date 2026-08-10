@@ -3,7 +3,7 @@ import { AdminLogin } from "@/components/admin-login";
 import { isSafeAdminRedirect } from "@/lib/admin-session";
 
 export const metadata: Metadata = {
-  title: "Admin Login | AI Sports Prediction",
+  title: "Admin Login | Residual Sports",
   robots: { index: false, follow: false }
 };
 

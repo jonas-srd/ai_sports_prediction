@@ -5,7 +5,7 @@ export const revalidate = 60;
 export const dynamic = "force-static";
 
 export const metadata: Metadata = {
-  title: "AI Sports Prediction",
+  title: "Residual Sports",
   description: "KI-Prognosen, Match-Signale und Modellanalysen für Fußball, NFL, NBA und Tennis."
 };
 

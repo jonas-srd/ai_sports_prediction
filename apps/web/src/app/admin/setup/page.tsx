@@ -7,7 +7,7 @@ import styles from "./setup.module.css";
 export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
-  title: "Authenticator Setup | AI Sports Prediction",
+  title: "Authenticator Setup | Residual Sports",
   robots: { index: false, follow: false }
 };
 

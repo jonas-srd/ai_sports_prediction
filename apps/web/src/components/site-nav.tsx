@@ -264,7 +264,7 @@ export function SiteNav() {
             <span className="siteNavLogoMark" aria-hidden="true">
               <img src="/site-icon.png" alt="" />
             </span>
-            <span>AI Sports Prediction</span>
+            <span>Residual Sports</span>
           </Link>
           <SiteSearch
             items={searchItems.map((item) => ({ ...item, href: localizePath(item.href, locale) }))}

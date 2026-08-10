@@ -2,8 +2,8 @@ import type { Metadata } from "next";
 import { getWidgetSellerDetails } from "@/lib/widget-sales-config";
 
 export const metadata: Metadata = {
-  title: "Impressum | AI Sports Prediction",
-  description: "Impressum und Anbieterinformationen für AI Sports Prediction."
+  title: "Impressum | Residual Sports",
+  description: "Impressum und Anbieterinformationen für Residual Sports."
 };
 
 export default function GermanLegalNoticePage() {
@@ -15,13 +15,13 @@ export default function GermanLegalNoticePage() {
         <div className="sportschauCompetitionTitle">
           <p className="footballEyebrow">Rechtliches</p>
           <h1>Impressum</h1>
-          <p>Kontakt- und Anbieterinformationen für AI Sports Prediction.</p>
+          <p>Kontakt- und Anbieterinformationen für Residual Sports.</p>
         </div>
       </section>
 
       <section className="footballPanel legalPagePanel" aria-labelledby="legal-title">
         <div className="sportschauSectionTitle">
-          <span>AI Sports Prediction</span>
+          <span>Residual Sports</span>
           <h2 id="legal-title">Impressum</h2>
         </div>
 

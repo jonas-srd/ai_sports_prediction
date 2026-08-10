@@ -265,7 +265,7 @@ function getCustomerCopy(type: string, german: boolean, links: { account: string
     domain_failures: { subject: "A widget domain needs attention", text: `Domain verification failed several times. Review allowed domains and your embed:\n\n${links.account}` },
     payment_failed: { subject: "Payment for your widget plan failed", text: `Stripe could not complete the payment. Update the payment method in your account; Stripe will run further eligible retries automatically:\n\n${links.account}` }
   };
-  return (german ? de : en)[type] ?? { subject: "AI Sports Prediction Widget", text: links.account };
+  return (german ? de : en)[type] ?? { subject: "Residual Sports Widget", text: links.account };
 }
 
 async function sendEmail(to: string[], subject: string, text: string) {

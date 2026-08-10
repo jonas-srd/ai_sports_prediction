@@ -64,7 +64,7 @@ export function DataQualityAdmin() {
     <main className={styles.page}>
       <header className={styles.header}>
         <div>
-          <span>AI Sports Prediction · Safety Gate</span>
+          <span>Residual Sports · Safety Gate</span>
           <h1>Datenqualität</h1>
           <p>Nur Spiele mit erlaubter Liga, korrekten Teilnehmern und echten Logos beziehungsweise Tennisflaggen werden veröffentlicht.</p>
         </div>

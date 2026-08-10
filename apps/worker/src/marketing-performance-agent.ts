@@ -341,7 +341,7 @@ async function createPerformanceRecommendations(
     || "openai/gpt-oss-20b:free";
   const client = new OpenRouterClient({ apiKey, siteUrl: process.env.OPENROUTER_SITE_URL, siteName: process.env.OPENROUTER_SITE_NAME });
   try {
-    const response = await client.createChatCompletion(modelId, `You are the performance agent for AI Sports Prediction. Analyse only these aggregated social media metrics, do not invent missing values, and write every recommendation in English. Return JSON: {"recommendations":[{"priority":"high|medium|low","title":"...","action":"...","evidence":"..."}]}. Return at most four specific recommendations.\n\nSummary: ${JSON.stringify(summary)}\nPosts: ${JSON.stringify(metrics.map(({ rawMetrics: _raw, ...item }) => item))}`, {
+    const response = await client.createChatCompletion(modelId, `You are the performance agent for Residual Sports. Analyse only these aggregated social media metrics, do not invent missing values, and write every recommendation in English. Return JSON: {"recommendations":[{"priority":"high|medium|low","title":"...","action":"...","evidence":"..."}]}. Return at most four specific recommendations.\n\nSummary: ${JSON.stringify(summary)}\nPosts: ${JSON.stringify(metrics.map(({ rawMetrics: _raw, ...item }) => item))}`, {
       temperature: 0.2,
       maxTokens: 1000,
       responseFormat: { type: "json_object" }

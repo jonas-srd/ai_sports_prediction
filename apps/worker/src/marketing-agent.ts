@@ -283,7 +283,7 @@ export function createFallbackMarketingCopy(prediction: MarketingPrediction): Ma
   const score = `${prediction.predictedHome}:${prediction.predictedAway}`;
   const date = formatMatchDate(prediction.utcDate);
   const hashtags = normalizeHashtags([
-    "AISportsPrediction",
+    "ResidualSports",
     prediction.sport,
     prediction.competition.replace(/[^\p{L}\p{N}]+/gu, "")
   ]);
@@ -443,7 +443,7 @@ export function renderPredictionSvg(
       <rect width="${width}" height="${height}" fill="url(#bg)"/>
       <rect width="${width}" height="${height}" fill="url(#glow)"/>
       <rect x="${pad}" y="${pad}" width="${width - 2 * pad}" height="${height - 2 * pad}" rx="32" fill="none" stroke="#5ff1c0" stroke-opacity="0.42" stroke-width="3"/>
-      <text x="${pad + 34}" y="${headingY}" fill="#5ff1c0" font-family="Arial, Helvetica, sans-serif" font-size="${compact ? 24 : 30}" font-weight="800" letter-spacing="5">${tiktokClean ? "MODEL MATCH PREVIEW" : "AI SPORTS PREDICTION"}</text>
+      <text x="${pad + 34}" y="${headingY}" fill="#5ff1c0" font-family="Arial, Helvetica, sans-serif" font-size="${compact ? 24 : 30}" font-weight="800" letter-spacing="5">${tiktokClean ? "MODEL MATCH PREVIEW" : "RESIDUAL SPORTS"}</text>
       <text x="${pad + 34}" y="${headingY + (compact ? 42 : 54)}" fill="#ffca5c" font-family="Arial, Helvetica, sans-serif" font-size="${compact ? 19 : 24}" font-weight="700" letter-spacing="3">${escapeXml(prediction.competition.toUpperCase())}</text>
       <text x="${width / 2}" y="${teamsY}" text-anchor="middle" fill="#f4f8fb" font-family="Arial, Helvetica, sans-serif" font-size="${teamSize}" font-weight="800">${escapeXml(shorten(prediction.homeTeam, 25))}</text>
       <text x="${width / 2}" y="${teamsY + Math.round(teamSize * 1.45)}" text-anchor="middle" fill="#9babb5" font-family="Arial, Helvetica, sans-serif" font-size="${Math.round(teamSize * 0.58)}" font-weight="700">VS</text>
@@ -501,7 +501,7 @@ function buildMarketingPosts(
 }
 
 function buildCopyPrompt(prediction: MarketingPrediction): string {
-  return `You are the social copy agent for AI Sports Prediction. Create factual social posts in English for this model prediction. Every generated field must be English, even if the source reason is in another language.
+  return `You are the social copy agent for Residual Sports. Create factual social posts in English for this model prediction. Every generated field must be English, even if the source reason is in another language.
 
 Facts:
 - Sport: ${prediction.sport}

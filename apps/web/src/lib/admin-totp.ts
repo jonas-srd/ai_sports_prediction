@@ -54,7 +54,7 @@ export function generateTotp(secret: string, nowMs = Date.now()): string {
 }
 
 export function buildTotpUri(email: string, secret: string): string {
-  const issuer = "AI Sports Prediction";
+  const issuer = "Residual Sports";
   const label = `${issuer}:${normalizeEmail(email)}`;
   const query = new URLSearchParams({
     algorithm: "SHA1",

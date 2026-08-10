@@ -17,7 +17,7 @@ export async function GET(request: NextRequest) {
   const ok = await unsubscribeNewsletterSubscriber(getNewsletterDb(), token).catch(() => false);
 
   return new NextResponse(
-    renderMessage(ok ? "You have been unsubscribed from the AI Sports Prediction newsletter." : "This unsubscribe link is invalid or already used."),
+    renderMessage(ok ? "You have been unsubscribed from the Residual Sports newsletter." : "This unsubscribe link is invalid or already used."),
     {
       headers: { "content-type": "text/html; charset=utf-8" },
       status: ok ? 200 : 404
@@ -31,7 +31,7 @@ function renderMessage(message: string): string {
       <head>
         <meta charset="utf-8" />
         <meta name="viewport" content="width=device-width,initial-scale=1" />
-        <title>Newsletter | AI Sports Prediction</title>
+        <title>Newsletter | Residual Sports</title>
         <style>
           body {
             align-items: center;
@@ -56,7 +56,7 @@ function renderMessage(message: string): string {
       </head>
       <body>
         <main>
-          <p>AI Sports Prediction</p>
+          <p>Residual Sports</p>
           <h1>Newsletter</h1>
           <p>${escapeHtml(message)}</p>
           <a href="/">Back to website</a>

@@ -30,7 +30,7 @@ export function MarketingStudioPreview() {
       <header className={styles.header}>
         <div>
           <div className={styles.kickerRow}>
-            <span className={styles.eyebrow}>AI Sports Prediction · Growth OS</span>
+            <span className={styles.eyebrow}>Residual Sports · Growth OS</span>
             <span className={styles.demoBadge}><i /> Live-Vorschau · Demo-Daten</span>
             <span className={styles.languageBadge}>Content · English only</span>
           </div>
@@ -81,7 +81,7 @@ export function MarketingStudioPreview() {
                 <button className={format === "story" ? styles.selected : ""} onClick={() => setFormat("story")} type="button">Story · 9:16</button>
               </div>
               <div className={`${styles.socialVisual} ${format === "story" ? styles.storyVisual : ""}`} data-testid="marketing-visual-preview">
-                <div className={styles.visualTop}><strong>AI SPORTS PREDICTION</strong><span>FA CUP</span></div>
+                <div className={styles.visualTop}><strong>RESIDUAL SPORTS</strong><span>FA CUP</span></div>
                 <div className={styles.matchup}>
                   <strong>Arsenal</strong><span>VS</span><strong>Liverpool</strong>
                 </div>
@@ -104,11 +104,11 @@ export function MarketingStudioPreview() {
               <div className={styles.copyCard}>
                 <div className={styles.copyMeta}><span>{channel} Entwurf</span><b>KI + Compliance geprüft</b></div>
                 {channel === "Instagram" ? (
-                  <p>Our AI prediction for Arsenal vs Liverpool: <strong>2:1</strong>.<br /><br />Model pick: Arsenal · Confidence: 68%. The model weighs form, matchup context, and the available competition data.<br /><br />AI prediction, not a guarantee.<br /><br /><em>#AISportsPrediction #FACup #Football</em></p>
+                  <p>Our AI prediction for Arsenal vs Liverpool: <strong>2:1</strong>.<br /><br />Model pick: Arsenal · Confidence: 68%. The model weighs form, matchup context, and the available competition data.<br /><br />AI prediction, not a guarantee.<br /><br /><em>#ResidualSports #FACup #Football</em></p>
                 ) : channel === "X" ? (
                   <p>AI match prediction: Arsenal – Liverpool 2:1. Pick: Arsenal, confidence 68%. AI prediction, not a guarantee. <em>#FACup</em></p>
                 ) : channel === "TikTok" ? (
-                  <p>Arsenal vs Liverpool: our model predicts <strong>2:1</strong>.<br /><br />Pick: Arsenal · Confidence: 68%.<br /><br />AI prediction, not a guarantee.<br /><br /><em>#AISportsPrediction #FACup #Football</em></p>
+                  <p>Arsenal vs Liverpool: our model predicts <strong>2:1</strong>.<br /><br />Pick: Arsenal · Confidence: 68%.<br /><br />AI prediction, not a guarantee.<br /><br /><em>#ResidualSports #FACup #Football</em></p>
                 ) : (
                   <p><strong>AI prediction: Arsenal vs Liverpool (2:1)</strong><br /><br />Our model gives Arsenal the edge with 68% confidence. It weighs form, matchup context, and the available competition data. How do you see this matchup playing out?</p>
                 )}

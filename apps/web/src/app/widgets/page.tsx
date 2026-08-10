@@ -8,7 +8,7 @@ import type { Locale } from "@/lib/i18n";
 import { getWidgetPreviewMatches, type WidgetPreviewMatch, type WidgetPreviewMatches } from "@/lib/widget-data";
 
 export const metadata: Metadata = {
-  title: "AI Sports Prediction | Editorial widgets",
+  title: "Residual Sports | Editorial widgets",
   description: "Embeddable AI sports prediction widgets for editorial articles.",
   alternates: {
     canonical: "/widgets",
@@ -32,7 +32,7 @@ const pricingPlansByLocale: Record<Locale, Array<{
       monthlyMinimumTermTotal: "588 EUR",
       annualPrice: "539 EUR / first year",
       description: "For small blogs and local editorial teams publishing prediction embeds.",
-      features: ["50k widget requests", "2 domains", "Prediction cards, match lists and win probability", "AI Sports Prediction branding"],
+      features: ["50k widget requests", "2 domains", "Prediction cards, match lists and win probability", "Residual Sports branding"],
       plan: "starter"
     },
     {
@@ -61,7 +61,7 @@ const pricingPlansByLocale: Record<Locale, Array<{
       monthlyMinimumTermTotal: "588 EUR",
       annualPrice: "539 EUR / erstes Jahr",
       description: "Für kleine Blogs und lokale Redaktionen, die Prognose-Embeds veröffentlichen.",
-      features: ["50k Widget-Aufrufe", "2 Domains", "Prognosekarten, Matchlisten und Sieg-Wahrscheinlichkeit", "AI Sports Prediction Branding"],
+      features: ["50k Widget-Aufrufe", "2 Domains", "Prognosekarten, Matchlisten und Sieg-Wahrscheinlichkeit", "Residual Sports Branding"],
       plan: "starter"
     },
     {
@@ -103,7 +103,7 @@ const examplesByLocale = {
 const pageText = {
   en: {
     heroEyebrow: "Editorial embeds",
-    title: "AI Sports Prediction widgets",
+    title: "Residual Sports widgets",
     heroTitle: "More time on page. More interaction. Publish faster.",
     heroText: "Add current, explainable sports predictions to articles in a few minutes with one embed code.",
     heroBenefits: ["Live prediction preview", "API data with quality checks", "No manual match graphics"],
@@ -127,7 +127,7 @@ const pageText = {
   },
   de: {
     heroEyebrow: "Redaktionelle Embeds",
-    title: "AI Sports Prediction Widgets",
+    title: "Residual Sports Widgets",
     heroTitle: "Mehr Verweildauer. Mehr Interaktion. Schneller veröffentlichen.",
     heroText: "Aktuelle, nachvollziehbare Sportprognosen in wenigen Minuten per Embed-Code in Artikel einbauen.",
     heroBenefits: ["Interaktive Live-Vorschau", "API-Daten mit Qualitätsprüfung", "Keine manuellen Matchgrafiken"],
@@ -164,7 +164,7 @@ export function WidgetsPageContent({ locale }: { locale: Locale }) {
     "@type": "SoftwareApplication",
     applicationCategory: "BusinessApplication",
     applicationSubCategory: "Sports publishing widget",
-    name: "AI Sports Prediction Widgets",
+    name: "Residual Sports Widgets",
     operatingSystem: "Web",
     offers: [
       { "@type": "Offer", price: "49", priceCurrency: "EUR", name: "Starter monthly" },

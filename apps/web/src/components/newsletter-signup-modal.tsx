@@ -28,7 +28,7 @@ export function NewsletterSignupModal() {
         submit: "Eintragen",
         submitting: "Wird gespeichert",
         success: "Danke, du bist eingetragen.",
-        title: "AI Sports Prediction Updates"
+        title: "Residual Sports Updates"
       }
     : {
         close: "Close",
@@ -40,7 +40,7 @@ export function NewsletterSignupModal() {
         submit: "Subscribe",
         submitting: "Saving",
         success: "Thanks, you are subscribed.",
-        title: "AI Sports Prediction updates"
+        title: "Residual Sports updates"
       };
 
   useEffect(() => {

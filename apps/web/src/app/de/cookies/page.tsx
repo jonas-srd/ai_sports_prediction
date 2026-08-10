@@ -2,8 +2,8 @@ import type { Metadata } from "next";
 import { CookiePreferencesPage } from "@/components/cookie-consent";
 
 export const metadata: Metadata = {
-  title: "AI Sports Prediction | Cookie-Einstellungen",
-  description: "Cookie-Einstellungen fuer AI Sports Prediction verwalten."
+  title: "Residual Sports | Cookie-Einstellungen",
+  description: "Cookie-Einstellungen fuer Residual Sports verwalten."
 };
 
 export default function GermanCookiesPage() {

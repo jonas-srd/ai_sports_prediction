@@ -6,8 +6,8 @@ import { parseWidgetBillingInterval } from "@/lib/widget-billing";
 import { getWidgetSellerDetails } from "@/lib/widget-sales-config";
 
 export const metadata: Metadata = {
-  title: "Widget checkout | AI Sports Prediction",
-  description: "Complete the billing details for AI Sports Prediction widgets.",
+  title: "Widget checkout | Residual Sports",
+  description: "Complete the billing details for Residual Sports widgets.",
   robots: { index: false, follow: false }
 };
 

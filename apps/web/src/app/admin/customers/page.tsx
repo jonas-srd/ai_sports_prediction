@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { WidgetCustomerAdmin } from "@/components/widget-customer-admin";
 
 export const metadata: Metadata = {
-  title: "Widget-Kunden | AI Sports Prediction",
+  title: "Widget-Kunden | Residual Sports",
   robots: { index: false, follow: false }
 };
 

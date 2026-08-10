@@ -3,7 +3,7 @@ import Link from "next/link";
 import styles from "./page.module.css";
 
 export const metadata: Metadata = {
-  title: "Agent Cockpit | AI Sports Prediction",
+  title: "Agent Cockpit | Residual Sports",
   robots: { index: false, follow: false }
 };
 
@@ -62,7 +62,7 @@ export default function AdminOverviewPage() {
   return (
     <main className={styles.page}>
       <header className={styles.hero}>
-        <span>AI Sports Prediction · Private Operations</span>
+        <span>Residual Sports · Private Operations</span>
         <h1>Alle Agents. Eine Anmeldung.</h1>
         <p>Nach der Authenticator-Anmeldung erreicht ihr jedes interne Cockpit ohne zusätzliche Tokens oder Passwörter.</p>
       </header>

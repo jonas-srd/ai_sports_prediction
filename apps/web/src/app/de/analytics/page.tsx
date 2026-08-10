@@ -4,7 +4,7 @@ import { AnalyticsPageContent } from "@/app/_route-content";
 export const revalidate = 60;
 
 export const metadata: Metadata = {
-  title: "KI-Analyse | AI Sports Prediction",
+  title: "KI-Analyse | Residual Sports",
   description: "Analyse von Modellgenauigkeit, Konfidenz und Zuverlässigkeit für Sportprognosen."
 };
 

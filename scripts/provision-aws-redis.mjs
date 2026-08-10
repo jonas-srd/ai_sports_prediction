@@ -44,7 +44,7 @@ function ensureRedisSecurityGroup(vpcId) {
   return aws([
     "ec2", "create-security-group",
     "--group-name", "ai-sports-prediction-redis-access",
-    "--description", "Private Valkey access from AI Sports Prediction ECS tasks",
+    "--description", "Private Valkey access from Residual Sports ECS tasks",
     "--vpc-id", vpcId, "--query", "GroupId", "--output", "text"
   ]);
 }
@@ -69,7 +69,7 @@ function ensureServerlessCache(redisSecurityGroup) {
     aws([
       "elasticache", "create-serverless-cache",
       "--serverless-cache-name", cacheName,
-      "--description", "Private BullMQ and API cache for AI Sports Prediction",
+      "--description", "Private BullMQ and API cache for Residual Sports",
       "--engine", "valkey",
       "--security-group-ids", redisSecurityGroup,
       "--subnet-ids", ...subnetIds,

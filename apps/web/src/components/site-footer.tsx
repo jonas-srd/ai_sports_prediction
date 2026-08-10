@@ -11,7 +11,7 @@ export function SiteFooter() {
   return (
     <footer className="siteFooter">
       <div className="siteFooterInner">
-        <span>AI Sports Prediction</span>
+        <span>Residual Sports</span>
         <Link href={localizePath("/impressum", locale)}>{text.legalNotice}</Link>
         <Link href={localizePath("/privacy", locale)}>{locale === "de" ? "Datenschutz" : "Privacy"}</Link>
         <Link href={localizePath("/widget-terms", locale)}>{locale === "de" ? "Widget-AGB" : "Widget terms"}</Link>

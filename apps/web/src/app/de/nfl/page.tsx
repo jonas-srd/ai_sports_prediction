@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { NflPage as NflPageContent } from "@/components/nfl-pages";
 
 export const metadata: Metadata = {
-  title: "NFL Prognosen | AI Sports Prediction",
+  title: "NFL Prognosen | Residual Sports",
   description: "NFL-Prognosen für Wochenlinien, Abstände, Verletzungen, Teamstärke und Playoff-Pfade."
 };
 
