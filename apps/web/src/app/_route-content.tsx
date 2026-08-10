@@ -557,6 +557,7 @@ function getHomeStartCopy(locale: Locale) {
       probability: "Win probability",
       score: "Predicted score",
       currentScore: "Current score",
+      upcoming: "Upcoming",
       reason: "Reasoning"
     },
     de: {
@@ -579,6 +580,7 @@ function getHomeStartCopy(locale: Locale) {
       probability: "Siegchance",
       score: "Prognose-Ergebnis",
       currentScore: "Aktueller Stand",
+      upcoming: "Anstehend",
       reason: "Begründung"
     }
   }[locale];
@@ -855,7 +857,12 @@ function HomeHighlightCard({ highlight, locale }: { highlight: HomeMatchHighligh
             <span>{actualScore ?? "–"}</span>
             <small>{copy.currentScore}</small>
           </div>
-        ) : <span aria-hidden="true" className="homeScorePlaceholder" />}
+        ) : (
+          <span className="homeUpcomingMatchMarker" aria-label={copy.upcoming}>
+            <b>VS</b>
+            <small>{copy.upcoming}</small>
+          </span>
+        )}
         <div>
           <SportTeamLogo logo={highlight.match.awayLogo} name={highlight.match.awayName} />
           <strong>{highlight.match.awayName}</strong>

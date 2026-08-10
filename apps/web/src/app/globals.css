@@ -5431,11 +5431,36 @@ a.matchDetailParticipant:focus-visible {
   width: 42px;
 }
 
-.homeScorePlaceholder {
+.homeUpcomingMatchMarker {
+  align-content: center;
   align-self: start;
-  height: 1px;
-  margin-top: 52px;
-  width: 78px;
+  background: rgba(255, 255, 255, 0.055);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 999px;
+  display: grid;
+  gap: 3px;
+  justify-items: center;
+  margin-top: 43px;
+  min-height: 54px;
+  min-width: 58px;
+  padding: 8px 10px;
+}
+
+.homeUpcomingMatchMarker > b {
+  color: #f8fbff;
+  font-size: 0.88rem;
+  font-weight: 950;
+  letter-spacing: 0.08em;
+  line-height: 1;
+}
+
+.homeUpcomingMatchMarker > small {
+  color: rgba(248, 251, 255, 0.52);
+  font-size: 0.48rem;
+  font-weight: 950;
+  letter-spacing: 0.1em;
+  line-height: 1;
+  text-transform: uppercase;
 }
 
 .homeHighlightCard p {
@@ -5782,8 +5807,9 @@ a.matchDetailParticipant:focus-visible {
     min-height: 0;
   }
 
-  .homeScorePlaceholder {
-    display: none;
+  .homeUpcomingMatchMarker {
+    justify-self: center;
+    margin-top: 0;
   }
 
   .homeLiveGames .homeHighlightTeams .homeLiveScoreBox {
