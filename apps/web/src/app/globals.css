@@ -240,7 +240,7 @@
 .homePredictionSummary {
   display: grid;
   gap: 8px;
-  grid-template-columns: minmax(0, 1fr) minmax(82px, 0.36fr);
+  grid-template-columns: minmax(0, 1fr) minmax(116px, auto);
   min-width: 0;
 }
 
@@ -269,11 +269,15 @@
 
 .homePredictionSummary .isScore {
   align-content: center;
+  min-width: 116px;
   text-align: center;
 }
 
 .homePredictionSummary .isScore strong {
-  font-size: 1.2rem;
+  font-size: clamp(1.02rem, 1.2vw, 1.2rem);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.035em;
+  max-width: 100%;
   white-space: nowrap;
 }
 
