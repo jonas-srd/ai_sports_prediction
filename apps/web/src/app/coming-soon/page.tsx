@@ -2,7 +2,8 @@ import type { Metadata } from "next";
 
 export const metadata: Metadata = {
   title: "Residual Sports | Stay Tuned",
-  description: "AI predictions for football, NFL, NBA and tennis are getting ready for launch."
+  description: "AI predictions for football, NFL, NBA and tennis are getting ready for launch.",
+  robots: { index: false, follow: false }
 };
 
 export const revalidate = 300;

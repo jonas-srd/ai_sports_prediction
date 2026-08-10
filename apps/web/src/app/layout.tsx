@@ -13,15 +13,34 @@ import "./prediction-layout.css";
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://residualsports.com"),
-  title: "Residual Sports",
-  description: "AI predictions, match signals and model analytics for football, NFL, NBA and tennis.",
+  title: "Residual Sports | AI Sports Predictions & Analytics",
+  description: "Research-built AI predictions, probabilities, match signals and model analytics for football, NFL, NBA and tennis.",
+  applicationName: "Residual Sports",
+  creator: "Residual Sports",
+  publisher: "Residual Sports",
+  category: "Sports analytics",
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      "max-image-preview": "large",
+      "max-snippet": -1,
+      "max-video-preview": -1
+    }
+  },
   openGraph: {
-    title: "Residual Sports",
-    description: "AI predictions, match signals and model analytics for football, NFL, NBA and tennis.",
+    title: "Residual Sports | AI Sports Predictions & Analytics",
+    description: "Research-built AI predictions, probabilities and reasoning for football, NFL, NBA and tennis.",
+    siteName: "Residual Sports",
+    type: "website",
     images: [{ url: "/site-icon.png", width: 1254, height: 1254, alt: "Residual Sports" }]
   },
   twitter: {
     card: "summary",
+    title: "Residual Sports | AI Sports Predictions & Analytics",
+    description: "Research-built AI predictions, probabilities and reasoning for football, NFL, NBA and tennis.",
     images: ["/site-icon.png"]
   },
   icons: {
