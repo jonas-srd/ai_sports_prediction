@@ -34,6 +34,7 @@ const secrets = {
   serpApiKey: runtimeSecretReference("ai-sports-prediction/serpapi-api-key")
   ,resendApiKey: runtimeSecretReference("ai-sports-prediction/resend-api-key")
   ,ga4ApiSecret: optionalRuntimeSecretReference("ai-sports-prediction/ga4-api-secret")
+  ,instagramAccessToken: optionalRuntimeSecretReference("ai-sports-prediction/instagram-access-token")
 };
 
 const definition = {
@@ -78,7 +79,14 @@ const definition = {
       ["OPS_ALERT_FROM_EMAIL", env("OPS_ALERT_FROM_EMAIL", "Residual Sports <ops@residualsports.com>")],
       ["NEWSLETTER_FROM_EMAIL", env("NEWSLETTER_FROM_EMAIL", "Residual Sports <hello@residualsports.com>")],
       ["MARKETING_AUTOMATION_ENABLED", env("MARKETING_AUTOMATION_ENABLED", "0")],
+      ["MARKETING_PUBLISH_MODE", env("MARKETING_PUBLISH_MODE", "review")],
       ["MARKETING_ANALYTICS_ENABLED", env("MARKETING_ANALYTICS_ENABLED", "1")]
+      ,["MARKETING_PUBLIC_ASSET_BASE_URL", env("MARKETING_PUBLIC_ASSET_BASE_URL", "https://residualsports.com/api/marketing-assets")]
+      ,["MARKETING_ASSET_S3_BUCKET", env("MARKETING_ASSET_S3_BUCKET", "ai-sports-prediction")]
+      ,["MARKETING_ASSET_S3_PREFIX", env("MARKETING_ASSET_S3_PREFIX", "marketing-assets")]
+      ,["MARKETING_ASSET_S3_REGION", env("MARKETING_ASSET_S3_REGION", region)]
+      ,["INSTAGRAM_ACCOUNT_ID", env("INSTAGRAM_ACCOUNT_ID", "17841438107091610")]
+      ,["INSTAGRAM_GRAPH_API_VERSION", env("INSTAGRAM_GRAPH_API_VERSION", "v23.0")]
       ,["GA4_MEASUREMENT_ID", env("GA4_MEASUREMENT_ID", "G-KSGFX9TKD8")]
       ,["REVENUE_AUTOMATION_ENABLED", env("REVENUE_AUTOMATION_ENABLED", "1")]
       ,["REVENUE_AUTOMATION_INTERVAL_MINUTES", env("REVENUE_AUTOMATION_INTERVAL_MINUTES", "60")]
@@ -95,6 +103,7 @@ const definition = {
       ["SERPAPI_API_KEY", secrets.serpApiKey]
       ,["RESEND_API_KEY", secrets.resendApiKey]
       ,...(secrets.ga4ApiSecret ? [["GA4_API_SECRET", secrets.ga4ApiSecret]] : [])
+      ,...(secrets.instagramAccessToken ? [["INSTAGRAM_ACCESS_TOKEN", secrets.instagramAccessToken]] : [])
     ].map(([name, valueFrom]) => ({ name, valueFrom })),
     logConfiguration: {
       logDriver: "awslogs",

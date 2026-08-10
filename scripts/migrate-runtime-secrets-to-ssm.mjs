@@ -21,7 +21,7 @@ const requiredSecrets = [
   "widget-api-key-encryption-key",
   "widget-customer-session-secret"
 ];
-const optionalSecrets = ["ga4-api-secret", "tiktok-access-token"];
+const optionalSecrets = ["ga4-api-secret", "instagram-access-token", "tiktok-access-token"];
 
 for (const name of requiredSecrets) {
   migrate(name, true);

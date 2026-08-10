@@ -50,6 +50,7 @@ const secrets = {
   ga4ApiSecret: optionalRuntimeSecretReference("ai-sports-prediction/ga4-api-secret"),
   widgetApiKeyEncryptionKey: optionalRuntimeSecretReference("ai-sports-prediction/widget-api-key-encryption-key"),
   widgetCustomerSessionSecret: optionalRuntimeSecretReference("ai-sports-prediction/widget-customer-session-secret"),
+  instagramAccessToken: optionalRuntimeSecretReference("ai-sports-prediction/instagram-access-token"),
   tiktokAccessToken: optionalRuntimeSecretReference("ai-sports-prediction/tiktok-access-token")
 };
 
@@ -102,6 +103,9 @@ const taskDefinition = {
         ,{ name: "PUBLIC_SITE_URL", value: env("PUBLIC_SITE_URL", "https://residualsports.com") }
         ,{ name: "WIDGET_CUSTOMER_SESSION_TTL_HOURS", value: env("WIDGET_CUSTOMER_SESSION_TTL_HOURS", "720") }
         ,{ name: "WIDGET_ACCESS_FROM_EMAIL", value: env("WIDGET_ACCESS_FROM_EMAIL", "") }
+        ,{ name: "MARKETING_ASSET_S3_BUCKET", value: env("MARKETING_ASSET_S3_BUCKET", "ai-sports-prediction") }
+        ,{ name: "MARKETING_ASSET_S3_PREFIX", value: env("MARKETING_ASSET_S3_PREFIX", "marketing-assets") }
+        ,{ name: "MARKETING_ASSET_S3_REGION", value: env("MARKETING_ASSET_S3_REGION", region) }
       ],
       secrets: [
         { name: "DATABASE_URL", valueFrom: secrets.databaseUrl },
@@ -200,7 +204,14 @@ const taskDefinition = {
         ["OPS_ALERT_FROM_EMAIL", env("OPS_ALERT_FROM_EMAIL", "Residual Sports <ops@residualsports.com>")],
         ["NEWSLETTER_FROM_EMAIL", env("NEWSLETTER_FROM_EMAIL", "Residual Sports <hello@residualsports.com>")],
         ["MARKETING_AUTOMATION_ENABLED", env("MARKETING_AUTOMATION_ENABLED", "0")],
+        ["MARKETING_PUBLISH_MODE", env("MARKETING_PUBLISH_MODE", "review")],
         ["MARKETING_ANALYTICS_ENABLED", env("MARKETING_ANALYTICS_ENABLED", "1")],
+        ["MARKETING_PUBLIC_ASSET_BASE_URL", env("MARKETING_PUBLIC_ASSET_BASE_URL", "https://residualsports.com/api/marketing-assets")],
+        ["MARKETING_ASSET_S3_BUCKET", env("MARKETING_ASSET_S3_BUCKET", "ai-sports-prediction")],
+        ["MARKETING_ASSET_S3_PREFIX", env("MARKETING_ASSET_S3_PREFIX", "marketing-assets")],
+        ["MARKETING_ASSET_S3_REGION", env("MARKETING_ASSET_S3_REGION", region)],
+        ["INSTAGRAM_ACCOUNT_ID", env("INSTAGRAM_ACCOUNT_ID", "17841438107091610")],
+        ["INSTAGRAM_GRAPH_API_VERSION", env("INSTAGRAM_GRAPH_API_VERSION", "v23.0")],
         ["GA4_MEASUREMENT_ID", env("GA4_MEASUREMENT_ID", "G-KSGFX9TKD8")],
         ["REVENUE_AUTOMATION_ENABLED", env("REVENUE_AUTOMATION_ENABLED", "1")],
         ["REVENUE_AUTOMATION_INTERVAL_MINUTES", env("REVENUE_AUTOMATION_INTERVAL_MINUTES", "60")],
@@ -216,6 +227,7 @@ const taskDefinition = {
         ["THE_ODDS_API_KEY", secrets.theOddsApiKey],
         ["SERPAPI_API_KEY", secrets.serpApiKey],
         ["RESEND_API_KEY", secrets.resendApiKey],
+        ...(secrets.instagramAccessToken ? [["INSTAGRAM_ACCESS_TOKEN", secrets.instagramAccessToken]] : []),
         ...(secrets.ga4ApiSecret ? [["GA4_API_SECRET", secrets.ga4ApiSecret]] : [])
       ].map(([name, valueFrom]) => ({ name, valueFrom })),
       logConfiguration: awslogs("edge-worker")
