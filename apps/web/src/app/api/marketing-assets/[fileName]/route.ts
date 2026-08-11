@@ -18,7 +18,10 @@ export async function GET(
     return new Response("Not found", { status: 404 });
   }
 
-  const prefix = (process.env.MARKETING_ASSET_S3_PREFIX?.trim() || "marketing-assets")
+  const prefix = (
+    process.env.MARKETING_ASSET_S3_PREFIX?.trim()
+    || "ai-sports-prediction/backups/marketing-assets"
+  )
     .replace(/^\/+|\/+$/gu, "");
   const endpoint = process.env.MARKETING_ASSET_S3_ENDPOINT?.trim();
   const client = new S3Client({

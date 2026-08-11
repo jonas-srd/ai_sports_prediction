@@ -83,7 +83,7 @@ const definition = {
       ["MARKETING_ANALYTICS_ENABLED", env("MARKETING_ANALYTICS_ENABLED", "1")]
       ,["MARKETING_PUBLIC_ASSET_BASE_URL", env("MARKETING_PUBLIC_ASSET_BASE_URL", "https://residualsports.com/api/marketing-assets")]
       ,["MARKETING_ASSET_S3_BUCKET", env("MARKETING_ASSET_S3_BUCKET", "ai-sports-prediction")]
-      ,["MARKETING_ASSET_S3_PREFIX", env("MARKETING_ASSET_S3_PREFIX", "marketing-assets")]
+      ,["MARKETING_ASSET_S3_PREFIX", env("MARKETING_ASSET_S3_PREFIX", "ai-sports-prediction/backups/marketing-assets")]
       ,["MARKETING_ASSET_S3_REGION", env("MARKETING_ASSET_S3_REGION", region)]
       ,["INSTAGRAM_ACCOUNT_ID", env("INSTAGRAM_ACCOUNT_ID", "17841438107091610")]
       ,["INSTAGRAM_GRAPH_API_VERSION", env("INSTAGRAM_GRAPH_API_VERSION", "v23.0")]
