@@ -1,4 +1,5 @@
 export const ADMIN_SESSION_COOKIE = "ai_sports_admin_session";
+export const FULL_SITE_PREVIEW_COOKIE = "residual_full_site_preview";
 
 export type AdminSession = {
   email: string;

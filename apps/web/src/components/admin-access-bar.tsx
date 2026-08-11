@@ -19,6 +19,7 @@ export function AdminAccessBar() {
     <div className={styles.bar}>
       <span className={styles.lock}>● PRIVATE</span>
       <nav aria-label="Admin-Navigation">
+        <Link href="/">Website öffnen</Link>
         <Link aria-current={pathname === "/admin" ? "page" : undefined} href="/admin">Übersicht</Link>
         <Link aria-current={pathname.startsWith("/admin/revenue") ? "page" : undefined} href="/admin/revenue">Umsatz</Link>
         <Link aria-current={pathname.startsWith("/admin/marketing") ? "page" : undefined} href="/admin/marketing">Marketing</Link>

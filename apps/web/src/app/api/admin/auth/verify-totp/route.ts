@@ -6,6 +6,7 @@ import {
 } from "@/lib/admin-login-rate-limit";
 import {
   ADMIN_SESSION_COOKIE,
+  FULL_SITE_PREVIEW_COOKIE,
   createAdminSession,
   getAdminSessionSecret,
   getAdminSessionTtlSeconds,
@@ -74,6 +75,13 @@ export async function POST(request: NextRequest) {
   });
   response.cookies.set(ADMIN_SESSION_COOKIE, session, {
     httpOnly: true,
+    maxAge: ttlSeconds,
+    path: "/",
+    sameSite: "lax",
+    secure: process.env.NODE_ENV === "production"
+  });
+  response.cookies.set(FULL_SITE_PREVIEW_COOKIE, "1", {
+    httpOnly: false,
     maxAge: ttlSeconds,
     path: "/",
     sameSite: "lax",

@@ -1,6 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 import {
   ADMIN_SESSION_COOKIE,
+  FULL_SITE_PREVIEW_COOKIE,
   getAdminSessionSecret,
   getAllowedAdminEmails,
   verifyAdminSession
@@ -79,9 +80,44 @@ export async function proxy(request: NextRequest) {
     return NextResponse.next();
   }
 
+  const previewSession = await readAuthorizedAdminSession(request);
+  if (previewSession) {
+    const response = NextResponse.next();
+    response.cookies.set(FULL_SITE_PREVIEW_COOKIE, "1", {
+      httpOnly: false,
+      secure: request.nextUrl.protocol === "https:" || process.env.NODE_ENV === "production",
+      sameSite: "lax",
+      maxAge: Math.max(1, previewSession.expiresAt - Math.floor(Date.now() / 1000)),
+      path: "/"
+    });
+    response.headers.set("cache-control", "private, no-store");
+    response.headers.set("x-robots-tag", "noindex, nofollow, noarchive");
+    response.headers.append("vary", "Cookie");
+    return response;
+  }
+
   const url = request.nextUrl.clone();
   url.pathname = "/coming-soon";
-  return NextResponse.rewrite(url);
+  const response = NextResponse.rewrite(url);
+  if (request.cookies.has(FULL_SITE_PREVIEW_COOKIE)) {
+    response.cookies.set(FULL_SITE_PREVIEW_COOKIE, "", {
+      httpOnly: false,
+      secure: request.nextUrl.protocol === "https:" || process.env.NODE_ENV === "production",
+      sameSite: "lax",
+      maxAge: 0,
+      path: "/"
+    });
+  }
+  return response;
+}
+
+async function readAuthorizedAdminSession(request: NextRequest) {
+  const sessionToken = request.cookies.get(ADMIN_SESSION_COOKIE)?.value ?? "";
+  if (!sessionToken) return null;
+  const sessionSecret = getAdminSessionSecret();
+  const allowedEmails = getAllowedAdminEmails();
+  if (!sessionSecret || allowedEmails.size === 0) return null;
+  return verifyAdminSession(sessionToken, sessionSecret, allowedEmails);
 }
 
 function isLocalDevelopmentRequest(request: NextRequest): boolean {
