@@ -27,6 +27,7 @@
   "dependencies": {
     "@ai-sports-prediction/db": "0.1.0",
     "@ai-sports-prediction/llm": "0.1.0",
+    "@ai-sports-prediction/tiktok": "0.1.0",
     "@aws-sdk/client-s3": "latest",
     "bullmq": "latest",
     "sharp": "^0.35.3",

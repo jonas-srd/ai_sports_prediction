@@ -4,6 +4,12 @@
  */
 import { readFile } from "node:fs/promises";
 import type { PostgresDb } from "@ai-sports-prediction/db";
+import {
+  getValidTikTokAccessToken,
+  readTikTokServerConfig,
+  uploadTikTokPhotoDraft,
+  type TikTokServerConfig
+} from "@ai-sports-prediction/tiktok";
 import { parseSubredditAllowlist, type MarketingPlatform } from "./marketing-agent";
 
 type MarketingPostRow = {
@@ -131,7 +137,7 @@ export async function publishMarketingCampaign(
         "update marketing_posts set status = 'publishing', error_message = null where id = $1",
         [post.id]
       );
-      const published = await publishPost(post);
+      const published = await publishPost(db, post);
       await db.query(
         `
           update marketing_posts
@@ -184,7 +190,7 @@ export async function publishApprovedMarketingCampaigns(
   return results;
 }
 
-async function publishPost(post: MarketingPostRow): Promise<PublishedPost> {
+async function publishPost(db: PostgresDb, post: MarketingPostRow): Promise<PublishedPost> {
   if (post.platform === "instagram_feed" || post.platform === "instagram_story") {
     return publishInstagram(post);
   }
@@ -192,7 +198,7 @@ async function publishPost(post: MarketingPostRow): Promise<PublishedPost> {
     return publishX(post);
   }
   if (post.platform === "tiktok") {
-    return publishTikTok(post);
+    return publishTikTok(post, { db });
   }
   return publishReddit(post);
 }
@@ -274,68 +280,27 @@ export async function publishX(post: MarketingPostRow): Promise<PublishedPost> {
   return { providerPostId: id, providerPostUrl: `https://x.com/i/web/status/${id}` };
 }
 
-export async function publishTikTok(post: MarketingPostRow): Promise<PublishedPost> {
-  const accessToken = requireEnv("TIKTOK_ACCESS_TOKEN");
+export async function publishTikTok(
+  post: MarketingPostRow,
+  options: {
+    db?: PostgresDb;
+    accessToken?: string;
+    config?: TikTokServerConfig;
+  } = {}
+): Promise<PublishedPost> {
   if (!post.asset_url || !post.asset_url.startsWith("https://")) {
     throw new Error("TikTok requires a public HTTPS asset URL from MARKETING_PUBLIC_ASSET_BASE_URL.");
   }
-
-  const configuredMode = process.env.TIKTOK_POST_MODE?.trim().toUpperCase();
-  const directPost = configuredMode === "DIRECT_POST";
-  const postInfo: Record<string, unknown> = {
+  const config = options.config ?? readTikTokServerConfig();
+  const accessToken = options.accessToken
+    ?? (options.db ? await getValidTikTokAccessToken(options.db, config) : null);
+  if (!accessToken) throw new Error("A connected TikTok account is required.");
+  const created = await uploadTikTokPhotoDraft(accessToken, {
     title: truncate(post.title?.trim() || "AI match prediction", 90),
-    description: truncate(post.body, 4000)
-  };
-
-  if (directPost) {
-    const creatorInfo = await fetchJson("https://open.tiktokapis.com/v2/post/publish/creator_info/query/", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${accessToken}`,
-        "Content-Type": "application/json; charset=UTF-8"
-      },
-      body: "{}"
-    });
-    assertTikTokSuccess(creatorInfo, "TikTok creator info");
-    const privacyOptions = Array.isArray(creatorInfo.data?.privacy_level_options)
-      ? creatorInfo.data.privacy_level_options.filter((value: unknown): value is string => typeof value === "string")
-      : [];
-    const privacyLevel = process.env.TIKTOK_PRIVACY_LEVEL?.trim() || "SELF_ONLY";
-    if (!privacyOptions.includes(privacyLevel)) {
-      throw new Error(`TikTok privacy level ${privacyLevel} is not available for this creator.`);
-    }
-    Object.assign(postInfo, {
-      privacy_level: privacyLevel,
-      disable_comment: false,
-      auto_add_music: true,
-      brand_content_toggle: false,
-      brand_organic_toggle: true
-    });
-  }
-
-  const created = await fetchJson("https://open.tiktokapis.com/v2/post/publish/content/init/", {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${accessToken}`,
-      "Content-Type": "application/json; charset=UTF-8"
-    },
-    body: JSON.stringify({
-      post_info: postInfo,
-      source_info: {
-        source: "PULL_FROM_URL",
-        photo_cover_index: 0,
-        photo_images: [post.asset_url]
-      },
-      post_mode: directPost ? "DIRECT_POST" : "MEDIA_UPLOAD",
-      media_type: "PHOTO"
-    })
+    description: truncate(post.body, 4000),
+    photoUrl: post.asset_url
   });
-  assertTikTokSuccess(created, "TikTok content posting");
-  const publishId = created.data?.publish_id;
-  if (typeof publishId !== "string" || !publishId) {
-    throw new Error("TikTok accepted the request but returned no publish_id.");
-  }
-  return { providerPostId: publishId, providerPostUrl: null };
+  return { providerPostId: created.publishId, providerPostUrl: null };
 }
 
 export async function publishReddit(post: MarketingPostRow): Promise<PublishedPost> {
@@ -429,13 +394,6 @@ function readRedditUrl(payload: Record<string, any>): string | null {
 function readRedditPostId(payload: Record<string, any>): string | null {
   const value = payload.json?.data?.name ?? payload.json?.data?.id;
   return typeof value === "string" && value ? value : null;
-}
-
-function assertTikTokSuccess(payload: Record<string, any>, label: string): void {
-  const code = payload.error?.code;
-  if (typeof code === "string" && code !== "ok") {
-    throw new Error(`${label} failed (${code}): ${String(payload.error?.message ?? "Unknown TikTok error")}`);
-  }
 }
 
 function truncate(value: string, max: number): string {

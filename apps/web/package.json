@@ -13,6 +13,7 @@
   "dependencies": {
     "@ai-sports-prediction/db": "file:../../packages/db",
     "@ai-sports-prediction/llm": "file:../../packages/llm",
+    "@ai-sports-prediction/tiktok": "file:../../packages/tiktok",
     "@aws-sdk/client-s3": "latest",
     "@types/qrcode": "^1.5.6",
     "bullmq": "latest",

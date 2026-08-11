@@ -51,7 +51,9 @@ const secrets = {
   widgetApiKeyEncryptionKey: optionalRuntimeSecretReference("ai-sports-prediction/widget-api-key-encryption-key"),
   widgetCustomerSessionSecret: optionalRuntimeSecretReference("ai-sports-prediction/widget-customer-session-secret"),
   instagramAccessToken: optionalRuntimeSecretReference("ai-sports-prediction/instagram-access-token"),
-  tiktokAccessToken: optionalRuntimeSecretReference("ai-sports-prediction/tiktok-access-token")
+  tiktokClientKey: optionalRuntimeSecretReference("ai-sports-prediction/tiktok-client-key"),
+  tiktokClientSecret: optionalRuntimeSecretReference("ai-sports-prediction/tiktok-client-secret"),
+  tiktokTokenEncryptionKey: optionalRuntimeSecretReference("ai-sports-prediction/tiktok-token-encryption-key")
 };
 
 const taskDefinition = {
@@ -106,6 +108,7 @@ const taskDefinition = {
         ,{ name: "MARKETING_ASSET_S3_BUCKET", value: env("MARKETING_ASSET_S3_BUCKET", "ai-sports-prediction") }
         ,{ name: "MARKETING_ASSET_S3_PREFIX", value: env("MARKETING_ASSET_S3_PREFIX", "ai-sports-prediction/backups/marketing-assets") }
         ,{ name: "MARKETING_ASSET_S3_REGION", value: env("MARKETING_ASSET_S3_REGION", region) }
+        ,{ name: "TIKTOK_REDIRECT_URI", value: env("TIKTOK_REDIRECT_URI", "https://residualsports.com/api/tiktok/oauth/callback") }
       ],
       secrets: [
         { name: "DATABASE_URL", valueFrom: secrets.databaseUrl },
@@ -127,6 +130,15 @@ const taskDefinition = {
           : [])
         ,...(secrets.widgetCustomerSessionSecret
           ? [{ name: "WIDGET_CUSTOMER_SESSION_SECRET", valueFrom: secrets.widgetCustomerSessionSecret }]
+          : [])
+        ,...(secrets.tiktokClientKey
+          ? [{ name: "TIKTOK_CLIENT_KEY", valueFrom: secrets.tiktokClientKey }]
+          : [])
+        ,...(secrets.tiktokClientSecret
+          ? [{ name: "TIKTOK_CLIENT_SECRET", valueFrom: secrets.tiktokClientSecret }]
+          : [])
+        ,...(secrets.tiktokTokenEncryptionKey
+          ? [{ name: "TIKTOK_TOKEN_ENCRYPTION_KEY", valueFrom: secrets.tiktokTokenEncryptionKey }]
           : [])
       ],
       logConfiguration: awslogs("edge-web")
@@ -218,6 +230,7 @@ const taskDefinition = {
         ["PUBLIC_SITE_URL", env("PUBLIC_SITE_URL", "https://residualsports.com")],
         ["WIDGET_ACCESS_FROM_EMAIL", env("WIDGET_ACCESS_FROM_EMAIL", "")],
         ["SALES_ALERT_EMAILS", env("SALES_ALERT_EMAILS", "")]
+        ,["TIKTOK_REDIRECT_URI", env("TIKTOK_REDIRECT_URI", "https://residualsports.com/api/tiktok/oauth/callback")]
       ].map(([name, value]) => ({ name, value })),
       secrets: [
         ["DATABASE_URL", secrets.databaseUrl],
@@ -228,7 +241,10 @@ const taskDefinition = {
         ["SERPAPI_API_KEY", secrets.serpApiKey],
         ["RESEND_API_KEY", secrets.resendApiKey],
         ...(secrets.instagramAccessToken ? [["INSTAGRAM_ACCESS_TOKEN", secrets.instagramAccessToken]] : []),
-        ...(secrets.ga4ApiSecret ? [["GA4_API_SECRET", secrets.ga4ApiSecret]] : [])
+        ...(secrets.ga4ApiSecret ? [["GA4_API_SECRET", secrets.ga4ApiSecret]] : []),
+        ...(secrets.tiktokClientKey ? [["TIKTOK_CLIENT_KEY", secrets.tiktokClientKey]] : []),
+        ...(secrets.tiktokClientSecret ? [["TIKTOK_CLIENT_SECRET", secrets.tiktokClientSecret]] : []),
+        ...(secrets.tiktokTokenEncryptionKey ? [["TIKTOK_TOKEN_ENCRYPTION_KEY", secrets.tiktokTokenEncryptionKey]] : [])
       ].map(([name, valueFrom]) => ({ name, valueFrom })),
       logConfiguration: awslogs("edge-worker")
     },

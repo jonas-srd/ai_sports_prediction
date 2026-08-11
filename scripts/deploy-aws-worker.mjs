@@ -35,6 +35,9 @@ const secrets = {
   ,resendApiKey: runtimeSecretReference("ai-sports-prediction/resend-api-key")
   ,ga4ApiSecret: optionalRuntimeSecretReference("ai-sports-prediction/ga4-api-secret")
   ,instagramAccessToken: optionalRuntimeSecretReference("ai-sports-prediction/instagram-access-token")
+  ,tiktokClientKey: optionalRuntimeSecretReference("ai-sports-prediction/tiktok-client-key")
+  ,tiktokClientSecret: optionalRuntimeSecretReference("ai-sports-prediction/tiktok-client-secret")
+  ,tiktokTokenEncryptionKey: optionalRuntimeSecretReference("ai-sports-prediction/tiktok-token-encryption-key")
 };
 
 const definition = {
@@ -93,6 +96,7 @@ const definition = {
       ,["PUBLIC_SITE_URL", env("PUBLIC_SITE_URL", "https://residualsports.com")]
       ,["WIDGET_ACCESS_FROM_EMAIL", env("WIDGET_ACCESS_FROM_EMAIL", "")]
       ,["SALES_ALERT_EMAILS", env("SALES_ALERT_EMAILS", "")]
+      ,["TIKTOK_REDIRECT_URI", env("TIKTOK_REDIRECT_URI", "https://residualsports.com/api/tiktok/oauth/callback")]
     ].map(([name, value]) => ({ name, value })),
     secrets: [
       ["DATABASE_URL", secrets.databaseUrl],
@@ -104,6 +108,9 @@ const definition = {
       ,["RESEND_API_KEY", secrets.resendApiKey]
       ,...(secrets.ga4ApiSecret ? [["GA4_API_SECRET", secrets.ga4ApiSecret]] : [])
       ,...(secrets.instagramAccessToken ? [["INSTAGRAM_ACCESS_TOKEN", secrets.instagramAccessToken]] : [])
+      ,...(secrets.tiktokClientKey ? [["TIKTOK_CLIENT_KEY", secrets.tiktokClientKey]] : [])
+      ,...(secrets.tiktokClientSecret ? [["TIKTOK_CLIENT_SECRET", secrets.tiktokClientSecret]] : [])
+      ,...(secrets.tiktokTokenEncryptionKey ? [["TIKTOK_TOKEN_ENCRYPTION_KEY", secrets.tiktokTokenEncryptionKey]] : [])
     ].map(([name, valueFrom]) => ({ name, valueFrom })),
     logConfiguration: {
       logDriver: "awslogs",

@@ -43,6 +43,7 @@ const EXPORT_TABLES = [
   "editorial_outreach_drafts",
   "marketing_campaigns",
   "marketing_posts",
+  "social_connections",
   "marketing_post_metrics",
   "marketing_performance_reports",
   "tennis_player_country_profiles",

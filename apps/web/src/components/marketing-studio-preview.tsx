@@ -1,188 +1,355 @@
 "use client";
 
-import { useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
+import type {
+  MarketingAdminCampaignView,
+  MarketingAdminPostView,
+  MarketingAdminResponse
+} from "@/lib/marketing-admin-types";
 import styles from "./marketing-studio-preview.module.css";
 
-const channels = [
-  { name: "Instagram", icon: "◎", status: "Bereit", tone: "mint", detail: "Feed + Story" },
-  { name: "X", icon: "𝕏", status: "Bereit", tone: "blue", detail: "Post + Visual" },
-  { name: "Reddit", icon: "●", status: "Review", tone: "orange", detail: "r/soccer" },
-  { name: "TikTok", icon: "♪", status: "Entwurf", tone: "pink", detail: "Photo draft" }
-] as const;
+type DraftEdit = { title: string; body: string };
+type ApiFailure = { message?: string };
 
-const weekly = [
-  { day: "Mo", impressions: 32, clicks: 18 },
-  { day: "Di", impressions: 48, clicks: 29 },
-  { day: "Mi", impressions: 39, clicks: 24 },
-  { day: "Do", impressions: 66, clicks: 47 },
-  { day: "Fr", impressions: 58, clicks: 36 },
-  { day: "Sa", impressions: 92, clicks: 76 },
-  { day: "So", impressions: 74, clicks: 61 }
-];
+const STATUS_LABELS: Record<string, string> = {
+  pending_review: "Zur Freigabe",
+  approved: "Freigegeben",
+  publishing: "Wird übertragen",
+  uploaded_draft: "In TikTok bereit",
+  published: "Veröffentlicht",
+  failed: "Fehlgeschlagen",
+  rejected: "Abgelehnt",
+  skipped: "Übersprungen"
+};
+
+const PROVIDER_LABELS: Record<string, string> = {
+  REQUESTING_UPLOAD: "Upload wird angefordert",
+  PROCESSING_DOWNLOAD: "TikTok lädt das Motiv",
+  SEND_TO_USER_INBOX: "Entwurf im TikTok-Postfach",
+  PUBLISH_COMPLETE: "Auf TikTok veröffentlicht",
+  FAILED: "TikTok-Verarbeitung fehlgeschlagen"
+};
 
 export function MarketingStudioPreview() {
-  const [format, setFormat] = useState<"feed" | "story">("feed");
-  const [channel, setChannel] = useState("Instagram");
+  const [data, setData] = useState<MarketingAdminResponse | null>(null);
+  const [edits, setEdits] = useState<Record<string, DraftEdit>>({});
+  const [confirmed, setConfirmed] = useState<Record<string, boolean>>({});
+  const [busyPost, setBusyPost] = useState<string | null>(null);
+  const [busyConnection, setBusyConnection] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [message, setMessage] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  const load = useCallback(async (quiet = false) => {
+    if (!quiet) setLoading(true);
+    setError(null);
+    try {
+      const response = await fetch("/api/admin/marketing", {
+        cache: "no-store",
+        credentials: "same-origin"
+      });
+      if (response.status === 401) {
+        window.location.assign("/admin/login?next=/admin/marketing");
+        return;
+      }
+      const payload = await response.json() as MarketingAdminResponse | ApiFailure;
+      if (!response.ok || !("ok" in payload)) {
+        throw new Error("message" in payload && payload.message
+          ? payload.message
+          : "Das Marketing Studio konnte nicht geladen werden.");
+      }
+      setData(payload);
+      setEdits((current) => {
+        const next = { ...current };
+        for (const campaign of payload.campaigns) {
+          for (const post of campaign.posts.filter((entry) => entry.platform === "tiktok")) {
+            if (!next[post.id]) next[post.id] = { title: post.title ?? "", body: post.body };
+          }
+        }
+        return next;
+      });
+    } catch (reason) {
+      setError(reason instanceof Error ? reason.message : "Das Marketing Studio ist nicht verfügbar.");
+    } finally {
+      if (!quiet) setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    void load();
+    const status = new URL(window.location.href).searchParams.get("tiktok");
+    if (status === "connected") setMessage("TikTok wurde erfolgreich mit Residual Sports verbunden.");
+    if (status === "not_configured") setError("Die serverseitige TikTok-Konfiguration ist noch unvollständig.");
+    if (status === "error") setError("Die TikTok-Verbindung konnte nicht abgeschlossen werden. Bitte erneut verbinden.");
+  }, [load]);
+
+  const tiktokPosts = useMemo(() => data?.campaigns.flatMap((campaign) =>
+    campaign.posts
+      .filter((post) => post.platform === "tiktok")
+      .map((post) => ({ campaign, post }))) ?? [], [data]);
+
+  async function act(payload: Record<string, unknown>, successMessage: string, postId?: string) {
+    if (postId) setBusyPost(postId);
+    else setBusyConnection(true);
+    setError(null);
+    setMessage(null);
+    try {
+      const response = await fetch("/api/admin/marketing", {
+        method: "PATCH",
+        credentials: "same-origin",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify(payload)
+      });
+      if (response.status === 401) {
+        window.location.assign("/admin/login?next=/admin/marketing");
+        return;
+      }
+      const result = await response.json() as { ok?: boolean; message?: string };
+      if (!response.ok || !result.ok) throw new Error(result.message || "Die Aktion ist fehlgeschlagen.");
+      setMessage(successMessage);
+      if (postId) setConfirmed((current) => ({ ...current, [postId]: false }));
+      await load(true);
+    } catch (reason) {
+      setError(reason instanceof Error ? reason.message : "Die Aktion ist fehlgeschlagen.");
+    } finally {
+      if (postId) setBusyPost(null);
+      else setBusyConnection(false);
+    }
+  }
+
+  async function disconnect() {
+    if (!window.confirm("TikTok wirklich von Residual Sports trennen? Bereits hochgeladene Entwürfe bleiben in TikTok erhalten.")) return;
+    await act({ action: "disconnect_tiktok", confirmed: true }, "TikTok wurde getrennt.");
+  }
+
+  const connected = data?.tiktokConnection?.status === "connected";
+  const pendingCount = tiktokPosts.filter(({ post }) => isEditable(post)).length;
+  const uploadedCount = tiktokPosts.filter(({ post }) => post.status === "uploaded_draft").length;
+  const failedCount = tiktokPosts.filter(({ post }) => post.status === "failed").length;
 
   return (
     <main className={styles.shell}>
       <header className={styles.header}>
         <div>
-          <div className={styles.kickerRow}>
-            <span className={styles.eyebrow}>Residual Sports · Growth OS</span>
-            <span className={styles.demoBadge}><i /> Live-Vorschau · Demo-Daten</span>
-            <span className={styles.languageBadge}>Content · English only</span>
-          </div>
+          <span className={styles.eyebrow}>Residual Sports · Marketing Agent</span>
           <h1>Marketing Studio</h1>
-          <p>Aus Predictions werden freigegebene Kampagnen – und aus echten Reaktionen bessere nächste Posts.</p>
+          <p>Predictions prüfen, den Text anpassen und bewusst als bearbeitbaren TikTok-Entwurf übertragen.</p>
         </div>
         <div className={styles.headerActions}>
           <Link className={styles.ghostButton} href="/admin/outreach">Outreach Cockpit</Link>
-          <button className={styles.primaryButton} type="button">Neue Kampagne</button>
+          <button className={styles.ghostButton} disabled={loading} onClick={() => void load()} type="button">Aktualisieren</button>
         </div>
       </header>
 
-      <section className={styles.agentRail} aria-label="Marketing-Agenten">
-        {[
-          ["01", "Scout", "Prediction gewählt", "done"],
-          ["02", "Copy", "4 Kanäle erstellt", "done"],
-          ["03", "Visual", "4 Formate gerendert", "done"],
-          ["04", "Compliance", "Keine Risiken", "done"],
-          ["05", "Publisher", "Freigabe wartet", "active"],
-          ["06", "Performance", "Lernt aus Daten", "learning"]
-        ].map(([number, name, detail, state], index) => (
-          <div className={`${styles.agentStep} ${styles[state as keyof typeof styles]}`} key={name}>
-            <span className={styles.agentNumber}>{number}</span>
-            <div><strong>{name}</strong><small>{detail}</small></div>
-            {index < 5 ? <span className={styles.connector} /> : null}
+      {message ? <div className={styles.successBanner} role="status">{message}</div> : null}
+      {error ? <div className={styles.errorBanner} role="alert">{error}</div> : null}
+
+      <section className={styles.connectionCard}>
+        <div className={styles.connectionHeading}>
+          <div className={styles.tiktokMark}>♪</div>
+          <div>
+            <span className={styles.sectionKicker}>Content Posting API</span>
+            <h2>TikTok-Verbindung</h2>
           </div>
-        ))}
-      </section>
+          <ConnectionBadge configured={Boolean(data?.tiktokConfigured)} connected={connected} />
+        </div>
 
-      <section className={styles.statsGrid}>
-        <Metric label="Reichweite" value="28.4K" change="+18,6 %" spark={[24, 31, 28, 42, 51, 58, 72]} />
-        <Metric label="Klicks" value="1.126" change="+24,1 %" spark={[12, 18, 17, 31, 29, 43, 57]} />
-        <Metric label="Klickrate" value="4,0 %" change="+0,7 Pkt." spark={[18, 22, 19, 26, 31, 36, 43]} />
-        <Metric label="Engagement" value="7,8 %" change="+1,2 Pkt." spark={[21, 24, 29, 27, 38, 44, 50]} />
-      </section>
-
-      <div className={styles.mainGrid}>
-        <section className={styles.campaignPanel}>
-          <div className={styles.sectionHeader}>
-            <div><span className={styles.sectionKicker}>Nächste Kampagne</span><h2>FA Cup Match Prediction</h2></div>
-            <span className={styles.reviewBadge}>Zur Freigabe</span>
+        {loading ? (
+          <p className={styles.muted}>Verbindung wird geprüft …</p>
+        ) : !data?.tiktokConfigured ? (
+          <div className={styles.connectionBody}>
+            <p>Client Key, Client Secret oder der Schlüssel zur Token-Verschlüsselung fehlen noch auf dem Server.</p>
+            <span>Es werden keine Zugangsdaten im Browser gespeichert.</span>
           </div>
-
-          <div className={styles.campaignGrid}>
+        ) : data.tiktokConnection ? (
+          <div className={styles.profileRow}>
+            {data.tiktokConnection.avatarUrl
+              ? <img alt="TikTok-Profilbild" className={styles.avatar} src={data.tiktokConnection.avatarUrl} />
+              : <div className={styles.avatarFallback}>♪</div>}
+            <div className={styles.profileInfo}>
+              <strong>{data.tiktokConnection.displayName || "Verbundenes TikTok-Konto"}</strong>
+              <span>{data.tiktokConnection.scopes.join(" · ")}</span>
+              <small>Verbunden am {formatDate(data.tiktokConnection.connectedAtUtc)} · automatische Token-Erneuerung aktiv</small>
+              {data.tiktokConnection.lastError ? <em>{data.tiktokConnection.lastError}</em> : null}
+            </div>
+            <div className={styles.connectionActions}>
+              {data.tiktokConnection.status !== "connected"
+                ? <a className={styles.primaryButton} href="/api/tiktok/oauth/start">Neu verbinden</a>
+                : null}
+              <button className={styles.dangerButton} disabled={busyConnection} onClick={() => void disconnect()} type="button">Trennen</button>
+            </div>
+          </div>
+        ) : (
+          <div className={styles.connectionBody}>
             <div>
-              <div className={styles.formatSwitch}>
-                <button className={format === "feed" ? styles.selected : ""} onClick={() => setFormat("feed")} type="button">Feed · 1:1</button>
-                <button className={format === "story" ? styles.selected : ""} onClick={() => setFormat("story")} type="button">Story · 9:16</button>
-              </div>
-              <div className={`${styles.socialVisual} ${format === "story" ? styles.storyVisual : ""}`} data-testid="marketing-visual-preview">
-                <div className={styles.visualTop}><strong>RESIDUAL SPORTS</strong><span>FA CUP</span></div>
-                <div className={styles.matchup}>
-                  <strong>Arsenal</strong><span>VS</span><strong>Liverpool</strong>
-                </div>
-                <div className={styles.score}>2:1</div>
-                <p>Arsenal with <strong>68%</strong> model confidence</p>
-                <span className={styles.tendency}>Pick: Arsenal</span>
-                {format === "story" ? <b className={styles.storyCta}>MORE AI PREDICTIONS ↗</b> : null}
-                <small>20 Jul 2026, 20:00 · AI prediction, not a guarantee</small>
-              </div>
+              <strong>Noch kein TikTok-Konto verbunden</strong>
+              <p>Du meldest dich einmal bei TikTok an und erlaubst Profilzugriff sowie Entwurfs-Uploads.</p>
             </div>
+            <a className={styles.primaryButton} href="/api/tiktok/oauth/start">TikTok verbinden</a>
+          </div>
+        )}
+      </section>
 
-            <div className={styles.copyPanel}>
-              <div className={styles.channelTabs}>
-                {channels.map((item) => (
-                  <button className={channel === item.name ? styles.activeChannel : ""} key={item.name} onClick={() => setChannel(item.name)} type="button">
-                    <span>{item.icon}</span>{item.name}
-                  </button>
-                ))}
-              </div>
-              <div className={styles.copyCard}>
-                <div className={styles.copyMeta}><span>{channel} Entwurf</span><b>KI + Compliance geprüft</b></div>
-                {channel === "Instagram" ? (
-                  <p>Our AI prediction for Arsenal vs Liverpool: <strong>2:1</strong>.<br /><br />Model pick: Arsenal · Confidence: 68%. The model weighs form, matchup context, and the available competition data.<br /><br />AI prediction, not a guarantee.<br /><br /><em>#ResidualSports #FACup #Football</em></p>
-                ) : channel === "X" ? (
-                  <p>AI match prediction: Arsenal – Liverpool 2:1. Pick: Arsenal, confidence 68%. AI prediction, not a guarantee. <em>#FACup</em></p>
-                ) : channel === "TikTok" ? (
-                  <p>Arsenal vs Liverpool: our model predicts <strong>2:1</strong>.<br /><br />Pick: Arsenal · Confidence: 68%.<br /><br />AI prediction, not a guarantee.<br /><br /><em>#ResidualSports #FACup #Football</em></p>
-                ) : (
-                  <p><strong>AI prediction: Arsenal vs Liverpool (2:1)</strong><br /><br />Our model gives Arsenal the edge with 68% confidence. It weighs form, matchup context, and the available competition data. How do you see this matchup playing out?</p>
-                )}
-                <div className={styles.safetyChecks}>
-                  <span>✓ Keine Garantie</span><span>✓ Keine Wettaufforderung</span><span>✓ Faktenbasiert</span>
-                </div>
-              </div>
-              <div className={styles.publishTargets}>
-                {channels.map((item) => (
-                  <div key={item.name}><span className={styles[item.tone]}>{item.icon}</span><div><strong>{item.name}</strong><small>{item.detail}</small></div><b>{item.status}</b></div>
-                ))}
-              </div>
-              <div className={styles.actionRow}>
-                <button className={styles.ghostButton} type="button">Bearbeiten</button>
-                <button className={styles.primaryButton} type="button">Kampagne freigeben</button>
-              </div>
-            </div>
-          </div>
-        </section>
+      <section className={styles.statsGrid} aria-label="TikTok-Übersicht">
+        <Metric label="TikTok-Entwürfe" value={String(tiktokPosts.length)} />
+        <Metric label="Zu prüfen" value={String(pendingCount)} />
+        <Metric label="In TikTok bereit" value={String(uploadedCount)} />
+        <Metric label="Fehler" value={String(failedCount)} alert={failedCount > 0} />
+      </section>
 
-        <aside className={styles.insightsPanel}>
-          <div className={styles.sectionHeader}>
-            <div><span className={styles.sectionKicker}>Performance Agent</span><h2>Was wir lernen</h2></div>
-            <span className={styles.livePulse}><i /> Aktiv</span>
-          </div>
-          <div className={styles.recommendationHigh}>
-            <span>Hohe Priorität</span>
-            <h3>CTA früher platzieren</h3>
-            <p>Posts mit klarem Nutzen vor dem Link erzielen aktuell deutlich mehr Klicks.</p>
-            <div><b>+31 %</b><small>Klickrate bei Nutzen-Hooks</small></div>
-          </div>
-          <div className={styles.recommendation}>
-            <span>Format-Signal</span><h3>Story als Leitformat</h3>
-            <p>9:16-Motive haben die beste Engagement-Rate. Das Layout auf X übertragen.</p>
-          </div>
-          <div className={styles.recommendation}>
-            <span>Zeitfenster</span><h3>Samstag, 17–20 Uhr</h3>
-            <p>Dieses Fenster liefert 1,6× mehr Reichweite als der Wochenmittelwert.</p>
-          </div>
-          <button className={styles.insightButton} type="button">Alle Empfehlungen ansehen →</button>
-        </aside>
-      </div>
-
-      <section className={styles.analyticsPanel}>
+      <section className={styles.queueSection}>
         <div className={styles.sectionHeader}>
-          <div><span className={styles.sectionKicker}>Letzte 7 Tage</span><h2>Reichweite & Klicks</h2></div>
-          <div className={styles.legend}><span><i className={styles.impressionDot} />Impressionen</span><span><i className={styles.clickDot} />Klicks</span></div>
+          <div>
+            <span className={styles.sectionKicker}>Freigabe-Queue</span>
+            <h2>Bearbeitbare TikTok-Entwürfe</h2>
+          </div>
+          <span className={styles.queueCount}>{tiktokPosts.length} Entwürfe</span>
         </div>
-        <div className={styles.chart}>
-          {weekly.map((item) => (
-            <div className={styles.chartColumn} key={item.day}>
-              <div className={styles.barArea}>
-                <span className={styles.impressionBar} style={{ height: `${item.impressions}%` }} />
-                <span className={styles.clickBar} style={{ height: `${item.clicks}%` }} />
-              </div>
-              <small>{item.day}</small>
-            </div>
-          ))}
-        </div>
-        <div className={styles.channelSummary}>
-          <ChannelSummary color="mint" label="Instagram" reach="16.8K" clicks="594" rate="3,5 % CTR" />
-          <ChannelSummary color="blue" label="X" reach="8.9K" clicks="418" rate="4,7 % CTR" />
-          <ChannelSummary color="orange" label="Reddit" reach="2.7K" clicks="114" rate="4,2 % CTR" />
-          <ChannelSummary color="pink" label="TikTok" reach="Neu" clicks="–" rate="Draft API" />
+
+        {loading ? <LoadingCards /> : null}
+        {!loading && tiktokPosts.length === 0 ? (
+          <div className={styles.emptyState}>
+            <strong>Noch keine TikTok-Kampagnen vorhanden</strong>
+            <p>Sobald der Marketing-Agent aus einer Prediction eine Kampagne erzeugt, erscheint der Entwurf hier.</p>
+          </div>
+        ) : null}
+        <div className={styles.cardGrid}>
+          {tiktokPosts.map(({ campaign, post }) => {
+            const edit = edits[post.id] ?? { title: post.title ?? "", body: post.body };
+            const editable = isEditable(post);
+            const busy = busyPost === post.id;
+            const canUpload = Boolean(connected && data?.tiktokConfigured && confirmed[post.id] && editable && !busy);
+            return (
+              <article className={styles.draftCard} key={post.id}>
+                <div className={styles.draftMeta}>
+                  <div>
+                    <span>{campaign.sport} · {campaign.competition}</span>
+                    <h3>{campaign.homeTeam} vs. {campaign.awayTeam}</h3>
+                    <small>{formatDate(campaign.utcDate)} · Prediction {campaign.predictedHome}:{campaign.predictedAway}</small>
+                  </div>
+                  <StatusBadge status={post.status} />
+                </div>
+
+                <div className={styles.draftLayout}>
+                  <div className={styles.assetPreview}>
+                    {post.assetUrl
+                      ? <img alt={`TikTok-Motiv für ${campaign.homeTeam} gegen ${campaign.awayTeam}`} src={post.assetUrl} />
+                      : <div className={styles.noAsset}>Motiv wird noch erzeugt</div>}
+                    <span>PHOTO DRAFT</span>
+                  </div>
+
+                  <div className={styles.editor}>
+                    <label>
+                      Titel <small>{Array.from(edit.title).length}/90</small>
+                      <input
+                        disabled={!editable || busy}
+                        maxLength={90}
+                        onChange={(event) => setEdits((current) => ({ ...current, [post.id]: { ...edit, title: event.target.value } }))}
+                        value={edit.title}
+                      />
+                    </label>
+                    <label>
+                      Beschreibung <small>{Array.from(edit.body).length}/4000</small>
+                      <textarea
+                        disabled={!editable || busy}
+                        maxLength={4000}
+                        onChange={(event) => setEdits((current) => ({ ...current, [post.id]: { ...edit, body: event.target.value } }))}
+                        rows={8}
+                        value={edit.body}
+                      />
+                    </label>
+
+                    {post.providerStatus ? (
+                      <div className={styles.providerStatus}>
+                        <span>TikTok-Status</span>
+                        <strong>{PROVIDER_LABELS[post.providerStatus] ?? post.providerStatus}</strong>
+                        {post.providerStatusUpdatedAtUtc ? <small>Zuletzt geprüft: {formatDate(post.providerStatusUpdatedAtUtc)}</small> : null}
+                      </div>
+                    ) : null}
+                    {post.errorMessage ? <div className={styles.postError}>{post.errorMessage}</div> : null}
+
+                    {editable ? (
+                      <label className={styles.confirmRow}>
+                        <input
+                          checked={Boolean(confirmed[post.id])}
+                          disabled={!connected || busy}
+                          onChange={(event) => setConfirmed((current) => ({ ...current, [post.id]: event.target.checked }))}
+                          type="checkbox"
+                        />
+                        <span>Motiv und Text sind geprüft. Diesen Beitrag jetzt als bearbeitbaren TikTok-Entwurf übertragen.</span>
+                      </label>
+                    ) : null}
+
+                    <div className={styles.actionRow}>
+                      {editable ? (
+                        <>
+                          <button
+                            className={styles.ghostButton}
+                            disabled={busy || !hasChanges(post, edit)}
+                            onClick={() => void act({ action: "update_tiktok_post", postId: post.id, ...edit }, "Entwurf wurde gespeichert.", post.id)}
+                            type="button"
+                          >Speichern</button>
+                          <button
+                            className={styles.primaryButton}
+                            disabled={!canUpload}
+                            onClick={() => void act({ action: "upload_tiktok_draft", postId: post.id, ...edit, confirmed: true }, "Der Entwurf wurde an TikTok übertragen. Öffne TikTok, prüfe ihn dort und veröffentliche ihn manuell.", post.id)}
+                            type="button"
+                          >{busy ? "Wird übertragen …" : "Als TikTok-Entwurf hochladen"}</button>
+                        </>
+                      ) : null}
+                      {post.providerPostId ? (
+                        <button
+                          className={styles.ghostButton}
+                          disabled={!connected || busy}
+                          onClick={() => void act({ action: "refresh_tiktok_status", postId: post.id }, "TikTok-Status wurde aktualisiert.", post.id)}
+                          type="button"
+                        >Status prüfen</button>
+                      ) : null}
+                    </div>
+                    {editable && !connected ? <small className={styles.actionHint}>Verbinde zuerst das Residual-Sports-TikTok-Konto.</small> : null}
+                    {post.status === "uploaded_draft" ? <small className={styles.actionHint}>Der Beitrag liegt in TikTok als Entwurf bereit und wird nicht automatisch veröffentlicht.</small> : null}
+                  </div>
+                </div>
+              </article>
+            );
+          })}
         </div>
       </section>
     </main>
   );
 }
 
-function Metric({ label, value, change, spark }: { label: string; value: string; change: string; spark: number[] }) {
-  return <article className={styles.metricCard}><span>{label}</span><div><strong>{value}</strong><b>{change}</b></div><div className={styles.spark}>{spark.map((height, index) => <i key={index} style={{ height: `${height}%` }} />)}</div></article>;
+function ConnectionBadge({ configured, connected }: { configured: boolean; connected: boolean }) {
+  if (!configured) return <span className={`${styles.connectionBadge} ${styles.warning}`}>Konfiguration fehlt</span>;
+  if (connected) return <span className={`${styles.connectionBadge} ${styles.connected}`}><i /> Verbunden</span>;
+  return <span className={styles.connectionBadge}>Nicht verbunden</span>;
 }
 
-function ChannelSummary({ color, label, reach, clicks, rate }: { color: "mint" | "blue" | "orange" | "pink"; label: string; reach: string; clicks: string; rate: string }) {
-  return <div className={styles.channelSummaryItem}><i className={styles[color]} /><strong>{label}</strong><span>{reach} Reichweite</span><span>{clicks} Klicks</span><b>{rate}</b></div>;
+function StatusBadge({ status }: { status: string }) {
+  return <span className={`${styles.statusBadge} ${styles[`status_${status}`] ?? ""}`}>{STATUS_LABELS[status] ?? status}</span>;
+}
+
+function Metric({ label, value, alert = false }: { label: string; value: string; alert?: boolean }) {
+  return <article className={`${styles.metricCard} ${alert ? styles.metricAlert : ""}`}><span>{label}</span><strong>{value}</strong></article>;
+}
+
+function LoadingCards() {
+  return <div className={styles.loadingCards} aria-label="Marketing-Entwürfe werden geladen"><i /><i /></div>;
+}
+
+function isEditable(post: MarketingAdminPostView): boolean {
+  return ["pending_review", "approved", "failed"].includes(post.status);
+}
+
+function hasChanges(post: MarketingAdminPostView, edit: DraftEdit): boolean {
+  return edit.title.trim() !== (post.title ?? "").trim() || edit.body.trim() !== post.body.trim();
+}
+
+function formatDate(value: string): string {
+  return new Intl.DateTimeFormat("de-DE", {
+    dateStyle: "medium",
+    timeStyle: "short",
+    timeZone: "Europe/Berlin"
+  }).format(new Date(value));
 }

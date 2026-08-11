@@ -67,8 +67,6 @@ async function testRedditPublishing(): Promise<void> {
 }
 
 async function testTikTokDraftUpload(): Promise<void> {
-  process.env.TIKTOK_ACCESS_TOKEN = "tiktok-token";
-  delete process.env.TIKTOK_POST_MODE;
   const requests: Array<{ url: string; body: Record<string, unknown> }> = [];
   globalThis.fetch = async (input, init) => {
     requests.push({ url: String(input), body: JSON.parse(String(init?.body ?? "{}")) as Record<string, unknown> });
@@ -79,7 +77,15 @@ async function testTikTokDraftUpload(): Promise<void> {
     platform: "tiktok",
     title: "Arsenal vs Liverpool",
     asset_url: "https://assets.example/tiktok.jpg"
-  }));
+  }), {
+    accessToken: "tiktok-token",
+    config: {
+      clientKey: "client-key",
+      clientSecret: "client-secret",
+      redirectUri: "https://residualsports.com/api/tiktok/oauth/callback",
+      tokenEncryptionKey: Buffer.alloc(32, 1).toString("base64")
+    }
+  });
   assert.equal(result.providerPostId, "tiktok-publish-1");
   assert.equal(requests.length, 1);
   assert.match(requests[0]!.url, /content\/init/u);

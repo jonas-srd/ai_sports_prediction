@@ -65,7 +65,9 @@ Configure an OAuth refresh token with the `submit` scope. `MARKETING_REDDIT_SUBR
 
 ### TikTok
 
-Configure a TikTok developer app with the Content Posting API and `TIKTOK_ACCESS_TOKEN`. The safe default `TIKTOK_POST_MODE=MEDIA_UPLOAD` uploads the generated photo as an editable draft. The public asset domain must be verified in the TikTok developer portal and must match `MARKETING_PUBLIC_ASSET_BASE_URL`. Use `DIRECT_POST` only after TikTok has approved the app for `video.publish`; the configured creator privacy level is checked before posting.
+Configure Login Kit and the Content Posting API with the scopes `user.info.basic` and `video.upload`. Set `TIKTOK_CLIENT_KEY`, `TIKTOK_CLIENT_SECRET`, `TIKTOK_TOKEN_ENCRYPTION_KEY`, and the exact production callback in `TIKTOK_REDIRECT_URI`. An allowlisted administrator connects the owned account from `/admin/marketing`; access and refresh tokens are then encrypted in Postgres and refreshed server-side.
+
+Every upload remains an explicit review action. The administrator can edit the title and description, confirm the final review, and upload the verified public image as an editable TikTok draft. The website never publishes the draft automatically. The public asset domain must be verified in the TikTok developer portal and match `MARKETING_PUBLIC_ASSET_BASE_URL`.
 
 ## Environment variables
 
