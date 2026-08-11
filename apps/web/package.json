@@ -14,18 +14,18 @@
     "@ai-sports-prediction/db": "file:../../packages/db",
     "@ai-sports-prediction/llm": "file:../../packages/llm",
     "@ai-sports-prediction/tiktok": "file:../../packages/tiktok",
-    "@aws-sdk/client-s3": "latest",
+    "@aws-sdk/client-s3": "*",
     "@types/qrcode": "^1.5.6",
-    "bullmq": "latest",
-    "next": "16.3.0-canary.106",
+    "bullmq": "*",
+    "next": "16.3.0",
     "qrcode": "^1.5.4",
-    "react": "latest",
-    "react-dom": "latest"
+    "react": "^19.2.8",
+    "react-dom": "^19.2.8"
   },
   "devDependencies": {
-    "@types/node": "latest",
-    "@types/react": "latest",
-    "@types/react-dom": "latest",
-    "typescript": "latest"
+    "@types/node": "*",
+    "@types/react": "^19.2.18",
+    "@types/react-dom": "^19.2.4",
+    "typescript": "*"
   }
 }
