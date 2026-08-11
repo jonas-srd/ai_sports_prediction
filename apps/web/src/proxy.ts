@@ -7,6 +7,20 @@ import {
 } from "@/lib/admin-session";
 
 const PUBLIC_FILE = /\.(?:avif|ico|jpg|jpeg|png|svg|webp|txt|xml|pdf|html|js|css|map)$/i;
+const PUBLIC_LEGAL_PATHS = new Set([
+  "/terms",
+  "/privacy",
+  "/impressum",
+  "/cookies",
+  "/widget-terms",
+  "/data-processing",
+  "/de/terms",
+  "/de/privacy",
+  "/de/impressum",
+  "/de/cookies",
+  "/de/widget-terms",
+  "/de/data-processing"
+]);
 
 export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
@@ -57,6 +71,7 @@ export async function proxy(request: NextRequest) {
 
   if (
     pathname === "/coming-soon" ||
+    PUBLIC_LEGAL_PATHS.has(pathname) ||
     pathname.startsWith("/api/") ||
     pathname.startsWith("/_next/") ||
     PUBLIC_FILE.test(pathname)

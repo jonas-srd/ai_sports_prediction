@@ -7918,6 +7918,34 @@ a {
   line-height: 1.6;
 }
 
+.comingSoonLegalLinks {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 10px 12px;
+  margin-top: 28px;
+}
+
+.comingSoonLegalLinks a {
+  padding: 9px 13px;
+  border: 1px solid rgba(121, 255, 188, 0.22);
+  border-radius: 999px;
+  background: rgba(8, 22, 17, 0.72);
+  color: #d8e6de;
+  font-family: "Courier New", monospace;
+  font-size: 0.72rem;
+  font-weight: 900;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+}
+
+.comingSoonLegalLinks a:hover,
+.comingSoonLegalLinks a:focus-visible {
+  border-color: rgba(121, 255, 188, 0.56);
+  background: rgba(24, 216, 137, 0.12);
+  color: var(--green-2);
+}
+
 @media (max-width: 640px) {
   .comingSoonShell::before {
     inset: 14px;

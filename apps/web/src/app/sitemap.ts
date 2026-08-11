@@ -27,6 +27,7 @@ const localizedRoutes = [
   ["/tournament-tree", "/de/tournament-tree"],
   ["/widgets", "/de/widgets"],
   ["/privacy", "/de/privacy"],
+  ["/terms", "/de/terms"],
   ["/cookies", "/de/cookies"],
   ["/impressum", "/de/impressum"],
   ["/widget-terms", "/de/widget-terms"],

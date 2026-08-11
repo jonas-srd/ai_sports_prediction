@@ -1,3 +1,4 @@
+export const SITE_TERMS_VERSION = "2026-08-11";
 export const WIDGET_TERMS_VERSION = "2026-07-16";
 export const WIDGET_PRIVACY_VERSION = "2026-07-16";
 export const WIDGET_DPA_VERSION = "2026-07-16";

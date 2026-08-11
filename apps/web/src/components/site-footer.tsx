@@ -13,6 +13,7 @@ export function SiteFooter() {
       <div className="siteFooterInner">
         <span>Residual Sports</span>
         <Link href={localizePath("/impressum", locale)}>{text.legalNotice}</Link>
+        <Link href={localizePath("/terms", locale)}>{locale === "de" ? "Nutzungsbedingungen" : "Terms"}</Link>
         <Link href={localizePath("/privacy", locale)}>{locale === "de" ? "Datenschutz" : "Privacy"}</Link>
         <Link href={localizePath("/widget-terms", locale)}>{locale === "de" ? "Widget-AGB" : "Widget terms"}</Link>
         <Link href={localizePath("/data-processing", locale)}>{locale === "de" ? "AVV" : "DPA"}</Link>

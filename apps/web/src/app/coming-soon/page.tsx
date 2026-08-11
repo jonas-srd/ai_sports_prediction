@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 
 export const metadata: Metadata = {
   title: "Residual Sports | Stay Tuned",
@@ -16,6 +17,11 @@ export default function ComingSoonPage() {
         <p className="comingSoonEyebrow">Residual Sports</p>
         <h1 id="coming-soon-title">Stay tuned</h1>
         <p className="comingSoonText">Football, NFL, NBA and tennis predictions are getting ready.</p>
+        <nav className="comingSoonLegalLinks" aria-label="Legal information">
+          <Link href="/terms">Terms of Service</Link>
+          <Link href="/privacy">Privacy Policy</Link>
+          <Link href="/impressum">Legal Notice</Link>
+        </nav>
       </section>
     </main>
   );

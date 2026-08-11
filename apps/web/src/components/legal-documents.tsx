@@ -2,11 +2,86 @@ import Link from "next/link";
 import type { Locale } from "@/lib/i18n";
 import { localizePath } from "@/lib/i18n";
 import {
+  SITE_TERMS_VERSION,
   WIDGET_DPA_VERSION,
   WIDGET_PRIVACY_VERSION,
   WIDGET_TERMS_VERSION
 } from "@/lib/widget-legal-versions";
 import { getWidgetSellerDetails } from "@/lib/widget-sales-config";
+
+export function SiteTermsDocument({ locale }: { locale: Locale }) {
+  const seller = getWidgetSellerDetails();
+  const de = locale === "de";
+  return (
+    <LegalShell
+      eyebrow={de ? "Residual Sports · Nutzung" : "Residual Sports · Use"}
+      intro={de ? "Bedingungen für die Nutzung unserer Website und frei zugänglichen Dienste." : "Terms for using our website and publicly available services."}
+      title={de ? "Nutzungsbedingungen" : "Terms of Service"}
+      version={SITE_TERMS_VERSION}
+    >
+      <LegalSection title={de ? "1. Anbieter und Geltungsbereich" : "1. Provider and scope"}>
+        <p>{de
+          ? <>Anbieter ist {seller.name}, handelnd unter {seller.tradingName}, {formatAddress(seller)}. Diese Bedingungen gelten für die Nutzung der Residual-Sports-Website und der dort frei zugänglichen Funktionen und Inhalte. Anbieter- und Kontaktangaben stehen außerdem im <Link href={localizePath("/impressum", locale)}>Impressum</Link>.</>
+          : <>The provider is {seller.name}, trading as {seller.tradingName}, {formatAddress(seller)}. These terms govern use of the Residual Sports website and its publicly available functions and content. Provider and contact details are also available in the <Link href={localizePath("/impressum", locale)}>legal notice</Link>.</>}</p>
+      </LegalSection>
+      <LegalSection title={de ? "2. Unser Angebot" : "2. Our service"}>
+        <p>{de
+          ? "Residual Sports stellt KI-gestützte Sportprognosen, Wahrscheinlichkeiten, mögliche Spielstände, Begründungen, Spieldaten und redaktionelle Informationen bereit. Umfang und Verfügbarkeit können sich je nach Sportart, Wettbewerb, Datenquelle und Zeitpunkt unterscheiden. Kostenpflichtige Produkte können zusätzlichen Bedingungen unterliegen."
+          : "Residual Sports provides AI-assisted sports predictions, probabilities, possible scores, reasoning, match data and editorial information. Scope and availability may vary by sport, competition, data source and time. Paid products may be subject to additional terms."}</p>
+      </LegalSection>
+      <LegalSection title={de ? "3. Nur Information – keine Wettberatung" : "3. Information only — no betting advice"}>
+        <p>{de
+          ? "Alle Prognosen sind statistische Einschätzungen unter Unsicherheit. Sie garantieren kein Ergebnis, sind keine Wett-, Finanz- oder Anlageberatung und keine Aufforderung zum Glücksspiel. Quoten und Wahrscheinlichkeiten können sich ändern. Nutzer treffen Entscheidungen eigenverantwortlich und müssen geltende Alters-, Glücksspiel- und sonstige Vorschriften beachten."
+          : "All predictions are statistical estimates under uncertainty. They do not guarantee an outcome, are not betting, financial or investment advice, and are not an invitation to gamble. Odds and probabilities may change. Users make decisions at their own responsibility and must comply with applicable age, gambling and other rules."}</p>
+      </LegalSection>
+      <LegalSection title={de ? "4. Daten- und KI-Hinweise" : "4. Data and AI notices"}>
+        <p>{de
+          ? "Spielpläne, Ergebnisse, Quoten, Rankings und andere Daten stammen teilweise von Drittanbietern und können verspätet, unvollständig oder fehlerhaft sein. Prognosen und Begründungen werden automatisiert erzeugt und können Fehler enthalten. Wesentliche Informationen sollten anhand offizieller Quellen geprüft werden."
+          : "Schedules, scores, odds, rankings and other data may come from third parties and can be delayed, incomplete or inaccurate. Predictions and reasoning are generated automatically and may contain errors. Important information should be checked against official sources."}</p>
+      </LegalSection>
+      <LegalSection title={de ? "5. Zulässige Nutzung" : "5. Acceptable use"}>
+        <p>{de
+          ? "Der Dienst darf nur rechtmäßig genutzt werden. Untersagt sind insbesondere Angriffe oder Umgehungen von Sicherheits- und Zugriffskontrollen, missbräuchliche automatisierte Abrufe, die Nutzung fremder Zugangsdaten, die Beeinträchtigung des Betriebs sowie eine irreführende Weiterverbreitung unserer Prognosen. Gesetzlich zwingend erlaubte Nutzungen bleiben unberührt."
+          : "The service may be used only lawfully. In particular, users must not attack or bypass security and access controls, perform abusive automated retrieval, use another person's credentials, disrupt operations or redistribute our predictions misleadingly. Uses mandatorily permitted by law remain unaffected."}</p>
+      </LegalSection>
+      <LegalSection title={de ? "6. Geistiges Eigentum und Kennzeichen" : "6. Intellectual property and trademarks"}>
+        <p>{de
+          ? "Inhalte, Gestaltung, Modelle, Software und Residual-Sports-Kennzeichen sind nach den anwendbaren Gesetzen geschützt. Eine Nutzung über das normale Aufrufen und Teilen von Links hinaus bedarf der Erlaubnis, soweit sie nicht gesetzlich gestattet ist. Team-, Liga- und sonstige Drittmarken gehören ihren jeweiligen Inhabern; ihre Darstellung begründet keine Partnerschaft oder Unterstützung."
+          : "Content, design, models, software and Residual Sports branding are protected under applicable law. Use beyond normal access and sharing links requires permission unless permitted by law. Team, league and other third-party marks belong to their respective owners; their display does not imply partnership or endorsement."}</p>
+      </LegalSection>
+      <LegalSection title={de ? "7. Externe Dienste und Social Media" : "7. External services and social media"}>
+        <p>{de
+          ? "Links, eingebettete Inhalte und Veröffentlichungen auf Diensten wie TikTok oder Instagram werden zusätzlich nach den Bedingungen des jeweiligen Anbieters genutzt. Für Inhalte und Verfügbarkeit externer Dienste sind deren Betreiber verantwortlich."
+          : "Links, embedded content and publications on services such as TikTok or Instagram are also governed by the relevant provider's terms. Their operators are responsible for the content and availability of external services."}</p>
+      </LegalSection>
+      <LegalSection title={de ? "8. Verfügbarkeit und Änderungen" : "8. Availability and changes"}>
+        <p>{de
+          ? "Wir bemühen uns um einen sicheren und stabilen Betrieb, schulden für kostenfreie Dienste jedoch keine ununterbrochene Verfügbarkeit. Wartung, Sicherheitsmaßnahmen, Änderungen von Sportplänen und Ausfälle von Daten- oder Infrastrukturpartnern können den Dienst beeinträchtigen. Funktionen und Inhalte dürfen sachlich begründet geändert oder eingestellt werden."
+          : "We aim to operate the service securely and reliably, but do not promise uninterrupted availability for free services. Maintenance, security measures, schedule changes and outages affecting data or infrastructure partners may impact the service. Functions and content may be changed or discontinued for objective reasons."}</p>
+      </LegalSection>
+      <LegalSection title={de ? "9. Haftung" : "9. Liability"}>
+        <p>{de
+          ? "Wir haften unbeschränkt bei Vorsatz, grober Fahrlässigkeit, Verletzung von Leben, Körper oder Gesundheit, arglistigem Verschweigen, Garantieübernahme und zwingender gesetzlicher Haftung. Bei leicht fahrlässiger Verletzung einer wesentlichen Pflicht ist die Haftung auf den vertragstypischen, vorhersehbaren Schaden begrenzt; im Übrigen ist sie bei leichter Fahrlässigkeit ausgeschlossen. Zwingende Verbraucherrechte bleiben unberührt."
+          : "Our liability is unlimited for intent, gross negligence, injury to life, body or health, fraudulent concealment, express guarantees and mandatory statutory liability. For slight negligence affecting an essential duty, liability is limited to typical foreseeable loss; otherwise liability for slight negligence is excluded. Mandatory consumer rights remain unaffected."}</p>
+      </LegalSection>
+      <LegalSection title={de ? "10. Datenschutz" : "10. Privacy"}>
+        <p>{de
+          ? <>Informationen zur Verarbeitung personenbezogener Daten und zu Betroffenenrechten enthält unsere <Link href={localizePath("/privacy", locale)}>Datenschutzerklärung</Link>.</>
+          : <>Information about personal-data processing and individual rights is available in our <Link href={localizePath("/privacy", locale)}>privacy policy</Link>.</>}</p>
+      </LegalSection>
+      <LegalSection title={de ? "11. Anwendbares Recht" : "11. Governing law"}>
+        <p>{de
+          ? "Es gilt deutsches Recht. Für Verbraucher gilt diese Rechtswahl nur, soweit dadurch zwingender Schutz des Staates ihres gewöhnlichen Aufenthalts nicht entzogen wird. Zwingende gesetzliche Gerichtsstände bleiben unberührt."
+          : "German law applies. For consumers, this choice of law applies only insofar as it does not remove mandatory protection granted by the law of their habitual residence. Mandatory statutory venues remain unaffected."}</p>
+      </LegalSection>
+      <LegalSection title={de ? "12. Änderungen und Kontakt" : "12. Changes and contact"}>
+        <p>{de
+          ? <>Wir können diese Bedingungen mit Wirkung für die Zukunft anpassen, wenn sich Dienst oder Rechtslage ändern. Maßgeblich ist die oben angegebene Version. Fragen können an <a href={`mailto:${seller.email}`}>{seller.email}</a> gerichtet werden.</>
+          : <>We may update these terms for the future when the service or law changes. The version above controls. Questions can be sent to <a href={`mailto:${seller.email}`}>{seller.email}</a>.</>}</p>
+      </LegalSection>
+    </LegalShell>
+  );
+}
 
 export function WidgetTermsDocument({ locale }: { locale: Locale }) {
   const seller = getWidgetSellerDetails();
