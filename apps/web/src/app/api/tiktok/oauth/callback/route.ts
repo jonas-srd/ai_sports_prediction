@@ -8,6 +8,7 @@ import {
 } from "@ai-sports-prediction/tiktok";
 import { getAuthorizedAdminSession } from "@/lib/admin-request-auth";
 import { getMarketingDb } from "@/lib/marketing-admin-db";
+import { getPublicSiteDestination } from "@/lib/public-site-url";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -15,14 +16,14 @@ export const dynamic = "force-dynamic";
 const STATE_COOKIE = "residual_tiktok_oauth_state";
 
 export async function GET(request: NextRequest) {
-  const destination = new URL("/admin/marketing", request.url);
+  const destination = getPublicSiteDestination("/admin/marketing", request.url);
   const response = (status: string, reason?: string) => {
     destination.searchParams.set("tiktok", status);
     if (reason) destination.searchParams.set("reason", reason);
     const redirect = NextResponse.redirect(destination);
     redirect.cookies.set(STATE_COOKIE, "", {
       httpOnly: true,
-      secure: request.nextUrl.protocol === "https:",
+      secure: isSecureRequest(request),
       sameSite: "lax",
       maxAge: 0,
       path: "/api/tiktok/oauth/callback"
@@ -63,6 +64,12 @@ export async function GET(request: NextRequest) {
     console.error("TikTok OAuth callback failed:", error);
     return response("error", "token_exchange");
   }
+}
+
+function isSecureRequest(request: NextRequest): boolean {
+  return process.env.NODE_ENV === "production"
+    || request.headers.get("x-forwarded-proto")?.split(",")[0]?.trim() === "https"
+    || request.nextUrl.protocol === "https:";
 }
 
 function safeEqual(left: string, right: string): boolean {

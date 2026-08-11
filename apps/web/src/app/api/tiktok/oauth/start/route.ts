@@ -5,6 +5,7 @@ import {
   readTikTokServerConfig
 } from "@ai-sports-prediction/tiktok";
 import { getAuthorizedAdminSession } from "@/lib/admin-request-auth";
+import { getPublicSiteDestination } from "@/lib/public-site-url";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -13,7 +14,10 @@ const STATE_COOKIE = "residual_tiktok_oauth_state";
 
 export async function GET(request: NextRequest) {
   if (!await getAuthorizedAdminSession(request)) {
-    return NextResponse.redirect(new URL("/admin/login?next=/admin/marketing", request.url));
+    return NextResponse.redirect(getPublicSiteDestination(
+      "/admin/login?next=/admin/marketing",
+      request.url
+    ));
   }
 
   try {
@@ -22,7 +26,7 @@ export async function GET(request: NextRequest) {
     const response = NextResponse.redirect(createTikTokAuthorizationUrl(config, state));
     response.cookies.set(STATE_COOKIE, state, {
       httpOnly: true,
-      secure: request.nextUrl.protocol === "https:",
+      secure: isSecureRequest(request),
       sameSite: "lax",
       maxAge: 10 * 60,
       path: "/api/tiktok/oauth/callback",
@@ -32,6 +36,15 @@ export async function GET(request: NextRequest) {
     return response;
   } catch (error) {
     console.error("Could not start TikTok OAuth:", error);
-    return NextResponse.redirect(new URL("/admin/marketing?tiktok=not_configured", request.url));
+    return NextResponse.redirect(getPublicSiteDestination(
+      "/admin/marketing?tiktok=not_configured",
+      request.url
+    ));
   }
+}
+
+function isSecureRequest(request: NextRequest): boolean {
+  return process.env.NODE_ENV === "production"
+    || request.headers.get("x-forwarded-proto")?.split(",")[0]?.trim() === "https"
+    || request.nextUrl.protocol === "https:";
 }
