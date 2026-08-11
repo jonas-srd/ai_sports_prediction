@@ -5,6 +5,7 @@ import {
   readTikTokServerConfig
 } from "@ai-sports-prediction/tiktok";
 import { getAuthorizedAdminSession } from "@/lib/admin-request-auth";
+import { ADMIN_SESSION_COOKIE } from "@/lib/admin-session";
 import { getPublicSiteDestination } from "@/lib/public-site-url";
 
 export const runtime = "nodejs";
@@ -13,7 +14,8 @@ export const dynamic = "force-dynamic";
 const STATE_COOKIE = "residual_tiktok_oauth_state";
 
 export async function GET(request: NextRequest) {
-  if (!await getAuthorizedAdminSession(request)) {
+  const session = await getAuthorizedAdminSession(request);
+  if (!session) {
     return NextResponse.redirect(getPublicSiteDestination(
       "/admin/login?next=/admin/marketing",
       request.url
@@ -32,6 +34,17 @@ export async function GET(request: NextRequest) {
       path: "/api/tiktok/oauth/callback",
       priority: "high"
     });
+    const sessionToken = request.cookies.get(ADMIN_SESSION_COOKIE)?.value;
+    if (sessionToken) {
+      response.cookies.set(ADMIN_SESSION_COOKIE, sessionToken, {
+        httpOnly: true,
+        secure: isSecureRequest(request),
+        sameSite: "lax",
+        maxAge: Math.max(1, session.expiresAt - Math.floor(Date.now() / 1000)),
+        path: "/",
+        priority: "high"
+      });
+    }
     response.headers.set("cache-control", "no-store");
     return response;
   } catch (error) {

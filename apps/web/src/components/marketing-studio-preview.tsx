@@ -79,9 +79,18 @@ export function MarketingStudioPreview() {
   useEffect(() => {
     void load();
     const status = new URL(window.location.href).searchParams.get("tiktok");
+    const reason = new URL(window.location.href).searchParams.get("reason");
     if (status === "connected") setMessage("TikTok wurde erfolgreich mit Residual Sports verbunden.");
     if (status === "not_configured") setError("Die serverseitige TikTok-Konfiguration ist noch unvollständig.");
-    if (status === "error") setError("Die TikTok-Verbindung konnte nicht abgeschlossen werden. Bitte erneut verbinden.");
+    if (status === "error") {
+      setError(reason === "admin_session"
+        ? "Die Admin-Sitzung ging beim Rücksprung von TikTok verloren. Bitte erneut verbinden."
+        : reason === "authorization_denied"
+          ? "Die TikTok-Autorisierung wurde abgelehnt oder abgebrochen. Bitte erneut verbinden und den Zugriff erlauben."
+          : reason === "invalid_state"
+            ? "Die TikTok-Anmeldung ist abgelaufen oder wurde in einem anderen Tab gestartet. Bitte erneut verbinden."
+            : "Die TikTok-Verbindung konnte nicht abgeschlossen werden. Bitte erneut verbinden.");
+    }
   }, [load]);
 
   const tiktokPosts = useMemo(() => data?.campaigns.flatMap((campaign) =>
