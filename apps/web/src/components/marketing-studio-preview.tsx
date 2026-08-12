@@ -9,7 +9,7 @@ import type {
 } from "@/lib/marketing-admin-types";
 import styles from "./marketing-studio-preview.module.css";
 
-type DraftEdit = { title: string; body: string };
+type DraftEdit = { title: string; body: string; target?: string };
 type ApiFailure = { message?: string };
 
 const STATUS_LABELS: Record<string, string> = {
@@ -63,8 +63,14 @@ export function MarketingStudioPreview() {
       setEdits((current) => {
         const next = { ...current };
         for (const campaign of payload.campaigns) {
-          for (const post of campaign.posts.filter((entry) => entry.platform === "tiktok")) {
-            if (!next[post.id]) next[post.id] = { title: post.title ?? "", body: post.body };
+          for (const post of campaign.posts.filter((entry) => ["tiktok", "reddit"].includes(entry.platform))) {
+            if (!next[post.id]) {
+              next[post.id] = {
+                title: post.title ?? "",
+                body: post.body,
+                target: post.platform === "reddit" ? post.target : undefined
+              };
+            }
           }
         }
         return next;
@@ -78,24 +84,18 @@ export function MarketingStudioPreview() {
 
   useEffect(() => {
     void load();
-    const status = new URL(window.location.href).searchParams.get("tiktok");
-    const reason = new URL(window.location.href).searchParams.get("reason");
-    if (status === "connected") setMessage("TikTok wurde erfolgreich mit Residual Sports verbunden.");
-    if (status === "not_configured") setError("Die serverseitige TikTok-Konfiguration ist noch unvollständig.");
-    if (status === "error") {
-      setError(reason === "admin_session"
-        ? "Die Admin-Sitzung ging beim Rücksprung von TikTok verloren. Bitte erneut verbinden."
-        : reason === "authorization_denied"
-          ? "Die TikTok-Autorisierung wurde abgelehnt oder abgebrochen. Bitte erneut verbinden und den Zugriff erlauben."
-          : reason === "invalid_state"
-            ? "Die TikTok-Anmeldung ist abgelaufen oder wurde in einem anderen Tab gestartet. Bitte erneut verbinden."
-            : "Die TikTok-Verbindung konnte nicht abgeschlossen werden. Bitte erneut verbinden.");
-    }
+    const url = new URL(window.location.href);
+    showOAuthResult("TikTok", url.searchParams.get("tiktok"), url.searchParams.get("reason"), setMessage, setError);
+    showOAuthResult("Reddit", url.searchParams.get("reddit"), url.searchParams.get("reason"), setMessage, setError);
   }, [load]);
 
   const tiktokPosts = useMemo(() => data?.campaigns.flatMap((campaign) =>
     campaign.posts
       .filter((post) => post.platform === "tiktok")
+      .map((post) => ({ campaign, post }))) ?? [], [data]);
+  const redditPosts = useMemo(() => data?.campaigns.flatMap((campaign) =>
+    campaign.posts
+      .filter((post) => post.platform === "reddit")
       .map((post) => ({ campaign, post }))) ?? [], [data]);
 
   async function act(payload: Record<string, unknown>, successMessage: string, postId?: string) {
@@ -127,15 +127,20 @@ export function MarketingStudioPreview() {
     }
   }
 
-  async function disconnect() {
+  async function disconnectTikTok() {
     if (!window.confirm("TikTok wirklich von Residual Sports trennen? Bereits hochgeladene Entwürfe bleiben in TikTok erhalten.")) return;
     await act({ action: "disconnect_tiktok", confirmed: true }, "TikTok wurde getrennt.");
   }
 
+  async function disconnectReddit() {
+    if (!window.confirm("Reddit wirklich von Residual Sports trennen? Bereits veröffentlichte Beiträge bleiben bestehen.")) return;
+    await act({ action: "disconnect_reddit", confirmed: true }, "Reddit wurde getrennt.");
+  }
+
   const connected = data?.tiktokConnection?.status === "connected";
+  const redditConnected = data?.redditConnection?.status === "connected";
   const pendingCount = tiktokPosts.filter(({ post }) => isEditable(post)).length;
-  const uploadedCount = tiktokPosts.filter(({ post }) => post.status === "uploaded_draft").length;
-  const failedCount = tiktokPosts.filter(({ post }) => post.status === "failed").length;
+  const failedCount = [...tiktokPosts, ...redditPosts].filter(({ post }) => post.status === "failed").length;
 
   return (
     <main className={styles.shell}>
@@ -143,7 +148,7 @@ export function MarketingStudioPreview() {
         <div>
           <span className={styles.eyebrow}>Residual Sports · Marketing Agent</span>
           <h1>Marketing Studio</h1>
-          <p>Predictions prüfen, den Text anpassen und bewusst als bearbeitbaren TikTok-Entwurf übertragen.</p>
+          <p>Predictions prüfen, Inhalte anpassen und bewusst für TikTok oder Reddit freigeben.</p>
         </div>
         <div className={styles.headerActions}>
           <Link className={styles.ghostButton} href="/admin/outreach">Outreach Cockpit</Link>
@@ -186,7 +191,7 @@ export function MarketingStudioPreview() {
               {data.tiktokConnection.status !== "connected"
                 ? <a className={styles.primaryButton} href="/api/tiktok/oauth/start">Neu verbinden</a>
                 : null}
-              <button className={styles.dangerButton} disabled={busyConnection} onClick={() => void disconnect()} type="button">Trennen</button>
+              <button className={styles.dangerButton} disabled={busyConnection} onClick={() => void disconnectTikTok()} type="button">Trennen</button>
             </div>
           </div>
         ) : (
@@ -200,10 +205,62 @@ export function MarketingStudioPreview() {
         )}
       </section>
 
-      <section className={styles.statsGrid} aria-label="TikTok-Übersicht">
+      <section className={styles.connectionCard}>
+        <div className={styles.connectionHeading}>
+          <div className={styles.redditMark}>r/</div>
+          <div>
+            <span className={styles.sectionKicker}>Reddit Data API</span>
+            <h2>Reddit-Verbindung</h2>
+          </div>
+          <ConnectionBadge configured={Boolean(data?.redditConfigured)} connected={redditConnected} />
+        </div>
+
+        {loading ? (
+          <p className={styles.muted}>Verbindung wird geprüft …</p>
+        ) : !data?.redditConfigured ? (
+          <div className={styles.connectionBody}>
+            <div>
+              <strong>Reddit-Konfiguration fehlt noch</strong>
+              <p>Client-ID, Client-Secret oder der Schlüssel zur Token-Verschlüsselung fehlen auf dem Server.</p>
+            </div>
+            <span>Veröffentlichen bleibt bis zur Reddit-Freigabe deaktiviert.</span>
+          </div>
+        ) : data.redditConnection ? (
+          <div className={styles.profileRow}>
+            {data.redditConnection.avatarUrl
+              ? <img alt="Reddit-Profilbild" className={styles.avatar} src={data.redditConnection.avatarUrl} />
+              : <div className={styles.avatarFallback}>r/</div>}
+            <div className={styles.profileInfo}>
+              <strong>u/{data.redditConnection.displayName || "verbunden"}</strong>
+              <span>{data.redditConnection.scopes.join(" · ")}</span>
+              <small>Verbunden am {formatDate(data.redditConnection.connectedAtUtc)} · automatische Token-Erneuerung aktiv</small>
+              {data.redditConnection.lastError ? <em>{data.redditConnection.lastError}</em> : null}
+            </div>
+            <div className={styles.connectionActions}>
+              {data.redditConnection.status !== "connected"
+                ? <a className={styles.primaryButton} href="/api/reddit/oauth/start">Neu verbinden</a>
+                : null}
+              <button className={styles.dangerButton} disabled={busyConnection} onClick={() => void disconnectReddit()} type="button">Trennen</button>
+            </div>
+          </div>
+        ) : (
+          <div className={styles.connectionBody}>
+            <div>
+              <strong>Noch kein Reddit-Konto verbunden</strong>
+              <p>Du meldest dich einmal bei Reddit an und erlaubst Profilzugriff sowie Text-Beiträge.</p>
+            </div>
+            <a className={styles.primaryButton} href="/api/reddit/oauth/start">Reddit verbinden</a>
+          </div>
+        )}
+        {!loading && data?.redditConfigured && data.redditSubreddits.length === 0 ? (
+          <small className={styles.actionHint}>Vor dem Erstellen von Reddit-Entwürfen muss mindestens ein erlaubter Subreddit konfiguriert werden.</small>
+        ) : null}
+      </section>
+
+      <section className={styles.statsGrid} aria-label="Marketing-Übersicht">
         <Metric label="TikTok-Entwürfe" value={String(tiktokPosts.length)} />
-        <Metric label="Zu prüfen" value={String(pendingCount)} />
-        <Metric label="In TikTok bereit" value={String(uploadedCount)} />
+        <Metric label="Reddit-Entwürfe" value={String(redditPosts.length)} />
+        <Metric label="Zu prüfen" value={String(pendingCount + redditPosts.filter(({ post }) => isEditable(post)).length)} />
         <Metric label="Fehler" value={String(failedCount)} alert={failedCount > 0} />
       </section>
 
@@ -325,6 +382,120 @@ export function MarketingStudioPreview() {
           })}
         </div>
       </section>
+
+      <section className={styles.queueSection}>
+        <div className={styles.sectionHeader}>
+          <div>
+            <span className={styles.sectionKicker}>Reddit-Freigabe</span>
+            <h2>Bearbeitbare Reddit-Textbeiträge</h2>
+          </div>
+          <span className={styles.queueCount}>{redditPosts.length} Entwürfe</span>
+        </div>
+
+        {!loading && redditPosts.length === 0 ? (
+          <div className={styles.emptyState}>
+            <strong>Noch keine Reddit-Kampagnen vorhanden</strong>
+            <p>Neue Kampagnen erhalten Reddit-Entwürfe, sobald erlaubte Subreddits konfiguriert sind.</p>
+          </div>
+        ) : null}
+        <div className={styles.cardGrid}>
+          {redditPosts.map(({ campaign, post }) => {
+            const edit = edits[post.id] ?? { title: post.title ?? "", body: post.body, target: post.target };
+            const editable = isEditable(post);
+            const busy = busyPost === post.id;
+            const allowedTarget = Boolean(data?.redditSubreddits.some((entry) =>
+              entry.toLowerCase() === (edit.target ?? "").toLowerCase()));
+            const canPublish = Boolean(
+              redditConnected
+              && data?.redditConfigured
+              && confirmed[post.id]
+              && editable
+              && allowedTarget
+              && !busy
+            );
+            return (
+              <article className={styles.draftCard} key={post.id}>
+                <div className={styles.draftMeta}>
+                  <div>
+                    <span>{campaign.sport} · {campaign.competition}</span>
+                    <h3>{campaign.homeTeam} vs. {campaign.awayTeam}</h3>
+                    <small>{formatDate(campaign.utcDate)} · Prediction {campaign.predictedHome}:{campaign.predictedAway}</small>
+                  </div>
+                  <StatusBadge status={post.status} />
+                </div>
+
+                <div className={styles.redditEditor}>
+                  <label>
+                    Subreddit
+                    <select
+                      disabled={!editable || busy}
+                      onChange={(event) => setEdits((current) => ({ ...current, [post.id]: { ...edit, target: event.target.value } }))}
+                      value={edit.target ?? ""}
+                    >
+                      {!allowedTarget && edit.target ? <option value={edit.target}>r/{edit.target} · nicht freigegeben</option> : null}
+                      {(data?.redditSubreddits ?? []).map((target) => <option key={target} value={target}>r/{target}</option>)}
+                    </select>
+                  </label>
+                  <label>
+                    Titel <small>{Array.from(edit.title).length}/300</small>
+                    <input
+                      disabled={!editable || busy}
+                      maxLength={300}
+                      onChange={(event) => setEdits((current) => ({ ...current, [post.id]: { ...edit, title: event.target.value } }))}
+                      value={edit.title}
+                    />
+                  </label>
+                  <label>
+                    Text <small>{Array.from(edit.body).length}/40000</small>
+                    <textarea
+                      disabled={!editable || busy}
+                      maxLength={40_000}
+                      onChange={(event) => setEdits((current) => ({ ...current, [post.id]: { ...edit, body: event.target.value } }))}
+                      rows={9}
+                      value={edit.body}
+                    />
+                  </label>
+
+                  {post.errorMessage ? <div className={styles.postError}>{post.errorMessage}</div> : null}
+                  {editable ? (
+                    <label className={styles.confirmRow}>
+                      <input
+                        checked={Boolean(confirmed[post.id])}
+                        disabled={!redditConnected || !allowedTarget || busy}
+                        onChange={(event) => setConfirmed((current) => ({ ...current, [post.id]: event.target.checked }))}
+                        type="checkbox"
+                      />
+                      <span>Titel, Text und Subreddit sind geprüft. Diesen Beitrag jetzt auf Reddit veröffentlichen.</span>
+                    </label>
+                  ) : null}
+
+                  <div className={styles.actionRow}>
+                    {editable ? (
+                      <>
+                        <button
+                          className={styles.ghostButton}
+                          disabled={busy || !allowedTarget || !hasChanges(post, edit)}
+                          onClick={() => void act({ action: "update_reddit_post", postId: post.id, ...edit }, "Reddit-Entwurf wurde gespeichert.", post.id)}
+                          type="button"
+                        >Speichern</button>
+                        <button
+                          className={styles.primaryButton}
+                          disabled={!canPublish}
+                          onClick={() => void act({ action: "publish_reddit_post", postId: post.id, ...edit, confirmed: true }, "Der Beitrag wurde auf Reddit veröffentlicht.", post.id)}
+                          type="button"
+                        >{busy ? "Wird veröffentlicht …" : "Auf Reddit veröffentlichen"}</button>
+                      </>
+                    ) : null}
+                    {post.providerPostUrl ? <a className={styles.ghostButton} href={post.providerPostUrl} rel="noreferrer" target="_blank">Beitrag öffnen</a> : null}
+                  </div>
+                  {editable && !redditConnected ? <small className={styles.actionHint}>Verbinde zuerst das Residual-Sports-Reddit-Konto.</small> : null}
+                  {editable && !allowedTarget ? <small className={styles.actionHint}>Dieser Subreddit ist nicht in der Freigabeliste enthalten.</small> : null}
+                </div>
+              </article>
+            );
+          })}
+        </div>
+      </section>
     </main>
   );
 }
@@ -352,7 +523,32 @@ function isEditable(post: MarketingAdminPostView): boolean {
 }
 
 function hasChanges(post: MarketingAdminPostView, edit: DraftEdit): boolean {
-  return edit.title.trim() !== (post.title ?? "").trim() || edit.body.trim() !== post.body.trim();
+  return edit.title.trim() !== (post.title ?? "").trim()
+    || edit.body.trim() !== post.body.trim()
+    || (edit.target ?? post.target).trim() !== post.target.trim();
+}
+
+function showOAuthResult(
+  provider: "TikTok" | "Reddit",
+  status: string | null,
+  reason: string | null,
+  setMessage: (value: string) => void,
+  setError: (value: string) => void
+): void {
+  if (status === "connected") {
+    setMessage(`${provider} wurde erfolgreich mit Residual Sports verbunden.`);
+  }
+  if (status === "not_configured") {
+    setError(`Die serverseitige ${provider}-Konfiguration ist noch unvollständig.`);
+  }
+  if (status !== "error") return;
+  setError(reason === "admin_session"
+    ? `Die Admin-Sitzung ging beim Rücksprung von ${provider} verloren. Bitte erneut verbinden.`
+    : reason === "authorization_denied"
+      ? `Die ${provider}-Autorisierung wurde abgelehnt oder abgebrochen.`
+      : reason === "invalid_state"
+        ? `Die ${provider}-Anmeldung ist abgelaufen oder wurde in einem anderen Tab gestartet.`
+        : `Die ${provider}-Verbindung konnte nicht abgeschlossen werden. Bitte erneut verbinden.`);
 }
 
 function formatDate(value: string): string {

@@ -10,6 +10,12 @@ import {
   uploadTikTokPhotoDraft,
   type TikTokServerConfig
 } from "@ai-sports-prediction/tiktok";
+import {
+  getValidRedditAccessToken,
+  publishRedditTextPost,
+  readRedditServerConfig,
+  type RedditServerConfig
+} from "@ai-sports-prediction/reddit";
 import { parseSubredditAllowlist, type MarketingPlatform } from "./marketing-agent";
 
 type MarketingPostRow = {
@@ -200,7 +206,7 @@ async function publishPost(db: PostgresDb, post: MarketingPostRow): Promise<Publ
   if (post.platform === "tiktok") {
     return publishTikTok(post, { db });
   }
-  return publishReddit(post);
+  return publishReddit(post, { db });
 }
 
 export async function publishInstagram(post: MarketingPostRow): Promise<PublishedPost> {
@@ -303,48 +309,20 @@ export async function publishTikTok(
   return { providerPostId: created.publishId, providerPostUrl: null };
 }
 
-export async function publishReddit(post: MarketingPostRow): Promise<PublishedPost> {
-  const clientId = requireEnv("REDDIT_CLIENT_ID");
-  const clientSecret = requireEnv("REDDIT_CLIENT_SECRET");
-  const refreshToken = requireEnv("REDDIT_REFRESH_TOKEN");
-  const userAgent = process.env.REDDIT_USER_AGENT?.trim()
-    || "web:residual-sports-marketing:v1.0 (by /u/configure-owner)";
-  const tokenResponse = await fetchJson("https://www.reddit.com/api/v1/access_token", {
-    method: "POST",
-    headers: {
-      Authorization: `Basic ${Buffer.from(`${clientId}:${clientSecret}`).toString("base64")}`,
-      "Content-Type": "application/x-www-form-urlencoded",
-      "User-Agent": userAgent
-    },
-    body: new URLSearchParams({ grant_type: "refresh_token", refresh_token: refreshToken })
-  });
-  const accessToken = typeof tokenResponse.access_token === "string" ? tokenResponse.access_token : null;
-  if (!accessToken) throw new Error("Reddit token refresh did not return an access token.");
-
-  const body = new URLSearchParams({
-    api_type: "json",
-    kind: "self",
-    sr: post.target,
-    title: post.title ?? "AI-Sportprognose",
-    text: post.body,
-    resubmit: "false",
-    sendreplies: "false"
-  });
-  const created = await fetchJson("https://oauth.reddit.com/api/submit", {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${accessToken}`,
-      "Content-Type": "application/x-www-form-urlencoded",
-      "User-Agent": userAgent
-    },
-    body
-  });
-  const errors = readRedditErrors(created);
-  if (errors.length) throw new Error(`Reddit rejected the post: ${errors.join("; ")}`);
-  const url = readRedditUrl(created);
-  const providerPostId = readRedditPostId(created) ?? url;
-  if (!providerPostId) throw new Error("Reddit accepted the request but returned no post identifier.");
-  return { providerPostId, providerPostUrl: url };
+export async function publishReddit(
+  post: MarketingPostRow,
+  options: { db?: PostgresDb; accessToken?: string; config?: RedditServerConfig } = {}
+): Promise<PublishedPost> {
+  const config = options.config ?? readRedditServerConfig();
+  const accessToken = options.accessToken
+    ?? (options.db ? await getValidRedditAccessToken(options.db, config) : null);
+  if (!accessToken) throw new Error("A connected Reddit account is required.");
+  const created = await publishRedditTextPost(accessToken, {
+    subreddit: post.target,
+    title: truncate(post.title?.trim() || "AI-Sportprognose", 300),
+    body: truncate(post.body, 40_000)
+  }, config.userAgent);
+  return { providerPostId: created.id, providerPostUrl: created.url };
 }
 
 function assertConfiguredTarget(post: MarketingPostRow): void {

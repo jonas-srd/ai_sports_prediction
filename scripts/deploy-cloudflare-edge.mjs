@@ -53,7 +53,10 @@ const secrets = {
   instagramAccessToken: optionalRuntimeSecretReference("ai-sports-prediction/instagram-access-token"),
   tiktokClientKey: optionalRuntimeSecretReference("ai-sports-prediction/tiktok-client-key"),
   tiktokClientSecret: optionalRuntimeSecretReference("ai-sports-prediction/tiktok-client-secret"),
-  tiktokTokenEncryptionKey: optionalRuntimeSecretReference("ai-sports-prediction/tiktok-token-encryption-key")
+  tiktokTokenEncryptionKey: optionalRuntimeSecretReference("ai-sports-prediction/tiktok-token-encryption-key"),
+  redditClientId: optionalRuntimeSecretReference("ai-sports-prediction/reddit-client-id"),
+  redditClientSecret: optionalRuntimeSecretReference("ai-sports-prediction/reddit-client-secret"),
+  redditTokenEncryptionKey: optionalRuntimeSecretReference("ai-sports-prediction/reddit-token-encryption-key")
 };
 
 const taskDefinition = {
@@ -109,6 +112,9 @@ const taskDefinition = {
         ,{ name: "MARKETING_ASSET_S3_PREFIX", value: env("MARKETING_ASSET_S3_PREFIX", "ai-sports-prediction/backups/marketing-assets") }
         ,{ name: "MARKETING_ASSET_S3_REGION", value: env("MARKETING_ASSET_S3_REGION", region) }
         ,{ name: "TIKTOK_REDIRECT_URI", value: env("TIKTOK_REDIRECT_URI", "https://residualsports.com/api/tiktok/oauth/callback") }
+        ,{ name: "REDDIT_REDIRECT_URI", value: env("REDDIT_REDIRECT_URI", "https://residualsports.com/api/reddit/oauth/callback") }
+        ,{ name: "REDDIT_USER_AGENT", value: env("REDDIT_USER_AGENT", "web:residual-sports-marketing:v1.0 (by /u/residualsports)") }
+        ,{ name: "MARKETING_REDDIT_SUBREDDITS", value: env("MARKETING_REDDIT_SUBREDDITS", "") }
       ],
       secrets: [
         { name: "DATABASE_URL", valueFrom: secrets.databaseUrl },
@@ -139,6 +145,15 @@ const taskDefinition = {
           : [])
         ,...(secrets.tiktokTokenEncryptionKey
           ? [{ name: "TIKTOK_TOKEN_ENCRYPTION_KEY", valueFrom: secrets.tiktokTokenEncryptionKey }]
+          : [])
+        ,...(secrets.redditClientId
+          ? [{ name: "REDDIT_CLIENT_ID", valueFrom: secrets.redditClientId }]
+          : [])
+        ,...(secrets.redditClientSecret
+          ? [{ name: "REDDIT_CLIENT_SECRET", valueFrom: secrets.redditClientSecret }]
+          : [])
+        ,...(secrets.redditTokenEncryptionKey
+          ? [{ name: "REDDIT_TOKEN_ENCRYPTION_KEY", valueFrom: secrets.redditTokenEncryptionKey }]
           : [])
       ],
       logConfiguration: awslogs("edge-web")
@@ -231,6 +246,9 @@ const taskDefinition = {
         ["WIDGET_ACCESS_FROM_EMAIL", env("WIDGET_ACCESS_FROM_EMAIL", "")],
         ["SALES_ALERT_EMAILS", env("SALES_ALERT_EMAILS", "")]
         ,["TIKTOK_REDIRECT_URI", env("TIKTOK_REDIRECT_URI", "https://residualsports.com/api/tiktok/oauth/callback")]
+        ,["REDDIT_REDIRECT_URI", env("REDDIT_REDIRECT_URI", "https://residualsports.com/api/reddit/oauth/callback")]
+        ,["REDDIT_USER_AGENT", env("REDDIT_USER_AGENT", "web:residual-sports-marketing:v1.0 (by /u/residualsports)")]
+        ,["MARKETING_REDDIT_SUBREDDITS", env("MARKETING_REDDIT_SUBREDDITS", "")]
       ].map(([name, value]) => ({ name, value })),
       secrets: [
         ["DATABASE_URL", secrets.databaseUrl],
@@ -244,7 +262,10 @@ const taskDefinition = {
         ...(secrets.ga4ApiSecret ? [["GA4_API_SECRET", secrets.ga4ApiSecret]] : []),
         ...(secrets.tiktokClientKey ? [["TIKTOK_CLIENT_KEY", secrets.tiktokClientKey]] : []),
         ...(secrets.tiktokClientSecret ? [["TIKTOK_CLIENT_SECRET", secrets.tiktokClientSecret]] : []),
-        ...(secrets.tiktokTokenEncryptionKey ? [["TIKTOK_TOKEN_ENCRYPTION_KEY", secrets.tiktokTokenEncryptionKey]] : [])
+        ...(secrets.tiktokTokenEncryptionKey ? [["TIKTOK_TOKEN_ENCRYPTION_KEY", secrets.tiktokTokenEncryptionKey]] : []),
+        ...(secrets.redditClientId ? [["REDDIT_CLIENT_ID", secrets.redditClientId]] : []),
+        ...(secrets.redditClientSecret ? [["REDDIT_CLIENT_SECRET", secrets.redditClientSecret]] : []),
+        ...(secrets.redditTokenEncryptionKey ? [["REDDIT_TOKEN_ENCRYPTION_KEY", secrets.redditTokenEncryptionKey]] : [])
       ].map(([name, valueFrom]) => ({ name, valueFrom })),
       logConfiguration: awslogs("edge-worker")
     },

@@ -8,16 +8,28 @@ import {
   readTikTokServerConfig,
   uploadTikTokPhotoDraft
 } from "@ai-sports-prediction/tiktok";
+import {
+  disconnectRedditConnection,
+  getRedditConnection,
+  getValidRedditAccessToken,
+  isRedditServerConfigured,
+  publishRedditTextPost,
+  readRedditServerConfig
+} from "@ai-sports-prediction/reddit";
 import { getAuthorizedAdminSession } from "@/lib/admin-request-auth";
 import {
   approveAndClaimTikTokPost,
+  approveAndClaimRedditPost,
   getMarketingDb,
   getTikTokPostForStatus,
   listMarketingCampaigns,
   markTikTokDraftFailed,
   markTikTokDraftUploaded,
+  markRedditPostFailed,
+  markRedditPostPublished,
   saveTikTokPostStatus,
-  updateTikTokPost
+  updateTikTokPost,
+  updateRedditPost
 } from "@/lib/marketing-admin-db";
 
 export const runtime = "nodejs";
@@ -29,15 +41,19 @@ export async function GET(request: NextRequest) {
   }
   try {
     const db = getMarketingDb();
-    const [campaigns, tiktokConnection] = await Promise.all([
+    const [campaigns, tiktokConnection, redditConnection] = await Promise.all([
       listMarketingCampaigns(db),
-      getTikTokConnection(db)
+      getTikTokConnection(db),
+      getRedditConnection(db)
     ]);
     return json({
       ok: true,
       campaigns,
       tiktokConfigured: isTikTokServerConfigured(),
       tiktokConnection,
+      redditConfigured: isRedditServerConfigured(),
+      redditConnection,
+      redditSubreddits: subredditAllowlist(),
       generatedAtUtc: new Date().toISOString()
     });
   } catch (error) {
@@ -73,6 +89,49 @@ export async function PATCH(request: NextRequest) {
         return json({ error: "not_editable", message: "Dieser TikTok-Entwurf kann nicht mehr bearbeitet werden." }, 409);
       }
       return json({ ok: true });
+    }
+
+    if (action === "update_reddit_post") {
+      const target = subreddit(body.target);
+      assertAllowedSubreddit(target);
+      if (!await updateRedditPost({
+        postId: required(body.postId, "Entwurf-ID"),
+        title: boundedText(body.title, "Titel", 300),
+        body: boundedText(body.body, "Text", 40_000),
+        target
+      })) {
+        return json({ error: "not_editable", message: "Dieser Reddit-Entwurf kann nicht mehr bearbeitet werden." }, 409);
+      }
+      return json({ ok: true });
+    }
+
+    if (action === "publish_reddit_post") {
+      if (body.confirmed !== true) {
+        return json({ error: "confirmation_required", message: "Bitte bestätige die ausdrückliche Freigabe vor der Veröffentlichung." }, 400);
+      }
+      const target = subreddit(body.target);
+      const config = readRedditServerConfig();
+      const claimed = await approveAndClaimRedditPost({
+        postId: required(body.postId, "Entwurf-ID"),
+        title: boundedText(body.title, "Titel", 300),
+        body: boundedText(body.body, "Text", 40_000),
+        target,
+        reviewer: session.email,
+        allowedSubreddits: subredditAllowlist()
+      });
+      try {
+        const accessToken = await getValidRedditAccessToken(getMarketingDb(), config);
+        const published = await publishRedditTextPost(accessToken, {
+          subreddit: claimed.target,
+          title: claimed.title,
+          body: claimed.body
+        }, config.userAgent);
+        await markRedditPostPublished(claimed, published.id, published.url);
+        return json({ ok: true, providerPostId: published.id, providerPostUrl: published.url });
+      } catch (error) {
+        await markRedditPostFailed(claimed, error instanceof Error ? error.message : String(error));
+        throw error;
+      }
     }
 
     if (action === "upload_tiktok_draft") {
@@ -123,9 +182,17 @@ export async function PATCH(request: NextRequest) {
       return json({ ok: true });
     }
 
+    if (action === "disconnect_reddit") {
+      if (body.confirmed !== true) {
+        return json({ error: "confirmation_required", message: "Die Trennung muss ausdrücklich bestätigt werden." }, 400);
+      }
+      await disconnectRedditConnection(getMarketingDb(), readRedditServerConfig());
+      return json({ ok: true });
+    }
+
     return json({ error: "unknown_action", message: "Unbekannte Aktion." }, 400);
   } catch (error) {
-    const message = error instanceof Error ? error.message : "Die TikTok-Aktion ist fehlgeschlagen.";
+    const message = error instanceof Error ? error.message : "Die Marketing-Aktion ist fehlgeschlagen.";
     console.error(`Marketing action ${action || "unknown"} failed:`, error);
     return json({ error: "action_failed", message }, 409);
   }
@@ -162,6 +229,27 @@ function boundedText(value: unknown, label: string, max: number): string {
     throw new Error(`${label} darf höchstens ${max} Zeichen enthalten.`);
   }
   return normalized;
+}
+
+function subredditAllowlist(): string[] {
+  return (process.env.MARKETING_REDDIT_SUBREDDITS ?? "")
+    .split(",")
+    .map((value) => value.trim().replace(/^r\//iu, ""))
+    .filter((value, index, all) => Boolean(value) && all.indexOf(value) === index);
+}
+
+function subreddit(value: unknown): string {
+  const normalized = required(value, "Subreddit").replace(/^r\//iu, "");
+  if (!/^[A-Za-z0-9_]{3,21}$/u.test(normalized)) {
+    throw new Error("Der Subreddit-Name ist ungültig.");
+  }
+  return normalized;
+}
+
+function assertAllowedSubreddit(target: string): void {
+  if (!subredditAllowlist().some((value) => value.toLowerCase() === target.toLowerCase())) {
+    throw new Error(`r/${target} ist nicht in MARKETING_REDDIT_SUBREDDITS freigegeben.`);
+  }
 }
 
 function required(value: unknown, label: string): string {

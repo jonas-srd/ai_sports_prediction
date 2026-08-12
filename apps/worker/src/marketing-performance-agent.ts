@@ -5,6 +5,10 @@
 import { randomUUID } from "node:crypto";
 import type { PostgresDb } from "@ai-sports-prediction/db";
 import { OpenRouterClient } from "@ai-sports-prediction/llm";
+import {
+  getValidRedditAccessToken,
+  readRedditServerConfig
+} from "@ai-sports-prediction/reddit";
 import type { MarketingPlatform } from "./marketing-agent";
 
 export type MarketingMetricSnapshot = {
@@ -82,7 +86,7 @@ export async function runMarketingPerformanceAgent(db: PostgresDb): Promise<Mark
   let failed = 0;
   for (const post of published.rows) {
     try {
-      const metric = await collectPostMetrics(post);
+      const metric = await collectPostMetrics(post, db);
       await storeMetricSnapshot(db, metric);
       collected += 1;
     } catch (error) {
@@ -116,7 +120,10 @@ export async function runMarketingPerformanceAgent(db: PostgresDb): Promise<Mark
   return { collected, failed, reportId, summary, recommendations: recommendations.items };
 }
 
-export async function collectPostMetrics(post: PublishedPostRow): Promise<MarketingMetricSnapshot> {
+export async function collectPostMetrics(
+  post: PublishedPostRow,
+  db?: PostgresDb
+): Promise<MarketingMetricSnapshot> {
   if (post.platform === "instagram_feed" || post.platform === "instagram_story") {
     return collectInstagramMetrics(post);
   }
@@ -126,7 +133,8 @@ export async function collectPostMetrics(post: PublishedPostRow): Promise<Market
   if (post.platform === "tiktok") {
     return collectTikTokMetrics(post);
   }
-  return collectRedditMetrics(post);
+  if (!db) throw new Error("Reddit analytics requires the marketing database connection.");
+  return collectRedditMetrics(post, db);
 }
 
 export function parseInstagramMetrics(payload: Record<string, any>) {
@@ -269,14 +277,18 @@ async function collectXMetrics(post: PublishedPostRow): Promise<MarketingMetricS
   return makeSnapshot(post, "x", parseXMetrics(payload), payload);
 }
 
-async function collectRedditMetrics(post: PublishedPostRow): Promise<MarketingMetricSnapshot> {
-  const token = await getRedditAccessToken();
+async function collectRedditMetrics(
+  post: PublishedPostRow,
+  db: PostgresDb
+): Promise<MarketingMetricSnapshot> {
+  const config = readRedditServerConfig();
+  const token = await getValidRedditAccessToken(db, config);
   const id = post.provider_post_id.replace(/^t3_/u, "").replace(/^.*comments\//u, "").split("/")[0];
   const url = new URL("https://oauth.reddit.com/api/info");
   url.searchParams.set("id", `t3_${id}`);
   url.searchParams.set("raw_json", "1");
   const payload = await fetchJson(url, {
-    headers: { Authorization: `Bearer ${token}`, "User-Agent": redditUserAgent() }
+    headers: { Authorization: `Bearer ${token}`, "User-Agent": config.userAgent }
   });
   return makeSnapshot(post, "reddit", parseRedditMetrics(payload), payload);
 }
@@ -376,26 +388,6 @@ function makeSnapshot(post: PublishedPostRow, source: MarketingMetricSnapshot["s
   };
 }
 
-let redditTokenCache: { token: string; expiresAt: number } | null = null;
-async function getRedditAccessToken(): Promise<string> {
-  if (redditTokenCache && redditTokenCache.expiresAt > Date.now() + 60_000) return redditTokenCache.token;
-  const clientId = requireEnv("REDDIT_CLIENT_ID");
-  const clientSecret = requireEnv("REDDIT_CLIENT_SECRET");
-  const refreshToken = requireEnv("REDDIT_REFRESH_TOKEN");
-  const payload = await fetchJson(new URL("https://www.reddit.com/api/v1/access_token"), {
-    method: "POST",
-    headers: {
-      Authorization: `Basic ${Buffer.from(`${clientId}:${clientSecret}`).toString("base64")}`,
-      "Content-Type": "application/x-www-form-urlencoded",
-      "User-Agent": redditUserAgent()
-    },
-    body: new URLSearchParams({ grant_type: "refresh_token", refresh_token: refreshToken })
-  });
-  if (typeof payload.access_token !== "string") throw new Error("Reddit token refresh returned no access token.");
-  redditTokenCache = { token: payload.access_token, expiresAt: Date.now() + (readNumber(payload.expires_in) ?? 3600) * 1000 };
-  return payload.access_token;
-}
-
 async function fetchJson(url: URL, init: RequestInit): Promise<Record<string, any>> {
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), 20_000);
@@ -445,10 +437,6 @@ function platformLabel(value: string): string {
 
 function shorten(value: string, max: number): string {
   return value.length <= max ? value : `${value.slice(0, max - 1).trimEnd()}…`;
-}
-
-function redditUserAgent(): string {
-  return process.env.REDDIT_USER_AGENT?.trim() || "web:residual-sports-marketing:v1.0 (by /u/configure-owner)";
 }
 
 function requireEnv(name: string): string {

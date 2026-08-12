@@ -1,4 +1,5 @@
 import type { TikTokConnectionView } from "@ai-sports-prediction/tiktok";
+import type { RedditConnectionView } from "@ai-sports-prediction/reddit";
 
 export type MarketingAdminPostView = {
   id: string;
@@ -38,5 +39,8 @@ export type MarketingAdminResponse = {
   campaigns: MarketingAdminCampaignView[];
   tiktokConfigured: boolean;
   tiktokConnection: TikTokConnectionView | null;
+  redditConfigured: boolean;
+  redditConnection: RedditConnectionView | null;
+  redditSubreddits: string[];
   generatedAtUtc: string;
 };

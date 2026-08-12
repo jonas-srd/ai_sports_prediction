@@ -48,22 +48,31 @@ async function testInstagramStoryPublishing(): Promise<void> {
 }
 
 async function testRedditPublishing(): Promise<void> {
-  process.env.REDDIT_CLIENT_ID = "reddit-client";
-  process.env.REDDIT_CLIENT_SECRET = "reddit-secret";
-  process.env.REDDIT_REFRESH_TOKEN = "reddit-refresh";
-  process.env.REDDIT_USER_AGENT = "test:marketing:v1 (by /u/test)";
   const requests: string[] = [];
   globalThis.fetch = async (input) => {
     const url = String(input);
     requests.push(url);
-    return Response.json(url.includes("access_token")
-      ? { access_token: "reddit-access" }
-      : { json: { errors: [], data: { url: "https://reddit.com/r/sports/comments/abc" } } });
+    return Response.json({
+      json: { errors: [], data: { name: "t3_abc", url: "https://reddit.com/r/sports/comments/abc" } }
+    });
   };
 
-  const result = await publishReddit(makePost({ platform: "reddit", target: "sports", title: "Test title" }));
+  const result = await publishReddit(
+    makePost({ platform: "reddit", target: "sports", title: "Test title" }),
+    {
+      accessToken: "reddit-access",
+      config: {
+        clientId: "reddit-client",
+        clientSecret: "reddit-secret",
+        redirectUri: "https://residualsports.com/api/reddit/oauth/callback",
+        tokenEncryptionKey: Buffer.alloc(32, 2).toString("base64"),
+        userAgent: "test:marketing:v1 (by /u/test)"
+      }
+    }
+  );
+  assert.equal(result.providerPostId, "t3_abc");
   assert.equal(result.providerPostUrl, "https://reddit.com/r/sports/comments/abc");
-  assert.equal(requests.length, 2);
+  assert.equal(requests.length, 1);
 }
 
 async function testTikTokDraftUpload(): Promise<void> {
