@@ -138,6 +138,21 @@ export async function PATCH(request: NextRequest) {
       }
     }
 
+    if (action === "publish_instagram_carousel") {
+      if (body.confirmed !== true) {
+        return json({ error: "confirmation_required", message: "Bitte bestätige die ausdrückliche Freigabe vor der Veröffentlichung." }, 400);
+      }
+      const config = readInstagramConfig();
+      const imageUrls = instagramCarouselImageUrls(body.imageUrls, request);
+      const caption = boundedText(body.caption, "Instagram-Text", 2200);
+      const published = await publishInstagramCarousel(config, { imageUrls, caption });
+      return json({
+        ok: true,
+        providerPostId: published.id,
+        providerPostUrl: published.permalink
+      });
+    }
+
     if (action === "update_reddit_post") {
       const target = subreddit(body.target);
       assertAllowedSubreddit(target);
@@ -411,6 +426,63 @@ async function publishInstagramPost(
   return responseId(published, "Instagram-Beitrag");
 }
 
+async function publishInstagramCarousel(
+  config: InstagramConfig,
+  carousel: { imageUrls: string[]; caption: string }
+): Promise<{ id: string; permalink: string | null }> {
+  const childIds: string[] = [];
+  for (const imageUrl of carousel.imageUrls) {
+    const child = await fetchInstagramJson(
+      `https://graph.instagram.com/${encodeURIComponent(config.graphVersion)}/${encodeURIComponent(config.accountId)}/media`,
+      config.accessToken,
+      new URLSearchParams({ image_url: imageUrl, is_carousel_item: "true" })
+    );
+    const childId = responseId(child, "Instagram-Karussellbild");
+    await waitForInstagramContainer(config, childId);
+    childIds.push(childId);
+  }
+
+  const container = await fetchInstagramJson(
+    `https://graph.instagram.com/${encodeURIComponent(config.graphVersion)}/${encodeURIComponent(config.accountId)}/media`,
+    config.accessToken,
+    new URLSearchParams({
+      media_type: "CAROUSEL",
+      children: childIds.join(","),
+      caption: carousel.caption
+    })
+  );
+  const creationId = responseId(container, "Instagram-Karussellcontainer");
+  await waitForInstagramContainer(config, creationId);
+
+  const published = await fetchInstagramJson(
+    `https://graph.instagram.com/${encodeURIComponent(config.graphVersion)}/${encodeURIComponent(config.accountId)}/media_publish`,
+    config.accessToken,
+    new URLSearchParams({ creation_id: creationId })
+  );
+  const id = responseId(published, "Instagram-Karussell");
+  const details = await fetchInstagramGetJson(
+    `https://graph.instagram.com/${encodeURIComponent(config.graphVersion)}/${encodeURIComponent(id)}?fields=permalink`,
+    config.accessToken
+  ).catch((): Record<string, unknown> => ({}));
+  return { id, permalink: text(details.permalink) || null };
+}
+
+async function waitForInstagramContainer(config: InstagramConfig, containerId: string): Promise<void> {
+  for (let attempt = 0; attempt < 30; attempt += 1) {
+    const status = await fetchInstagramGetJson(
+      `https://graph.instagram.com/${encodeURIComponent(config.graphVersion)}/${encodeURIComponent(containerId)}?fields=status_code,status`,
+      config.accessToken
+    );
+    const statusCode = text(status.status_code).toUpperCase();
+    if (statusCode === "FINISHED") return;
+    if (statusCode === "ERROR" || statusCode === "EXPIRED") {
+      throw new Error(text(status.status) || `Instagram-Mediencontainer: ${statusCode}`);
+    }
+    await new Promise((resolvePromise) => setTimeout(resolvePromise, 1_000));
+  }
+  throw new Error("Instagram hat die Bilder nicht rechtzeitig verarbeitet.");
+}
+
 async function fetchInstagramJson(
   url: string,
   accessToken: string,
@@ -440,6 +512,53 @@ async function fetchInstagramJson(
   } finally {
     clearTimeout(timeout);
   }
+}
+
+async function fetchInstagramGetJson(
+  url: string,
+  accessToken: string
+): Promise<Record<string, unknown>> {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 20_000);
+  try {
+    const response = await fetch(url, {
+      headers: { authorization: `Bearer ${accessToken}` },
+      cache: "no-store",
+      signal: controller.signal
+    });
+    const payload = await response.json().catch(() => ({})) as Record<string, unknown>;
+    if (!response.ok) {
+      const providerError = payload.error && typeof payload.error === "object"
+        ? text((payload.error as Record<string, unknown>).message)
+        : "";
+      throw new Error(providerError || `Instagram hat HTTP ${response.status} zurückgegeben.`);
+    }
+    return payload;
+  } finally {
+    clearTimeout(timeout);
+  }
+}
+
+function instagramCarouselImageUrls(value: unknown, request: NextRequest): string[] {
+  if (!Array.isArray(value) || value.length < 2 || value.length > 10) {
+    throw new Error("Ein Instagram-Karussell benötigt zwei bis zehn Bilder.");
+  }
+  const allowedOrigins = new Set([
+    request.nextUrl.origin,
+    "https://residualsports.com",
+    "https://www.residualsports.com"
+  ]);
+  return value.map((item) => {
+    const raw = required(item, "Instagram-Bild-URL");
+    const url = new URL(raw);
+    if (url.protocol !== "https:" || !allowedOrigins.has(url.origin)) {
+      throw new Error("Instagram-Bilder müssen über Residual Sports per HTTPS bereitgestellt werden.");
+    }
+    if (!/\.(?:jpe?g|png)$/iu.test(url.pathname)) {
+      throw new Error("Instagram-Bilder müssen JPEG- oder PNG-Dateien sein.");
+    }
+    return url.toString();
+  });
 }
 
 function responseId(payload: Record<string, unknown>, label: string): string {
