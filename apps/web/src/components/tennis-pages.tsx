@@ -9,7 +9,6 @@ import { getSportMatchHref } from "@/components/match-detail-page";
 import { SportsNewsCards } from "@/components/sports-news-cards";
 import { OpenRouterPredictionPending, PredictionModelSelector, SelectedModelPrediction } from "@/components/prediction-model-selector";
 import { buildStoredModelPredictions } from "@/lib/prediction-models";
-import { ensureSportApiMatchPredictions } from "@/lib/stored-sports-predictions";
 
 export type TennisTab = "news" | "matches" | "tournaments" | "rankings" | "players";
 export type TennisTournamentTab = "results" | "info" | "players";
@@ -605,10 +604,9 @@ function TennisApiEmptySection({
   );
 }
 
-async function TennisPrediction({ locale, match }: { locale: Locale; match: SportApiMatch }) {
+function TennisPrediction({ locale, match }: { locale: Locale; match: SportApiMatch }) {
   const copy = text[locale];
-  const [matchWithPredictions = match] = await ensureSportApiMatchPredictions([match], "tennis").catch(() => [match]);
-  const variants = buildStoredModelPredictions(matchWithPredictions, "tennis", locale);
+  const variants = buildStoredModelPredictions(match, "tennis", locale);
 
   if (!variants) return <OpenRouterPredictionPending className="fixturePredictionMain tennisPredictionMain" locale={locale} />;
 

@@ -12,7 +12,6 @@ import {
 } from "@/lib/sports-api-data";
 import { resolveTennisPlayerFlagUrl, tennisPlayers, tennisTournaments } from "@/lib/tennis-data";
 import { getOfficialWidgetLogo } from "@/lib/widget-logo-policy";
-import { ensureSportApiMatchPredictions } from "@/lib/stored-sports-predictions";
 
 export type WidgetSport = "all" | "football" | "nba" | "nfl" | "tennis";
 export type WidgetType = "prediction-card" | "match-list" | "win-probability" | "key-factors";
@@ -278,14 +277,12 @@ async function getLiveSportsWidgetMatches(
 
       if (footballCompetition) {
         const snapshot = await getFootballCompetitionApiSnapshot(footballCompetition);
-        const matches = await ensureSportApiMatchPredictions(snapshot.matches.slice(0, limit), "football");
-        return { ...snapshot, matches };
+        return { ...snapshot, matches: snapshot.matches.slice(0, limit) };
       }
     }
 
     const snapshot = await getSportApiSnapshot(sportId);
-    const matches = await ensureSportApiMatchPredictions(snapshot.matches.slice(0, limit), sportId);
-    return { ...snapshot, matches };
+    return { ...snapshot, matches: snapshot.matches.slice(0, limit) };
   }));
 
   return snapshots.flatMap((snapshot) =>

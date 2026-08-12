@@ -7,7 +7,6 @@ import { getSportMatchHref } from "@/components/match-detail-page";
 import { SportsNewsCards } from "@/components/sports-news-cards";
 import { OpenRouterPredictionPending, PredictionModelSelector, SelectedModelPrediction } from "@/components/prediction-model-selector";
 import { buildStoredModelPredictions } from "@/lib/prediction-models";
-import { ensureSportApiMatchPredictions } from "@/lib/stored-sports-predictions";
 import { getStoredTeamLogo } from "@/lib/team-logo-fallback";
 
 type LeagueTeam = {
@@ -441,10 +440,9 @@ function LeagueMatchesSection<TTeam extends LeagueTeam>({
   );
 }
 
-async function LeaguePredictionCard<TTeam extends LeagueTeam>({ config, locale, match }: { config: LeagueSportConfig<TTeam>; locale: Locale; match: SportApiMatch }) {
+function LeaguePredictionCard<TTeam extends LeagueTeam>({ config, locale, match }: { config: LeagueSportConfig<TTeam>; locale: Locale; match: SportApiMatch }) {
   const text = labels[locale];
-  const [matchWithPredictions = match] = await ensureSportApiMatchPredictions([match], config.apiSport).catch(() => [match]);
-  const variants = buildStoredModelPredictions(matchWithPredictions, config.apiSport, locale);
+  const variants = buildStoredModelPredictions(match, config.apiSport, locale);
 
   if (!variants) return <OpenRouterPredictionPending locale={locale} />;
 

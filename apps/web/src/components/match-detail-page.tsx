@@ -23,7 +23,7 @@ import { findTennisPlayerByName, resolveTennisPlayerFlagUrl } from "@/lib/tennis
 import { SportsNewsCards } from "@/components/sports-news-cards";
 import { OpenRouterPredictionPending, SelectedModelPrediction, SelectedModelSignal } from "@/components/prediction-model-selector";
 import { buildStoredModelPredictions, type ModelPredictionSet } from "@/lib/prediction-models";
-import { ensureSportApiMatchPredictions } from "@/lib/stored-sports-predictions";
+import { hydrateMatchesWithStoredPredictions } from "@/lib/stored-sports-predictions";
 
 export type MatchDetailTab = "overview" | "comparison" | "stats" | "signal";
 
@@ -138,7 +138,7 @@ export async function SportMatchDetailPage({
     notFound();
   }
 
-  const [matchWithPredictions = loadedContext.match] = await ensureSportApiMatchPredictions([loadedContext.match], loadedContext.sport)
+  const [matchWithPredictions = loadedContext.match] = await hydrateMatchesWithStoredPredictions([loadedContext.match])
     .catch(() => [loadedContext.match]);
   const context = { ...loadedContext, match: matchWithPredictions };
 

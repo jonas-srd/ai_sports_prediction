@@ -88,9 +88,6 @@ const taskDefinition = {
         { name: "NEXT_PUBLIC_SITE_URL", value: env("NEXT_PUBLIC_SITE_URL", "https://residualsports.com") },
         { name: "GA4_MEASUREMENT_ID", value: env("GA4_MEASUREMENT_ID", "G-KSGFX9TKD8") },
         { name: "ADMIN_SESSION_TTL_HOURS", value: env("ADMIN_SESSION_TTL_HOURS", "168") },
-        { name: "OPENROUTER_MODEL_IDS", value: env("OPENROUTER_MODEL_IDS", "openai/gpt-oss-20b:free") },
-        { name: "OPENROUTER_SITE_URL", value: env("OPENROUTER_SITE_URL", "https://residualsports.com") },
-        { name: "OPENROUTER_SITE_NAME", value: env("OPENROUTER_SITE_NAME", "Residual Sports") },
         { name: "NEWSLETTER_FROM_EMAIL", value: env("NEWSLETTER_FROM_EMAIL", "Residual Sports <hello@residualsports.com>") },
         { name: "THE_ODDS_API_REGIONS", value: env("THE_ODDS_API_REGIONS", "eu,us") },
         { name: "ODDS_REFRESH_LOOKAHEAD_DAYS", value: env("ODDS_REFRESH_LOOKAHEAD_DAYS", "7") },
@@ -104,6 +101,7 @@ const taskDefinition = {
         },
         { name: "WEB_API_CACHE_SECONDS", value: env("WEB_API_CACHE_SECONDS", "60") },
         { name: "WEB_API_ODDS_CACHE_SECONDS", value: env("WEB_API_ODDS_CACHE_SECONDS", "60") },
+        { name: "WEB_API_PREDICTIONS_CACHE_SECONDS", value: env("WEB_API_PREDICTIONS_CACHE_SECONDS", "300") },
         { name: "OUTREACH_SEARCH_PROVIDER", value: env("OUTREACH_SEARCH_PROVIDER", "serpapi") }
         ,{ name: "PUBLIC_SITE_URL", value: env("PUBLIC_SITE_URL", "https://residualsports.com") }
         ,{ name: "WIDGET_CUSTOMER_SESSION_TTL_HOURS", value: env("WIDGET_CUSTOMER_SESSION_TTL_HOURS", "720") }
@@ -126,7 +124,6 @@ const taskDefinition = {
         { name: "ADMIN_ACCESS_EMAILS", valueFrom: secrets.adminAccessEmails },
         { name: "ADMIN_SESSION_SECRET", valueFrom: secrets.adminSessionSecret },
         { name: "ADMIN_TOTP_SECRETS", valueFrom: secrets.adminTotpSecrets },
-        { name: "OPENROUTER_API_KEY", valueFrom: secrets.openrouterApiKey },
         { name: "RESEND_API_KEY", valueFrom: secrets.resendApiKey },
         { name: "THE_ODDS_API_KEY", valueFrom: secrets.theOddsApiKey },
         { name: "THE_SPORTS_DB_API_KEY", valueFrom: secrets.theSportsDbApiKey },
@@ -184,18 +181,15 @@ const taskDefinition = {
         { name: "API_CACHE_ENABLED", value: env("API_CACHE_ENABLED", "1") },
         { name: "API_CACHE_MATCHES_TTL_SECONDS", value: env("API_CACHE_MATCHES_TTL_SECONDS", "300") },
         { name: "API_CACHE_ODDS_TTL_SECONDS", value: env("API_CACHE_ODDS_TTL_SECONDS", "60") },
+        { name: "API_CACHE_PREDICTIONS_TTL_SECONDS", value: env("API_CACHE_PREDICTIONS_TTL_SECONDS", "300") },
         { name: "API_CACHE_BENCHMARK_TTL_SECONDS", value: env("API_CACHE_BENCHMARK_TTL_SECONDS", "300") },
         { name: "API_CACHE_SPECIAL_TTL_SECONDS", value: env("API_CACHE_SPECIAL_TTL_SECONDS", "300") },
-        { name: "API_CACHE_HEALTH_TTL_SECONDS", value: env("API_CACHE_HEALTH_TTL_SECONDS", "2") },
-        { name: "OPENROUTER_MODEL_IDS", value: env("OPENROUTER_MODEL_IDS", "openai/gpt-oss-20b:free") },
-        { name: "OPENROUTER_SITE_URL", value: env("OPENROUTER_SITE_URL", "https://residualsports.com") },
-        { name: "OPENROUTER_SITE_NAME", value: env("OPENROUTER_SITE_NAME", "Residual Sports") }
+        { name: "API_CACHE_HEALTH_TTL_SECONDS", value: env("API_CACHE_HEALTH_TTL_SECONDS", "2") }
       ],
       secrets: [
         { name: "DATABASE_URL", valueFrom: secrets.databaseUrl },
         { name: "REDIS_URL", valueFrom: secrets.redisUrl },
-        { name: "ADMIN_API_TOKEN", valueFrom: secrets.adminApiToken },
-        { name: "OPENROUTER_API_KEY", valueFrom: secrets.openrouterApiKey }
+        { name: "ADMIN_API_TOKEN", valueFrom: secrets.adminApiToken }
       ],
       logConfiguration: awslogs("edge-api")
     },

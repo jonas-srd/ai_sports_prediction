@@ -25,7 +25,6 @@ import {
 import { SportsNewsCards } from "@/components/sports-news-cards";
 import { OpenRouterPredictionPending, PredictionModelSelector, SelectedModelPrediction } from "@/components/prediction-model-selector";
 import { buildStoredModelPredictions } from "@/lib/prediction-models";
-import { ensureSportApiMatchPredictions } from "@/lib/stored-sports-predictions";
 
 const labels = {
   en: {
@@ -1917,11 +1916,10 @@ function FixtureTeam({
   return <span className={`fixtureTeam fixtureTeam-${align}`}>{content}</span>;
 }
 
-async function FixturePredictionCard({ competition, fixture, locale }: { competition: FootballCompetition; fixture: SportApiMatch; locale: Locale }) {
+function FixturePredictionCard({ competition, fixture, locale }: { competition: FootballCompetition; fixture: SportApiMatch; locale: Locale }) {
   const text = labels[locale];
   void competition;
-  const [matchWithPredictions = fixture] = await ensureSportApiMatchPredictions([fixture], "football").catch(() => [fixture]);
-  const variants = buildStoredModelPredictions(matchWithPredictions, "football", locale);
+  const variants = buildStoredModelPredictions(fixture, "football", locale);
 
   if (!variants) return <OpenRouterPredictionPending locale={locale} />;
 

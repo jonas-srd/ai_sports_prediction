@@ -2,7 +2,7 @@
  * Purpose: Creates OpenRouter predictions for newly discovered Sport API fixtures.
  */
 import {
-  predictionExists,
+  openRouterPredictionProfileExists,
   storeMatchDataSnapshot,
   type PostgresDb,
   upsertPredictionMatch,
@@ -129,7 +129,7 @@ export async function generateUpcomingSportApiPredictions(db: PostgresDb) {
 
     const missingProfiles: Array<typeof PUBLIC_PREDICTION_PROFILES[number]> = [];
     for (const profile of PUBLIC_PREDICTION_PROFILES) {
-      if (await predictionExists(db, matchId, getPublicPredictionModelId(modelId, profile))) {
+      if (await openRouterPredictionProfileExists(db, matchId, profile)) {
         skipped += 1;
       } else {
         missingProfiles.push(profile);

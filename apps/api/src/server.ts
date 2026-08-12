@@ -13,7 +13,6 @@ import {
   listSpecialPredictionsForApi
 } from "@ai-sports-prediction/db";
 import { createApiCache } from "./cache";
-import { ensurePublicPredictions } from "./public-predictions";
 
 const port = Number(process.env.API_PORT ?? process.env.PORT ?? 3001);
 const host = process.env.API_HOST ?? process.env.HOST ?? "0.0.0.0";
@@ -24,7 +23,7 @@ const CACHE_TTLS = {
   health: Number(process.env.API_CACHE_HEALTH_TTL_SECONDS ?? 2),
   matches: Number(process.env.API_CACHE_MATCHES_TTL_SECONDS ?? 300),
   odds: Number(process.env.API_CACHE_ODDS_TTL_SECONDS ?? 60),
-  predictions: Number(process.env.API_CACHE_PREDICTIONS_TTL_SECONDS ?? 60),
+  predictions: Number(process.env.API_CACHE_PREDICTIONS_TTL_SECONDS ?? 300),
   benchmarkPredictions: Number(process.env.API_CACHE_BENCHMARK_TTL_SECONDS ?? 300),
   specialPredictions: Number(process.env.API_CACHE_SPECIAL_TTL_SECONDS ?? 300)
 };
@@ -53,17 +52,6 @@ async function routeRequest(request: IncomingMessage, response: ServerResponse):
 
   if (request.method === "OPTIONS") {
     sendEmpty(response, 204);
-    return;
-  }
-
-  if (request.method === "POST" && url.pathname === "/v1/predictions/ensure") {
-    if (!isAdminAuthorized(request)) {
-      sendJson(response, 401, { error: "unauthorized" });
-      return;
-    }
-    const body = await readJsonBody(request);
-    const predictions = await ensurePublicPredictions(db, body?.fixtures);
-    sendJson(response, 200, { predictions });
     return;
   }
 
@@ -162,20 +150,6 @@ async function routeRequest(request: IncomingMessage, response: ServerResponse):
   }
 
   sendJson(response, 404, { error: "not_found" });
-}
-
-async function readJsonBody(request: IncomingMessage): Promise<Record<string, any> | null> {
-  const chunks: Buffer[] = [];
-  let size = 0;
-  for await (const chunk of request) {
-    const buffer = Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk);
-    size += buffer.length;
-    if (size > 128 * 1024) throw new Error("request_body_too_large");
-    chunks.push(buffer);
-  }
-  if (chunks.length === 0) return null;
-  const parsed = JSON.parse(Buffer.concat(chunks).toString("utf8"));
-  return parsed && typeof parsed === "object" && !Array.isArray(parsed) ? parsed : null;
 }
 
 function readSourceMatchIds(url: URL) {

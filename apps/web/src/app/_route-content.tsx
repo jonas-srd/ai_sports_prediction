@@ -23,7 +23,6 @@ import { getSportsNewsLinks, type SportsNewsItem } from "@/lib/sports-news";
 import { isLiveSportMatch, isUpcomingPredictionMatch } from "@/lib/home-content-quality";
 import { resolveTennisPlayerFlagUrl } from "@/lib/tennis-data";
 import { buildStoredModelPredictions, type ModelPredictionSet } from "@/lib/prediction-models";
-import { ensureSportApiMatchPredictions } from "@/lib/stored-sports-predictions";
 import {
   OpenRouterPredictionPending,
   PredictionModelSelector,
@@ -670,13 +669,11 @@ async function buildHomeHighlight(
   match: SportApiMatch,
   locale: Locale
 ): Promise<HomeMatchHighlight> {
-  const hydratedMatch = hydrateHomeHighlightMatch(row.sport, match);
-  const [matchWithPredictions] = await ensureSportApiMatchPredictions([hydratedMatch], row.sport).catch(() => [hydratedMatch]);
-  const resolvedMatch = matchWithPredictions ?? hydratedMatch;
+  const resolvedMatch = hydrateHomeHighlightMatch(row.sport, match);
 
   return {
     accent: row.accent,
-    href: getSportMatchHref({ competitionSlug: row.competitionSlug, locale, match: hydratedMatch, sport: row.sport }),
+    href: getSportMatchHref({ competitionSlug: row.competitionSlug, locale, match: resolvedMatch, sport: row.sport }),
     match: resolvedMatch,
     prediction: buildStoredModelPredictions(resolvedMatch, row.sport, locale),
     sport: row.sport,

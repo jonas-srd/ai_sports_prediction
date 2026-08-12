@@ -402,8 +402,23 @@ export async function updatePredictionMatchFinalResult(db: PostgresDb, input: Ma
   );
 }
 
-export async function predictionExists(db: PostgresDb, matchId: string, modelId: string): Promise<boolean> {
-  const result = await db.query("select 1 from predictions where match_id = $1 and model_id = $2", [matchId, modelId]);
+export async function openRouterPredictionProfileExists(
+  db: PostgresDb,
+  matchId: string,
+  profile: "nexus" | "pulse" | "edge"
+): Promise<boolean> {
+  const result = await db.query(
+    `
+      select 1
+      from predictions p
+      join models m on m.id = p.model_id
+      where p.match_id = $1
+        and lower(m.provider) = 'openrouter'
+        and lower(m.name) = $2
+      limit 1
+    `,
+    [matchId, profile]
+  );
   return Boolean(result.rowCount && result.rowCount > 0);
 }
 
