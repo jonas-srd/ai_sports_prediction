@@ -63,7 +63,12 @@ export function MarketingStudioPreview() {
       setEdits((current) => {
         const next = { ...current };
         for (const campaign of payload.campaigns) {
-          for (const post of campaign.posts.filter((entry) => ["tiktok", "reddit"].includes(entry.platform))) {
+          for (const post of campaign.posts.filter((entry) => [
+            "instagram_feed",
+            "instagram_story",
+            "tiktok",
+            "reddit"
+          ].includes(entry.platform))) {
             if (!next[post.id]) {
               next[post.id] = {
                 title: post.title ?? "",
@@ -92,6 +97,10 @@ export function MarketingStudioPreview() {
   const tiktokPosts = useMemo(() => data?.campaigns.flatMap((campaign) =>
     campaign.posts
       .filter((post) => post.platform === "tiktok")
+      .map((post) => ({ campaign, post }))) ?? [], [data]);
+  const instagramPosts = useMemo(() => data?.campaigns.flatMap((campaign) =>
+    campaign.posts
+      .filter((post) => post.platform === "instagram_feed" || post.platform === "instagram_story")
       .map((post) => ({ campaign, post }))) ?? [], [data]);
   const redditPosts = useMemo(() => data?.campaigns.flatMap((campaign) =>
     campaign.posts
@@ -138,9 +147,10 @@ export function MarketingStudioPreview() {
   }
 
   const connected = data?.tiktokConnection?.status === "connected";
+  const instagramConnected = Boolean(data?.instagramConfigured);
   const redditConnected = data?.redditConnection?.status === "connected";
-  const pendingCount = tiktokPosts.filter(({ post }) => isEditable(post)).length;
-  const failedCount = [...tiktokPosts, ...redditPosts].filter(({ post }) => post.status === "failed").length;
+  const failedCount = [...tiktokPosts, ...instagramPosts, ...redditPosts]
+    .filter(({ post }) => post.status === "failed").length;
 
   return (
     <main className={styles.shell}>
@@ -148,7 +158,7 @@ export function MarketingStudioPreview() {
         <div>
           <span className={styles.eyebrow}>Residual Sports · Marketing Agent</span>
           <h1>Marketing Studio</h1>
-          <p>Predictions prüfen, Inhalte anpassen und bewusst für TikTok oder Reddit freigeben.</p>
+          <p>Predictions prüfen, Inhalte anpassen und bewusst für TikTok, Instagram oder Reddit freigeben.</p>
         </div>
         <div className={styles.headerActions}>
           <Link className={styles.ghostButton} href="/admin/outreach">Outreach Cockpit</Link>
@@ -207,6 +217,39 @@ export function MarketingStudioPreview() {
 
       <section className={styles.connectionCard}>
         <div className={styles.connectionHeading}>
+          <div className={styles.instagramMark}>◎</div>
+          <div>
+            <span className={styles.sectionKicker}>Instagram Graph API</span>
+            <h2>Instagram-Verbindung</h2>
+          </div>
+          <ConnectionBadge configured={instagramConnected} connected={instagramConnected} />
+        </div>
+
+        {loading ? (
+          <p className={styles.muted}>Verbindung wird geprüft …</p>
+        ) : instagramConnected ? (
+          <div className={styles.profileRow}>
+            <div className={`${styles.avatarFallback} ${styles.instagramAvatar}`}>◎</div>
+            <div className={styles.profileInfo}>
+              <strong>{data?.instagramAccountLabel || "Residual Sports"}</strong>
+              <span>Feed-Beiträge · Stories</span>
+              <small>Serverseitig verbunden · Veröffentlichung nur nach manueller Freigabe</small>
+            </div>
+            <span className={`${styles.connectionBadge} ${styles.connected}`}><i /> Bereit</span>
+          </div>
+        ) : (
+          <div className={styles.connectionBody}>
+            <div>
+              <strong>Instagram-Konfiguration fehlt noch</strong>
+              <p>Instagram-Konto-ID oder Zugriffstoken fehlen auf dem Server.</p>
+            </div>
+            <span>Der Bereich bleibt sichtbar; Veröffentlichen ist bis zur Konfiguration gesperrt.</span>
+          </div>
+        )}
+      </section>
+
+      <section className={styles.connectionCard}>
+        <div className={styles.connectionHeading}>
           <div className={styles.redditMark}>r/</div>
           <div>
             <span className={styles.sectionKicker}>Reddit Data API</span>
@@ -259,9 +302,125 @@ export function MarketingStudioPreview() {
 
       <section className={styles.statsGrid} aria-label="Marketing-Übersicht">
         <Metric label="TikTok-Entwürfe" value={String(tiktokPosts.length)} />
+        <Metric label="Instagram-Entwürfe" value={String(instagramPosts.length)} />
         <Metric label="Reddit-Entwürfe" value={String(redditPosts.length)} />
-        <Metric label="Zu prüfen" value={String(pendingCount + redditPosts.filter(({ post }) => isEditable(post)).length)} />
         <Metric label="Fehler" value={String(failedCount)} alert={failedCount > 0} />
+      </section>
+
+      <section className={styles.queueSection}>
+        <div className={styles.sectionHeader}>
+          <div>
+            <span className={styles.sectionKicker}>Instagram-Freigabe</span>
+            <h2>Feed-Beiträge und Stories</h2>
+          </div>
+          <span className={styles.queueCount}>{instagramPosts.length} Entwürfe</span>
+        </div>
+
+        {!loading && instagramPosts.length === 0 ? (
+          <div className={styles.emptyState}>
+            <strong>Noch keine Instagram-Kampagnen vorhanden</strong>
+            <p>Sobald der Marketing-Agent eine Kampagne erzeugt, erscheinen Feed-Motiv und Story hier.</p>
+          </div>
+        ) : null}
+        <div className={styles.cardGrid}>
+          {instagramPosts.map(({ campaign, post }) => {
+            const edit = edits[post.id] ?? { title: "", body: post.body };
+            const editable = isEditable(post);
+            const busy = busyPost === post.id;
+            const canPublish = Boolean(
+              instagramConnected
+              && confirmed[post.id]
+              && editable
+              && post.assetUrl?.startsWith("https://")
+              && !busy
+            );
+            const isStory = post.platform === "instagram_story";
+            return (
+              <article className={styles.draftCard} key={post.id}>
+                <div className={styles.draftMeta}>
+                  <div>
+                    <span>{isStory ? "Instagram Story" : "Instagram Feed"} · {campaign.competition}</span>
+                    <h3>{campaign.homeTeam} vs. {campaign.awayTeam}</h3>
+                    <small>{formatDate(campaign.utcDate)} · Prediction {campaign.predictedHome}:{campaign.predictedAway}</small>
+                  </div>
+                  <StatusBadge status={post.status} />
+                </div>
+
+                <div className={styles.draftLayout}>
+                  <div className={`${styles.assetPreview} ${isStory ? styles.storyPreview : ""}`}>
+                    {post.assetUrl
+                      ? <img alt={`Instagram-Motiv für ${campaign.homeTeam} gegen ${campaign.awayTeam}`} src={post.assetUrl} />
+                      : <div className={styles.noAsset}>Motiv wird noch erzeugt</div>}
+                    <span>{isStory ? "STORY" : "FEED"}</span>
+                  </div>
+                  <div className={styles.editor}>
+                    <label>
+                      {isStory ? "Interner Story-Text" : "Caption"} <small>{Array.from(edit.body).length}/2200</small>
+                      <textarea
+                        disabled={!editable || busy}
+                        maxLength={2200}
+                        onChange={(event) => setEdits((current) => ({
+                          ...current,
+                          [post.id]: { ...edit, body: event.target.value }
+                        }))}
+                        rows={8}
+                        value={edit.body}
+                      />
+                    </label>
+                    {isStory ? (
+                      <small className={styles.actionHint}>Bei Stories wird das fertige Motiv veröffentlicht; dieser Text dient der internen Prüfung.</small>
+                    ) : null}
+                    {post.errorMessage ? <div className={styles.postError}>{post.errorMessage}</div> : null}
+                    {editable ? (
+                      <label className={styles.confirmRow}>
+                        <input
+                          checked={Boolean(confirmed[post.id])}
+                          disabled={!instagramConnected || !post.assetUrl || busy}
+                          onChange={(event) => setConfirmed((current) => ({
+                            ...current,
+                            [post.id]: event.target.checked
+                          }))}
+                          type="checkbox"
+                        />
+                        <span>Motiv und Inhalt sind geprüft. Diesen Beitrag jetzt auf Instagram veröffentlichen.</span>
+                      </label>
+                    ) : null}
+                    <div className={styles.actionRow}>
+                      {editable ? (
+                        <>
+                          <button
+                            className={styles.ghostButton}
+                            disabled={busy || !hasChanges(post, edit)}
+                            onClick={() => void act({
+                              action: "update_instagram_post",
+                              postId: post.id,
+                              body: edit.body
+                            }, "Instagram-Entwurf wurde gespeichert.", post.id)}
+                            type="button"
+                          >Speichern</button>
+                          <button
+                            className={styles.primaryButton}
+                            disabled={!canPublish}
+                            onClick={() => void act({
+                              action: "publish_instagram_post",
+                              postId: post.id,
+                              body: edit.body,
+                              confirmed: true
+                            }, "Der Beitrag wurde auf Instagram veröffentlicht.", post.id)}
+                            type="button"
+                          >{busy ? "Wird veröffentlicht …" : "Auf Instagram veröffentlichen"}</button>
+                        </>
+                      ) : null}
+                    </div>
+                    {editable && !instagramConnected ? (
+                      <small className={styles.actionHint}>Das Instagram-Zugriffstoken muss zuerst serverseitig eingerichtet werden.</small>
+                    ) : null}
+                  </div>
+                </div>
+              </article>
+            );
+          })}
+        </div>
       </section>
 
       <section className={styles.queueSection}>

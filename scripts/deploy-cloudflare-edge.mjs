@@ -111,6 +111,9 @@ const taskDefinition = {
         ,{ name: "MARKETING_ASSET_S3_BUCKET", value: env("MARKETING_ASSET_S3_BUCKET", "ai-sports-prediction") }
         ,{ name: "MARKETING_ASSET_S3_PREFIX", value: env("MARKETING_ASSET_S3_PREFIX", "ai-sports-prediction/backups/marketing-assets") }
         ,{ name: "MARKETING_ASSET_S3_REGION", value: env("MARKETING_ASSET_S3_REGION", region) }
+        ,{ name: "INSTAGRAM_ACCOUNT_ID", value: env("INSTAGRAM_ACCOUNT_ID", "17841438107091610") }
+        ,{ name: "INSTAGRAM_ACCOUNT_LABEL", value: env("INSTAGRAM_ACCOUNT_LABEL", "Residual Sports") }
+        ,{ name: "INSTAGRAM_GRAPH_API_VERSION", value: env("INSTAGRAM_GRAPH_API_VERSION", "v23.0") }
         ,{ name: "TIKTOK_REDIRECT_URI", value: env("TIKTOK_REDIRECT_URI", "https://residualsports.com/api/tiktok/oauth/callback") }
         ,{ name: "REDDIT_REDIRECT_URI", value: env("REDDIT_REDIRECT_URI", "https://residualsports.com/api/reddit/oauth/callback") }
         ,{ name: "REDDIT_USER_AGENT", value: env("REDDIT_USER_AGENT", "web:residual-sports-marketing:v1.0 (by /u/residualsports)") }
@@ -136,6 +139,9 @@ const taskDefinition = {
           : [])
         ,...(secrets.widgetCustomerSessionSecret
           ? [{ name: "WIDGET_CUSTOMER_SESSION_SECRET", valueFrom: secrets.widgetCustomerSessionSecret }]
+          : [])
+        ,...(secrets.instagramAccessToken
+          ? [{ name: "INSTAGRAM_ACCESS_TOKEN", valueFrom: secrets.instagramAccessToken }]
           : [])
         ,...(secrets.tiktokClientKey
           ? [{ name: "TIKTOK_CLIENT_KEY", valueFrom: secrets.tiktokClientKey }]

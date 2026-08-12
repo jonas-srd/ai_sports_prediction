@@ -41,6 +41,14 @@ export type ClaimedRedditPost = {
   target: string;
 };
 
+export type ClaimedInstagramPost = {
+  id: string;
+  campaignId: string;
+  platform: "instagram_feed" | "instagram_story";
+  body: string;
+  assetUrl: string;
+};
+
 export function getMarketingDb(): PostgresDb {
   if (!globalThis.residualSportsMarketingDb) {
     globalThis.residualSportsMarketingDb = createPostgresPool(undefined, {
@@ -177,6 +185,123 @@ export async function updateRedditPost(
     [input.postId, input.title, input.body, input.target]
   );
   return Boolean(result.rowCount);
+}
+
+export async function updateInstagramPost(
+  input: { postId: string; body: string },
+  db = getMarketingDb()
+): Promise<boolean> {
+  const result = await db.query(
+    `update marketing_posts set
+       body = $2, status = 'pending_review', approved_by = null,
+       approved_at_utc = null, provider_post_id = null,
+       provider_post_url = null, provider_status = null,
+       provider_status_payload = null, provider_status_updated_at_utc = null,
+       error_message = null, published_at_utc = null, updated_at_utc = now()
+     where id = $1 and platform in ('instagram_feed', 'instagram_story')
+       and status in ('pending_review', 'approved', 'failed')`,
+    [input.postId, input.body]
+  );
+  return Boolean(result.rowCount);
+}
+
+export async function approveAndClaimInstagramPost(
+  input: { postId: string; body: string; reviewer: string },
+  db = getMarketingDb()
+): Promise<ClaimedInstagramPost> {
+  const client = await db.connect();
+  try {
+    await client.query("begin");
+    const selected = await client.query<{
+      id: string;
+      campaign_id: string;
+      platform: "instagram_feed" | "instagram_story";
+      asset_url: string | null;
+      status: string;
+    }>(
+      `select id, campaign_id, platform, asset_url, status
+       from marketing_posts
+       where id = $1 and platform in ('instagram_feed', 'instagram_story')
+       for update`,
+      [input.postId]
+    );
+    const post = selected.rows[0];
+    if (!post || !["pending_review", "approved", "failed"].includes(post.status)) {
+      throw new Error("Dieser Instagram-Entwurf ist nicht mehr zur Freigabe verfügbar.");
+    }
+    if (!post.asset_url?.startsWith("https://")) {
+      throw new Error("Der Instagram-Entwurf hat noch keine öffentlich erreichbare Bilddatei.");
+    }
+    const campaign = await client.query(
+      `update marketing_campaigns set
+         status = 'approved', approved_by = $2, approved_at_utc = now()
+       where id = $1 and status in ('pending_review','approved','failed','partially_published')
+       returning id`,
+      [post.campaign_id, input.reviewer]
+    );
+    if (!campaign.rowCount) {
+      throw new Error("Die Kampagne kann in ihrem aktuellen Status nicht freigegeben werden.");
+    }
+    await client.query(
+      `update marketing_posts set
+         body = $2, status = 'publishing', approved_by = $3,
+         approved_at_utc = now(), error_message = null,
+         provider_status = 'CREATING_MEDIA', provider_status_updated_at_utc = now()
+       where id = $1`,
+      [post.id, input.body, input.reviewer]
+    );
+    await client.query("commit");
+    return {
+      id: post.id,
+      campaignId: post.campaign_id,
+      platform: post.platform,
+      body: input.body,
+      assetUrl: post.asset_url
+    };
+  } catch (error) {
+    await client.query("rollback");
+    throw error;
+  } finally {
+    client.release();
+  }
+}
+
+export async function markInstagramPostPublished(
+  post: Pick<ClaimedInstagramPost, "id" | "campaignId">,
+  providerPostId: string,
+  db = getMarketingDb()
+): Promise<void> {
+  await db.query(
+    `update marketing_posts set
+       status = 'published', provider_post_id = $2, provider_post_url = null,
+       provider_status = 'PUBLISHED', provider_status_updated_at_utc = now(),
+       error_message = null, published_at_utc = now()
+     where id = $1 and platform in ('instagram_feed', 'instagram_story')`,
+    [post.id, providerPostId]
+  );
+  await db.query(
+    `update marketing_campaigns set status = 'partially_published' where id = $1`,
+    [post.campaignId]
+  );
+}
+
+export async function markInstagramPostFailed(
+  post: Pick<ClaimedInstagramPost, "id" | "campaignId">,
+  errorMessage: string,
+  db = getMarketingDb()
+): Promise<void> {
+  await db.query(
+    `update marketing_posts set
+       status = 'failed', provider_status = 'FAILED', error_message = $2,
+       provider_status_updated_at_utc = now()
+     where id = $1`,
+    [post.id, errorMessage.slice(0, 2000)]
+  );
+  await db.query(
+    `update marketing_campaigns set status = 'failed'
+     where id = $1 and status in ('approved','publishing','partially_published')`,
+    [post.campaignId]
+  );
 }
 
 export async function approveAndClaimRedditPost(

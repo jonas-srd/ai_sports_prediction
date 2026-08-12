@@ -18,6 +18,7 @@ import {
 } from "@ai-sports-prediction/reddit";
 import { getAuthorizedAdminSession } from "@/lib/admin-request-auth";
 import {
+  approveAndClaimInstagramPost,
   approveAndClaimTikTokPost,
   approveAndClaimRedditPost,
   getMarketingDb,
@@ -25,10 +26,13 @@ import {
   listMarketingCampaigns,
   markTikTokDraftFailed,
   markTikTokDraftUploaded,
+  markInstagramPostFailed,
+  markInstagramPostPublished,
   markRedditPostFailed,
   markRedditPostPublished,
   saveTikTokPostStatus,
   updateTikTokPost,
+  updateInstagramPost,
   updateRedditPost
 } from "@/lib/marketing-admin-db";
 
@@ -49,6 +53,8 @@ export async function GET(request: NextRequest) {
     return json({
       ok: true,
       campaigns,
+      instagramConfigured: isInstagramConfigured(),
+      instagramAccountLabel: process.env.INSTAGRAM_ACCOUNT_LABEL?.trim() || "Residual Sports",
       tiktokConfigured: isTikTokServerConfigured(),
       tiktokConnection,
       redditConfigured: isRedditServerConfigured(),
@@ -89,6 +95,36 @@ export async function PATCH(request: NextRequest) {
         return json({ error: "not_editable", message: "Dieser TikTok-Entwurf kann nicht mehr bearbeitet werden." }, 409);
       }
       return json({ ok: true });
+    }
+
+    if (action === "update_instagram_post") {
+      if (!await updateInstagramPost({
+        postId: required(body.postId, "Entwurf-ID"),
+        body: boundedText(body.body, "Instagram-Text", 2200)
+      })) {
+        return json({ error: "not_editable", message: "Dieser Instagram-Entwurf kann nicht mehr bearbeitet werden." }, 409);
+      }
+      return json({ ok: true });
+    }
+
+    if (action === "publish_instagram_post") {
+      if (body.confirmed !== true) {
+        return json({ error: "confirmation_required", message: "Bitte bestätige die ausdrückliche Freigabe vor der Veröffentlichung." }, 400);
+      }
+      const config = readInstagramConfig();
+      const claimed = await approveAndClaimInstagramPost({
+        postId: required(body.postId, "Entwurf-ID"),
+        body: boundedText(body.body, "Instagram-Text", 2200),
+        reviewer: session.email
+      });
+      try {
+        const publishedId = await publishInstagramPost(config, claimed);
+        await markInstagramPostPublished(claimed, publishedId);
+        return json({ ok: true, providerPostId: publishedId });
+      } catch (error) {
+        await markInstagramPostFailed(claimed, error instanceof Error ? error.message : String(error));
+        throw error;
+      }
     }
 
     if (action === "update_reddit_post") {
@@ -229,6 +265,94 @@ function boundedText(value: unknown, label: string, max: number): string {
     throw new Error(`${label} darf höchstens ${max} Zeichen enthalten.`);
   }
   return normalized;
+}
+
+type InstagramConfig = {
+  accountId: string;
+  accessToken: string;
+  graphVersion: string;
+};
+
+function readInstagramConfig(): InstagramConfig {
+  return {
+    accountId: required(process.env.INSTAGRAM_ACCOUNT_ID, "Instagram-Konto-ID"),
+    accessToken: required(process.env.INSTAGRAM_ACCESS_TOKEN, "Instagram-Zugriffstoken"),
+    graphVersion: process.env.INSTAGRAM_GRAPH_API_VERSION?.trim() || "v23.0"
+  };
+}
+
+function isInstagramConfigured(): boolean {
+  try {
+    readInstagramConfig();
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+async function publishInstagramPost(
+  config: InstagramConfig,
+  post: {
+    platform: "instagram_feed" | "instagram_story";
+    body: string;
+    assetUrl: string;
+  }
+): Promise<string> {
+  const mediaBody = new URLSearchParams({ image_url: post.assetUrl });
+  if (post.platform === "instagram_feed") {
+    mediaBody.set("caption", post.body);
+  } else {
+    mediaBody.set("media_type", "STORIES");
+  }
+  const container = await fetchInstagramJson(
+    `https://graph.instagram.com/${encodeURIComponent(config.graphVersion)}/${encodeURIComponent(config.accountId)}/media`,
+    config.accessToken,
+    mediaBody
+  );
+  const creationId = responseId(container, "Instagram-Mediencontainer");
+  const published = await fetchInstagramJson(
+    `https://graph.instagram.com/${encodeURIComponent(config.graphVersion)}/${encodeURIComponent(config.accountId)}/media_publish`,
+    config.accessToken,
+    new URLSearchParams({ creation_id: creationId })
+  );
+  return responseId(published, "Instagram-Beitrag");
+}
+
+async function fetchInstagramJson(
+  url: string,
+  accessToken: string,
+  body: URLSearchParams
+): Promise<Record<string, unknown>> {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 20_000);
+  try {
+    const response = await fetch(url, {
+      method: "POST",
+      headers: {
+        authorization: `Bearer ${accessToken}`,
+        "content-type": "application/x-www-form-urlencoded"
+      },
+      body,
+      cache: "no-store",
+      signal: controller.signal
+    });
+    const payload = await response.json().catch(() => ({})) as Record<string, unknown>;
+    if (!response.ok) {
+      const providerError = payload.error && typeof payload.error === "object"
+        ? text((payload.error as Record<string, unknown>).message)
+        : "";
+      throw new Error(providerError || `Instagram hat HTTP ${response.status} zurückgegeben.`);
+    }
+    return payload;
+  } finally {
+    clearTimeout(timeout);
+  }
+}
+
+function responseId(payload: Record<string, unknown>, label: string): string {
+  const id = text(payload.id);
+  if (!id) throw new Error(`${label} enthält keine ID.`);
+  return id;
 }
 
 function subredditAllowlist(): string[] {
