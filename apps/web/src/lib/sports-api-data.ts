@@ -652,10 +652,14 @@ async function fetchTheSportsDbLeagueSummaryEvents(
     return [];
   }
 
+  const [currentSeason] = getTheSportsDbSeasonCandidates();
   const rows = await Promise.all([
     fetchTheSportsDbV2Events(`livescore/${leagueId}`).catch(() => []),
     fetchTheSportsDbSportLiveEvents(sport, leagueId, league).catch(() => []),
     fetchTheSportsDbV2Events(`schedule/next/league/${leagueId}`).catch(() => []),
+    ...(currentSeason
+      ? [fetchTheSportsDbV2Events(`schedule/league/${leagueId}/${encodeURIComponent(currentSeason)}`).catch(() => [])]
+      : []),
     fetchTheSportsDbList<any>("eventsnextleague.php", { id: leagueId }, "events").catch(() => []),
     fetchTheSportsDbV2Events(`schedule/previous/league/${leagueId}`).catch(() => [])
   ]);

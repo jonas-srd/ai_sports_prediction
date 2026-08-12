@@ -91,6 +91,7 @@ export class OpenRouterClient {
     let retryCount = 0;
     let retriedWithoutJsonMode = false;
     let retriedContentFailure = false;
+    let transientRetries = 0;
 
     for (;;) {
       try {
@@ -99,6 +100,17 @@ export class OpenRouterClient {
           retryCount
         });
       } catch (error) {
+        if (
+          error instanceof OpenRouterResponseError
+          && isRetryableRequestFailure(error)
+          && transientRetries < 2
+        ) {
+          transientRetries += 1;
+          retryCount += 1;
+          await wait(getRetryDelayMs(error, transientRetries));
+          continue;
+        }
+
         if (
           !retriedWithoutJsonMode
           && error instanceof OpenRouterResponseError
@@ -459,6 +471,46 @@ function shouldRetryWithoutJsonMode(error: OpenRouterResponseError, options: Ope
 
   const raw = JSON.stringify(error.rawResponse).toLowerCase();
   return raw.includes("response_format") || raw.includes("json_schema") || raw.includes("json mode");
+}
+
+function isRetryableRequestFailure(error: OpenRouterResponseError): boolean {
+  return error.code === "request_failed"
+    && (error.status === 408 || error.status === 429 || (error.status !== null && error.status >= 500));
+}
+
+function getRetryDelayMs(error: OpenRouterResponseError, attempt: number): number {
+  const retryAfterSeconds = findRetryAfterSeconds(error.rawResponse);
+  if (retryAfterSeconds !== null) {
+    return Math.min(30_000, Math.max(1_000, retryAfterSeconds * 1_000));
+  }
+
+  return Math.min(8_000, 1_000 * 2 ** (attempt - 1));
+}
+
+function findRetryAfterSeconds(value: unknown): number | null {
+  if (!isRecord(value)) {
+    return null;
+  }
+
+  for (const key of ["retry_after_seconds", "retryAfterSeconds", "retry_after"] as const) {
+    const parsed = readNumber(value[key]);
+    if (parsed !== null && parsed >= 0) {
+      return parsed;
+    }
+  }
+
+  for (const child of Object.values(value)) {
+    const parsed = findRetryAfterSeconds(child);
+    if (parsed !== null) {
+      return parsed;
+    }
+  }
+
+  return null;
+}
+
+function wait(milliseconds: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, milliseconds));
 }
 
 function extractFirstJsonObject(text: string): string {

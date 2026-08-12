@@ -675,8 +675,62 @@ export async function upsertStoredPrediction(db: PostgresDb, input: StoredPredic
 
   try {
     await client.query("begin");
-    const result = await client.query<{ id: string }>(
-    `
+    // Some long-lived databases predate the predictions(match_id, model_id)
+    // unique constraint. Serialize writes for one match/profile and update the
+    // existing row explicitly so persistence remains idempotent on every
+    // supported schema version.
+    await client.query(
+      "select pg_advisory_xact_lock(hashtextextended($1, 0))",
+      [`${input.matchId.length}:${input.matchId}:${input.modelId}`]
+    );
+    const existing = await client.query<{ id: string }>(
+      `select id from predictions where match_id = $1 and model_id = $2 order by created_at asc limit 1`,
+      [input.matchId, input.modelId]
+    );
+    const existingId = existing.rows[0]?.id;
+    const result = existingId
+      ? await client.query<{ id: string }>(
+        `
+          update predictions
+          set
+            predicted_home = $2,
+            predicted_away = $3,
+            confidence = $4,
+            reason = $5,
+            raw_response = $6,
+            model_version = $7,
+            prompt_text = $8,
+            input_context = $9::jsonb,
+            provider_response_id = $10,
+            latency_ms = $11,
+            input_tokens = $12,
+            output_tokens = $13,
+            cost_usd = $14,
+            generated_at_utc = $15,
+            updated_at = now()
+          where id = $1
+          returning id
+        `,
+        [
+          existingId,
+          input.predictedHome,
+          input.predictedAway,
+          input.confidence ?? null,
+          input.reason ?? null,
+          rawResponseJson,
+          input.modelVersion ?? null,
+          input.promptText ?? null,
+          inputContextJson,
+          input.providerResponseId ?? null,
+          input.latencyMs ?? null,
+          input.inputTokens ?? null,
+          input.outputTokens ?? null,
+          input.costUsd ?? null,
+          generatedAtUtc
+        ]
+      )
+      : await client.query<{ id: string }>(
+        `
       insert into predictions (
         id,
         match_id,
@@ -698,44 +752,28 @@ export async function upsertStoredPrediction(db: PostgresDb, input: StoredPredic
         updated_at
       )
       values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11::jsonb, $12, $13, $14, $15, $16, $17, now())
-      on conflict (match_id, model_id) do update set
-        predicted_home = excluded.predicted_home,
-        predicted_away = excluded.predicted_away,
-        confidence = excluded.confidence,
-        reason = excluded.reason,
-        raw_response = excluded.raw_response,
-        model_version = excluded.model_version,
-        prompt_text = excluded.prompt_text,
-        input_context = excluded.input_context,
-        provider_response_id = excluded.provider_response_id,
-        latency_ms = excluded.latency_ms,
-        input_tokens = excluded.input_tokens,
-        output_tokens = excluded.output_tokens,
-        cost_usd = excluded.cost_usd,
-        generated_at_utc = excluded.generated_at_utc,
-        updated_at = now()
       returning id
-    `,
-    [
-      id,
-      input.matchId,
-      input.modelId,
-      input.predictedHome,
-      input.predictedAway,
-      input.confidence ?? null,
-      input.reason ?? null,
-      rawResponseJson,
-      input.modelVersion ?? null,
-      input.promptText ?? null,
-      inputContextJson,
-      input.providerResponseId ?? null,
-      input.latencyMs ?? null,
-      input.inputTokens ?? null,
-      input.outputTokens ?? null,
-      input.costUsd ?? null,
-      generatedAtUtc
-    ]
-  );
+        `,
+        [
+          id,
+          input.matchId,
+          input.modelId,
+          input.predictedHome,
+          input.predictedAway,
+          input.confidence ?? null,
+          input.reason ?? null,
+          rawResponseJson,
+          input.modelVersion ?? null,
+          input.promptText ?? null,
+          inputContextJson,
+          input.providerResponseId ?? null,
+          input.latencyMs ?? null,
+          input.inputTokens ?? null,
+          input.outputTokens ?? null,
+          input.costUsd ?? null,
+          generatedAtUtc
+        ]
+      );
 
     const predictionId = result.rows[0]?.id ?? id;
     const revisionContent = {
@@ -752,32 +790,38 @@ export async function upsertStoredPrediction(db: PostgresDb, input: StoredPredic
       providerResponseId: input.providerResponseId ?? null
     };
     const contentHash = createHash("sha256").update(serializeJson(revisionContent)).digest("hex");
-    await client.query(
-    `
-      insert into prediction_revisions (
-        id, prediction_id, match_id, model_id, model_version,
-        predicted_home, predicted_away, confidence, reason,
-        prompt_text, input_context, raw_response, provider_response_id,
-        latency_ms, input_tokens, output_tokens, cost_usd,
-        generated_at_utc, content_hash
-      )
-      values (
-        $1, $2, $3, $4, $5,
-        $6, $7, $8, $9,
-        $10, $11::jsonb, $12::jsonb, $13,
-        $14, $15, $16, $17,
-        $18, $19
-      )
-      on conflict (prediction_id, content_hash) do nothing
-    `,
-    [
-      randomUUID(), predictionId, input.matchId, input.modelId, input.modelVersion ?? null,
-      input.predictedHome, input.predictedAway, input.confidence ?? null, input.reason ?? null,
-      input.promptText ?? null, inputContextJson, rawResponseJson, input.providerResponseId ?? null,
-      input.latencyMs ?? null, input.inputTokens ?? null, input.outputTokens ?? null, input.costUsd ?? null,
-      generatedAtUtc, contentHash
-    ]
-  );
+    const existingRevision = await client.query(
+      `select 1 from prediction_revisions where prediction_id = $1 and content_hash = $2 limit 1`,
+      [predictionId, contentHash]
+    );
+    if (!existingRevision.rowCount) {
+      await client.query(
+        `
+          insert into prediction_revisions (
+            id, prediction_id, match_id, model_id, model_version,
+            predicted_home, predicted_away, confidence, reason,
+            prompt_text, input_context, raw_response, provider_response_id,
+            latency_ms, input_tokens, output_tokens, cost_usd,
+            generated_at_utc, content_hash
+          )
+          values (
+            $1, $2, $3, $4, $5,
+            $6, $7, $8, $9,
+            $10, $11::jsonb, $12::jsonb, $13,
+            $14, $15, $16, $17,
+            $18, $19
+          )
+          on conflict do nothing
+        `,
+        [
+          randomUUID(), predictionId, input.matchId, input.modelId, input.modelVersion ?? null,
+          input.predictedHome, input.predictedAway, input.confidence ?? null, input.reason ?? null,
+          input.promptText ?? null, inputContextJson, rawResponseJson, input.providerResponseId ?? null,
+          input.latencyMs ?? null, input.inputTokens ?? null, input.outputTokens ?? null, input.costUsd ?? null,
+          generatedAtUtc, contentHash
+        ]
+      );
+    }
 
     await client.query("commit");
     return predictionId;
