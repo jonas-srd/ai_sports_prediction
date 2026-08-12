@@ -26,7 +26,14 @@ const optionalSecrets = [
   "instagram-access-token",
   "tiktok-client-key",
   "tiktok-client-secret",
-  "tiktok-token-encryption-key"
+  "tiktok-token-encryption-key",
+  "stripe-secret-key",
+  "stripe-webhook-secret",
+  "stripe-price-starter-monthly",
+  "stripe-price-starter-annual",
+  "stripe-price-growth-monthly",
+  "stripe-price-growth-annual",
+  "stripe-customer-portal-configuration-id"
 ];
 
 for (const name of requiredSecrets) {

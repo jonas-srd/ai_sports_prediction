@@ -4,6 +4,7 @@ import test from "node:test";
 import {
   getMinimumTermEnd,
   getStripeTaxIdType,
+  createWidgetCheckoutSession,
   isWidgetCheckoutConfigured,
   parseWidgetBillingInterval,
   requiresEuVatId,
@@ -15,6 +16,55 @@ test("normalizes widget billing intervals", () => {
   assert.equal(parseWidgetBillingInterval("annual"), "annual");
   assert.equal(parseWidgetBillingInterval("monthly"), "monthly");
   assert.equal(parseWidgetBillingInterval("unexpected"), "monthly");
+});
+
+test("creates a hosted SEPA Checkout session with Managed Payments disabled", async () => {
+  const names = [
+    "STRIPE_SECRET_KEY", "STRIPE_PRICE_STARTER_MONTHLY", "WIDGET_TAX_MODE"
+  ] as const;
+  const previous = Object.fromEntries(names.map((name) => [name, process.env[name]]));
+  const previousFetch = globalThis.fetch;
+  let checkoutBody = "";
+  Object.assign(process.env, {
+    STRIPE_SECRET_KEY: "sk_test_checkout_fixture",
+    STRIPE_PRICE_STARTER_MONTHLY: "price_starter_monthly_fixture",
+    WIDGET_TAX_MODE: "small_business"
+  });
+  globalThis.fetch = async (input, init) => {
+    const path = String(input);
+    if (path.includes("/v1/prices/")) {
+      return new Response(JSON.stringify({
+        active: true,
+        currency: "eur",
+        recurring: { interval: "month", interval_count: 1 },
+        tax_behavior: "exclusive",
+        unit_amount: 4_900
+      }), { status: 200 });
+    }
+    checkoutBody = String(init?.body ?? "");
+    return new Response(JSON.stringify({ id: "cs_test_fixture", url: "https://checkout.stripe.com/test" }), { status: 200 });
+  };
+  try {
+    await createWidgetCheckoutSession({
+      billingInterval: "monthly",
+      customerId: "cus_fixture",
+      domain: "example.com",
+      leadId: "lead_fixture",
+      locale: "en",
+      origin: "https://residualsports.com",
+      plan: "starter",
+      publicationName: "Example"
+    });
+    const params = new URLSearchParams(checkoutBody);
+    assert.equal(params.get("managed_payments[enabled]"), "false");
+    assert.equal(params.get("payment_method_types[0]"), "sepa_debit");
+  } finally {
+    globalThis.fetch = previousFetch;
+    for (const name of names) {
+      if (previous[name] === undefined) delete process.env[name];
+      else process.env[name] = previous[name];
+    }
+  }
 });
 
 test("cancels an annual subscription schedule at the minimum-term phase boundary", async () => {

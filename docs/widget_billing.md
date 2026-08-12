@@ -29,7 +29,7 @@ The webhook converts an annual Checkout subscription to a schedule: the current 
 3. Enable SEPA Direct Debit in Stripe and make sure every configured price is in EUR.
 4. Activate Stripe Tax, configure the seller's German tax registration and assign the correct tax code to the widget products. Checkout requires the billing address, supports business tax IDs and calculates applicable VAT automatically.
 5. Register `https://residualsports.com/api/widgets/stripe/webhook` as a Stripe webhook endpoint.
-6. Subscribe it to `checkout.session.completed`, `checkout.session.async_payment_succeeded`, `invoice.paid`, `invoice.payment_failed`, `customer.subscription.updated`, and `customer.subscription.deleted`.
+6. Subscribe it to `checkout.session.completed`, `checkout.session.async_payment_succeeded`, `invoice.finalized`, `invoice.finalization_failed`, `invoice.paid`, `invoice.payment_failed`, `customer.subscription.updated`, and `customer.subscription.deleted`.
 7. Configure a Resend-verified sender in `WIDGET_ACCESS_FROM_EMAIL`.
 8. Apply migration `0010_widget_invoice_details.sql` so invoice and contact details can be retained for customer support and invoice delivery.
 9. Create a Stripe Customer Portal configuration for invoices, payment methods, billing address
@@ -38,6 +38,8 @@ The webhook converts an annual Checkout subscription to a schedule: the current 
 10. In Stripe Revenue Recovery, enable Smart Retries and Stripe's payment-failure emails. The
     application additionally consumes `invoice.payment_failed`, marks the customer `past_due`,
     emails the account link and creates an internal, idempotent automation event.
+11. Synchronize the local test/live Stripe settings to encrypted AWS runtime storage with
+    `npm run aws:sync-stripe-secrets`, then deploy. This command never prints secret values.
 
 Widget access is created only after `invoice.paid`. Payment failures mark access `past_due`; canceled or unpaid subscriptions are deactivated. Stripe webhook signatures and event IDs are verified to prevent forged or duplicate processing.
 

@@ -49,7 +49,7 @@ const workers = queues.map((queueName) => new Worker(
     });
 
     try {
-      await runQueuedJob(queueName, job.name, job.data);
+      const result = await runQueuedJob(queueName, job.name, job.data);
       await upsertJobAttempt(db, {
         queueName,
         jobName: job.name,
@@ -60,6 +60,7 @@ const workers = queues.map((queueName) => new Worker(
         startedAtUtc,
         finishedAtUtc: new Date().toISOString()
       });
+      return result;
     } catch (error) {
       await upsertJobAttempt(db, {
         queueName,
@@ -95,7 +96,7 @@ void registerRecurringJobs().catch((error) => {
 process.on("SIGTERM", () => shutdown());
 process.on("SIGINT", () => shutdown());
 
-async function runQueuedJob(queueName: string, jobName: string, data: unknown): Promise<void> {
+async function runQueuedJob(queueName: string, jobName: string, data: unknown): Promise<unknown> {
   if (queueName === "fixture-sync" && jobName === "sync-live-sport-scores") {
     const { syncLiveSportScores } = await import("./jobs/sync-live-sport-scores");
     await syncLiveSportScores(db);
@@ -142,17 +143,22 @@ async function runQueuedJob(queueName: string, jobName: string, data: unknown): 
 
   if (queueName === "marketing" && jobName === "generate-marketing-campaigns") {
     const { runMarketingCampaignGeneration } = await import("./marketing-agent");
-    const result = await runMarketingCampaignGeneration(db);
+    const generationData = data && typeof data === "object" ? data as Record<string, unknown> : {};
+    const manualRequest = readOptionalString(generationData.source) === "admin";
+    const result = await runMarketingCampaignGeneration(db, manualRequest ? {
+      limit: readOptionalInteger(generationData.limit, 1, 10),
+      lookaheadDays: 7
+    } : {});
     console.log("Marketing campaign generation finished:", result);
 
-    if ((process.env.MARKETING_PUBLISH_MODE ?? "review").trim().toLowerCase() === "auto") {
+    if (!manualRequest && (process.env.MARKETING_PUBLISH_MODE ?? "review").trim().toLowerCase() === "auto") {
       const { approveMarketingCampaign, publishMarketingCampaign } = await import("./marketing-publishers");
       for (const campaignId of result.campaignIds) {
         await approveMarketingCampaign(db, campaignId, "residual-sports:marketing-agent:auto");
         await publishMarketingCampaign(db, campaignId);
       }
     }
-    return;
+    return result;
   }
 
   if (queueName === "marketing" && jobName === "publish-approved-marketing-campaigns") {
@@ -197,6 +203,11 @@ function readOutreachResearchOptions(data: unknown): {
 
 function readOptionalString(value: unknown): string | undefined {
   return typeof value === "string" && value.trim() ? value.trim() : undefined;
+}
+
+function readOptionalInteger(value: unknown, min: number, max: number): number | undefined {
+  const parsed = Number(value);
+  return Number.isInteger(parsed) ? Math.max(min, Math.min(max, parsed)) : undefined;
 }
 
 function readRequiredString(data: unknown, key: string): string {

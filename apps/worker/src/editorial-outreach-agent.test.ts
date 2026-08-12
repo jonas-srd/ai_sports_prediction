@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import {
   buildDefaultSearchQueries,
   buildFallbackDraftForPublication,
+  classifyPublicationSize,
   extractPublicContacts,
   isGenericRoleEmail,
   isLikelyFirstPartyEmail,
@@ -77,6 +78,22 @@ function testFitScoring(): void {
   assert.equal(low.score, 0);
 }
 
+function testPublicationSizeClassification(): void {
+  assert.equal(
+    classifyPublicationSize("Ein persönlicher Fan-Blog, betrieben von einem unabhängigen Autor."),
+    "small_blog"
+  );
+  assert.equal(
+    classifyPublicationSize("Unser Sportmagazin wird von einem festen Redaktionsteam betreut."),
+    "medium_sports_media"
+  );
+  assert.equal(
+    classifyPublicationSize("Die Mediengruppe betreibt eine nationale Sportredaktion mit Millionen Nutzern."),
+    "large_publisher"
+  );
+  assert.equal(classifyPublicationSize("Aktuelle Ergebnisse und Tabellen."), "unknown");
+}
+
 function testAiDraftParsing(): void {
   const parsed = parseAiDraft('```json\n{"subject":" Kurze Demo ","textBody":"Guten Tag\\n\\nText"}\n```');
   assert.equal(parsed.subject, "Kurze Demo");
@@ -98,6 +115,7 @@ testFirstPartyContactFilter();
 testPublicationNameCleanup();
 testRobotsRules();
 testFitScoring();
+testPublicationSizeClassification();
 testAiDraftParsing();
 testInternationalResearchAndDrafts();
 console.log("Editorial outreach agent tests passed.");

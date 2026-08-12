@@ -48,6 +48,11 @@ export type MarketingGenerationResult = {
   campaignIds: string[];
 };
 
+export type MarketingGenerationOptions = {
+  limit?: number;
+  lookaheadDays?: number;
+};
+
 type GeneratedAsset = {
   platform: "instagram_feed" | "instagram_story" | "social_landscape" | "tiktok_photo";
   path: string;
@@ -65,10 +70,22 @@ const BLOCKED_CLAIMS = [
 ];
 
 export async function runMarketingCampaignGeneration(
-  db: PostgresDb
+  db: PostgresDb,
+  options: MarketingGenerationOptions = {}
 ): Promise<MarketingGenerationResult> {
-  const limit = boundedInteger(process.env.MARKETING_MAX_CAMPAIGNS_PER_RUN, 5, 1, 50);
-  const candidates = await selectMarketingPredictions(db, limit);
+  const limit = boundedInteger(
+    options.limit ?? process.env.MARKETING_MAX_CAMPAIGNS_PER_RUN,
+    5,
+    1,
+    50
+  );
+  const lookaheadDays = boundedInteger(
+    options.lookaheadDays ?? process.env.MARKETING_LOOKAHEAD_DAYS,
+    3,
+    1,
+    30
+  );
+  const candidates = await selectMarketingPredictions(db, limit, lookaheadDays);
   const result: MarketingGenerationResult = {
     selected: candidates.length,
     campaignsCreated: 0,
@@ -158,9 +175,9 @@ export async function runMarketingCampaignGeneration(
 
 export async function selectMarketingPredictions(
   db: PostgresDb,
-  limit: number
+  limit: number,
+  lookaheadDays = boundedInteger(process.env.MARKETING_LOOKAHEAD_DAYS, 3, 1, 30)
 ): Promise<MarketingPrediction[]> {
-  const lookaheadDays = boundedInteger(process.env.MARKETING_LOOKAHEAD_DAYS, 3, 1, 30);
   const minimumConfidence = boundedNumber(process.env.MARKETING_MIN_CONFIDENCE, 55, 0, 100);
   const query = await db.query<{
     prediction_id: string;
@@ -177,28 +194,53 @@ export async function selectMarketingPredictions(
     reason: string | null;
   }>(
     `
+      with ranked_predictions as (
+        select
+          p.id as prediction_id,
+          p.match_id,
+          p.model_id,
+          m.sport,
+          m.competition,
+          m.home_team,
+          m.away_team,
+          m.utc_date,
+          p.predicted_home,
+          p.predicted_away,
+          p.confidence,
+          p.reason,
+          row_number() over (
+            partition by p.match_id
+            order by
+              case lower(pm.name) when 'nexus' then 0 when 'pulse' then 1 when 'edge' then 2 else 3 end,
+              coalesce(p.confidence, 0) desc,
+              p.created_at desc
+          ) as prediction_rank
+        from predictions p
+        join matches m on m.id = p.match_id
+        join models pm on pm.id = p.model_id
+        where m.utc_date >= now()
+          and m.utc_date <= now() + ($1::text || ' days')::interval
+          and upper(coalesce(m.status, 'SCHEDULED')) not in ('FINISHED', 'FT', 'CANCELLED', 'CANCELED', 'POSTPONED')
+          and not exists (
+            select 1 from marketing_campaigns c where c.match_id = p.match_id
+          )
+      )
       select
-        p.id as prediction_id,
-        p.match_id,
-        p.model_id,
-        m.sport,
-        m.competition,
-        m.home_team,
-        m.away_team,
-        m.utc_date,
-        p.predicted_home,
-        p.predicted_away,
-        p.confidence,
-        p.reason
-      from predictions p
-      join matches m on m.id = p.match_id
-      where m.utc_date >= now()
-        and m.utc_date <= now() + ($1::text || ' days')::interval
-        and upper(coalesce(m.status, 'SCHEDULED')) not in ('FINISHED', 'FT', 'CANCELLED', 'CANCELED', 'POSTPONED')
-        and not exists (
-          select 1 from marketing_campaigns c where c.prediction_id = p.id
-        )
-      order by coalesce(p.confidence, 0) desc, m.utc_date asc
+        prediction_id,
+        match_id,
+        model_id,
+        sport,
+        competition,
+        home_team,
+        away_team,
+        utc_date,
+        predicted_home,
+        predicted_away,
+        confidence,
+        reason
+      from ranked_predictions
+      where prediction_rank = 1
+      order by coalesce(confidence, 0) desc, utc_date asc
       limit $2
     `,
     [lookaheadDays, Math.max(limit * 4, limit)]
@@ -601,7 +643,7 @@ function readText(value: unknown, fallback: string): string {
   return typeof value === "string" && value.trim() ? value.trim() : fallback;
 }
 
-function boundedInteger(raw: string | undefined, fallback: number, min: number, max: number): number {
+function boundedInteger(raw: unknown, fallback: number, min: number, max: number): number {
   const value = Number(raw ?? fallback);
   return Number.isInteger(value) ? Math.max(min, Math.min(max, value)) : fallback;
 }

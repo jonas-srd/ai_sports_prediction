@@ -141,6 +141,7 @@ export async function createWidgetCheckoutSession(input: CheckoutInput): Promise
     cancel_url: `${input.origin}${checkoutPath}?${returnQuery}&checkout=canceled`,
     "line_items[0][price]": priceId,
     "line_items[0][quantity]": "1",
+    "managed_payments[enabled]": "false",
     "payment_method_types[0]": "sepa_debit",
     billing_address_collection: "required",
     "customer_update[address]": "auto",

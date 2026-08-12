@@ -39,6 +39,7 @@ export type MarketingAdminResponse = {
   campaigns: MarketingAdminCampaignView[];
   instagramConfigured: boolean;
   instagramAccountLabel: string;
+  generationConfigured: boolean;
   tiktokConfigured: boolean;
   tiktokConnection: TikTokConnectionView | null;
   redditConfigured: boolean;

@@ -1,4 +1,5 @@
 import { NextResponse, type NextRequest } from "next/server";
+import { Queue } from "bullmq";
 import {
   disconnectTikTokConnection,
   fetchTikTokPublishStatus,
@@ -55,6 +56,7 @@ export async function GET(request: NextRequest) {
       campaigns,
       instagramConfigured: isInstagramConfigured(),
       instagramAccountLabel: process.env.INSTAGRAM_ACCOUNT_LABEL?.trim() || "Residual Sports",
+      generationConfigured: Boolean(process.env.REDIS_URL?.trim()),
       tiktokConfigured: isTikTokServerConfigured(),
       tiktokConnection,
       redditConfigured: isRedditServerConfigured(),
@@ -87,6 +89,15 @@ export async function PATCH(request: NextRequest) {
   const action = text(body.action);
 
   try {
+    if (action === "create_content") {
+      const jobId = await enqueueMarketingGeneration(boundedInteger(body.limit, 3, 1, 10));
+      return json({ ok: true, jobId });
+    }
+
+    if (action === "content_generation_status") {
+      return json({ ok: true, ...(await readMarketingGenerationStatus(required(body.jobId, "Job-ID"))) });
+    }
+
     if (action === "update_tiktok_post") {
       const postId = required(body.postId, "Entwurf-ID");
       const title = boundedText(body.title, "Titel", 90);
@@ -265,6 +276,88 @@ function boundedText(value: unknown, label: string, max: number): string {
     throw new Error(`${label} darf höchstens ${max} Zeichen enthalten.`);
   }
   return normalized;
+}
+
+function boundedInteger(value: unknown, fallback: number, min: number, max: number): number {
+  const parsed = Number(value);
+  return Number.isInteger(parsed) ? Math.max(min, Math.min(max, parsed)) : fallback;
+}
+
+type MarketingGenerationResult = {
+  selected: number;
+  campaignsCreated: number;
+  postsCreated: number;
+  failed: number;
+  campaignIds: string[];
+};
+
+async function enqueueMarketingGeneration(limit: number): Promise<string> {
+  const queue = createMarketingQueue();
+  try {
+    const job = await queue.add("generate-marketing-campaigns", {
+      source: "admin",
+      limit
+    }, {
+      jobId: `admin-marketing-${Date.now()}`,
+      attempts: 2,
+      backoff: { type: "exponential", delay: 10_000 },
+      removeOnComplete: { age: 60 * 60, count: 50 },
+      removeOnFail: { age: 24 * 60 * 60, count: 100 }
+    });
+    if (!job.id) throw new Error("Der Content-Auftrag hat keine ID erhalten.");
+    return job.id;
+  } finally {
+    await queue.close();
+  }
+}
+
+async function readMarketingGenerationStatus(jobId: string): Promise<{
+  state: string;
+  result: MarketingGenerationResult | null;
+  failureReason: string | null;
+}> {
+  const queue = createMarketingQueue();
+  try {
+    const job = await queue.getJob(jobId);
+    if (!job) throw new Error("Der Content-Auftrag wurde nicht gefunden oder ist bereits abgelaufen.");
+    const state = await job.getState();
+    return {
+      state,
+      result: state === "completed" ? normalizeGenerationResult(job.returnvalue) : null,
+      failureReason: state === "failed" ? job.failedReason || "Die Content-Erstellung ist fehlgeschlagen." : null
+    };
+  } finally {
+    await queue.close();
+  }
+}
+
+function normalizeGenerationResult(value: unknown): MarketingGenerationResult {
+  const row = value && typeof value === "object" ? value as Record<string, unknown> : {};
+  return {
+    selected: boundedInteger(row.selected, 0, 0, 100),
+    campaignsCreated: boundedInteger(row.campaignsCreated, 0, 0, 100),
+    postsCreated: boundedInteger(row.postsCreated, 0, 0, 1000),
+    failed: boundedInteger(row.failed, 0, 0, 100),
+    campaignIds: Array.isArray(row.campaignIds)
+      ? row.campaignIds.filter((id): id is string => typeof id === "string")
+      : []
+  };
+}
+
+function createMarketingQueue(): Queue {
+  const redisUrl = required(process.env.REDIS_URL, "Redis-Verbindung");
+  const url = new URL(redisUrl);
+  return new Queue("marketing", {
+    connection: {
+      host: url.hostname,
+      port: Number(url.port || 6379),
+      username: url.username ? decodeURIComponent(url.username) : undefined,
+      password: url.password ? decodeURIComponent(url.password) : undefined,
+      maxRetriesPerRequest: null,
+      tls: url.protocol === "rediss:" ? {} : undefined
+    },
+    prefix: process.env.QUEUE_KEY_PREFIX ?? "{ai-sports-prediction}"
+  });
 }
 
 type InstagramConfig = {

@@ -113,9 +113,6 @@ async function handleStripeEvent(type: string, object: Record<string, unknown>) 
 
   if (type === "invoice.finalized") {
     await upsertWidgetInvoice(object, "open");
-    const subscriptionId = getInvoiceSubscriptionId(object);
-    const leadId = subscriptionId ? await findLeadIdBySubscription(subscriptionId) : null;
-    if (leadId) await sendWidgetInvoiceEmailOnce(leadId, object);
     return;
   }
 

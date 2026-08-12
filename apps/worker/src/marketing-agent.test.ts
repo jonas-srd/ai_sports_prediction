@@ -1,11 +1,13 @@
 import assert from "node:assert/strict";
 import sharp from "sharp";
+import type { PostgresDb } from "@ai-sports-prediction/db";
 import {
   createFallbackMarketingCopy,
   parseMarketingCopy,
   parseSubredditAllowlist,
   renderMarketingAssets,
   renderPredictionSvg,
+  selectMarketingPredictions,
   validateMarketingCopy,
   type MarketingPrediction
 } from "./marketing-agent";
@@ -86,10 +88,28 @@ async function testRenderedJpegs(): Promise<void> {
   assert.ok(metadata.every((item) => item.format === "jpeg"));
 }
 
+async function testManualSevenDaySelection(): Promise<void> {
+  let sql = "";
+  let parameters: unknown[] = [];
+  const db = {
+    query: async (statement: string, values: unknown[]) => {
+      sql = statement;
+      parameters = values;
+      return { rows: [] };
+    }
+  } as unknown as PostgresDb;
+  assert.deepEqual(await selectMarketingPredictions(db, 3, 7), []);
+  assert.deepEqual(parameters, [7, 12]);
+  assert.match(sql, /partition by p\.match_id/u);
+  assert.match(sql, /where c\.match_id = p\.match_id/u);
+  assert.match(sql, /when 'nexus' then 0/u);
+}
+
 testFallbackCompliance();
 testAiCopyParsingAndLimits();
 testBlockedClaims();
 testSvgEscaping();
 testSubredditAllowlist();
 await testRenderedJpegs();
+await testManualSevenDaySelection();
 console.log("Marketing agent tests passed.");

@@ -9,8 +9,10 @@ import {
   markOutreachDraftSent,
   rejectOutreachProspect,
   suppressOutreachProspect,
-  updateOutreachDraft
+  updateOutreachDraft,
+  updateOutreachProspectPublicationSize
 } from "@/lib/outreach-admin-db";
+import type { OutreachPublicationSize } from "@/lib/outreach-admin-types";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -64,6 +66,17 @@ export async function PATCH(request: NextRequest) {
       const textBody = required(body.textBody, "E-Mail-Text").slice(0, 6000);
       if (!await updateOutreachDraft(draftId, subject, textBody)) {
         return json({ error: "draft_not_editable", message: "Dieser Entwurf kann nicht mehr bearbeitet werden." }, 409);
+      }
+      return json({ ok: true });
+    }
+
+    if (action === "update_publication_size") {
+      const publicationSize = readPublicationSize(body.publicationSize);
+      if (!await updateOutreachProspectPublicationSize(
+        required(body.prospectId, "Prospect-ID"),
+        publicationSize
+      )) {
+        return json({ error: "prospect_not_found", message: "Die Redaktion wurde nicht gefunden." }, 404);
       }
       return json({ ok: true });
     }
@@ -156,6 +169,19 @@ function readEmailLanguage(value: unknown): string {
     throw new Error("Die E-Mail-Sprache wird nicht unterstützt.");
   }
   return language;
+}
+
+function readPublicationSize(value: unknown): OutreachPublicationSize {
+  const publicationSize = text(value);
+  if (
+    publicationSize !== "small_blog"
+    && publicationSize !== "medium_sports_media"
+    && publicationSize !== "large_publisher"
+    && publicationSize !== "unknown"
+  ) {
+    throw new Error("Die Redaktionsgröße wird nicht unterstützt.");
+  }
+  return publicationSize;
 }
 
 function parseRedisConnection(redisUrl: string) {

@@ -56,7 +56,14 @@ const secrets = {
   tiktokTokenEncryptionKey: optionalRuntimeSecretReference("ai-sports-prediction/tiktok-token-encryption-key"),
   redditClientId: optionalRuntimeSecretReference("ai-sports-prediction/reddit-client-id"),
   redditClientSecret: optionalRuntimeSecretReference("ai-sports-prediction/reddit-client-secret"),
-  redditTokenEncryptionKey: optionalRuntimeSecretReference("ai-sports-prediction/reddit-token-encryption-key")
+  redditTokenEncryptionKey: optionalRuntimeSecretReference("ai-sports-prediction/reddit-token-encryption-key"),
+  stripeSecretKey: optionalRuntimeSecretReference("ai-sports-prediction/stripe-secret-key"),
+  stripeWebhookSecret: optionalRuntimeSecretReference("ai-sports-prediction/stripe-webhook-secret"),
+  stripePriceStarterMonthly: optionalRuntimeSecretReference("ai-sports-prediction/stripe-price-starter-monthly"),
+  stripePriceStarterAnnual: optionalRuntimeSecretReference("ai-sports-prediction/stripe-price-starter-annual"),
+  stripePriceGrowthMonthly: optionalRuntimeSecretReference("ai-sports-prediction/stripe-price-growth-monthly"),
+  stripePriceGrowthAnnual: optionalRuntimeSecretReference("ai-sports-prediction/stripe-price-growth-annual"),
+  stripeCustomerPortalConfigurationId: optionalRuntimeSecretReference("ai-sports-prediction/stripe-customer-portal-configuration-id")
 };
 
 const taskDefinition = {
@@ -106,6 +113,21 @@ const taskDefinition = {
         ,{ name: "PUBLIC_SITE_URL", value: env("PUBLIC_SITE_URL", "https://residualsports.com") }
         ,{ name: "WIDGET_CUSTOMER_SESSION_TTL_HOURS", value: env("WIDGET_CUSTOMER_SESSION_TTL_HOURS", "720") }
         ,{ name: "WIDGET_ACCESS_FROM_EMAIL", value: env("WIDGET_ACCESS_FROM_EMAIL", "") }
+        ,{ name: "WIDGET_CHECKOUT_ORIGIN", value: env("WIDGET_CHECKOUT_ORIGIN", "https://residualsports.com") }
+        ,{ name: "WIDGET_DIRECT_SALES_ENABLED", value: env("WIDGET_DIRECT_SALES_ENABLED", "0") }
+        ,{ name: "LEGAL_SELLER_NAME", value: env("LEGAL_SELLER_NAME", "") }
+        ,{ name: "LEGAL_SELLER_TRADING_NAME", value: env("LEGAL_SELLER_TRADING_NAME", "Residual Sports") }
+        ,{ name: "LEGAL_SELLER_STREET", value: env("LEGAL_SELLER_STREET", "") }
+        ,{ name: "LEGAL_SELLER_POSTAL_CODE", value: env("LEGAL_SELLER_POSTAL_CODE", "") }
+        ,{ name: "LEGAL_SELLER_CITY", value: env("LEGAL_SELLER_CITY", "") }
+        ,{ name: "LEGAL_SELLER_COUNTRY", value: env("LEGAL_SELLER_COUNTRY", "Deutschland") }
+        ,{ name: "LEGAL_SELLER_COUNTRY_CODE", value: env("LEGAL_SELLER_COUNTRY_CODE", "DE") }
+        ,{ name: "LEGAL_SELLER_EMAIL", value: env("LEGAL_SELLER_EMAIL", "hello@residualsports.com") }
+        ,{ name: "WIDGET_TAX_MODE", value: env("WIDGET_TAX_MODE", "") }
+        ,{ name: "LEGAL_SELLER_VAT_ID", value: env("LEGAL_SELLER_VAT_ID", "") }
+        ,{ name: "LEGAL_SELLER_TAX_NUMBER", value: env("LEGAL_SELLER_TAX_NUMBER", "") }
+        ,{ name: "STRIPE_TAX_READY", value: env("STRIPE_TAX_READY", "0") }
+        ,{ name: "WIDGET_INVOICE_DELIVERY_READY", value: env("WIDGET_INVOICE_DELIVERY_READY", "0") }
         ,{ name: "MARKETING_ASSET_S3_BUCKET", value: env("MARKETING_ASSET_S3_BUCKET", "ai-sports-prediction") }
         ,{ name: "MARKETING_ASSET_S3_PREFIX", value: env("MARKETING_ASSET_S3_PREFIX", "ai-sports-prediction/backups/marketing-assets") }
         ,{ name: "MARKETING_ASSET_S3_REGION", value: env("MARKETING_ASSET_S3_REGION", region) }
@@ -157,6 +179,27 @@ const taskDefinition = {
           : [])
         ,...(secrets.redditTokenEncryptionKey
           ? [{ name: "REDDIT_TOKEN_ENCRYPTION_KEY", valueFrom: secrets.redditTokenEncryptionKey }]
+          : [])
+        ,...(secrets.stripeSecretKey
+          ? [{ name: "STRIPE_SECRET_KEY", valueFrom: secrets.stripeSecretKey }]
+          : [])
+        ,...(secrets.stripeWebhookSecret
+          ? [{ name: "STRIPE_WEBHOOK_SECRET", valueFrom: secrets.stripeWebhookSecret }]
+          : [])
+        ,...(secrets.stripePriceStarterMonthly
+          ? [{ name: "STRIPE_PRICE_STARTER_MONTHLY", valueFrom: secrets.stripePriceStarterMonthly }]
+          : [])
+        ,...(secrets.stripePriceStarterAnnual
+          ? [{ name: "STRIPE_PRICE_STARTER_ANNUAL", valueFrom: secrets.stripePriceStarterAnnual }]
+          : [])
+        ,...(secrets.stripePriceGrowthMonthly
+          ? [{ name: "STRIPE_PRICE_GROWTH_MONTHLY", valueFrom: secrets.stripePriceGrowthMonthly }]
+          : [])
+        ,...(secrets.stripePriceGrowthAnnual
+          ? [{ name: "STRIPE_PRICE_GROWTH_ANNUAL", valueFrom: secrets.stripePriceGrowthAnnual }]
+          : [])
+        ,...(secrets.stripeCustomerPortalConfigurationId
+          ? [{ name: "STRIPE_CUSTOMER_PORTAL_CONFIGURATION_ID", valueFrom: secrets.stripeCustomerPortalConfigurationId }]
           : [])
       ],
       logConfiguration: awslogs("edge-web")

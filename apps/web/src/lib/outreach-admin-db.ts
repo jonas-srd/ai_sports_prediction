@@ -2,6 +2,7 @@ import { createPostgresPool, type PostgresDb } from "@ai-sports-prediction/db";
 import type {
   OutreachContactView,
   OutreachDraftView,
+  OutreachPublicationSize,
   OutreachProspectView
 } from "@/lib/outreach-admin-types";
 
@@ -48,6 +49,8 @@ export async function listOutreachProspects(db = getOutreachDb()): Promise<Outre
         summary,
         fit_score as "fitScore",
         fit_reasons as "fitReasons",
+        publication_size as "publicationSize",
+        publication_size_source as "publicationSizeSource",
         status,
         consent_status as "consentStatus",
         consent_evidence as "consentEvidence",
@@ -118,6 +121,22 @@ export async function listOutreachProspects(db = getOutreachDb()): Promise<Outre
       createdAtUtc: toIso(draft.createdAtUtc)
     }))
   }));
+}
+
+export async function updateOutreachProspectPublicationSize(
+  prospectId: string,
+  publicationSize: OutreachPublicationSize,
+  db = getOutreachDb()
+): Promise<boolean> {
+  const result = await db.query(
+    `
+      update editorial_prospects
+      set publication_size = $2, publication_size_source = 'manual', updated_at_utc = now()
+      where id = $1
+    `,
+    [prospectId, publicationSize]
+  );
+  return Boolean(result.rowCount);
 }
 
 export async function updateOutreachDraft(

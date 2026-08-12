@@ -11,6 +11,7 @@ const BOT_CONTACT_URL = process.env.OUTREACH_BOT_CONTACT_URL
   ?? "https://residualsports.com/de/impressum";
 const BOT_USER_AGENT = `${BOT_NAME}/1.0 (+${BOT_CONTACT_URL})`;
 export type OutreachEmailLanguage = "de" | "en" | "es" | "fr" | "it" | "nl";
+export type PublicationSize = "small_blog" | "medium_sports_media" | "large_publisher" | "unknown";
 export type OutreachResearchOptions = {
   country?: string;
   searchLanguage?: string;
@@ -66,6 +67,8 @@ export type ResearchedPublisher = {
   pageText: string;
   fitScore: number;
   fitReasons: string[];
+  publicationSize: PublicationSize;
+  publicationSizeSource: "automatic" | "unknown";
   contacts: PublicContact[];
   country: string;
   searchLanguage: string;
@@ -299,6 +302,7 @@ export async function researchPublisher(result: SearchResult): Promise<Researche
   const combinedText = cleanText(pages.map((page) => htmlToText(page.html)).join(" ")).slice(0, 20_000);
   const contacts = dedupeContacts(pages.flatMap((page) => extractPublicContacts(page.html, page.url)));
   const scoring = scorePublisher(`${result.title} ${result.description} ${combinedText}`);
+  const publicationSize = classifyPublicationSize(`${result.title} ${result.description} ${combinedText}`);
   const pageTitle = extractTitle(firstPage.html) || result.title || startUrl.hostname;
 
   return {
@@ -311,6 +315,8 @@ export async function researchPublisher(result: SearchResult): Promise<Researche
     pageText: combinedText,
     fitScore: scoring.score,
     fitReasons: scoring.reasons,
+    publicationSize,
+    publicationSizeSource: publicationSize === "unknown" ? "unknown" : "automatic",
     contacts,
     country: normalizeCountry(result.country),
     searchLanguage: normalizeSearchLanguage(result.searchLanguage, normalizeCountry(result.country)),
@@ -436,6 +442,51 @@ export function scorePublisher(text: string): { score: number; reasons: string[]
   return { score: Math.min(100, score), reasons };
 }
 
+export function classifyPublicationSize(text: string): PublicationSize {
+  const normalized = cleanText(text).toLowerCase();
+  const hasAny = (patterns: RegExp[]) => patterns.some((pattern) => pattern.test(normalized));
+
+  const largeSignals = [
+    /\bverlagsgruppe\b/u,
+    /\bmediengruppe\b/u,
+    /\bmedia group\b/u,
+    /\bpublisher group\b/u,
+    /\bnational broadcaster\b/u,
+    /\böffentlich-rechtlich/u,
+    /\binternational(?:e|er|es)? redaktion\b/u,
+    /\b(?:million|millionen) (?:leser|nutzer|users|readers)\b/u
+  ];
+  if (hasAny(largeSignals)) {
+    return "large_publisher";
+  }
+
+  const smallSignals = [
+    /\bfan-?blog\b/u,
+    /\bpersönlicher blog\b/u,
+    /\bprivater blog\b/u,
+    /\bpersonal blog\b/u,
+    /\bindependent blog\b/u,
+    /\bone-person (?:blog|publication)\b/u,
+    /\bein-mann-(?:blog|redaktion)\b/u,
+    /\bpowered by wordpress\b/u
+  ];
+  if (hasAny(smallSignals)) {
+    return "small_blog";
+  }
+
+  const mediumSignals = [
+    /\bsportmagazin\b/u,
+    /\bsportportal\b/u,
+    /\bsports magazine\b/u,
+    /\bsports publication\b/u,
+    /\bredaktionsteam\b/u,
+    /\beditorial team\b/u,
+    /\bnewsroom\b/u,
+    /\bsportredaktion\b/u
+  ];
+  return hasAny(mediumSignals) ? "medium_sports_media" : "unknown";
+}
+
 export function parseAiDraft(content: string): { subject: string; textBody: string } {
   const start = content.indexOf("{");
   const end = content.lastIndexOf("}");
@@ -539,9 +590,10 @@ async function storePublisher(
     `
       insert into editorial_prospects (
         id, publication_name, domain, website_url, country, language, source_query, source_url,
-        summary, fit_score, fit_reasons, status, researched_at_utc, updated_at_utc
+        summary, fit_score, fit_reasons, publication_size, publication_size_source,
+        status, researched_at_utc, updated_at_utc
       )
-      values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11::jsonb, 'pending_review', now(), now())
+      values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11::jsonb, $12, $13, 'pending_review', now(), now())
       on conflict (domain) do update set
         publication_name = excluded.publication_name,
         website_url = excluded.website_url,
@@ -550,6 +602,14 @@ async function storePublisher(
         summary = excluded.summary,
         fit_score = excluded.fit_score,
         fit_reasons = excluded.fit_reasons,
+        publication_size = case
+          when editorial_prospects.publication_size_source = 'manual' then editorial_prospects.publication_size
+          else excluded.publication_size
+        end,
+        publication_size_source = case
+          when editorial_prospects.publication_size_source = 'manual' then 'manual'
+          else excluded.publication_size_source
+        end,
         researched_at_utc = now(),
         updated_at_utc = now()
       returning id
@@ -565,7 +625,9 @@ async function storePublisher(
       publisher.sourceUrl,
       publisher.summary,
       publisher.fitScore,
-      JSON.stringify(publisher.fitReasons)
+      JSON.stringify(publisher.fitReasons),
+      publisher.publicationSize,
+      publisher.publicationSizeSource
     ]
   );
   const storedProspectId = prospectResult.rows[0]?.id;

@@ -7,6 +7,9 @@ export type OutreachContactView = {
   isRoleAddress: boolean;
 };
 
+export type OutreachPublicationSize = "small_blog" | "medium_sports_media" | "large_publisher" | "unknown";
+export type OutreachPublicationSizeSource = "automatic" | "manual" | "unknown";
+
 export type OutreachDraftView = {
   id: string;
   contactId: string | null;
@@ -35,6 +38,8 @@ export type OutreachProspectView = {
   summary: string | null;
   fitScore: number;
   fitReasons: string[];
+  publicationSize: OutreachPublicationSize;
+  publicationSizeSource: OutreachPublicationSizeSource;
   status: "discovered" | "pending_review" | "qualified" | "rejected";
   consentStatus: "unknown" | "explicit_consent" | "existing_customer_exception" | "declined";
   consentEvidence: string | null;

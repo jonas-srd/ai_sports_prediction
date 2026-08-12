@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState, type CSSProperties } from "react";
 import type {
   OutreachAdminResponse,
   OutreachDraftView,
+  OutreachPublicationSize,
   OutreachProspectView
 } from "@/lib/outreach-admin-types";
 import styles from "./outreach-admin.module.css";
@@ -21,12 +22,20 @@ const researchCountries = [
   ["FR", "Frankreich"], ["IT", "Italien"], ["NL", "Niederlande"]
 ] as const;
 
+const publicationSizeLabels: Record<OutreachPublicationSize, string> = {
+  small_blog: "Kleiner Blog",
+  medium_sports_media: "Mittleres Sportmedium",
+  large_publisher: "Großer Verlag / Redaktion",
+  unknown: "Noch nicht eingeordnet"
+};
+
 export function OutreachAdmin() {
   const [data, setData] = useState<OutreachAdminResponse | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [status, setStatus] = useState("Prospects werden geladen …");
   const [query, setQuery] = useState("");
   const [filter, setFilter] = useState("active");
+  const [sizeFilter, setSizeFilter] = useState<OutreachPublicationSize | "all">("all");
   const [draftEdits, setDraftEdits] = useState<Record<string, DraftEdit>>({});
   const [approvalEdits, setApprovalEdits] = useState<Record<string, ApprovalEdit>>({});
   const [busyId, setBusyId] = useState<string | null>(null);
@@ -42,11 +51,22 @@ export function OutreachAdmin() {
     return (data?.prospects ?? []).filter((prospect) => {
       if (filter === "active" && prospect.status === "rejected") return false;
       if (filter !== "all" && filter !== "active" && prospect.status !== filter) return false;
+      if (sizeFilter !== "all" && prospect.publicationSize !== sizeFilter) return false;
       if (!normalizedQuery) return true;
       return [prospect.publicationName, prospect.domain, prospect.summary, prospect.sourceQuery]
         .some((value) => value?.toLowerCase().includes(normalizedQuery));
     });
-  }, [data, filter, query]);
+  }, [data, filter, query, sizeFilter]);
+
+  const sizeCounts = useMemo(() => {
+    const prospects = data?.prospects ?? [];
+    return {
+      small_blog: prospects.filter((item) => item.publicationSize === "small_blog").length,
+      medium_sports_media: prospects.filter((item) => item.publicationSize === "medium_sports_media").length,
+      large_publisher: prospects.filter((item) => item.publicationSize === "large_publisher").length,
+      unknown: prospects.filter((item) => item.publicationSize === "unknown").length
+    };
+  }, [data]);
 
   const stats = useMemo(() => {
     const prospects = data?.prospects ?? [];
@@ -215,6 +235,20 @@ export function OutreachAdmin() {
                 <option value="all">Alle</option>
               </select>
             </label>
+            <label>
+              <span>Redaktionsgröße</span>
+              <select
+                data-testid="outreach-publication-size-filter"
+                onChange={(event) => setSizeFilter(event.target.value as OutreachPublicationSize | "all")}
+                value={sizeFilter}
+              >
+                <option value="all">Alle Größen</option>
+                <option value="small_blog">Kleine Blogs ({sizeCounts.small_blog})</option>
+                <option value="medium_sports_media">Mittlere Sportmedien ({sizeCounts.medium_sports_media})</option>
+                <option value="large_publisher">Große Verlage / Redaktionen ({sizeCounts.large_publisher})</option>
+                <option value="unknown">Noch nicht eingeordnet ({sizeCounts.unknown})</option>
+              </select>
+            </label>
             <div className={data.sendConfigured ? styles.configReady : styles.configWarning}>
               <strong>{data.sendConfigured ? "Versand bereit" : "Versand nicht konfiguriert"}</strong>
               <span>{data.sendConfigured ? "Resend und Absender erkannt" : "OUTREACH_FROM_EMAIL und Reply-To prüfen"}</span>
@@ -279,6 +313,7 @@ function ProspectCard({
           <div className={styles.badgeRow}>
             <StatusBadge status={prospect.status} />
             <ConsentBadge status={prospect.consentStatus} />
+            <PublicationSizeBadge size={prospect.publicationSize} source={prospect.publicationSizeSource} />
             {prospect.country ? <span className={styles.neutralBadge}>{prospect.country}</span> : null}
             {isSuppressed ? <span className={styles.dangerBadge}>Gesperrt</span> : null}
           </div>
@@ -286,6 +321,27 @@ function ProspectCard({
           <a href={prospect.websiteUrl} rel="noreferrer" target="_blank">{prospect.domain} ↗</a>
         </div>
         <div className={styles.prospectActions}>
+          <label className={styles.sizeEditor}>
+            <span>Segment</span>
+            <select
+              aria-label={`Redaktionsgröße für ${prospect.publicationName}`}
+              disabled={busyId === prospect.id}
+              onChange={(event) => {
+                const publicationSize = event.target.value as OutreachPublicationSize;
+                void onRunAction(
+                  prospect.id,
+                  { action: "update_publication_size", prospectId: prospect.id, publicationSize },
+                  `Redaktionsgröße auf „${publicationSizeLabels[publicationSize]}“ gesetzt.`
+                );
+              }}
+              value={prospect.publicationSize}
+            >
+              <option value="small_blog">Kleiner Blog</option>
+              <option value="medium_sports_media">Mittleres Sportmedium</option>
+              <option value="large_publisher">Großer Verlag / Redaktion</option>
+              <option value="unknown">Noch nicht eingeordnet</option>
+            </select>
+          </label>
           <button
             className={styles.ghostButton}
             disabled={busyId === prospect.id || prospect.status === "rejected"}
@@ -442,6 +498,18 @@ function StatusBadge({ status }: { status: OutreachProspectView["status"] }) {
 function ConsentBadge({ status }: { status: OutreachProspectView["consentStatus"] }) {
   const labels = { unknown: "Keine Einwilligung", explicit_consent: "Einwilligung", existing_customer_exception: "Bestandskunde", declined: "Widerspruch" };
   return <span className={status === "unknown" ? styles.neutralBadge : styles.consentBadge}>{labels[status]}</span>;
+}
+
+function PublicationSizeBadge({ size, source }: {
+  size: OutreachProspectView["publicationSize"];
+  source: OutreachProspectView["publicationSizeSource"];
+}) {
+  const sourceLabel = source === "manual" ? "manuell" : source === "automatic" ? "automatisch" : "offen";
+  return (
+    <span className={size === "unknown" ? styles.neutralBadge : styles.sizeBadge} title={`Einstufung: ${sourceLabel}`}>
+      {publicationSizeLabels[size]}
+    </span>
+  );
 }
 
 function DraftBadge({ status }: { status: OutreachDraftView["status"] }) {

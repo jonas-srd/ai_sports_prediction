@@ -11,6 +11,19 @@ import styles from "./marketing-studio-preview.module.css";
 
 type DraftEdit = { title: string; body: string; target?: string };
 type ApiFailure = { message?: string };
+type MarketingGenerationResult = {
+  selected: number;
+  campaignsCreated: number;
+  postsCreated: number;
+  failed: number;
+};
+type GenerationStatusResponse = {
+  ok?: boolean;
+  state?: string;
+  result?: MarketingGenerationResult | null;
+  failureReason?: string | null;
+  message?: string;
+};
 
 const STATUS_LABELS: Record<string, string> = {
   pending_review: "Zur Freigabe",
@@ -37,6 +50,9 @@ export function MarketingStudioPreview() {
   const [confirmed, setConfirmed] = useState<Record<string, boolean>>({});
   const [busyPost, setBusyPost] = useState<string | null>(null);
   const [busyConnection, setBusyConnection] = useState(false);
+  const [generationLimit, setGenerationLimit] = useState(3);
+  const [generating, setGenerating] = useState(false);
+  const [generationStatus, setGenerationStatus] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -146,6 +162,72 @@ export function MarketingStudioPreview() {
     await act({ action: "disconnect_reddit", confirmed: true }, "Reddit wurde getrennt.");
   }
 
+  async function createContent() {
+    setGenerating(true);
+    setError(null);
+    setMessage(null);
+    setGenerationStatus("Auftrag wird vorbereitet …");
+    try {
+      const started = await marketingAction({ action: "create_content", limit: generationLimit }) as {
+        ok?: boolean;
+        jobId?: string;
+        message?: string;
+      };
+      if (!started.ok || !started.jobId) {
+        throw new Error(started.message || "Die Content-Erstellung konnte nicht gestartet werden.");
+      }
+
+      setGenerationStatus("Texte und Motive werden erstellt …");
+      const completed = await waitForGeneration(started.jobId);
+      await load(true);
+      if (completed.campaignsCreated === 0) {
+        setMessage(completed.failed > 0
+          ? "Es konnte noch kein neuer Entwurf erstellt werden. Bitte prüfe die gespeicherten Predictions und versuche es erneut."
+          : "Für die nächsten sieben Tage gibt es aktuell keine weitere Prediction ohne Marketing-Entwurf.");
+      } else {
+        setMessage(`${completed.campaignsCreated} Kampagne${completed.campaignsCreated === 1 ? "" : "n"} mit ${completed.postsCreated} bearbeitbaren Entwürfen wurde${completed.campaignsCreated === 1 ? "" : "n"} erstellt.`);
+      }
+      setGenerationStatus("Fertig – die Entwürfe stehen unten zur Bearbeitung bereit.");
+    } catch (reason) {
+      setGenerationStatus(null);
+      setError(reason instanceof Error ? reason.message : "Die Content-Erstellung ist fehlgeschlagen.");
+    } finally {
+      setGenerating(false);
+    }
+  }
+
+  async function waitForGeneration(jobId: string): Promise<MarketingGenerationResult> {
+    for (let attempt = 0; attempt < 120; attempt += 1) {
+      await wait(1500);
+      const status = await marketingAction({ action: "content_generation_status", jobId }) as GenerationStatusResponse;
+      if (!status.ok) throw new Error(status.message || "Der Status der Content-Erstellung konnte nicht geladen werden.");
+      if (status.state === "failed") throw new Error(status.failureReason || "Die Content-Erstellung ist fehlgeschlagen.");
+      if (status.state === "completed") {
+        return status.result ?? { selected: 0, campaignsCreated: 0, postsCreated: 0, failed: 0 };
+      }
+      setGenerationStatus(status.state === "active"
+        ? "Texte und Motive werden erstellt …"
+        : "Der Auftrag wartet auf den Marketing-Agenten …");
+    }
+    throw new Error("Die Content-Erstellung dauert ungewöhnlich lange. Der Auftrag läuft im Hintergrund weiter; bitte später aktualisieren.");
+  }
+
+  async function marketingAction(payload: Record<string, unknown>): Promise<Record<string, unknown>> {
+    const response = await fetch("/api/admin/marketing", {
+      method: "PATCH",
+      credentials: "same-origin",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify(payload)
+    });
+    if (response.status === 401) {
+      window.location.assign("/admin/login?next=/admin/marketing");
+      throw new Error("Bitte melde dich erneut an.");
+    }
+    const result = await response.json() as Record<string, unknown>;
+    if (!response.ok) throw new Error(typeof result.message === "string" ? result.message : "Die Aktion ist fehlgeschlagen.");
+    return result;
+  }
+
   const connected = data?.tiktokConnection?.status === "connected";
   const instagramConnected = Boolean(data?.instagramConfigured);
   const redditConnected = data?.redditConnection?.status === "connected";
@@ -168,6 +250,44 @@ export function MarketingStudioPreview() {
 
       {message ? <div className={styles.successBanner} role="status">{message}</div> : null}
       {error ? <div className={styles.errorBanner} role="alert">{error}</div> : null}
+
+      <section className={styles.generationCard}>
+        <div className={styles.generationCopy}>
+          <span className={styles.sectionKicker}>Content auf Knopfdruck</span>
+          <h2>Neue Social-Media-Entwürfe erstellen</h2>
+          <p>Der Marketing-Agent wählt gespeicherte Predictions der nächsten sieben Tage aus und erstellt passende Texte sowie Motive für Instagram, TikTok und Reddit. Alles bleibt zunächst unveröffentlicht.</p>
+          <ol>
+            <li>Prediction auswählen und Content erzeugen</li>
+            <li>Texte und Motive unten anpassen</li>
+            <li>Jeden Beitrag einzeln prüfen und freigeben</li>
+          </ol>
+        </div>
+        <div className={styles.generationControls}>
+          <label>
+            Anzahl neuer Kampagnen
+            <select
+              disabled={generating}
+              onChange={(event) => setGenerationLimit(Number(event.target.value))}
+              value={generationLimit}
+            >
+              <option value={1}>1 Kampagne</option>
+              <option value={3}>Bis zu 3 Kampagnen</option>
+              <option value={5}>Bis zu 5 Kampagnen</option>
+            </select>
+          </label>
+          <button
+            className={styles.generateButton}
+            disabled={loading || generating || !data?.generationConfigured}
+            onClick={() => void createContent()}
+            type="button"
+          >
+            <span>{generating ? "◌" : "+"}</span>
+            {generating ? "Content wird erstellt …" : "Content erstellen"}
+          </button>
+          {generationStatus ? <div className={styles.generationProgress} role="status"><i />{generationStatus}</div> : null}
+          {!loading && !data?.generationConfigured ? <small>Der Marketing-Agent ist noch nicht mit der Aufgabenwarteschlange verbunden.</small> : null}
+        </div>
+      </section>
 
       <section className={styles.connectionCard}>
         <div className={styles.connectionHeading}>
@@ -716,4 +836,8 @@ function formatDate(value: string): string {
     timeStyle: "short",
     timeZone: "Europe/Berlin"
   }).format(new Date(value));
+}
+
+function wait(milliseconds: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, milliseconds));
 }

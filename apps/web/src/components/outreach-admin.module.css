@@ -201,7 +201,7 @@
   border-radius: 18px;
   display: grid;
   gap: 14px;
-  grid-template-columns: minmax(240px, 1fr) minmax(190px, 0.3fr) minmax(220px, 0.35fr);
+  grid-template-columns: minmax(240px, 1fr) minmax(180px, 0.3fr) minmax(220px, 0.38fr) minmax(220px, 0.35fr);
   margin: 0 auto;
   max-width: 1480px;
   padding: 16px;
@@ -248,13 +248,23 @@
 .statusBadge,
 .neutralBadge,
 .consentBadge,
+.sizeBadge,
 .dangerBadge,
 .draftBadge { border-radius: 999px; font-size: 0.64rem; font-weight: 900; padding: 5px 9px; text-transform: uppercase; }
 .statusBadge { background: rgba(110, 231, 255, 0.1); color: #96edff; }
 .neutralBadge { background: rgba(245, 201, 90, 0.1); color: #f5d678; }
 .consentBadge { background: rgba(125, 245, 193, 0.11); color: #9cf7cc; }
+.sizeBadge { background: rgba(182, 151, 255, 0.12); color: #d3bdff; }
 .dangerBadge { background: rgba(255, 98, 77, 0.11); color: #ff9c8e; }
 .draftBadge { background: rgba(255, 255, 255, 0.07); color: #d4e3d9; }
+
+.sizeEditor {
+  min-width: 210px;
+}
+.sizeEditor select {
+  min-height: 40px;
+  padding-block: 8px;
+}
 
 .prospectMeta {
   border-top: 1px solid rgba(255, 255, 255, 0.07);
