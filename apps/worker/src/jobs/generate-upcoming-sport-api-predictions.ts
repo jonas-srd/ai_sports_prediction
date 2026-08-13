@@ -90,8 +90,8 @@ export async function generateUpcomingSportApiPredictions(db: PostgresDb) {
     siteUrl: process.env.OPENROUTER_SITE_URL,
     siteName: process.env.OPENROUTER_SITE_NAME
   });
-  const fixtures = await fetchUpcomingFixtures(apiKey);
-  const fixtureLimit = readPositiveInteger(process.env.PREDICTION_AUTOMATION_MAX_FIXTURES_PER_RUN, 50);
+  const fixtures = prioritizeFixturesForCoverage(await fetchUpcomingFixtures(apiKey));
+  const fixtureLimit = readPositiveInteger(process.env.PREDICTION_AUTOMATION_MAX_FIXTURES_PER_RUN, 500);
   let created = 0;
   let attemptedFixtures = 0;
   let skipped = 0;
@@ -201,6 +201,29 @@ export function shouldCreateAutomaticPrediction(fixture: SportFixture, now = Dat
   return isFixtureWithinUpcomingWindow(fixture, now, AUTOMATIC_PREDICTION_LEAD_DAYS);
 }
 
+/**
+ * Round-robin by sport and competition so a busy football league cannot consume
+ * the complete run limit before NFL, NBA, tennis or another competition is seen.
+ */
+export function prioritizeFixturesForCoverage(fixtures: SportFixture[]) {
+  const queues = new Map<string, SportFixture[]>();
+  for (const fixture of fixtures) {
+    const key = `${fixture.sport}:${fixture.competition}`;
+    const queue = queues.get(key) ?? [];
+    queue.push(fixture);
+    queues.set(key, queue);
+  }
+
+  const prioritized: SportFixture[] = [];
+  while (prioritized.length < fixtures.length) {
+    for (const queue of queues.values()) {
+      const fixture = queue.shift();
+      if (fixture) prioritized.push(fixture);
+    }
+  }
+  return prioritized;
+}
+
 function isFixtureWithinUpcomingWindow(fixture: SportFixture, now: number, lookaheadDays: number) {
   const timestamp = new Date(fixture.utcDate).getTime();
   const horizonMs = lookaheadDays * 24 * 60 * 60 * 1000;
@@ -212,6 +235,7 @@ function isFixtureWithinUpcomingWindow(fixture: SportFixture, now: number, looka
 
 async function fetchLeagueFixtures(apiKey: string, league: LeagueRef): Promise<SportFixture[]> {
   const rows = await Promise.all([
+    fetchTheSportsDbV2(apiKey, `schedule/next/league/${league.id}`),
     fetchTheSportsDbV1(apiKey, "eventsnextleague.php", { id: league.id }),
     ...getSeasonCandidates().map((season) => fetchTheSportsDbV2(apiKey, `schedule/league/${league.id}/${encodeURIComponent(season)}`))
   ]);
@@ -249,7 +273,6 @@ function matchesLeagueFixtureRow(row: any, league: LeagueRef) {
   if (rowLeagueId === league.id) {
     return exactLeagueName &&
       exactSport &&
-      (!rowCountry || !league.eventCountry || exactCountry) &&
       matchesRequestedCompetitionStage(row, league);
   }
 
@@ -416,8 +439,9 @@ function getSeasonCandidates() {
 }
 
 function getOpenRouterModelId() {
-  return process.env.OPENROUTER_MODEL_IDS?.split(",").map((value) => value.trim()).filter(Boolean)[0] ??
-    "openai/gpt-oss-20b:free";
+  return process.env.PUBLIC_PREDICTION_OPENROUTER_MODEL?.trim() ||
+    process.env.OPENROUTER_MODEL_IDS?.split(",").map((value) => value.trim()).filter(Boolean)[0] ||
+    "openai/gpt-oss-20b";
 }
 
 function isFinishedStatus(status: string) {

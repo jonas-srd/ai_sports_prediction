@@ -562,8 +562,8 @@ function getHomeStartCopy(locale: Locale) {
     },
     de: {
       eyebrow: "Residual Sports",
-      title: "Wisse den Tipp, bevor das Spiel beginnt.",
-      description: "KI-Prognosen für Fußball, NFL, NBA und Tennis mit Sieger, Ergebnisidee, Sicherheit und Begründung in einer Karte.",
+      title: "Die Prognose vor dem Anpfiff.",
+      description: "KI-Prognosen für Fußball, NFL, NBA und Tennis – mit Sieger-Tipp, Ergebnisprognose, Konfidenz und transparenter Begründung auf einer Karte.",
       primaryCta: "Topspiele anzeigen",
       secondaryCta: "Zur Sportart springen",
       liveGamesEyebrow: "Jetzt live",

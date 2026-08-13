@@ -1,6 +1,6 @@
 "use client";
 
-import { getTimeZoneOptions } from "@/lib/timezone";
+import { canonicalizeTimeZone, getTimeZoneOptions } from "@/lib/timezone";
 import { useTimeZone } from "@/components/time-zone-provider";
 import { useLocale } from "@/components/locale-provider";
 import { commonText, getIntlLocale } from "@/lib/i18n";
@@ -10,16 +10,17 @@ export function TimeZoneSelect() {
   const { siteLocale, t } = useLocale();
   const text = commonText[siteLocale];
   const standardOptions = getTimeZoneOptions(getIntlLocale(siteLocale));
-  const timeZoneOptions = standardOptions.some((option) => option.value === timeZone)
+  const selectedTimeZone = canonicalizeTimeZone(timeZone);
+  const timeZoneOptions = standardOptions.some((option) => option.value === selectedTimeZone)
     ? standardOptions
-    : [{ value: timeZone, label: `${t("Local time")} (${timeZone.replaceAll("_", " ")})` }, ...standardOptions];
+    : [{ value: selectedTimeZone, label: t("Local time") }, ...standardOptions];
 
   return (
-    <label className="siteNavControl">
+    <label className="siteNavControl siteNavControl--timezone">
       <span>{text.timezone}</span>
       <select
         aria-label={text.displayTimezone}
-        value={timeZone}
+        value={selectedTimeZone}
         onChange={(event) => setTimeZone(event.target.value)}
       >
         {timeZoneOptions.map((option) => (

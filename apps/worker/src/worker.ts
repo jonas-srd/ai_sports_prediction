@@ -274,6 +274,20 @@ async function registerRecurringJobs(): Promise<void> {
     }
   );
 
+  // Fill missing predictions right after a rollout instead of waiting for the
+  // next hourly repeat. The time bucket deduplicates overlapping deployments.
+  await predictionQueue.add(
+    "generate-upcoming-sport-api-predictions",
+    {},
+    {
+      jobId: `generate-upcoming-sport-api-predictions:startup:${Math.floor(Date.now() / every)}`,
+      attempts: 2,
+      backoff: { type: "exponential", delay: 30_000 },
+      removeOnComplete: 20,
+      removeOnFail: 50
+    }
+  );
+
   const oddsIntervalMinutes = Number(process.env.ODDS_REFRESH_INTERVAL_MINUTES ?? 60);
   const oddsEvery = Math.max(5, Number.isFinite(oddsIntervalMinutes) ? oddsIntervalMinutes : 60) * 60 * 1000;
 

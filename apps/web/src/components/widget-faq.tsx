@@ -1,3 +1,6 @@
+"use client";
+
+import { useLocale } from "@/components/locale-provider";
 import type { Locale } from "@/lib/i18n";
 
 type FaqEntry = [question: string, answer: string];
@@ -41,21 +44,23 @@ const homeEntriesByLocale: Record<Locale, FaqEntry[]> = {
 };
 
 export function WidgetFaq({ locale }: { locale: Locale }) {
+  const { t } = useLocale();
   return (
     <FaqSection
       entries={widgetEntriesByLocale[locale]}
       id="widget-faq-title"
-      title={locale === "de" ? "Häufige Fragen" : "Frequently asked questions"}
+      title={locale === "de" ? "Häufige Fragen" : t("Frequently asked questions")}
     />
   );
 }
 
 export function HomeFaq({ locale }: { locale: Locale }) {
+  const { t } = useLocale();
   return (
     <FaqSection
       entries={homeEntriesByLocale[locale]}
       id="home-faq-title"
-      title={locale === "de" ? "Häufige Fragen zu unseren Prognosen" : "Frequently asked questions about our predictions"}
+      title={locale === "de" ? "Häufige Fragen zu unseren Prognosen" : t("Frequently asked questions about our predictions")}
     />
   );
 }

@@ -144,17 +144,53 @@
   letter-spacing: 0.09em;
 }
 
+.publicSite .siteNavControls {
+  align-items: stretch;
+  flex-wrap: nowrap;
+}
+
+.publicSite .siteNavControl {
+  box-sizing: border-box;
+  display: grid;
+  gap: 1px;
+  grid-template-columns: minmax(0, 1fr);
+  min-height: 52px;
+  padding: 6px 12px;
+}
+
 .publicSite .siteNavControl select {
-  max-width: 170px;
+  appearance: auto;
+  background: transparent;
+  border: 0;
+  border-radius: 0;
+  color: var(--apple-text);
+  cursor: pointer;
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", Inter, sans-serif;
+  font-size: 0.82rem;
+  font-weight: 650;
+  max-width: none;
+  min-width: 0;
+  padding: 2px 22px 2px 0;
+  width: 100%;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 
-.publicSite .siteNavControl:has(select[aria-label*="zone" i]),
-.publicSite .siteNavControl:has(select[aria-label*="zeit" i]),
-.publicSite .siteNavControl:has(select[aria-label*="hora" i]),
-.publicSite .siteNavControl:has(select[aria-label*="fuso" i]) {
-  max-width: 230px;
+.publicSite .siteNavControl--timezone {
+  width: 210px;
+}
+
+.publicSite .siteNavControl--language {
+  width: 166px;
+}
+
+.publicSite .siteNavControl:is(:hover, :focus-within) {
+  background: rgba(255, 255, 255, 0.075);
+  border-color: rgba(113, 239, 193, 0.32);
+}
+
+.publicSite .siteNavControl:focus-within {
+  box-shadow: 0 0 0 4px rgba(113, 239, 193, 0.08), inset 0 1px rgba(255, 255, 255, 0.05);
 }
 
 .publicSite .sportschauTopicInner {
@@ -310,6 +346,28 @@
   font-weight: 720;
   letter-spacing: -0.062em;
   line-height: 0.93;
+}
+
+/* Competition names must stay inside the editorial card, including long UEFA names. */
+.publicSite .sportschauCompetitionHero {
+  grid-template-columns: minmax(0, 1fr) minmax(280px, 360px);
+}
+
+.publicSite .sportschauCompetitionTitle {
+  justify-self: stretch;
+  min-width: 0;
+  width: 100%;
+}
+
+.publicSite .sportschauCompetitionHero h1 {
+  font-size: clamp(2.8rem, 5vw, 5.5rem);
+  overflow-wrap: normal;
+  text-wrap: balance;
+}
+
+.publicSite .sportschauCompetitionHero .footballBackLink {
+  grid-column: 1 / -1;
+  justify-self: end;
 }
 
 .publicSite .homeStartCopy > p:not(.sectionKicker),
@@ -546,6 +604,17 @@
     padding-right: 16px;
   }
 
+  .publicSite .siteNavControls {
+    flex: 1 1 100%;
+    width: 100%;
+  }
+
+  .publicSite .siteNavControl--timezone,
+  .publicSite .siteNavControl--language {
+    flex: 1 1 0;
+    width: auto;
+  }
+
   .publicSite .sportschauTopicInner,
   .publicSite .globalModelBarInner {
     padding-left: 16px;
@@ -559,6 +628,15 @@
   .publicSite .homeStartHero {
     min-height: 460px;
     padding: 30px 24px;
+  }
+
+  .publicSite .sportschauCompetitionHero {
+    grid-template-columns: 1fr;
+  }
+
+  .publicSite .sportschauCompetitionHero .footballBackLink {
+    grid-column: 1;
+    justify-self: center;
   }
 
   .publicSite .homeStartCopy h1,

@@ -1,7 +1,7 @@
 "use client";
 
 import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
-import { DEFAULT_TIME_ZONE, isSupportedTimeZone } from "@/lib/timezone";
+import { canonicalizeTimeZone, DEFAULT_TIME_ZONE, isSupportedTimeZone } from "@/lib/timezone";
 
 const STORAGE_KEY = "ai-sports-prediction-time-zone";
 
@@ -18,12 +18,12 @@ export function TimeZoneProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     const stored = window.localStorage.getItem(STORAGE_KEY);
     if (isSupportedTimeZone(stored)) {
-      setTimeZoneState(stored);
+      setTimeZoneState(canonicalizeTimeZone(stored));
       return;
     }
 
     const browserTimeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
-    setTimeZoneState(isSupportedTimeZone(browserTimeZone) ? browserTimeZone : DEFAULT_TIME_ZONE);
+    setTimeZoneState(isSupportedTimeZone(browserTimeZone) ? canonicalizeTimeZone(browserTimeZone) : DEFAULT_TIME_ZONE);
   }, []);
 
   const value = useMemo<TimeZoneContextValue>(() => ({
@@ -33,8 +33,9 @@ export function TimeZoneProvider({ children }: { children: ReactNode }) {
         return;
       }
 
-      setTimeZoneState(nextTimeZone);
-      window.localStorage.setItem(STORAGE_KEY, nextTimeZone);
+      const canonicalTimeZone = canonicalizeTimeZone(nextTimeZone);
+      setTimeZoneState(canonicalTimeZone);
+      window.localStorage.setItem(STORAGE_KEY, canonicalTimeZone);
     }
   }), [timeZone]);
 

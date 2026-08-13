@@ -47,7 +47,7 @@ export function usePredictionModel() {
 }
 
 export function GlobalPredictionModelBar() {
-  const { locale } = useLocale();
+  const { locale, t } = useLocale();
   const { model } = usePredictionModel();
   const activeModel = getPredictionModel(model);
 
@@ -56,8 +56,8 @@ export function GlobalPredictionModelBar() {
       <div className="globalModelBarInner">
         <PredictionModelSelector locale={locale} />
         <div className="globalModelCopy">
-          <span>{locale === "de" ? "KI-Modell" : "AI model"}</span>
-          <p>{activeModel.description[locale]}</p>
+          <span>{t(locale === "de" ? "KI-Modell" : "AI model")}</span>
+          <p>{t(activeModel.description[locale])}</p>
         </div>
       </div>
     </section>
@@ -74,11 +74,12 @@ export function PredictionModelSelector({
   showLabel?: boolean;
 }) {
   const { model, setModel } = usePredictionModel();
+  const { t } = useLocale();
 
   return (
     <div className={`predictionModelControl${compact ? " isCompact" : ""}`}>
-      {showLabel ? <span>{locale === "de" ? "Modell wählen" : "Choose model"}</span> : null}
-      <div aria-label={locale === "de" ? "KI-Modell auswählen" : "Choose AI model"} className="predictionModelSelector" role="radiogroup">
+      {showLabel ? <span>{t(locale === "de" ? "Modell wählen" : "Choose model")}</span> : null}
+      <div aria-label={t(locale === "de" ? "KI-Modell auswählen" : "Choose AI model")} className="predictionModelSelector" role="radiogroup">
         {PREDICTION_MODELS.map((item) => (
           <button
             aria-checked={model === item.id}
@@ -87,7 +88,7 @@ export function PredictionModelSelector({
             onClick={() => setModel(item.id)}
             role="radio"
             style={{ "--model-accent": item.accent } as CSSProperties}
-            title={item.description[locale]}
+            title={t(item.description[locale])}
             type="button"
           >
             <span />
@@ -121,6 +122,7 @@ export function SelectedModelPrediction({
   variants: ModelPredictionSet;
 }) {
   const { model } = usePredictionModel();
+  const { t } = useLocale();
   const prediction = variants[model];
   const metadata = getPredictionModel(model);
 
@@ -129,7 +131,7 @@ export function SelectedModelPrediction({
       <div className="selectedModelPredictionHeader">
         <div className="selectedModelPredictionTitle">
           <span>{labels.prediction} · {metadata.name}</span>
-          <small>{metadata.description[locale]}{prediction.source === "openrouter" ? " · OpenRouter" : ""}</small>
+          <small>{t(metadata.description[locale])}{prediction.source === "openrouter" ? " · OpenRouter" : ""}</small>
         </div>
         {showSelector ? <PredictionModelSelector compact locale={locale} /> : null}
       </div>
@@ -140,8 +142,8 @@ export function SelectedModelPrediction({
       </div>
       <section className="predictionProbabilitySection">
         <div className="predictionSectionHeading">
-          <span>{locale === "de" ? "Siegwahrscheinlichkeiten" : "Win probabilities"}</span>
-          <small>{locale === "de" ? "Verteilung dieses Modells" : "This model's distribution"}</small>
+          <span>{t(locale === "de" ? "Siegwahrscheinlichkeiten" : "Win probabilities")}</span>
+          <small>{t(locale === "de" ? "Verteilung dieses Modells" : "This model's distribution")}</small>
         </div>
         <ProbabilityBreakdown locale={locale} prediction={prediction} />
       </section>
@@ -164,6 +166,7 @@ export function SelectedHomePrediction({
   variants: ModelPredictionSet;
 }) {
   const { model } = usePredictionModel();
+  const { t } = useLocale();
   const prediction = variants[model];
   const metadata = getPredictionModel(model);
 
@@ -172,7 +175,7 @@ export function SelectedHomePrediction({
       <span>{labels.prediction} · {metadata.name}{prediction.source === "openrouter" ? " · OpenRouter" : ""}</span>
       <div className="homePredictionSummary">
         <div>
-          <small>{locale === "de" ? "Tipp" : "Pick"}</small>
+          <small>{t(locale === "de" ? "Tipp" : "Pick")}</small>
           <strong>{formatPredictionPick(prediction.pick, locale)}</strong>
         </div>
         <div className="isScore">
@@ -194,6 +197,7 @@ export function OpenRouterPredictionPending({
   locale: Locale;
 }) {
   const router = useRouter();
+  const { t } = useLocale();
 
   useEffect(() => {
     pendingPredictionConsumers += 1;
@@ -213,10 +217,10 @@ export function OpenRouterPredictionPending({
   return (
     <div aria-live="polite" className={`${className} openRouterPredictionPending`}>
       <span>OpenRouter</span>
-      <strong>{locale === "de" ? "Prognose eine Woche vor Spielbeginn" : "Prediction one week before kickoff"}</strong>
-      <p>{locale === "de"
+      <strong>{t(locale === "de" ? "Prognose eine Woche vor Spielbeginn" : "Prediction one week before kickoff")}</strong>
+      <p>{t(locale === "de"
         ? "Die Prognose wird automatisch sieben Tage vor Spielbeginn erstellt. Dann stehen aktuellere Team-, Form- und Spieldaten zur Verfügung – für eine möglichst aussagekräftige und verlässliche Einschätzung."
-        : "The prediction is generated automatically seven days before kickoff. By then, more up-to-date team, form and match data is available for the most useful and reliable analysis possible."}</p>
+        : "The prediction is generated automatically seven days before kickoff. By then, more up-to-date team, form and match data is available for the most useful and reliable analysis possible.")}</p>
     </div>
   );
 }
@@ -233,6 +237,7 @@ export function SelectedModelSignal({
   variants: ModelPredictionSet;
 }) {
   const { model } = usePredictionModel();
+  const { t } = useLocale();
   const prediction = variants[model];
   const metadata = getPredictionModel(model);
 
@@ -246,12 +251,12 @@ export function SelectedModelSignal({
       <div className="signalGrid">
         <article className="signalCard">
           <span />
-          <h3>{locale === "de" ? "Tipp" : "Pick"}</h3>
+          <h3>{t(locale === "de" ? "Tipp" : "Pick")}</h3>
           <p>{prediction.pick} · {prediction.score} · {prediction.confidence}%</p>
         </article>
         <article className="signalCard">
           <span />
-          <h3>{locale === "de" ? "Modellgrund" : "Model reason"}</h3>
+          <h3>{t(locale === "de" ? "Modellgrund" : "Model reason")}</h3>
           <p>{prediction.reason}</p>
         </article>
         {staticSignals.map((signal) => (
@@ -276,12 +281,13 @@ function ProbabilityBreakdown({
   prediction: ModelPredictionSet[PredictionModelId];
 }) {
   const strongestProbability = Math.max(...prediction.probabilities.map((probability) => probability.value));
+  const { t } = useLocale();
 
   return (
-    <div className={`modelProbabilityBreakdown${compact ? " isCompact" : ""}`} aria-label={locale === "de" ? "Siegwahrscheinlichkeiten" : "Win probabilities"}>
+    <div className={`modelProbabilityBreakdown${compact ? " isCompact" : ""}`} aria-label={t(locale === "de" ? "Siegwahrscheinlichkeiten" : "Win probabilities")}>
       {prediction.probabilities.map((probability) => (
         <div className={probability.value === strongestProbability ? "isLeading" : undefined} key={probability.label}>
-          <small>{probability.label === "draw" ? (locale === "de" ? "Remis" : "Draw") : probability.name}</small>
+          <small>{probability.label === "draw" ? t(locale === "de" ? "Remis" : "Draw") : probability.name}</small>
           <strong>{probability.value}%</strong>
           <span><i style={{ width: `${probability.value}%` }} /></span>
         </div>

@@ -18,12 +18,12 @@ type CookieConsentProps = {
 };
 
 export function CookieConsent({ measurementId }: CookieConsentProps) {
-  const { locale } = useLocale();
+  const { locale, siteLocale, t } = useLocale();
   const pathname = stripLocalePrefix(usePathname() ?? "/");
   const [consent, setConsent] = useState<ConsentValue | null>(null);
   const [isReady, setIsReady] = useState(false);
   const [showPreferences, setShowPreferences] = useState(false);
-  const copy = locale === "de"
+  const baseCopy = locale === "de"
     ? {
         accept: "Alle akzeptieren",
         body: "Wir verwenden Cookies, um diese Website bereitzustellen. Mit deiner Zustimmung nutzen wir außerdem Analytics-Cookies, um zu verstehen, wie Residual Sports genutzt wird.",
@@ -40,6 +40,9 @@ export function CookieConsent({ measurementId }: CookieConsentProps) {
         reject: "Reject all",
         title: "Cookies"
       };
+  const copy = siteLocale === "en" || siteLocale === "de"
+    ? baseCopy
+    : Object.fromEntries(Object.entries(baseCopy).map(([key, value]) => [key, t(value)])) as typeof baseCopy;
   const shouldShowBanner = isReady && consent === null && pathname !== "/cookies";
 
   useEffect(() => {
@@ -76,7 +79,7 @@ export function CookieConsent({ measurementId }: CookieConsentProps) {
               <div>
                 <h2 id="cookie-consent-title">{copy.title}</h2>
                 <p>{copy.body}</p>
-                <Link className="cookieConsentPolicyLink" href={localizePath("/cookies", locale)}>
+                <Link className="cookieConsentPolicyLink" href={localizePath("/cookies", siteLocale)}>
                   {copy.policy}
                 </Link>
               </div>
@@ -100,10 +103,10 @@ export function CookieConsent({ measurementId }: CookieConsentProps) {
 }
 
 export function CookiePreferencesPage() {
-  const { locale } = useLocale();
+  const { locale, siteLocale, t } = useLocale();
   const [consent, setConsent] = useState<ConsentValue | null>(null);
   const [isReady, setIsReady] = useState(false);
-  const copy = locale === "de"
+  const baseCopy = locale === "de"
     ? {
         body: "Hier kannst du deine Cookie-Auswahl jederzeit ändern. Notwendige Cookies bleiben aktiv, weil die Website sie für Grundfunktionen benötigt.",
         title: "Cookie-Einstellungen"
@@ -112,6 +115,9 @@ export function CookiePreferencesPage() {
         body: "You can change your cookie choices here at any time. Necessary cookies stay active because the website needs them for core functions.",
         title: "Cookie settings"
       };
+  const copy = siteLocale === "en" || siteLocale === "de"
+    ? baseCopy
+    : Object.fromEntries(Object.entries(baseCopy).map(([key, value]) => [key, t(value)])) as typeof baseCopy;
 
   useEffect(() => {
     setConsent(readConsentCookie());
@@ -151,9 +157,9 @@ function CookiePreferencePanel({
   initialConsent: ConsentValue | null;
   onSave: (value: ConsentValue) => void;
 }) {
-  const { locale } = useLocale();
+  const { locale, siteLocale, t } = useLocale();
   const [analyticsEnabled, setAnalyticsEnabled] = useState(initialConsent === "analytics");
-  const copy = locale === "de"
+  const baseCopy = locale === "de"
     ? {
         analytics: "Analytics-Cookies",
         analyticsDescription: "Hilft uns zu verstehen, welche Seiten genutzt werden und wie wir die Website verbessern können.",
@@ -172,6 +178,9 @@ function CookiePreferencePanel({
         statusOff: "Off",
         statusOn: "On"
       };
+  const copy = siteLocale === "en" || siteLocale === "de"
+    ? baseCopy
+    : Object.fromEntries(Object.entries(baseCopy).map(([key, value]) => [key, t(value)])) as typeof baseCopy;
 
   useEffect(() => {
     setAnalyticsEnabled(initialConsent === "analytics");

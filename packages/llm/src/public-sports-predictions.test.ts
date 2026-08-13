@@ -46,30 +46,55 @@ test("rejects an incomplete response instead of fabricating a missing profile", 
   );
 });
 
+test("retries one malformed structured response", async () => {
+  let calls = 0;
+  const valid = JSON.stringify({
+    predictions: {
+      nexus: { home: 2, away: 1, confidence: 61, reason: "Long-term edge." },
+      pulse: { home: 1, away: 1, confidence: 42, reason: "Short-term uncertainty." },
+      edge: { home: 1, away: 2, confidence: 57, reason: "Matchup edge." }
+    }
+  });
+  const client = {
+    async createChatCompletion() {
+      calls += 1;
+      return fakeCompletion(calls === 1 ? '{"predictions":' : valid);
+    }
+  } as unknown as OpenRouterClient;
+
+  const predictions = await generatePublicSportsPredictions(client, "test/model", fixture);
+  assert.equal(calls, 2);
+  assert.equal(predictions.length, 3);
+});
+
 function fakeClient(content: string): OpenRouterClient {
   return {
     async createChatCompletion(): Promise<OpenRouterChatResult> {
-      return {
-        content,
-        rawResponse: { fixture: true },
-        responseId: "response-1",
-        finishReason: "stop",
-        latencyMs: 1,
-        inputTokens: 10,
-        outputTokens: 20,
-        costUsd: 0,
-        retryCount: 0,
-        maxCompletionTokens: 1200,
-        toolMetadata: {
-          toolsEnabled: false,
-          toolType: null,
-          toolCallsObserved: null,
-          numToolCalls: null,
-          toolTraceAvailable: false,
-          toolTrace: null,
-          openBookCompliance: "not_applicable"
-        }
-      };
+      return fakeCompletion(content);
     }
   } as unknown as OpenRouterClient;
+}
+
+function fakeCompletion(content: string): OpenRouterChatResult {
+  return {
+    content,
+    rawResponse: { fixture: true },
+    responseId: "response-1",
+    finishReason: "stop",
+    latencyMs: 1,
+    inputTokens: 10,
+    outputTokens: 20,
+    costUsd: 0,
+    retryCount: 0,
+    maxCompletionTokens: 1200,
+    toolMetadata: {
+      toolsEnabled: false,
+      toolType: null,
+      toolCallsObserved: null,
+      numToolCalls: null,
+      toolTraceAvailable: false,
+      toolTrace: null,
+      openBookCompliance: "not_applicable"
+    }
+  };
 }

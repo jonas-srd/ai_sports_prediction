@@ -6,6 +6,9 @@ import { translateText } from "@/lib/site-translations";
 import { localizePath } from "@/lib/i18n";
 
 const EXCLUDED_TAGS = new Set(["SCRIPT", "STYLE", "NOSCRIPT", "TEXTAREA"]);
+const ORIGINAL_TEXT = new WeakMap<Text, string>();
+const ORIGINAL_PLACEHOLDER = new WeakMap<HTMLInputElement, string>();
+const ORIGINAL_ARIA_LABEL = new WeakMap<HTMLElement, string>();
 
 export function PublicSiteTranslator() {
   const { siteLocale } = useLocale();
@@ -20,6 +23,12 @@ export function PublicSiteTranslator() {
       observer = new MutationObserver((mutations) => {
         observer?.disconnect();
         for (const mutation of mutations) {
+          if (mutation.type === "characterData" && mutation.target.parentElement) {
+            const textNode = mutation.target as Text;
+            ORIGINAL_TEXT.set(textNode, textNode.textContent ?? "");
+            translateElement(mutation.target.parentElement, siteLocale);
+            continue;
+          }
           for (const node of mutation.addedNodes) {
             if (node.nodeType === Node.ELEMENT_NODE) {
               translatePublicContent(node as HTMLElement, siteLocale);
@@ -28,17 +37,16 @@ export function PublicSiteTranslator() {
             }
           }
         }
-        observer?.observe(root, { childList: true, subtree: true });
+        observer?.observe(root, { characterData: true, childList: true, subtree: true });
       });
-      observer?.observe(root, { childList: true, subtree: true });
+      observer?.observe(root, { characterData: true, childList: true, subtree: true });
     };
 
-    // Wait until the rewritten server page and its nested Suspense boundaries have hydrated.
-    // Direct DOM localization before that point would make React compare translated text
-    // with the original server response.
-    const timeout = window.setTimeout(start, 2000);
+    // Effects run after hydration. Translate on the next frame so localized routes do not
+    // briefly show English; the observer handles Suspense content that arrives afterwards.
+    const frame = window.requestAnimationFrame(start);
     return () => {
-      window.clearTimeout(timeout);
+      window.cancelAnimationFrame(frame);
       observer?.disconnect();
     };
   }, [siteLocale]);
@@ -56,18 +64,27 @@ function translateElement(element: HTMLElement, locale: Parameters<typeof transl
 
   element.childNodes.forEach((node) => {
     if (node.nodeType !== Node.TEXT_NODE || !node.textContent?.trim()) return;
-    const original = node.textContent;
+    const textNode = node as Text;
+    const original = ORIGINAL_TEXT.get(textNode) ?? node.textContent;
+    ORIGINAL_TEXT.set(textNode, original);
     const leading = original.match(/^\s*/)?.[0] ?? "";
     const trailing = original.match(/\s*$/)?.[0] ?? "";
     const translated = translateText(original, locale);
-    if (translated !== original.trim().replace(/\s+/g, " ")) node.textContent = `${leading}${translated}${trailing}`;
+    const nextText = `${leading}${translated}${trailing}`;
+    if (node.textContent !== nextText) node.textContent = nextText;
   });
 
   if (element instanceof HTMLInputElement && element.placeholder) {
-    element.placeholder = translateText(element.placeholder, locale);
+    const original = ORIGINAL_PLACEHOLDER.get(element) ?? element.placeholder;
+    ORIGINAL_PLACEHOLDER.set(element, original);
+    element.placeholder = translateText(original, locale);
   }
   const ariaLabel = element.getAttribute("aria-label");
-  if (ariaLabel) element.setAttribute("aria-label", translateText(ariaLabel, locale));
+  if (ariaLabel) {
+    const original = ORIGINAL_ARIA_LABEL.get(element) ?? ariaLabel;
+    ORIGINAL_ARIA_LABEL.set(element, original);
+    element.setAttribute("aria-label", translateText(original, locale));
+  }
 
   if (element instanceof HTMLAnchorElement) {
     const href = element.getAttribute("href");

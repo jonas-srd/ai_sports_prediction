@@ -6,46 +6,72 @@ export type TimeZoneOption = {
 };
 
 export const TIME_ZONE_OPTIONS: TimeZoneOption[] = [
-  { value: "UTC", label: "Coordinated Universal Time (UTC)" },
-  { value: "Europe/London", label: "United Kingdom (London)" },
-  { value: "Europe/Berlin", label: "Central European Time (Berlin)" },
-  { value: "Europe/Paris", label: "Central European Time (Paris)" },
-  { value: "Europe/Madrid", label: "Central European Time (Madrid)" },
-  { value: "Europe/Rome", label: "Central European Time (Rome)" },
-  { value: "Europe/Lisbon", label: "Western European Time (Lisbon)" },
-  { value: "America/New_York", label: "Eastern Time (New York)" },
-  { value: "America/Chicago", label: "Central Time (Chicago)" },
-  { value: "America/Denver", label: "Mountain Time (Denver)" },
-  { value: "America/Los_Angeles", label: "Pacific Time (Los Angeles)" },
-  { value: "America/Mexico_City", label: "Central Time (Mexico City)" },
-  { value: "America/Sao_Paulo", label: "Brasília Time (São Paulo)" },
-  { value: "America/Argentina/Buenos_Aires", label: "Argentina Time (Buenos Aires)" },
-  { value: "Asia/Dubai", label: "Gulf Standard Time (Dubai)" },
-  { value: "Asia/Kolkata", label: "India Standard Time (Kolkata)" },
-  { value: "Asia/Singapore", label: "Singapore Time" },
-  { value: "Asia/Tokyo", label: "Japan Standard Time (Tokyo)" },
-  { value: "Australia/Sydney", label: "Australian Eastern Time (Sydney)" },
-  { value: "Pacific/Auckland", label: "New Zealand Time (Auckland)" }
+  { value: "UTC", label: "UTC" },
+  { value: "Europe/London", label: "GMT / BST" },
+  { value: "Europe/Berlin", label: "CET / CEST" },
+  { value: "Europe/Lisbon", label: "WET / WEST" },
+  { value: "America/New_York", label: "Eastern Time (ET)" },
+  { value: "America/Chicago", label: "Central Time (CT)" },
+  { value: "America/Denver", label: "Mountain Time (MT)" },
+  { value: "America/Los_Angeles", label: "Pacific Time (PT)" },
+  { value: "America/Sao_Paulo", label: "Brasília Time (BRT)" },
+  { value: "America/Argentina/Buenos_Aires", label: "Argentina Time (ART)" },
+  { value: "Asia/Dubai", label: "Gulf Standard Time (GST)" },
+  { value: "Asia/Kolkata", label: "India Standard Time (IST)" },
+  { value: "Asia/Singapore", label: "Singapore Time (SGT)" },
+  { value: "Asia/Tokyo", label: "Japan Standard Time (JST)" },
+  { value: "Australia/Sydney", label: "Australian Eastern Time (AET)" },
+  { value: "Pacific/Auckland", label: "New Zealand Time (NZT)" }
 ];
 
-export function getTimeZoneOptions(locale = "en-GB"): TimeZoneOption[] {
-  return TIME_ZONE_OPTIONS.map((option) => ({
-    ...option,
-    label: formatTimeZoneLabel(option.value, locale, option.label)
-  }));
+const TIME_ZONE_ALIASES: Record<string, string> = {
+  "Europe/Amsterdam": "Europe/Berlin",
+  "Europe/Andorra": "Europe/Berlin",
+  "Europe/Belgrade": "Europe/Berlin",
+  "Europe/Bratislava": "Europe/Berlin",
+  "Europe/Brussels": "Europe/Berlin",
+  "Europe/Budapest": "Europe/Berlin",
+  "Europe/Copenhagen": "Europe/Berlin",
+  "Europe/Gibraltar": "Europe/Berlin",
+  "Europe/Ljubljana": "Europe/Berlin",
+  "Europe/Luxembourg": "Europe/Berlin",
+  "Europe/Madrid": "Europe/Berlin",
+  "Europe/Malta": "Europe/Berlin",
+  "Europe/Monaco": "Europe/Berlin",
+  "Europe/Oslo": "Europe/Berlin",
+  "Europe/Paris": "Europe/Berlin",
+  "Europe/Podgorica": "Europe/Berlin",
+  "Europe/Prague": "Europe/Berlin",
+  "Europe/Rome": "Europe/Berlin",
+  "Europe/San_Marino": "Europe/Berlin",
+  "Europe/Sarajevo": "Europe/Berlin",
+  "Europe/Skopje": "Europe/Berlin",
+  "Europe/Stockholm": "Europe/Berlin",
+  "Europe/Tirane": "Europe/Berlin",
+  "Europe/Vaduz": "Europe/Berlin",
+  "Europe/Vatican": "Europe/Berlin",
+  "Europe/Vienna": "Europe/Berlin",
+  "Europe/Warsaw": "Europe/Berlin",
+  "Europe/Zagreb": "Europe/Berlin",
+  "Europe/Guernsey": "Europe/London",
+  "Europe/Isle_of_Man": "Europe/London",
+  "Europe/Jersey": "Europe/London",
+  "America/Detroit": "America/New_York",
+  "America/Indiana/Indianapolis": "America/New_York",
+  "America/Kentucky/Louisville": "America/New_York",
+  "America/Mexico_City": "America/Chicago"
+};
+
+export function canonicalizeTimeZone(value: string): string {
+  return TIME_ZONE_ALIASES[value] ?? value;
 }
 
-export function formatTimeZoneLabel(value: string, locale: string, fallback = value): string {
-  if (value === "UTC") return fallback;
-  try {
-    const city = value.split("/").at(-1)?.replaceAll("_", " ") ?? value;
-    const longName = new Intl.DateTimeFormat(locale, { timeZone: value, timeZoneName: "long" })
-      .formatToParts(new Date())
-      .find((part) => part.type === "timeZoneName")?.value;
-    return longName ? `${longName} (${city})` : fallback;
-  } catch {
-    return fallback;
-  }
+export function getTimeZoneOptions(_locale = "en-GB"): TimeZoneOption[] {
+  return TIME_ZONE_OPTIONS;
+}
+
+export function formatTimeZoneLabel(value: string, _locale: string, fallback = value): string {
+  return TIME_ZONE_OPTIONS.find((option) => option.value === canonicalizeTimeZone(value))?.label ?? fallback;
 }
 
 export function isSupportedTimeZone(value: string | undefined | null): value is string {

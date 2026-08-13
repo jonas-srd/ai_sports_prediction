@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { headers } from "next/headers";
 import { type ReactNode } from "react";
 import { CookieConsent } from "@/components/cookie-consent";
 import { HtmlLangSync } from "@/components/html-lang-sync";
@@ -7,6 +8,7 @@ import { NewsletterSignupModal } from "@/components/newsletter-signup-modal";
 import { PredictionModelProvider } from "@/components/prediction-model-selector";
 import { SiteChrome } from "@/components/site-chrome";
 import { TimeZoneProvider } from "@/components/time-zone-provider";
+import { isSiteLocale } from "@/lib/i18n";
 import "./globals.css";
 import "./sportschau-nav.css";
 import "./prediction-layout.css";
@@ -54,12 +56,14 @@ export const metadata: Metadata = {
   }
 };
 
-export default function RootLayout({ children }: Readonly<{ children: ReactNode }>) {
+export default async function RootLayout({ children }: Readonly<{ children: ReactNode }>) {
   const googleAnalyticsMeasurementId = process.env.NEXT_PUBLIC_GOOGLE_ANALYTICS_ID ?? "G-KSGFX9TKD8";
+  const requestedLocale = (await headers()).get("x-residual-locale");
+  const initialSiteLocale = isSiteLocale(requestedLocale) ? requestedLocale : "en";
   return (
-    <html data-scroll-behavior="smooth" lang="en">
+    <html data-scroll-behavior="smooth" lang={initialSiteLocale}>
       <body>
-        <LocaleProvider>
+        <LocaleProvider initialSiteLocale={initialSiteLocale}>
           <TimeZoneProvider>
             <PredictionModelProvider>
               <HtmlLangSync />

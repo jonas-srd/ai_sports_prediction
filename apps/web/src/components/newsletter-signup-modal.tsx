@@ -10,14 +10,14 @@ const DISMISS_MS = 1000 * 60 * 60 * 24 * 7;
 type SubmitState = "idle" | "submitting" | "success" | "error";
 
 export function NewsletterSignupModal() {
-  const { locale } = useLocale();
+  const { locale, t } = useLocale();
   const [isVisible, setIsVisible] = useState(false);
   const [email, setEmail] = useState("");
   const [consent, setConsent] = useState(false);
   const [company, setCompany] = useState("");
   const [submitState, setSubmitState] = useState<SubmitState>("idle");
 
-  const copy = locale === "de"
+  const baseCopy = locale === "de"
     ? {
         close: "Schließen",
         consent: "Ich möchte den Newsletter erhalten und stimme der Verarbeitung meiner E-Mail-Adresse dafür zu.",
@@ -42,6 +42,9 @@ export function NewsletterSignupModal() {
         success: "Thanks, you are subscribed.",
         title: "Residual Sports updates"
       };
+  const copy = locale === "en" || locale === "de"
+    ? baseCopy
+    : Object.fromEntries(Object.entries(baseCopy).map(([key, value]) => [key, t(value)])) as typeof baseCopy;
 
   useEffect(() => {
     const subscribed = window.localStorage.getItem(SUBSCRIBED_KEY) === "1";

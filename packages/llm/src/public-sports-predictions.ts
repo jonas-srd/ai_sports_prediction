@@ -1,4 +1,4 @@
-import type { OpenRouterClient } from "./openrouter-client";
+import { OpenRouterResponseError, type OpenRouterClient } from "./openrouter-client";
 
 export type PublicPredictionProfileKey = "nexus" | "pulse" | "edge";
 
@@ -36,47 +36,60 @@ export async function generatePublicSportsPredictions(
   fixture: PublicPredictionFixture
 ): Promise<GeneratedPublicPrediction[]> {
   const promptText = buildPublicPredictionPrompt(fixture);
-  const completion = await client.createChatCompletion(modelId, promptText, {
-    temperature: 0.15,
-    maxTokens: 1200,
-    responseFormat: { type: "json_object" }
-  });
-  const parsed = parseJsonObject(completion.content);
-  const predictions = readRecord(parsed.predictions);
-  const generatedAtUtc = new Date().toISOString();
+  let lastError: unknown;
 
-  return PROFILE_KEYS.map((profile) => {
-    const row = readRecord(predictions[profile]);
-    const predictedHome = readNonNegativeInteger(row.home);
-    const predictedAway = readNonNegativeInteger(row.away);
-    const confidence = readConfidence(row.confidence);
-    const reason = typeof row.reason === "string" ? row.reason.trim() : "";
+  // A provider can occasionally return truncated JSON despite JSON mode. Retry
+  // the model call once; never invent or substitute a prediction locally.
+  for (let attempt = 0; attempt < 2; attempt += 1) {
+    try {
+      const completion = await client.createChatCompletion(modelId, promptText, {
+        temperature: 0.1,
+        maxTokens: 900,
+        responseFormat: { type: "json_object" }
+      });
+      const parsed = parseJsonObject(completion.content);
+      const predictions = readRecord(parsed.predictions);
+      const generatedAtUtc = new Date().toISOString();
 
-    if (predictedHome === null || predictedAway === null || confidence === null || !reason) {
-      throw new Error(`OpenRouter returned an invalid ${profile} public prediction.`);
+      return PROFILE_KEYS.map((profile) => {
+        const row = readRecord(predictions[profile]);
+        const predictedHome = readNonNegativeInteger(row.home);
+        const predictedAway = readNonNegativeInteger(row.away);
+        const confidence = readConfidence(row.confidence);
+        const reason = typeof row.reason === "string" ? row.reason.trim() : "";
+
+        if (predictedHome === null || predictedAway === null || confidence === null || !reason) {
+          throw new Error(`OpenRouter returned an invalid ${profile} public prediction.`);
+        }
+
+        return {
+          profile,
+          predictedHome,
+          predictedAway,
+          confidence,
+          reason,
+          promptText,
+          providerResponseId: completion.responseId,
+          latencyMs: completion.latencyMs,
+          inputTokens: completion.inputTokens,
+          outputTokens: completion.outputTokens,
+          costUsd: completion.costUsd,
+          generatedAtUtc,
+          rawResponse: {
+            profile,
+            responseId: completion.responseId,
+            modelId,
+            response: completion.rawResponse
+          }
+        };
+      });
+    } catch (error) {
+      if (error instanceof OpenRouterResponseError) throw error;
+      lastError = error;
     }
+  }
 
-    return {
-      profile,
-      predictedHome,
-      predictedAway,
-      confidence,
-      reason,
-      promptText,
-      providerResponseId: completion.responseId,
-      latencyMs: completion.latencyMs,
-      inputTokens: completion.inputTokens,
-      outputTokens: completion.outputTokens,
-      costUsd: completion.costUsd,
-      generatedAtUtc,
-      rawResponse: {
-        profile,
-        responseId: completion.responseId,
-        modelId,
-        response: completion.rawResponse
-      }
-    };
-  });
+  throw lastError instanceof Error ? lastError : new Error("OpenRouter public prediction generation failed.");
 }
 
 function buildPublicPredictionPrompt(fixture: PublicPredictionFixture) {
@@ -85,6 +98,7 @@ function buildPublicPredictionPrompt(fixture: PublicPredictionFixture) {
     "Return only one valid JSON object and no markdown.",
     "Do not invent injuries, lineups, statistics or news that are not supplied.",
     "Use conservative scores and confidence values between 34 and 82.",
+    "Keep each reason factual and below 40 words.",
     "For tennis, home and away mean the first and second listed player and scores mean sets.",
     "NEXUS emphasizes long-term strength and historical priors.",
     "PULSE emphasizes short-term uncertainty, scheduling and momentum without claiming unavailable facts.",

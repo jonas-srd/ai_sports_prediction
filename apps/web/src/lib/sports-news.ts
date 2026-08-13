@@ -1,4 +1,5 @@
-import type { Locale } from "@/lib/i18n";
+import type { Locale, SiteLocale } from "@/lib/i18n";
+import { translateText } from "@/lib/site-translations";
 
 export type SportsNewsTopic = "football" | "nba" | "nfl" | "tennis";
 
@@ -16,6 +17,7 @@ type SportsNewsOptions = {
   contextName?: string;
   limit?: number;
   locale: Locale;
+  siteLocale?: SiteLocale;
   topic: SportsNewsTopic;
 };
 
@@ -88,6 +90,7 @@ export async function getSportsNewsLinks({
   contextName,
   limit = 3,
   locale,
+  siteLocale = locale,
   topic
 }: SportsNewsOptions): Promise<SportsNewsItem[]> {
   const query = buildNewsQuery(topic, locale, contextName);
@@ -114,7 +117,7 @@ export async function getSportsNewsLinks({
       ).slice(0, limit);
 
       if (items.length > 0) {
-        return fillWithFallbackItems(items, topic, locale, contextName, limit);
+        return fillWithFallbackItems(items, topic, locale, contextName, limit, siteLocale);
       }
     }
   } catch {
@@ -123,7 +126,7 @@ export async function getSportsNewsLinks({
     clearTimeout(timeout);
   }
 
-  return getFallbackNewsLinks(topic, locale, contextName).slice(0, limit);
+  return getFallbackNewsLinks(topic, locale, contextName, siteLocale).slice(0, limit);
 }
 
 function buildNewsQuery(topic: SportsNewsTopic, locale: Locale, contextName?: string) {
@@ -195,14 +198,15 @@ function fillWithFallbackItems(
   topic: SportsNewsTopic,
   locale: Locale,
   contextName: string | undefined,
-  limit: number
+  limit: number,
+  siteLocale: SiteLocale
 ) {
   if (items.length >= limit) {
     return items.slice(0, limit);
   }
 
   const seenUrls = new Set(items.map((item) => item.url));
-  const fallbackItems = getFallbackNewsLinks(topic, locale, contextName).filter((item) => !seenUrls.has(item.url));
+  const fallbackItems = getFallbackNewsLinks(topic, locale, contextName, siteLocale).filter((item) => !seenUrls.has(item.url));
 
   return [...items, ...fallbackItems].slice(0, limit);
 }
@@ -297,7 +301,7 @@ function decodeXml(value: string) {
     .replace(/&#x27;/g, "'");
 }
 
-function getFallbackNewsLinks(topic: SportsNewsTopic, locale: Locale, contextName?: string): SportsNewsItem[] {
+function getFallbackNewsLinks(topic: SportsNewsTopic, locale: Locale, contextName?: string, siteLocale: SiteLocale = locale): SportsNewsItem[] {
   const topicLabel = contextName ?? getTopicLabel(topic, locale);
   const fallback = getFallbackSources(topic, locale);
 
@@ -308,10 +312,22 @@ function getFallbackNewsLinks(topic: SportsNewsTopic, locale: Locale, contextNam
     sourceUrl: source.url,
     summary: locale === "de"
       ? `Aktuelle Meldungen, Hintergründe und Ergebnisse zu ${topicLabel}.`
-      : `Latest reports, context and results for ${topicLabel}.`,
-    title: locale === "de" ? `${topicLabel}: aktuelle News bei ${source.name}` : `${topicLabel}: latest news from ${source.name}`,
+      : localizeFallbackSummary(topicLabel, siteLocale),
+    title: locale === "de"
+      ? `${topicLabel}: aktuelle News bei ${source.name}`
+      : localizeFallbackTitle(topicLabel, source.name, siteLocale),
     url: source.url
   }));
+}
+
+function localizeFallbackSummary(topicLabel: string, locale: SiteLocale): string {
+  const template = translateText("Latest reports, context and results for {topic}.", locale);
+  return template.replace("{topic}", topicLabel);
+}
+
+function localizeFallbackTitle(topicLabel: string, source: string, locale: SiteLocale): string {
+  const template = translateText("{topic}: latest news from {source}", locale);
+  return template.replace("{topic}", topicLabel).replace("{source}", source);
 }
 
 function getFallbackSources(topic: SportsNewsTopic, locale: Locale) {
