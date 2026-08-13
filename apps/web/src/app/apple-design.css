@@ -1,0 +1,625 @@
+/*
+ * Public experience refinement based on Apple interface principles:
+ * clarity, restraint, depth, immediate feedback and accessible motion.
+ * The .publicSite boundary deliberately keeps admin and operational tools intact.
+ */
+
+.publicSite {
+  --apple-accent: #71efc1;
+  --apple-accent-strong: #35dca4;
+  --apple-blue: #69c8ff;
+  --apple-gold: #ffc45c;
+  --apple-text: #f5f7f8;
+  --apple-text-secondary: rgba(235, 241, 244, 0.72);
+  --apple-text-tertiary: rgba(235, 241, 244, 0.5);
+  --apple-surface: rgba(21, 29, 36, 0.78);
+  --apple-surface-solid: #111920;
+  --apple-surface-raised: rgba(30, 40, 48, 0.82);
+  --apple-hairline: rgba(255, 255, 255, 0.1);
+  --apple-hairline-strong: rgba(255, 255, 255, 0.16);
+  --apple-radius-large: 28px;
+  --apple-radius-medium: 20px;
+  --apple-radius-small: 14px;
+  --apple-shadow: 0 24px 70px rgba(0, 0, 0, 0.34);
+  --apple-shadow-soft: 0 14px 38px rgba(0, 0, 0, 0.22);
+  background:
+    radial-gradient(circle at 8% 0%, rgba(75, 210, 165, 0.12), transparent 31rem),
+    radial-gradient(circle at 96% 24%, rgba(105, 200, 255, 0.08), transparent 34rem),
+    linear-gradient(180deg, #070c10 0%, #05090c 54%, #040709 100%);
+  color: var(--apple-text);
+  color-scheme: dark;
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display", Inter, ui-sans-serif, system-ui, sans-serif;
+  font-optical-sizing: auto;
+  min-height: 100vh;
+  position: relative;
+}
+
+.publicSiteContent {
+  min-height: 68vh;
+}
+
+.publicSite :where(h1, h2, h3, h4, strong, button, input, select) {
+  font-family: inherit;
+}
+
+.publicSite :where(h1, h2, h3, h4) {
+  color: var(--apple-text);
+  text-wrap: balance;
+}
+
+.publicSite :where(p, li) {
+  text-wrap: pretty;
+}
+
+.publicSite :where(button, a, summary, select) {
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+}
+
+.publicSite :where(button, a, summary):focus-visible {
+  outline: 3px solid rgba(113, 239, 193, 0.58);
+  outline-offset: 3px;
+}
+
+/* Navigation: one continuous, restrained material instead of stacked bars. */
+.publicSite .siteNav {
+  -webkit-backdrop-filter: saturate(165%) blur(28px);
+  backdrop-filter: saturate(165%) blur(28px);
+  background: rgba(8, 13, 18, 0.76);
+  border-bottom: 1px solid var(--apple-hairline);
+  box-shadow: 0 10px 36px rgba(0, 0, 0, 0.2);
+}
+
+.publicSite .siteNavTop,
+.publicSite .sportschauTopicBar {
+  background: transparent;
+  border-color: rgba(255, 255, 255, 0.07);
+}
+
+.publicSite .siteNavInner {
+  gap: 18px;
+  max-width: 1440px;
+  min-height: 78px;
+  padding-left: clamp(18px, 3vw, 38px);
+  padding-right: clamp(18px, 3vw, 38px);
+}
+
+.publicSite .siteNavLogo {
+  color: var(--apple-text);
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", Inter, sans-serif;
+  font-size: clamp(1rem, 1.55vw, 1.42rem);
+  font-weight: 760;
+  letter-spacing: -0.035em;
+}
+
+.publicSite .siteNavLogoMark {
+  background: #090f14;
+  border: 1px solid var(--apple-hairline-strong);
+  border-radius: 13px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.28), inset 0 1px rgba(255, 255, 255, 0.08);
+  height: 48px;
+  overflow: hidden;
+  width: 48px;
+}
+
+.publicSite .siteSearchField,
+.publicSite .siteNavControl,
+.publicSite .siteNavMenuLink {
+  background: rgba(255, 255, 255, 0.055);
+  border: 1px solid var(--apple-hairline);
+  border-radius: var(--apple-radius-small);
+  box-shadow: inset 0 1px rgba(255, 255, 255, 0.04);
+}
+
+.publicSite .siteSearchField {
+  min-height: 48px;
+  padding-left: 16px;
+}
+
+.publicSite .siteSearchField:focus-within {
+  background: rgba(255, 255, 255, 0.075);
+  border-color: rgba(113, 239, 193, 0.42);
+  box-shadow: 0 0 0 4px rgba(113, 239, 193, 0.09), inset 0 1px rgba(255, 255, 255, 0.05);
+}
+
+.publicSite .siteSearchField input {
+  font-size: 0.94rem;
+  font-weight: 590;
+  letter-spacing: -0.01em;
+}
+
+.publicSite .siteSearchField input::placeholder {
+  color: var(--apple-text-tertiary);
+}
+
+.publicSite .siteSearchField button,
+.publicSite .siteNavMenuLink {
+  border-radius: 11px;
+  transition: background-color 150ms ease, border-color 150ms ease, transform 120ms ease;
+}
+
+.publicSite .siteNavControl span {
+  color: var(--apple-text-tertiary);
+  font-size: 0.6rem;
+  letter-spacing: 0.09em;
+}
+
+.publicSite .sportschauTopicInner {
+  max-width: 1440px;
+  min-height: 58px;
+  padding-left: clamp(18px, 3vw, 38px);
+  padding-right: clamp(18px, 3vw, 38px);
+}
+
+.publicSite .topicNavLink,
+.publicSite .topicNavSportLink,
+.publicSite .topicNavDropdown summary {
+  border-color: transparent;
+  border-radius: 999px;
+  color: var(--apple-text-secondary);
+  font-size: 0.9rem;
+  font-weight: 650;
+  min-height: 38px;
+  transition: background-color 150ms ease, color 150ms ease, transform 120ms ease;
+}
+
+.publicSite .topicNavSportLink {
+  background: rgba(255, 255, 255, 0.06);
+  border-color: rgba(255, 255, 255, 0.08);
+}
+
+.publicSite :where(.topicNavLink, .topicNavSportLink):is(:hover, :focus-visible, .isActive) {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.1);
+  color: #ffffff;
+  transform: none;
+}
+
+.publicSite :where(.topicNavLink, .topicNavSportLink).isActive {
+  background: rgba(113, 239, 193, 0.14);
+  border-color: rgba(113, 239, 193, 0.38);
+  box-shadow: inset 0 1px rgba(255, 255, 255, 0.1);
+}
+
+.publicSite :where(.siteSearchResults, .siteMenuPanel, .topicNavDropdownPanel) {
+  -webkit-backdrop-filter: saturate(150%) blur(26px);
+  backdrop-filter: saturate(150%) blur(26px);
+  background: rgba(19, 27, 34, 0.94);
+  border: 1px solid var(--apple-hairline-strong);
+  border-radius: 18px;
+  box-shadow: 0 28px 80px rgba(0, 0, 0, 0.48);
+}
+
+.publicSite .siteMenuPanel::before {
+  background: #151d24;
+  border-color: var(--apple-hairline-strong);
+}
+
+.publicSite :where(.siteMenuSection, .siteMenuSportBlock) {
+  background: rgba(255, 255, 255, 0.035);
+  border-color: rgba(255, 255, 255, 0.07);
+  border-radius: 14px;
+}
+
+/* The model switcher becomes a calm secondary control directly below navigation. */
+.publicSite .globalModelBar {
+  background: rgba(7, 12, 16, 0.72);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+}
+
+.publicSite .globalModelBarInner {
+  gap: 18px;
+  max-width: 1440px;
+  padding: 12px clamp(18px, 3vw, 38px);
+}
+
+.publicSite .globalModelCopy > span,
+.publicSite .sectionKicker,
+.publicSite .homeHighlightHeader span,
+.publicSite .homeHighlightPrediction > span,
+.publicSite .homeSportNewsColumnHeader span {
+  color: var(--apple-accent);
+  font-family: ui-monospace, "SFMono-Regular", SFMono-Regular, Menlo, monospace;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+}
+
+.publicSite .globalModelCopy p {
+  color: var(--apple-text-tertiary);
+  font-weight: 570;
+}
+
+.publicSite .predictionModelSelector {
+  background: rgba(255, 255, 255, 0.045);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 999px;
+  padding: 4px;
+}
+
+.publicSite .predictionModelSelector button {
+  border-radius: 999px;
+  font-weight: 680;
+  transition: background-color 150ms ease, color 150ms ease, transform 120ms ease;
+}
+
+.publicSite .predictionModelSelector button.isActive {
+  background: rgba(113, 239, 193, 0.16);
+  border-color: rgba(113, 239, 193, 0.38);
+  box-shadow: inset 0 1px rgba(255, 255, 255, 0.12);
+}
+
+/* Main page: large editorial clarity with softer depth and less visual noise. */
+.publicSite .homeStartShell {
+  gap: 28px;
+}
+
+.publicSite .homeStartHero,
+.publicSite .homeTopGames,
+.publicSite .panel,
+.publicSite .footballPanel,
+.publicSite .sportschauCompetitionHero,
+.publicSite .sportPageHeroCopy,
+.publicSite .sportPageModelCard,
+.publicSite .sportSignalBand,
+.publicSite .sportPageBottomGrid .panel {
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.055), rgba(255, 255, 255, 0.018)),
+    rgba(15, 23, 29, 0.88);
+  border: 1px solid var(--apple-hairline);
+  border-radius: var(--apple-radius-large);
+  box-shadow: var(--apple-shadow-soft), inset 0 1px rgba(255, 255, 255, 0.045);
+}
+
+.publicSite .homeStartHero {
+  min-height: min(62vh, 660px);
+  padding: clamp(34px, 6.5vw, 92px);
+}
+
+.publicSite .homeStartHero::before {
+  background:
+    radial-gradient(circle at 82% 26%, rgba(105, 200, 255, 0.17), transparent 22rem),
+    radial-gradient(circle at 18% 82%, rgba(113, 239, 193, 0.12), transparent 24rem);
+  mask-image: none;
+  opacity: 1;
+}
+
+.publicSite .homeStartCopy {
+  gap: 22px;
+  max-width: 1080px;
+}
+
+.publicSite .homeStartCopy h1,
+.publicSite .sportPageHeroCopy h1,
+.publicSite .sportschauCompetitionHero h1 {
+  color: var(--apple-text);
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", Inter, sans-serif;
+  font-size: clamp(3.25rem, 7vw, 7rem);
+  font-weight: 720;
+  letter-spacing: -0.062em;
+  line-height: 0.93;
+}
+
+.publicSite .homeStartCopy > p:not(.sectionKicker),
+.publicSite .sportPageHeroCopy > p:not(.sectionKicker) {
+  color: var(--apple-text-secondary);
+  font-size: clamp(1.05rem, 1.5vw, 1.3rem);
+  font-weight: 480;
+  letter-spacing: -0.012em;
+  line-height: 1.55;
+  max-width: 760px;
+}
+
+.publicSite .homeTopGames {
+  gap: 28px;
+  padding: clamp(26px, 4vw, 48px);
+}
+
+.publicSite .homeSectionHeader h2,
+.publicSite .sectionHeaderRow h2,
+.publicSite .footballSectionHeader h2,
+.publicSite .sportSignalBand h2 {
+  color: var(--apple-text);
+  font-size: clamp(2rem, 4.2vw, 4rem);
+  font-weight: 690;
+  letter-spacing: -0.048em;
+  line-height: 0.98;
+}
+
+.publicSite .homeSectionHeader p:not(.sectionKicker),
+.publicSite .sectionHeaderRow > p {
+  color: var(--apple-text-secondary);
+  font-weight: 500;
+}
+
+.publicSite .homeHighlightGrid,
+.publicSite .homeSportNewsGrid {
+  gap: 18px;
+}
+
+.publicSite .homeHighlightCard,
+.publicSite .homeSportNewsColumn,
+.publicSite .sportsNewsCard,
+.publicSite .sportLiveMatch,
+.publicSite .matchCard,
+.publicSite .scheduleMatchCard {
+  background: rgba(27, 37, 45, 0.76);
+  border: 1px solid var(--apple-hairline);
+  border-radius: var(--apple-radius-medium);
+  box-shadow: inset 0 1px rgba(255, 255, 255, 0.04);
+}
+
+.publicSite .homeHighlightCard {
+  gap: 18px;
+  padding: 20px;
+  transition: background-color 180ms ease, border-color 180ms ease, box-shadow 180ms ease, transform 180ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.publicSite .homeHighlightCard:is(:hover, :focus-visible) {
+  background: rgba(32, 43, 52, 0.9);
+  border-color: rgba(113, 239, 193, 0.24);
+  box-shadow: 0 18px 44px rgba(0, 0, 0, 0.24), inset 0 1px rgba(255, 255, 255, 0.06);
+  transform: translateY(-3px) scale(1.006);
+}
+
+.publicSite .homeUpcomingMatchMarker,
+.publicSite .homeLiveGames .homeHighlightTeams .homeLiveScoreBox {
+  background: rgba(255, 255, 255, 0.07);
+  border-color: rgba(255, 255, 255, 0.13);
+  border-radius: 14px;
+  box-shadow: inset 0 1px rgba(255, 255, 255, 0.045);
+}
+
+.publicSite .homeHighlightPrediction,
+.publicSite .predictionCard,
+.publicSite .matchDetailPrediction,
+.publicSite .selectedModelPrediction {
+  background: rgba(9, 16, 21, 0.68);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-left: 3px solid var(--apple-accent);
+  border-radius: 16px;
+  box-shadow: inset 0 1px rgba(255, 255, 255, 0.035);
+}
+
+.publicSite .homeHighlightPrediction {
+  padding: 16px;
+}
+
+.publicSite .predictionSummaryCard,
+.publicSite .predictionReasoning,
+.publicSite .predictionContextGrid > div,
+.publicSite .sportPagePick,
+.publicSite .sportSignalRow {
+  background: rgba(255, 255, 255, 0.04);
+  border-color: rgba(255, 255, 255, 0.075);
+  border-radius: var(--apple-radius-small);
+}
+
+.publicSite .homeSportNewsColumn {
+  padding: 18px;
+}
+
+.publicSite .sportsNewsCard {
+  transition: background-color 180ms ease, border-color 180ms ease, transform 180ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.publicSite .sportsNewsCard:is(:hover, :focus-visible) {
+  background: rgba(36, 47, 56, 0.88);
+  border-color: rgba(105, 200, 255, 0.22);
+  transform: translateY(-2px);
+}
+
+/* Sport and competition pages share the same hierarchy and surface language. */
+.publicSite :where(.sportschauFootballPage, .sportPageShell, .matchDetailPage, .matchdayPage) {
+  color: var(--apple-text);
+}
+
+.publicSite .sportPageShell {
+  gap: 30px;
+}
+
+.publicSite .sportPageHero {
+  gap: 22px;
+}
+
+.publicSite .sportPageHeroCopy,
+.publicSite .sportPageModelCard,
+.publicSite .sportSignalBand,
+.publicSite .sportPageBottomGrid .panel {
+  padding: clamp(26px, 4.5vw, 56px);
+}
+
+.publicSite .sportPageModelCard h2 {
+  font-size: clamp(1.8rem, 3vw, 3rem);
+  font-weight: 690;
+  letter-spacing: -0.04em;
+}
+
+.publicSite .sportPageModelCard p,
+.publicSite .sportSignalRow span,
+.publicSite .panelDescription {
+  color: var(--apple-text-secondary);
+}
+
+.publicSite .sportSwitchLinks a,
+.publicSite .footballBackLink,
+.publicSite .competitionControl,
+.publicSite .paginationButton {
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid var(--apple-hairline);
+  border-radius: 13px;
+  color: var(--apple-text);
+  transition: background-color 150ms ease, border-color 150ms ease, transform 120ms ease;
+}
+
+.publicSite :where(.sportSwitchLinks a, .footballBackLink, .competitionControl, .paginationButton):is(:hover, :focus-visible) {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(113, 239, 193, 0.3);
+}
+
+/* Immediate, interruptible feedback. Keep motion restrained and compositor-only. */
+.publicSite :where(
+  .siteNavLogo,
+  .siteSearchField button,
+  .siteNavMenuLink,
+  .topicNavLink,
+  .topicNavSportLink,
+  .predictionModelSelector button,
+  .sportSwitchLinks a,
+  .footballBackLink,
+  .competitionControl,
+  .paginationButton,
+  .homeHighlightCard,
+  .sportsNewsCard
+):active {
+  transform: scale(0.975);
+  transition-duration: 70ms;
+}
+
+/* Footer: quiet ending, not another content card. */
+.publicSite .siteFooter {
+  background: rgba(4, 8, 11, 0.9);
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.publicSite .siteFooterInner {
+  color: var(--apple-text-tertiary);
+  font-family: inherit;
+  font-size: 0.78rem;
+  font-weight: 560;
+  max-width: 1440px;
+  padding: 30px clamp(20px, 3vw, 40px);
+  text-transform: none;
+}
+
+.publicSite .siteFooterInner > span {
+  color: var(--apple-text);
+  font-weight: 680;
+  letter-spacing: -0.015em;
+}
+
+.publicSite .siteFooter a {
+  background: transparent;
+  border: 0;
+  border-radius: 8px;
+  color: var(--apple-text-secondary);
+  padding: 6px 8px;
+}
+
+.publicSite .siteFooter a:is(:hover, :focus-visible) {
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--apple-text);
+}
+
+@media (max-width: 1180px) {
+  .publicSite .homeHighlightGrid,
+  .publicSite .homeSportNewsGrid {
+    gap: 16px;
+  }
+
+  .publicSite .homeHighlightCard {
+    padding: 18px;
+  }
+}
+
+@media (max-width: 760px) {
+  .publicSite {
+    --apple-radius-large: 22px;
+    --apple-radius-medium: 17px;
+  }
+
+  .publicSite .siteNavInner {
+    min-height: 70px;
+    padding-left: 16px;
+    padding-right: 16px;
+  }
+
+  .publicSite .sportschauTopicInner,
+  .publicSite .globalModelBarInner {
+    padding-left: 16px;
+    padding-right: 16px;
+  }
+
+  .publicSite .homeStartShell {
+    gap: 18px;
+  }
+
+  .publicSite .homeStartHero {
+    min-height: 460px;
+    padding: 30px 24px;
+  }
+
+  .publicSite .homeStartCopy h1,
+  .publicSite .sportPageHeroCopy h1,
+  .publicSite .sportschauCompetitionHero h1 {
+    font-size: clamp(2.75rem, 14vw, 4.6rem);
+    letter-spacing: -0.058em;
+  }
+
+  .publicSite .homeTopGames {
+    gap: 22px;
+    padding: 24px 18px;
+  }
+
+  .publicSite .homeSectionHeader h2,
+  .publicSite .sectionHeaderRow h2,
+  .publicSite .footballSectionHeader h2,
+  .publicSite .sportSignalBand h2 {
+    font-size: clamp(1.9rem, 9vw, 3rem);
+  }
+
+  .publicSite .siteFooterInner {
+    align-items: flex-start;
+    flex-wrap: wrap;
+    justify-content: flex-start;
+    padding: 26px 18px;
+  }
+
+  .publicSite .siteFooterInner > span {
+    flex-basis: 100%;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .publicSite,
+  .publicSite * {
+    scroll-behavior: auto !important;
+  }
+
+  .publicSite *,
+  .publicSite *::before,
+  .publicSite *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+
+  .publicSite :where(.homeHighlightCard, .sportsNewsCard):is(:hover, :focus-visible, :active) {
+    transform: none;
+  }
+}
+
+@media (prefers-reduced-transparency: reduce) {
+  .publicSite .siteNav,
+  .publicSite :where(.siteSearchResults, .siteMenuPanel, .topicNavDropdownPanel),
+  .publicSite .globalModelBar {
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+    background: #0b1217;
+  }
+
+  .publicSite :where(.homeStartHero, .homeTopGames, .panel, .footballPanel, .sportschauCompetitionHero) {
+    background: var(--apple-surface-solid);
+  }
+}
+
+@media (prefers-contrast: more) {
+  .publicSite {
+    --apple-text-secondary: rgba(247, 250, 252, 0.88);
+    --apple-text-tertiary: rgba(247, 250, 252, 0.72);
+    --apple-hairline: rgba(255, 255, 255, 0.28);
+  }
+
+  .publicSite :where(.homeHighlightCard, .homeSportNewsColumn, .sportsNewsCard, .predictionCard) {
+    border-color: rgba(255, 255, 255, 0.28);
+  }
+}

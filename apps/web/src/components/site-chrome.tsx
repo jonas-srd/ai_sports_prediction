@@ -23,11 +23,11 @@ export function SiteChrome({ children }: { children: ReactNode }) {
   }
 
   return (
-    <>
+    <div className="publicSite">
       <SiteNav />
       <GlobalPredictionModelBar />
-      {children}
+      <div className="publicSiteContent">{children}</div>
       <SiteFooter />
-    </>
+    </div>
   );
 }

@@ -10,6 +10,7 @@ import { TimeZoneProvider } from "@/components/time-zone-provider";
 import "./globals.css";
 import "./sportschau-nav.css";
 import "./prediction-layout.css";
+import "./apple-design.css";
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://residualsports.com"),
