@@ -25,6 +25,8 @@ const PUBLIC_LEGAL_PATHS = new Set([
 
 export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
+  const localizedPath = pathname.match(/^\/(es|pt|fr|it)(\/.*)?$/);
+  const routePathname = localizedPath?.[2] || (localizedPath ? "/" : pathname);
   const isAdminPath = pathname === "/admin"
     || pathname.startsWith("/admin/")
     || pathname === "/api/admin"
@@ -67,22 +69,22 @@ export async function proxy(request: NextRequest) {
   }
 
   if (shouldShowFullSite()) {
-    return NextResponse.next();
+    return localizedPath ? localizedRewrite(request, localizedPath) : NextResponse.next();
   }
 
   if (
-    pathname === "/coming-soon" ||
-    PUBLIC_LEGAL_PATHS.has(pathname) ||
+    routePathname === "/coming-soon" ||
+    PUBLIC_LEGAL_PATHS.has(routePathname) ||
     pathname.startsWith("/api/") ||
     pathname.startsWith("/_next/") ||
     PUBLIC_FILE.test(pathname)
   ) {
-    return NextResponse.next();
+    return localizedPath ? localizedRewrite(request, localizedPath) : NextResponse.next();
   }
 
   const previewSession = await readAuthorizedAdminSession(request);
   if (previewSession) {
-    const response = NextResponse.next();
+    const response = localizedPath ? localizedRewrite(request, localizedPath) : NextResponse.next();
     response.cookies.set(FULL_SITE_PREVIEW_COOKIE, "1", {
       httpOnly: false,
       secure: request.nextUrl.protocol === "https:" || process.env.NODE_ENV === "production",
@@ -109,6 +111,14 @@ export async function proxy(request: NextRequest) {
     });
   }
   return response;
+}
+
+function localizedRewrite(request: NextRequest, match: RegExpMatchArray) {
+  const url = request.nextUrl.clone();
+  url.pathname = match[2] || "/";
+  const headers = new Headers(request.headers);
+  headers.set("x-residual-locale", match[1]);
+  return NextResponse.rewrite(url, { request: { headers } });
 }
 
 async function readAuthorizedAdminSession(request: NextRequest) {

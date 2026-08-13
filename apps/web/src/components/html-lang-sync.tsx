@@ -4,12 +4,11 @@ import { useEffect } from "react";
 import { useLocale } from "@/components/locale-provider";
 
 export function HtmlLangSync() {
-  const { locale } = useLocale();
+  const { siteLocale } = useLocale();
 
   useEffect(() => {
-    document.documentElement.lang = locale;
-  }, [locale]);
+    document.documentElement.lang = siteLocale;
+  }, [siteLocale]);
 
   return null;
 }
-

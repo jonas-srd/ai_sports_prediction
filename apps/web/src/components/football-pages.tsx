@@ -25,6 +25,7 @@ import {
 import { SportsNewsCards } from "@/components/sports-news-cards";
 import { OpenRouterPredictionPending, PredictionModelSelector, SelectedModelPrediction } from "@/components/prediction-model-selector";
 import { buildStoredModelPredictions } from "@/lib/prediction-models";
+import { LocalMatchDate } from "@/components/local-match-date";
 
 const labels = {
   en: {
@@ -714,7 +715,7 @@ function FeaturedFixtureCard({
       <span>{text.matchCenter}</span>
       <div className="featuredFixtureTeams">
         <TeamMark logo={fixture.homeLogo} name={fixture.homeName} team={findCompetitionTeamByName(competition, fixture.homeName)} />
-        <strong>{formatFixtureCenter(fixture, locale)}</strong>
+        <strong><FixtureCenter fixture={fixture} locale={locale} /></strong>
         <TeamMark logo={fixture.awayLogo} name={fixture.awayName} team={findCompetitionTeamByName(competition, fixture.awayName)} />
       </div>
       <small>{fixture.homeName} - {fixture.awayName}</small>
@@ -768,8 +769,8 @@ function TeamMatchesSection({
               />
               <FixtureTeam competition={competition} locale={locale} logo={fixture.homeLogo} name={fixture.homeName} align="right" />
               <div className="fixtureTime">
-                <span>{formatFixtureDate(fixture.date, locale)}</span>
-                <strong>{formatFixtureCenter(fixture, locale)}</strong>
+                <span><LocalMatchDate fallback={formatFixtureDate(fixture.date, locale)} kind="date" value={fixture.date} /></span>
+                <strong><FixtureCenter fixture={fixture} locale={locale} /></strong>
                 <small>{fixture.competition || competition.name}</small>
               </div>
               <FixtureTeam competition={competition} locale={locale} logo={fixture.awayLogo} name={fixture.awayName} align="left" />
@@ -975,8 +976,8 @@ function MatchdaySection({
               <div className="fixtureMatchLine">
                 <FixtureTeam competition={competition} locale={locale} logo={fixture.homeLogo} name={fixture.homeName} align="right" />
                 <div className="fixtureTime">
-                  <span>{formatFixtureDate(fixture.date, locale)}</span>
-                  <strong>{formatFixtureCenter(fixture, locale)}</strong>
+                  <span><LocalMatchDate fallback={formatFixtureDate(fixture.date, locale)} kind="date" value={fixture.date} /></span>
+                  <strong><FixtureCenter fixture={fixture} locale={locale} /></strong>
                   <small>{fixture.competition || competition.name}</small>
                 </div>
                 <FixtureTeam competition={competition} locale={locale} logo={fixture.awayLogo} name={fixture.awayName} align="left" />
@@ -1034,8 +1035,8 @@ async function CompetitionNewsSection({
                 <div className="fixtureMatchLine">
                   <FixtureTeam competition={competition} locale={locale} logo={fixture.homeLogo} name={fixture.homeName} align="right" />
                   <div className="fixtureTime">
-                    <span>{formatFixtureDate(fixture.date, locale)}</span>
-                    <strong>{formatFixtureCenter(fixture, locale)}</strong>
+                    <span><LocalMatchDate fallback={formatFixtureDate(fixture.date, locale)} kind="date" value={fixture.date} /></span>
+                    <strong><FixtureCenter fixture={fixture} locale={locale} /></strong>
                     <small>{fixture.competition || competition.name}</small>
                   </div>
                   <FixtureTeam competition={competition} locale={locale} logo={fixture.awayLogo} name={fixture.awayName} align="left" />
@@ -1396,13 +1397,13 @@ function CupRoundsSection({
                 <TeamMark logo={fixture.homeLogo} name={fixture.homeName} team={findCompetitionTeamByName(competition, fixture.homeName)} />
                 <strong>{fixture.homeName}</strong>
               </span>
-              <em>{formatFixtureCenter(fixture, locale)}</em>
+              <em><FixtureCenter fixture={fixture} locale={locale} /></em>
               <span className="cupRoundTeam cupRoundTeamAway">
                 <TeamMark logo={fixture.awayLogo} name={fixture.awayName} team={findCompetitionTeamByName(competition, fixture.awayName)} />
                 <strong>{fixture.awayName}</strong>
               </span>
             </div>
-            <small>{formatFixtureDate(fixture.date, locale)}</small>
+            <small><LocalMatchDate fallback={formatFixtureDate(fixture.date, locale)} kind="date" value={fixture.date} /></small>
           </article>
         ))}
       </div>
@@ -2174,6 +2175,12 @@ function formatFixtureCenter(fixture: SportApiMatch, locale: Locale) {
     hour: "2-digit",
     minute: "2-digit"
   }).format(date);
+}
+
+function FixtureCenter({ fixture, locale }: { fixture: SportApiMatch; locale: Locale }) {
+  if (fixture.homeScore !== null && fixture.awayScore !== null) return <>{fixture.homeScore} - {fixture.awayScore}</>;
+  if (!fixture.date) return <>{fixture.status ?? (locale === "de" ? "offen" : "pending")}</>;
+  return <LocalMatchDate fallback={formatFixtureCenter(fixture, locale)} kind="time" value={fixture.date} />;
 }
 
 function formatFixtureStatus(fixture: SportApiMatch, locale: Locale) {

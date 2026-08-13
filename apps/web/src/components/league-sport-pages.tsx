@@ -7,6 +7,7 @@ import { getSportMatchHref } from "@/components/match-detail-page";
 import { SportsNewsCards } from "@/components/sports-news-cards";
 import { OpenRouterPredictionPending, PredictionModelSelector, SelectedModelPrediction } from "@/components/prediction-model-selector";
 import { buildStoredModelPredictions } from "@/lib/prediction-models";
+import { LocalMatchDate } from "@/components/local-match-date";
 import { getStoredTeamLogo } from "@/lib/team-logo-fallback";
 
 type LeagueTeam = {
@@ -372,7 +373,7 @@ function FeaturedGame<TTeam extends LeagueTeam>({ config, match }: { config: Lea
       <span>Matchcenter</span>
       <div className="featuredFixtureTeams">
         <SportLogo logo={match.homeLogo} name={match.homeName} />
-        <strong>{formatMatchCenter(match)}</strong>
+        <strong><LeagueMatchCenter match={match} /></strong>
         <SportLogo logo={match.awayLogo} name={match.awayName} />
       </div>
       <small>{match.homeName} - {match.awayName}</small>
@@ -417,8 +418,8 @@ function LeagueMatchesSection<TTeam extends LeagueTeam>({
               <div className="fixtureMatchLine">
                 <LeagueFixtureTeam align="right" config={config} locale={locale} logo={match.homeLogo} name={match.homeName} />
                 <div className="fixtureTime">
-                  <span>{formatMatchDate(match.date, locale)}</span>
-                  <strong>{formatMatchCenter(match)}</strong>
+                  <span><LocalMatchDate fallback={formatMatchDate(match.date, locale)} value={match.date} /></span>
+                  <strong><LeagueMatchCenter match={match} /></strong>
                   <small>{match.competition || config.title}</small>
                 </div>
                 <LeagueFixtureTeam align="left" config={config} locale={locale} logo={match.awayLogo} name={match.awayName} />
@@ -532,8 +533,8 @@ async function LeagueNewsSection<TTeam extends LeagueTeam>({
                 <div className="fixtureMatchLine">
                   <LeagueFixtureTeam align="right" config={config} locale={locale} logo={match.homeLogo} name={match.homeName} />
                   <div className="fixtureTime">
-                    <span>{formatMatchDate(match.date, locale)}</span>
-                    <strong>{formatMatchCenter(match)}</strong>
+                    <span><LocalMatchDate fallback={formatMatchDate(match.date, locale)} value={match.date} /></span>
+                    <strong><LeagueMatchCenter match={match} /></strong>
                     <small>{match.competition || config.title}</small>
                   </div>
                   <LeagueFixtureTeam align="left" config={config} locale={locale} logo={match.awayLogo} name={match.awayName} />
@@ -1222,6 +1223,12 @@ function formatMatchCenter(match: SportApiMatch) {
   }
 
   return "vs";
+}
+
+function LeagueMatchCenter({ match }: { match: SportApiMatch }) {
+  if (match.homeScore !== null && match.awayScore !== null) return <>{match.homeScore} - {match.awayScore}</>;
+  if (match.date) return <LocalMatchDate fallback="vs" kind="time" value={match.date} />;
+  return <>vs</>;
 }
 
 function formatMatchDate(value: string | null, locale: Locale) {

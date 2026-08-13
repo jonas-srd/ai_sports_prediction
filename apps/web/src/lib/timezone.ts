@@ -1,4 +1,4 @@
-export const DEFAULT_TIME_ZONE = "Europe/Berlin";
+export const DEFAULT_TIME_ZONE = "UTC";
 
 export type TimeZoneOption = {
   value: string;
@@ -6,29 +6,65 @@ export type TimeZoneOption = {
 };
 
 export const TIME_ZONE_OPTIONS: TimeZoneOption[] = [
-  { value: "UTC", label: "UTC" },
-  { value: "Europe/Berlin", label: "CET" },
-  { value: "Europe/London", label: "GMT" },
-  { value: "America/New_York", label: "ET" },
-  { value: "America/Chicago", label: "CT" },
-  { value: "America/Denver", label: "MT" },
-  { value: "America/Los_Angeles", label: "PT" },
-  { value: "America/Mexico_City", label: "CST" },
-  { value: "Asia/Tokyo", label: "JST" },
-  { value: "Australia/Sydney", label: "AET" }
+  { value: "UTC", label: "Coordinated Universal Time (UTC)" },
+  { value: "Europe/London", label: "United Kingdom (London)" },
+  { value: "Europe/Berlin", label: "Central European Time (Berlin)" },
+  { value: "Europe/Paris", label: "Central European Time (Paris)" },
+  { value: "Europe/Madrid", label: "Central European Time (Madrid)" },
+  { value: "Europe/Rome", label: "Central European Time (Rome)" },
+  { value: "Europe/Lisbon", label: "Western European Time (Lisbon)" },
+  { value: "America/New_York", label: "Eastern Time (New York)" },
+  { value: "America/Chicago", label: "Central Time (Chicago)" },
+  { value: "America/Denver", label: "Mountain Time (Denver)" },
+  { value: "America/Los_Angeles", label: "Pacific Time (Los Angeles)" },
+  { value: "America/Mexico_City", label: "Central Time (Mexico City)" },
+  { value: "America/Sao_Paulo", label: "Brasília Time (São Paulo)" },
+  { value: "America/Argentina/Buenos_Aires", label: "Argentina Time (Buenos Aires)" },
+  { value: "Asia/Dubai", label: "Gulf Standard Time (Dubai)" },
+  { value: "Asia/Kolkata", label: "India Standard Time (Kolkata)" },
+  { value: "Asia/Singapore", label: "Singapore Time" },
+  { value: "Asia/Tokyo", label: "Japan Standard Time (Tokyo)" },
+  { value: "Australia/Sydney", label: "Australian Eastern Time (Sydney)" },
+  { value: "Pacific/Auckland", label: "New Zealand Time (Auckland)" }
 ];
 
-export function isSupportedTimeZone(value: string | undefined | null): value is string {
-  return Boolean(value && TIME_ZONE_OPTIONS.some((option) => option.value === value));
+export function getTimeZoneOptions(locale = "en-GB"): TimeZoneOption[] {
+  return TIME_ZONE_OPTIONS.map((option) => ({
+    ...option,
+    label: formatTimeZoneLabel(option.value, locale, option.label)
+  }));
 }
 
-export function formatMatchTime(value: string | undefined, timeZone: string): string {
+export function formatTimeZoneLabel(value: string, locale: string, fallback = value): string {
+  if (value === "UTC") return fallback;
+  try {
+    const city = value.split("/").at(-1)?.replaceAll("_", " ") ?? value;
+    const longName = new Intl.DateTimeFormat(locale, { timeZone: value, timeZoneName: "long" })
+      .formatToParts(new Date())
+      .find((part) => part.type === "timeZoneName")?.value;
+    return longName ? `${longName} (${city})` : fallback;
+  } catch {
+    return fallback;
+  }
+}
+
+export function isSupportedTimeZone(value: string | undefined | null): value is string {
+  if (!value) return false;
+  try {
+    new Intl.DateTimeFormat("en", { timeZone: value }).format();
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+export function formatMatchTime(value: string | undefined, timeZone: string, locale = "en-GB"): string {
   const date = parseDate(value);
   if (!date) {
     return "Open";
   }
 
-  return new Intl.DateTimeFormat("en-GB", {
+  return new Intl.DateTimeFormat(locale, {
     hour: "2-digit",
     minute: "2-digit",
     timeZone

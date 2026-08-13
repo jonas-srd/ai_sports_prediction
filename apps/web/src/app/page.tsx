@@ -18,6 +18,10 @@ export const metadata: Metadata = {
     languages: {
       "en-US": "/",
       "de-DE": "/de",
+      "es-ES": "/es",
+      "pt-PT": "/pt",
+      "fr-FR": "/fr",
+      "it-IT": "/it",
       "x-default": "/"
     }
   },
@@ -25,7 +29,7 @@ export const metadata: Metadata = {
     title: "Residual Sports | AI Sports Predictions & Analytics",
     description,
     locale: "en_US",
-    alternateLocale: ["de_DE"],
+    alternateLocale: ["de_DE", "es_ES", "pt_PT", "fr_FR", "it_IT"],
     url: "/"
   }
 };
@@ -48,7 +52,7 @@ export default function HomePage() {
         name: "Residual Sports",
         url: "https://residualsports.com/",
         description,
-        inLanguage: ["en", "de"],
+        inLanguage: ["en", "de", "es", "pt", "fr", "it"],
         publisher: { "@id": "https://residualsports.com/#organization" }
       }
     ]

@@ -9,6 +9,7 @@ import { getSportMatchHref } from "@/components/match-detail-page";
 import { SportsNewsCards } from "@/components/sports-news-cards";
 import { OpenRouterPredictionPending, PredictionModelSelector, SelectedModelPrediction } from "@/components/prediction-model-selector";
 import { buildStoredModelPredictions } from "@/lib/prediction-models";
+import { LocalMatchDate } from "@/components/local-match-date";
 
 export type TennisTab = "news" | "matches" | "tournaments" | "rankings" | "players";
 export type TennisTournamentTab = "results" | "info" | "players";
@@ -527,7 +528,7 @@ function TennisFeaturedMatch({ locale, match }: { locale: Locale; match: SportAp
       <span>{copy.matchCenter}</span>
       <div className="featuredFixtureTeams">
         <TennisNameMark logo={match.homeLogo} name={match.homeName} />
-        <strong>{formatTennisScore(match)}</strong>
+        <strong><TennisMatchCenter match={match} /></strong>
         <TennisNameMark logo={match.awayLogo} name={match.awayName} />
       </div>
       <small>{match.homeName} - {match.awayName}</small>
@@ -561,8 +562,8 @@ function TennisMatchesSection({ locale, matches }: { locale: Locale; matches: Sp
             <div className="fixtureMatchLine">
               <TennisFixturePlayer align="right" locale={locale} logo={match.homeLogo} name={match.homeName} />
               <div className="fixtureTime">
-                <span>{formatTennisDate(match.date, locale)}</span>
-                <strong>{formatTennisScore(match)}</strong>
+                <span><LocalMatchDate fallback={formatTennisDate(match.date, locale)} kind="date" value={match.date} /></span>
+                <strong><TennisMatchCenter match={match} /></strong>
                 <small>{match.competition}</small>
               </div>
               <TennisFixturePlayer align="left" locale={locale} logo={match.awayLogo} name={match.awayName} />
@@ -702,8 +703,8 @@ async function TennisNewsSection({
                 <div className="fixtureMatchLine">
                   <TennisFixturePlayer align="right" locale={locale} logo={match.homeLogo} name={match.homeName} />
                   <div className="fixtureTime">
-                    <span>{formatTennisDate(match.date, locale)}</span>
-                    <strong>{formatTennisScore(match)}</strong>
+                    <span><LocalMatchDate fallback={formatTennisDate(match.date, locale)} kind="date" value={match.date} /></span>
+                    <strong><TennisMatchCenter match={match} /></strong>
                     <small>{match.competition}</small>
                   </div>
                   <TennisFixturePlayer align="left" locale={locale} logo={match.awayLogo} name={match.awayName} />
@@ -1510,6 +1511,12 @@ function formatTennisScore(match: SportApiMatch) {
   }
 
   return "vs";
+}
+
+function TennisMatchCenter({ match }: { match: SportApiMatch }) {
+  if (match.homeScore !== null && match.awayScore !== null) return <>{match.homeScore}:{match.awayScore}</>;
+  if (match.date) return <LocalMatchDate fallback="vs" kind="time" value={match.date} />;
+  return <>vs</>;
 }
 
 function formatTennisOddsOutcomeLabel(label: "home" | "draw" | "away", match: SportApiMatch, locale: Locale) {

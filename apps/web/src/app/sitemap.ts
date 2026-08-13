@@ -3,39 +3,16 @@ import type { MetadataRoute } from "next";
 const base = "https://residualsports.com";
 const lastModified = new Date();
 
-const localizedRoutes = [
-  ["", "/de"],
-  ["/about", "/de/about"],
-  ["/analytics", "/de/analytics"],
-  ["/football", "/de/football"],
-  ["/matches", "/de/matches"],
-  ["/nba", "/de/nba"],
-  ["/nba/matches", "/de/nba/spieltag"],
-  ["/nba/table", "/de/nba/tabelle"],
-  ["/nba/team-stats", "/de/nba/teamstatistik"],
-  ["/nba/teams", "/de/nba/teams"],
-  ["/nfl", "/de/nfl"],
-  ["/nfl/matches", "/de/nfl/spieltag"],
-  ["/nfl/table", "/de/nfl/tabelle"],
-  ["/nfl/team-stats", "/de/nfl/teamstatistik"],
-  ["/nfl/teams", "/de/nfl/teams"],
-  ["/tennis", "/de/tennis"],
-  ["/tennis/matches", "/de/tennis/vorhersagen"],
-  ["/tennis/players", "/de/tennis/spieler"],
-  ["/tennis/rankings", "/de/tennis/ranking"],
-  ["/tennis/tournaments", "/de/tennis/turniere"],
-  ["/tournament-tree", "/de/tournament-tree"],
-  ["/widgets", "/de/widgets"],
-  ["/privacy", "/de/privacy"],
-  ["/terms", "/de/terms"],
-  ["/cookies", "/de/cookies"],
-  ["/impressum", "/de/impressum"],
-  ["/widget-terms", "/de/widget-terms"],
-  ["/data-processing", "/de/data-processing"]
-] as const;
+const routes = ["", "/about", "/analytics", "/football", "/matches", "/nba", "/nba/matches", "/nba/table", "/nba/team-stats", "/nba/teams", "/nfl", "/nfl/matches", "/nfl/table", "/nfl/team-stats", "/nfl/teams", "/tennis", "/tennis/matches", "/tennis/players", "/tennis/rankings", "/tennis/tournaments", "/tournament-tree", "/widgets", "/privacy", "/terms", "/cookies", "/impressum", "/widget-terms", "/data-processing"] as const;
+const localePrefixes = ["en", "de", "es", "pt", "fr", "it"] as const;
+
+function localizedPath(path: string, locale: typeof localePrefixes[number]): string {
+  if (locale === "en") return path;
+  return path ? `/${locale}${path}` : `/${locale}`;
+}
 
 function priorityFor(path: string): number {
-  if (path === "" || path === "/de") return 1;
+  if (path === "" || /^\/(?:de|es|pt|fr|it)$/u.test(path)) return 1;
   if (path.endsWith("/widgets")) return 0.9;
   return 0.7;
 }
@@ -45,19 +22,19 @@ function changeFrequencyFor(path: string): "daily" | "monthly" {
 }
 
 export default function sitemap(): MetadataRoute.Sitemap {
-  return localizedRoutes.flatMap(([englishPath, germanPath]) => {
-    const languages = {
-      en: `${base}${englishPath}`,
-      de: `${base}${germanPath}`,
-      "x-default": `${base}${englishPath}`
-    };
+  return routes.flatMap((route) => {
+    const languages = Object.fromEntries(localePrefixes.map((locale) => [locale, `${base}${localizedPath(route, locale)}`]));
+    languages["x-default"] = `${base}${route}`;
 
-    return [englishPath, germanPath].map((path) => ({
+    return localePrefixes.map((locale) => {
+      const path = localizedPath(route, locale);
+      return ({
       alternates: { languages },
       changeFrequency: changeFrequencyFor(path),
       lastModified,
       priority: priorityFor(path),
       url: `${base}${path}`
-    }));
+      });
+    });
   });
 }

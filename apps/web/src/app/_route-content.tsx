@@ -23,6 +23,7 @@ import { getSportsNewsLinks, type SportsNewsItem } from "@/lib/sports-news";
 import { isLiveSportMatch, isUpcomingPredictionMatch } from "@/lib/home-content-quality";
 import { resolveTennisPlayerFlagUrl } from "@/lib/tennis-data";
 import { buildStoredModelPredictions, type ModelPredictionSet } from "@/lib/prediction-models";
+import { LocalMatchDate } from "@/components/local-match-date";
 import {
   OpenRouterPredictionPending,
   PredictionModelSelector,
@@ -842,7 +843,7 @@ function HomeHighlightCard({ highlight, locale }: { highlight: HomeMatchHighligh
         <span>{highlight.sportLabel}</span>
         {isLive ? (
           <small className="homeLivePhase"><i aria-hidden="true" />{livePhase}</small>
-        ) : <small>{formatSportMatchDate(highlight.match.date, locale)}</small>}
+        ) : <small><LocalMatchDate fallback={formatSportMatchDate(highlight.match.date, locale)} value={highlight.match.date} /></small>}
       </div>
       <div className="homeHighlightTeams">
         <div>
@@ -982,7 +983,7 @@ export async function SportPageContent({ locale, sport }: { locale: Locale; spor
                   <strong>{match.awayName}</strong>
                 </div>
               </div>
-              <p>{formatSportMatchDate(match.date, locale)} · {labels.status}: {match.status ?? "preview"}</p>
+              <p><LocalMatchDate fallback={formatSportMatchDate(match.date, locale)} value={match.date} /> · {labels.status}: {match.status ?? "preview"}</p>
             </article>
           ))}
         </div>

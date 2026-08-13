@@ -23,9 +23,7 @@ export function TimeZoneProvider({ children }: { children: ReactNode }) {
     }
 
     const browserTimeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
-    if (isSupportedTimeZone(browserTimeZone)) {
-      setTimeZoneState(browserTimeZone);
-    }
+    setTimeZoneState(isSupportedTimeZone(browserTimeZone) ? browserTimeZone : DEFAULT_TIME_ZONE);
   }, []);
 
   const value = useMemo<TimeZoneContextValue>(() => ({

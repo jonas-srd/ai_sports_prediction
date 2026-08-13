@@ -144,6 +144,19 @@
   letter-spacing: 0.09em;
 }
 
+.publicSite .siteNavControl select {
+  max-width: 170px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.publicSite .siteNavControl:has(select[aria-label*="zone" i]),
+.publicSite .siteNavControl:has(select[aria-label*="zeit" i]),
+.publicSite .siteNavControl:has(select[aria-label*="hora" i]),
+.publicSite .siteNavControl:has(select[aria-label*="fuso" i]) {
+  max-width: 230px;
+}
+
 .publicSite .sportschauTopicInner {
   max-width: 1440px;
   min-height: 58px;

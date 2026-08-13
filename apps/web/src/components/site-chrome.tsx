@@ -5,6 +5,7 @@ import { type ReactNode, useEffect, useState } from "react";
 import { SiteFooter } from "@/components/site-footer";
 import { SiteNav } from "@/components/site-nav";
 import { GlobalPredictionModelBar } from "@/components/prediction-model-selector";
+import { PublicSiteTranslator } from "@/components/public-site-translator";
 
 export function SiteChrome({ children }: { children: ReactNode }) {
   const pathname = usePathname();
@@ -28,6 +29,7 @@ export function SiteChrome({ children }: { children: ReactNode }) {
       <GlobalPredictionModelBar />
       <div className="publicSiteContent">{children}</div>
       <SiteFooter />
+      <PublicSiteTranslator />
     </div>
   );
 }

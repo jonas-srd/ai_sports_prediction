@@ -23,6 +23,7 @@ import { findTennisPlayerByName, resolveTennisPlayerFlagUrl } from "@/lib/tennis
 import { SportsNewsCards } from "@/components/sports-news-cards";
 import { OpenRouterPredictionPending, SelectedModelPrediction, SelectedModelSignal } from "@/components/prediction-model-selector";
 import { buildStoredModelPredictions, type ModelPredictionSet } from "@/lib/prediction-models";
+import { LocalMatchDate } from "@/components/local-match-date";
 import { hydrateMatchesWithStoredPredictions } from "@/lib/stored-sports-predictions";
 
 export type MatchDetailTab = "overview" | "comparison" | "stats" | "signal";
@@ -153,7 +154,7 @@ export async function SportMatchDetailPage({
     { label: locale === "de" ? "Wettbewerb" : "Competition", value: context.match.competition },
     { label: locale === "de" ? "Runde" : "Round", value: context.match.round },
     { label: text.venue, value: context.match.venue },
-    { label: locale === "de" ? "Termin" : "Kickoff", value: formatMatchDate(context.match.date, locale) },
+    { label: locale === "de" ? "Termin" : "Kickoff", value: <LocalMatchDate fallback={formatMatchDate(context.match.date, locale)} value={context.match.date} /> },
     { label: "Status", value: formatMatchStatus(context.match, locale) }
   ].filter((item) => item.value);
 
@@ -181,7 +182,7 @@ export async function SportMatchDetailPage({
             <span>{text.title}</span>
             <div className="matchDetailScoreLine">
               <ParticipantLink context={context} logo={context.match.homeLogo} name={context.match.homeName} />
-              <strong>{formatMatchCenter(context.match)}</strong>
+              <strong><MatchCenterValue match={context.match} /></strong>
               <ParticipantLink context={context} logo={context.match.awayLogo} name={context.match.awayName} />
             </div>
             <MatchDetailCompactOddsLine context={context} locale={locale} />
@@ -1160,6 +1161,12 @@ function formatMatchCenter(match: SportApiMatch) {
   }
 
   return "vs";
+}
+
+function MatchCenterValue({ match }: { match: SportApiMatch }) {
+  if (match.homeScore !== null && match.awayScore !== null) return <>{match.homeScore} - {match.awayScore}</>;
+  if (match.date) return <LocalMatchDate fallback="vs" kind="time" value={match.date} />;
+  return <>vs</>;
 }
 
 function formatOddsOutcomeLabel(label: "home" | "draw" | "away", match: SportApiMatch, locale: Locale) {

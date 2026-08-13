@@ -10,7 +10,7 @@ import { nbaTeams } from "@/lib/nba-data";
 import { nflTeams } from "@/lib/nfl-data";
 import { tennisPlayers, tennisTournaments } from "@/lib/tennis-data";
 import { useLocale } from "@/components/locale-provider";
-import { commonText, localizePath, stripLocalePrefix } from "@/lib/i18n";
+import { commonText, localizePath, stripLocalePrefix, type SiteLocale } from "@/lib/i18n";
 
 type FootballCompetitionGroup = {
   competitions: typeof footballCompetitions;
@@ -28,7 +28,7 @@ type SportMenuSection =
   | { href: string; kind: "links"; label: string; links: SportMenuLink[] };
 
 export function SiteNav() {
-  const { locale } = useLocale();
+  const { locale, siteLocale, t } = useLocale();
   const pathname = usePathname();
   const router = useRouter();
   const footballDropdownsRef = useRef<HTMLDivElement>(null);
@@ -36,8 +36,8 @@ export function SiteNav() {
   const [openFootballDropdown, setOpenFootballDropdown] = useState<string | null>(null);
   const [activeSiteMenuSport, setActiveSiteMenuSport] = useState<string | null>(null);
   const [siteMenuOpen, setSiteMenuOpen] = useState(false);
-  const text = commonText[locale];
-  const widgetsLabel = "Widgets";
+  const text = commonText[siteLocale];
+  const widgetsLabel = t("Widgets");
   const mainLinks = [
     { href: "/", label: text.home },
     { href: "/widgets", label: widgetsLabel }
@@ -50,7 +50,7 @@ export function SiteNav() {
   ];
   const anchorAwarePath = (href: string) => {
     const [path, hash] = href.split("#");
-    return `${localizePath(path, locale)}${hash ? `#${hash}` : ""}`;
+    return `${localizePath(path, siteLocale)}${hash ? `#${hash}` : ""}`;
   };
   const currentPath = stripLocalePrefix(pathname ?? "/");
   const isFootballSection = currentPath === "/football" || currentPath.startsWith("/football/");
@@ -124,43 +124,31 @@ export function SiteNav() {
   const footballCompetitionGroups: FootballCompetitionGroup[] = [
     {
       id: "europe",
-      label: locale === "de" ? "Europa" : "Europe",
+      label: t("Europe"),
       competitions: footballCompetitions.filter((competition) => competition.country === "Europe")
     },
     {
       id: "leagues",
-      label: locale === "de" ? "Ligen" : "Leagues",
+      label: t("Leagues"),
       competitions: footballCompetitions.filter((competition) => competition.country !== "Europe" && competition.type === "league")
     },
     {
       id: "cups",
-      label: locale === "de" ? "Pokale" : "Cups",
+      label: t("Cups"),
       competitions: footballCompetitions.filter((competition) => competition.country !== "Europe" && competition.type === "cup")
     }
   ];
-  const sportMenuLabels = locale === "de"
-    ? {
-        competitions: "Wettbewerbe",
-        matches: "Spiele",
-        overview: "Übersicht",
-        players: "Spieler",
-        rankings: "Ranking",
-        table: "Tabelle",
-        teamStats: "Teamstatistik",
-        teams: "Teams",
-        tournaments: "Turniere"
-      }
-    : {
-        competitions: "Competitions",
-        matches: "Matches",
-        overview: "Overview",
-        players: "Players",
-        rankings: "Rankings",
-        table: "Table",
-        teamStats: "Team stats",
-        teams: "Teams",
-        tournaments: "Tournaments"
-      };
+  const sportMenuLabels = {
+    competitions: t("Competitions"),
+    matches: t("Matches"),
+    overview: t("Overview"),
+    players: t("Players"),
+    rankings: t("Rankings"),
+    table: t("Table"),
+    teamStats: t("Team stats"),
+    teams: t("Teams"),
+    tournaments: t("Tournaments")
+  };
   const sportMenuSections: SportMenuSection[] = [
     {
       href: "/football",
@@ -204,7 +192,7 @@ export function SiteNav() {
   ];
   const searchItems = useMemo(() => {
     const baseItems = [
-      { href: "/", label: text.home, eyebrow: locale === "de" ? "Start" : "Home" },
+      { href: "/", label: text.home, eyebrow: text.home },
       { href: "/widgets", label: widgetsLabel, eyebrow: text.mainNavigation },
       { href: "/football", label: text.football, eyebrow: text.sports },
       { href: "/nfl", label: "NFL", eyebrow: text.sports },
@@ -215,7 +203,7 @@ export function SiteNav() {
     const competitionItems = footballCompetitions.map((competition) => ({
       href: `/football/${competition.slug}`,
       label: competition.name,
-      eyebrow: competition.type === "league" ? (locale === "de" ? "Liga" : "League") : (locale === "de" ? "Pokal" : "Cup")
+      eyebrow: competition.type === "league" ? t("League") : t("Cup")
     }));
     const seenTeams = new Set<string>();
     const footballTeamItems = footballCompetitions.flatMap((competition) =>
@@ -228,7 +216,7 @@ export function SiteNav() {
         return [{
           href: `/football/team/${team.slug}`,
           label: team.name,
-          eyebrow: locale === "de" ? "Team" : "Team"
+          eyebrow: t("Team")
         }];
       })
     );
@@ -245,7 +233,7 @@ export function SiteNav() {
     const tennisPlayerItems = tennisPlayers.map((player) => ({
       href: `/tennis/player/${player.slug}`,
       label: player.name,
-      eyebrow: `${player.tour} ${locale === "de" ? "Spieler" : "Player"}`
+      eyebrow: `${player.tour} ${t("Player")}`
     }));
     const tennisTournamentItems = tennisTournaments.map((tournament) => ({
       href: locale === "de" ? `/tennis/turnier/${tournament.slug}` : `/tennis/tournament/${tournament.slug}`,
@@ -254,21 +242,21 @@ export function SiteNav() {
     }));
 
     return [...baseItems, ...competitionItems, ...footballTeamItems, ...nflTeamItems, ...nbaTeamItems, ...tennisPlayerItems, ...tennisTournamentItems];
-  }, [locale, text.football, text.home, text.legalNotice, text.mainNavigation, text.sports, text.tennis, widgetsLabel]);
+  }, [locale, t, text.football, text.home, text.legalNotice, text.mainNavigation, text.sports, text.tennis, widgetsLabel]);
 
   return (
     <header className="siteNav">
       <div className="siteNavTop">
         <div className="siteNavInner">
-          <Link className="siteNavLogo" href={localizePath("/", locale)}>
+          <Link className="siteNavLogo" href={localizePath("/", siteLocale)}>
             <span className="siteNavLogoMark" aria-hidden="true">
               <img src="/site-icon.png" alt="" />
             </span>
             <span>Residual Sports</span>
           </Link>
           <SiteSearch
-            items={searchItems.map((item) => ({ ...item, href: localizePath(item.href, locale) }))}
-            locale={locale}
+            items={searchItems.map((item) => ({ ...item, href: localizePath(item.href, siteLocale) }))}
+            locale={siteLocale}
             onNavigate={(href) => router.push(href)}
           />
           <div className="siteNavControls">
@@ -329,7 +317,7 @@ export function SiteNav() {
                               <div className="siteMenuMiniLinks">
                                 {group.competitions.map((competition) => (
                                   <Link
-                                    href={localizePath(`/football/${competition.slug}`, locale)}
+                                    href={localizePath(`/football/${competition.slug}`, siteLocale)}
                                     key={competition.slug}
                                     onClick={closeSiteMenu}
                                   >
@@ -367,7 +355,7 @@ export function SiteNav() {
           {isFootballSection ? (
             <>
               <div className="topicNavPrimaryGroup">
-                <Link className={`topicNavLink ${isActive("/") ? "isActive" : ""}`} href={localizePath("/", locale)}>
+                <Link className={`topicNavLink ${isActive("/") ? "isActive" : ""}`} href={localizePath("/", siteLocale)}>
                   {text.home}
                 </Link>
                 {sportLinks.map((link) => (
@@ -379,7 +367,7 @@ export function SiteNav() {
                     {link.label}
                   </Link>
                 ))}
-                <Link className={`topicNavLink ${isActive("/widgets") ? "isActive" : ""}`} href={localizePath("/widgets", locale)}>
+                <Link className={`topicNavLink ${isActive("/widgets") ? "isActive" : ""}`} href={localizePath("/widgets", siteLocale)}>
                   {widgetsLabel}
                 </Link>
               </div>
@@ -402,7 +390,7 @@ export function SiteNav() {
                         {group.competitions.map((competition) => (
                           <Link
                             className={isFootballCompetitionActive(competition.slug) ? "isActive" : ""}
-                            href={localizePath(`/football/${competition.slug}`, locale)}
+                            href={localizePath(`/football/${competition.slug}`, siteLocale)}
                             key={competition.slug}
                             onClick={closeFootballCompetitionDropdowns}
                           >
@@ -418,7 +406,7 @@ export function SiteNav() {
             </>
           ) : (
             <>
-              <Link className={`topicNavLink ${isActive("/") ? "isActive" : ""}`} href={localizePath("/", locale)}>
+              <Link className={`topicNavLink ${isActive("/") ? "isActive" : ""}`} href={localizePath("/", siteLocale)}>
                 {text.home}
               </Link>
               {sportLinks.map((link) => (
@@ -430,7 +418,7 @@ export function SiteNav() {
                   {link.label}
                 </Link>
               ))}
-              <Link className={`topicNavLink ${isActive("/widgets") ? "isActive" : ""}`} href={localizePath("/widgets", locale)}>
+              <Link className={`topicNavLink ${isActive("/widgets") ? "isActive" : ""}`} href={localizePath("/widgets", siteLocale)}>
                 {widgetsLabel}
               </Link>
             </>
@@ -447,7 +435,7 @@ function SiteSearch({
   onNavigate
 }: {
   items: Array<{ href: string; label: string; eyebrow: string }>;
-  locale: "en" | "de";
+  locale: SiteLocale;
   onNavigate: (href: string) => void;
 }) {
   const [query, setQuery] = useState("");
@@ -471,7 +459,7 @@ function SiteSearch({
   return (
     <form className="siteSearch" onSubmit={submitSearch} role="search">
       <label className="siteSearchLabel" htmlFor="site-search">
-        {locale === "de" ? "Suche" : "Search"}
+        {commonText[locale].search}
       </label>
       <div className="siteSearchField">
         <span aria-hidden="true">⌕</span>
@@ -479,10 +467,17 @@ function SiteSearch({
           autoComplete="off"
           id="site-search"
           onChange={(event) => setQuery(event.target.value)}
-          placeholder={locale === "de" ? "Team, Liga, Pokal suchen" : "Search team, league, cup"}
+          placeholder={{
+            en: "Search team, league, cup",
+            de: "Team, Liga oder Pokal suchen",
+            es: "Buscar equipo, liga o copa",
+            pt: "Pesquisar equipa, liga ou taça",
+            fr: "Rechercher équipe, ligue ou coupe",
+            it: "Cerca squadra, campionato o coppa"
+          }[locale]}
           value={query}
         />
-        <button aria-label={locale === "de" ? "Suchen" : "Search"} type="submit">
+        <button aria-label={commonText[locale].search} type="submit">
           →
         </button>
       </div>
