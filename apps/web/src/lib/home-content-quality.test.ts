@@ -26,6 +26,8 @@ test("normalizes common final and unavailable statuses", () => {
   assert.equal(isFinishedMatchStatus("Match Finished"), true);
   assert.equal(isFinishedMatchStatus("AET"), true);
   assert.equal(isUnavailableMatchStatus("Cancelled"), true);
+  assert.equal(isUnavailableMatchStatus("PST"), true);
+  assert.equal(isUnavailableMatchStatus("PPD"), true);
 });
 
 test("uses provider status and progress for live games", () => {
@@ -45,5 +47,22 @@ test("does not treat stale not-started rows with scores as live", () => {
     awayScore: 1,
     status: "NS",
     liveProgress: null
+  }, now), false);
+});
+
+test("does not treat postponed provider rows as live games", () => {
+  assert.equal(isLiveSportMatch({
+    date: "2026-07-15T11:00:00.000Z",
+    homeScore: null,
+    awayScore: null,
+    status: "PST",
+    liveProgress: null
+  }, now), false);
+  assert.equal(isLiveSportMatch({
+    date: "2026-07-15T11:00:00.000Z",
+    homeScore: null,
+    awayScore: null,
+    status: null,
+    liveProgress: "PST"
   }, now), false);
 });

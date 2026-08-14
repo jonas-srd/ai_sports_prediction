@@ -230,7 +230,9 @@ function isFixtureWithinUpcomingWindow(fixture: SportFixture, now: number, looka
   return Number.isFinite(timestamp) &&
     timestamp >= now &&
     timestamp <= now + horizonMs &&
-    !isFinishedStatus(fixture.status);
+    !isFinishedStatus(fixture.status) &&
+    !isUnavailableStatus(fixture.status) &&
+    !isUnavailableStatus(fixture.liveProgress ?? "");
 }
 
 async function fetchLeagueFixtures(apiKey: string, league: LeagueRef): Promise<SportFixture[]> {
@@ -447,6 +449,22 @@ function getOpenRouterModelId() {
 function isFinishedStatus(status: string) {
   const normalized = status.toLowerCase();
   return normalized.includes("final") || normalized.includes("finished") || normalized === "ft";
+}
+
+function isUnavailableStatus(status: string) {
+  const normalized = status.trim().toLowerCase();
+  return [
+    "cancelled",
+    "canceled",
+    "postponed",
+    "pst",
+    "ppd",
+    "canc",
+    "suspended",
+    "susp",
+    "abandoned",
+    "abd"
+  ].some((label) => normalized === label || normalized.includes(label));
 }
 
 function findArrays(value: unknown): unknown[][] {

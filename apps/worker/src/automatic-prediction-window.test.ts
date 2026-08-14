@@ -26,6 +26,15 @@ test("does not generate predictions for past or finished fixtures", () => {
   assert.equal(shouldCreateAutomaticPrediction(fixtureAt("2026-08-10T12:00:00.000Z", "FT"), now), false);
 });
 
+test("does not generate predictions for postponed or cancelled fixtures", () => {
+  assert.equal(shouldCreateAutomaticPrediction(fixtureAt("2026-08-10T12:00:00.000Z", "PST"), now), false);
+  assert.equal(shouldCreateAutomaticPrediction(fixtureAt("2026-08-10T12:00:00.000Z", "Cancelled"), now), false);
+  assert.equal(shouldCreateAutomaticPrediction({
+    ...fixtureAt("2026-08-10T12:00:00.000Z"),
+    liveProgress: "PPD"
+  }, now), false);
+});
+
 test("treats a stored profile as complete even when the configured model version changes", async () => {
   let sql = "";
   let parameters: unknown[] = [];

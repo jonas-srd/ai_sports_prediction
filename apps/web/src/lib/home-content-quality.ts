@@ -18,8 +18,13 @@ const UNAVAILABLE_STATUS_LABELS = [
   "cancelled",
   "canceled",
   "postponed",
+  "pst",
+  "ppd",
+  "canc",
   "suspended",
-  "abandoned"
+  "susp",
+  "abandoned",
+  "abd"
 ];
 
 export function isFinishedMatchStatus(status: string | null | undefined): boolean {
@@ -36,7 +41,12 @@ export function isLiveSportMatch(
   match: Pick<SportApiMatch, "date" | "homeScore" | "awayScore" | "status" | "liveProgress">,
   now = Date.now()
 ): boolean {
-  if (isFinishedMatchStatus(match.status) || isUnavailableMatchStatus(match.status)) {
+  if (
+    isFinishedMatchStatus(match.status) ||
+    isFinishedMatchStatus(match.liveProgress) ||
+    isUnavailableMatchStatus(match.status) ||
+    isUnavailableMatchStatus(match.liveProgress)
+  ) {
     return false;
   }
 

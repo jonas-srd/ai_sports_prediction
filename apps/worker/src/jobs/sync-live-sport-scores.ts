@@ -106,6 +106,11 @@ export function isFinalScoreFixture(fixture: SportFixture) {
 function hasLiveOrFinalState(row: any) {
   const status = readString(row?.strStatus ?? row?.status).toLowerCase();
   const progress = readString(row?.strProgress ?? row?.progress).toLowerCase();
+  const state = `${status} ${progress}`.trim();
+  if (["cancelled", "canceled", "postponed", "pst", "ppd", "canc", "suspended", "susp", "abandoned", "abd"]
+    .some((label) => state === label || state.split(/\s+/).includes(label))) {
+    return false;
+  }
   if (["ns", "not started", "scheduled", "tbd"].includes(status) && !progress) {
     return false;
   }

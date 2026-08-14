@@ -51,3 +51,15 @@ test("ignores not-started rows from the broad livescore feed", () => {
     strTimestamp: "2026-08-06T00:00:00"
   }), null);
 });
+
+test("ignores postponed rows from the broad livescore feed", () => {
+  assert.equal(normalizeSupportedLiveScoreRow({
+    idEvent: "postponed",
+    idLeague: "4481",
+    strHomeTeam: "KÍ Klaksvík",
+    strAwayTeam: "Lech Poznań",
+    strStatus: "PST",
+    strProgress: null,
+    strTimestamp: "2026-08-13T19:45:00"
+  }), null);
+});
