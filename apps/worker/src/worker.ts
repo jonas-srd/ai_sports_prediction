@@ -233,8 +233,9 @@ async function registerRecurringJobs(): Promise<void> {
     {
       jobId: "sync-live-sport-scores",
       repeat: { every: liveScoreEvery },
-      attempts: 3,
-      backoff: { type: "exponential", delay: 30_000 },
+      // The provider client performs bounded retries. A second BullMQ retry
+      // layer would overlap the next two-minute repeat and amplify 5xx bursts.
+      attempts: 1,
       removeOnComplete: 50,
       removeOnFail: 100
     }

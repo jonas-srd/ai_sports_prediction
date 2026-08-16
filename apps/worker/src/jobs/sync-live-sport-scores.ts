@@ -66,12 +66,51 @@ export async function syncLiveSportScores(db: PostgresDb) {
   return { checked: fixtures.length, finalResults: storedFinalResults };
 }
 
-export async function fetchSupportedLiveScoreFixtures(apiKey: string): Promise<SportFixture[]> {
-  const response = await fetch("https://www.thesportsdb.com/api/v2/json/livescore/all", {
-    headers: { "X-API-KEY": apiKey, accept: "application/json" }
-  });
+export async function fetchSupportedLiveScoreFixtures(
+  apiKey: string,
+  options: {
+    fetchImpl?: typeof fetch;
+    sleep?: (delayMs: number) => Promise<void>;
+    maxAttempts?: number;
+    baseDelayMs?: number;
+  } = {}
+): Promise<SportFixture[]> {
+  const fetchImpl = options.fetchImpl ?? fetch;
+  const sleep = options.sleep ?? wait;
+  const maxAttempts = Math.max(1, options.maxAttempts ?? 3);
+  const baseDelayMs = Math.max(0, options.baseDelayMs ?? 10_000);
+  let response: Response | null = null;
+  let lastNetworkError: unknown = null;
+  let attemptsUsed = 0;
+
+  for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
+    attemptsUsed = attempt;
+    try {
+      response = await fetchImpl("https://www.thesportsdb.com/api/v2/json/livescore/all", {
+        headers: { "X-API-KEY": apiKey, accept: "application/json" }
+      });
+      lastNetworkError = null;
+    } catch (error) {
+      lastNetworkError = error;
+      if (attempt === maxAttempts) break;
+      await sleep(baseDelayMs * (2 ** (attempt - 1)));
+      continue;
+    }
+
+    if (response.ok || !isTransientHttpStatus(response.status) || attempt === maxAttempts) {
+      break;
+    }
+
+    const retryAfterMs = readRetryAfterMs(response.headers.get("retry-after"));
+    await sleep(retryAfterMs ?? baseDelayMs * (2 ** (attempt - 1)));
+  }
+
+  if (!response) {
+    const detail = lastNetworkError instanceof Error ? lastNetworkError.message : String(lastNetworkError);
+    throw new Error(`TheSportsDB livescore request failed after ${attemptsUsed} attempts: ${detail}`);
+  }
   if (!response.ok) {
-    throw new Error(`TheSportsDB livescore request failed with HTTP ${response.status}.`);
+    throw new Error(`TheSportsDB livescore request failed with HTTP ${response.status} after ${attemptsUsed} attempts.`);
   }
 
   const payload = await response.json().catch(() => null);
@@ -86,6 +125,27 @@ export async function fetchSupportedLiveScoreFixtures(apiKey: string): Promise<S
     seen.add(fixture.id);
     return [fixture];
   });
+}
+
+function isTransientHttpStatus(status: number) {
+  return status === 408 || status === 425 || status === 429 || status >= 500;
+}
+
+function readRetryAfterMs(value: string | null) {
+  if (!value) return null;
+
+  const seconds = Number(value);
+  if (Number.isFinite(seconds) && seconds >= 0) {
+    return Math.min(seconds * 1000, 30_000);
+  }
+
+  const retryAt = Date.parse(value);
+  if (!Number.isFinite(retryAt)) return null;
+  return Math.max(0, Math.min(retryAt - Date.now(), 30_000));
+}
+
+function wait(delayMs: number) {
+  return new Promise<void>((resolve) => setTimeout(resolve, delayMs));
 }
 
 export function normalizeSupportedLiveScoreRow(row: any): SportFixture | null {

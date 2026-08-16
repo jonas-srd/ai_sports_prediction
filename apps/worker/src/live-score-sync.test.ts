@@ -1,6 +1,10 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { isFinalScoreFixture, normalizeSupportedLiveScoreRow } from "./jobs/sync-live-sport-scores";
+import {
+  fetchSupportedLiveScoreFixtures,
+  isFinalScoreFixture,
+  normalizeSupportedLiveScoreRow
+} from "./jobs/sync-live-sport-scores";
 
 test("normalizes a supported live-score row including progress", () => {
   const fixture = normalizeSupportedLiveScoreRow({
@@ -62,4 +66,69 @@ test("ignores postponed rows from the broad livescore feed", () => {
     strProgress: null,
     strTimestamp: "2026-08-13T19:45:00"
   }), null);
+});
+
+test("retries a transient provider failure before returning live scores", async () => {
+  let calls = 0;
+  const delays: number[] = [];
+
+  const fixtures = await fetchSupportedLiveScoreFixtures("test-key", {
+    fetchImpl: async () => {
+      calls += 1;
+      if (calls === 1) {
+        return new Response(null, { status: 503 });
+      }
+      return Response.json({ events: [] });
+    },
+    sleep: async (delayMs) => {
+      delays.push(delayMs);
+    },
+    baseDelayMs: 10
+  });
+
+  assert.deepEqual(fixtures, []);
+  assert.equal(calls, 2);
+  assert.deepEqual(delays, [10]);
+});
+
+test("stops after bounded retries when a provider outage persists", async () => {
+  let calls = 0;
+  const delays: number[] = [];
+
+  await assert.rejects(
+    fetchSupportedLiveScoreFixtures("test-key", {
+      fetchImpl: async () => {
+        calls += 1;
+        return new Response(null, { status: 503 });
+      },
+      sleep: async (delayMs) => {
+        delays.push(delayMs);
+      },
+      maxAttempts: 3,
+      baseDelayMs: 10
+    }),
+    /HTTP 503 after 3 attempts/
+  );
+
+  assert.equal(calls, 3);
+  assert.deepEqual(delays, [10, 20]);
+});
+
+test("does not retry a non-transient provider rejection", async () => {
+  let calls = 0;
+
+  await assert.rejects(
+    fetchSupportedLiveScoreFixtures("test-key", {
+      fetchImpl: async () => {
+        calls += 1;
+        return new Response(null, { status: 401 });
+      },
+      sleep: async () => {
+        assert.fail("non-transient responses must not be retried");
+      }
+    }),
+    /HTTP 401/
+  );
+
+  assert.equal(calls, 1);
 });
