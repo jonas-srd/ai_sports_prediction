@@ -13,8 +13,8 @@
     "@ai-sports-prediction/db": "0.1.0"
   },
   "devDependencies": {
-    "@types/node": "latest",
-    "tsx": "latest",
-    "typescript": "latest"
+    "@types/node": "*",
+    "tsx": "^4.23.12",
+    "typescript": "*"
   }
 }

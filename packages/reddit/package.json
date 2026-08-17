@@ -9,6 +9,12 @@
     "test": "node --import tsx --test src/*.test.ts",
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
-  "dependencies": { "@ai-sports-prediction/db": "0.1.0" },
-  "devDependencies": { "@types/node": "latest", "tsx": "latest", "typescript": "latest" }
+  "dependencies": {
+    "@ai-sports-prediction/db": "0.1.0"
+  },
+  "devDependencies": {
+    "@types/node": "*",
+    "tsx": "^4.23.12",
+    "typescript": "*"
+  }
 }
