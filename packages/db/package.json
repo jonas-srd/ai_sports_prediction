@@ -9,11 +9,11 @@
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
   "dependencies": {
-    "pg": "latest"
+    "pg": "^8.23.0"
   },
   "devDependencies": {
-    "@types/node": "latest",
-    "@types/pg": "latest",
-    "typescript": "latest"
+    "@types/node": "*",
+    "@types/pg": "^8.21.0",
+    "typescript": "*"
   }
 }
