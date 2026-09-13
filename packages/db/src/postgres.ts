@@ -407,17 +407,26 @@ export async function openRouterPredictionProfileExists(
   matchId: string,
   profile: "nexus" | "pulse" | "edge"
 ): Promise<boolean> {
+  return predictionProfileExists(db, matchId, profile, "openrouter");
+}
+
+export async function predictionProfileExists(
+  db: PostgresDb,
+  matchId: string,
+  profile: "nexus" | "pulse" | "edge",
+  provider: "openrouter" | "bedrock"
+): Promise<boolean> {
   const result = await db.query(
     `
       select 1
       from predictions p
       join models m on m.id = p.model_id
       where p.match_id = $1
-        and lower(m.provider) = 'openrouter'
+        and lower(m.provider) = $3
         and lower(m.name) = $2
       limit 1
     `,
-    [matchId, profile]
+    [matchId, profile, provider]
   );
   return Boolean(result.rowCount && result.rowCount > 0);
 }
@@ -463,7 +472,6 @@ export async function listLatestMatchPredictionsBySourceMatchIds(
       join matches m on m.id = p.match_id
       join models pm on pm.id = p.model_id
       where m.source_match_id = any($1::text[])
-        and lower(pm.provider) = 'openrouter'
       order by p.created_at desc
     `,
     [sourceMatchIds]

@@ -4,7 +4,7 @@
  */
 import { randomUUID } from "node:crypto";
 import type { PostgresDb } from "@ai-sports-prediction/db";
-import { OpenRouterClient } from "@ai-sports-prediction/llm";
+import { createConfiguredLlmClient } from "@ai-sports-prediction/llm";
 import {
   getValidRedditAccessToken,
   readRedditServerConfig
@@ -345,14 +345,17 @@ async function createPerformanceRecommendations(
   metrics: MarketingMetricSnapshot[]
 ): Promise<{ items: PerformanceRecommendation[]; modelId: string | null; providerResponseId: string | null }> {
   const fallback = buildFallbackRecommendations(summary, metrics);
-  const apiKey = process.env.OPENROUTER_API_KEY?.trim();
-  if (!apiKey || !summary.postsMeasured) return { items: fallback, modelId: null, providerResponseId: null };
-  const modelId = process.env.MARKETING_ANALYTICS_OPENROUTER_MODEL?.trim()
+  if (!summary.postsMeasured) return { items: fallback, modelId: null, providerResponseId: null };
+  const openRouterModelId = process.env.MARKETING_ANALYTICS_OPENROUTER_MODEL?.trim()
     || process.env.MARKETING_OPENROUTER_MODEL?.trim()
     || process.env.OPENROUTER_TEST_MODEL?.trim()
     || "openai/gpt-oss-20b:free";
-  const client = new OpenRouterClient({ apiKey, siteUrl: process.env.OPENROUTER_SITE_URL, siteName: process.env.OPENROUTER_SITE_NAME });
   try {
+    const { client, modelId } = createConfiguredLlmClient({
+      openRouterModelId,
+      bedrockModelId: process.env.MARKETING_ANALYTICS_BEDROCK_MODEL
+        || process.env.MARKETING_BEDROCK_MODEL
+    });
     const response = await client.createChatCompletion(modelId, `You are the performance agent for Residual Sports. Analyse only these aggregated social media metrics, do not invent missing values, and write every recommendation in English. Return JSON: {"recommendations":[{"priority":"high|medium|low","title":"...","action":"...","evidence":"..."}]}. Return at most four specific recommendations.\n\nSummary: ${JSON.stringify(summary)}\nPosts: ${JSON.stringify(metrics.map(({ rawMetrics: _raw, ...item }) => item))}`, {
       temperature: 0.2,
       maxTokens: 1000,

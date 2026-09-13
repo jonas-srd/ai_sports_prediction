@@ -244,7 +244,7 @@ function toPublicWidgetMatch(
 ): PublicWidgetMatch {
   const sport = inferSport(match);
   const predictions = match.predictions
-    .filter((prediction) => prediction.isValidForScoring && prediction.provider.toLowerCase() === "openrouter")
+    .filter((prediction) => prediction.isValidForScoring && isSupportedLlmProvider(prediction.provider))
     .map((prediction) => toPublicWidgetPrediction(prediction, sport, match.homeTeam, match.awayTeam))
     .sort((left, right) => getModelSortIndex(left.modelKey) - getModelSortIndex(right.modelKey));
   const selectedModel = requestedModel === "viewer" ? "nexus" : requestedModel;
@@ -320,7 +320,7 @@ function toDashboardMatchFromSportApi(
     competition: match.competition,
     homeLogo: match.homeLogo,
     homeTeam: match.homeName,
-    predictions: (match.predictions ?? []).map((prediction) => toDashboardPredictionFromOpenRouter(match, sport, prediction)),
+    predictions: (match.predictions ?? []).map((prediction) => toDashboardPredictionFromLlm(match, sport, prediction)),
     status: match.status ?? undefined,
     utcDate: match.date ?? undefined,
     venue: match.venue ?? null,
@@ -328,7 +328,7 @@ function toDashboardMatchFromSportApi(
   };
 }
 
-function toDashboardPredictionFromOpenRouter(
+function toDashboardPredictionFromLlm(
   match: SportApiMatch,
   sport: ApiSportId,
   prediction: NonNullable<SportApiMatch["predictions"]>[number]
@@ -339,7 +339,7 @@ function toDashboardPredictionFromOpenRouter(
     matchId: match.id,
     model: prediction.modelName,
     provider: prediction.provider,
-    predictorId: `openrouter:${prediction.modelVersion ?? "model"}:${prediction.modelKey}`,
+    predictorId: `${getLlmProviderKey(prediction.provider)}:${prediction.modelVersion ?? "model"}:${prediction.modelKey}`,
     accessCondition: "closed_book",
     promptStrategy: "direct_score",
     forecastHorizon: "T_24H",
@@ -707,6 +707,15 @@ function compareWidgetMatches(left: PublicWidgetMatch, right: PublicWidgetMatch)
   const rightTime = right.date ? Date.parse(right.date) : Number.POSITIVE_INFINITY;
 
   return leftTime - rightTime || left.homeTeam.localeCompare(right.homeTeam);
+}
+
+function isSupportedLlmProvider(provider: string): boolean {
+  const normalized = provider.trim().toLowerCase();
+  return normalized === "openrouter" || normalized === "bedrock" || normalized === "amazon bedrock";
+}
+
+function getLlmProviderKey(provider: string): "openrouter" | "bedrock" {
+  return provider.trim().toLowerCase().includes("bedrock") ? "bedrock" : "openrouter";
 }
 
 function normalizeKey(value: unknown): string {

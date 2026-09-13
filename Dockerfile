@@ -14,7 +14,9 @@ COPY apps/web/package.json apps/web/package.json
 COPY apps/worker/package.json apps/worker/package.json
 COPY packages/db/package.json packages/db/package.json
 COPY packages/llm/package.json packages/llm/package.json
+COPY packages/reddit/package.json packages/reddit/package.json
 COPY packages/scorer/package.json packages/scorer/package.json
+COPY packages/tiktok/package.json packages/tiktok/package.json
 
 RUN npm ci
 

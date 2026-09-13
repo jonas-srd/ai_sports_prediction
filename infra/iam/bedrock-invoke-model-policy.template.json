@@ -1,0 +1,11 @@
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "InvokeConfiguredBedrockModel",
+      "Effect": "Allow",
+      "Action": "bedrock:InvokeModel",
+      "Resource": "arn:${AWS_PARTITION}:bedrock:${AWS_REGION}::foundation-model/${BEDROCK_MODEL_ID}"
+    }
+  ]
+}

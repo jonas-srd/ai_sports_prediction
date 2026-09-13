@@ -131,7 +131,7 @@ export function SelectedModelPrediction({
       <div className="selectedModelPredictionHeader">
         <div className="selectedModelPredictionTitle">
           <span>{labels.prediction} · {metadata.name}</span>
-          <small>{t(metadata.description[locale])}{prediction.source === "openrouter" ? " · OpenRouter" : ""}</small>
+          <small>{t(metadata.description[locale])}{getProviderSuffix(prediction.source)}</small>
         </div>
         {showSelector ? <PredictionModelSelector compact locale={locale} /> : null}
       </div>
@@ -172,7 +172,7 @@ export function SelectedHomePrediction({
 
   return (
     <div className="homeHighlightPrediction selectedHomePrediction" style={{ "--model-accent": metadata.accent } as CSSProperties}>
-      <span>{labels.prediction} · {metadata.name}{prediction.source === "openrouter" ? " · OpenRouter" : ""}</span>
+      <span>{labels.prediction} · {metadata.name}{getProviderSuffix(prediction.source)}</span>
       <div className="homePredictionSummary">
         <div>
           <small>{t(locale === "de" ? "Tipp" : "Pick")}</small>
@@ -298,6 +298,12 @@ function ProbabilityBreakdown({
 
 function isPredictionModelId(value: string | null): value is PredictionModelId {
   return value === "nexus" || value === "pulse" || value === "edge";
+}
+
+function getProviderSuffix(source: ModelPredictionSet[PredictionModelId]["source"]): string {
+  if (source === "openrouter") return " · OpenRouter";
+  if (source === "bedrock") return " · Bedrock";
+  return "";
 }
 
 function formatPredictionPick(pick: string, locale: Locale) {

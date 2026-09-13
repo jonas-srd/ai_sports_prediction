@@ -16,7 +16,7 @@ export type ModelPrediction = {
   probabilities: PredictionProbability[];
   reason: string;
   score: string;
-  source?: "openrouter" | "generated";
+  source?: "openrouter" | "bedrock" | "generated";
   modelVersion?: string | null;
 };
 
@@ -138,9 +138,9 @@ export function buildStoredModelPredictions(
       model: model.id,
       pick,
       probabilities,
-      reason: stored.reason ?? (locale === "de" ? "OpenRouter-Prognose" : "OpenRouter prediction"),
+      reason: stored.reason ?? (locale === "de" ? `${stored.provider}-Prognose` : `${stored.provider} prediction`),
       score,
-      source: "openrouter",
+      source: stored.provider === "Bedrock" ? "bedrock" : "openrouter",
       modelVersion: stored.modelVersion
     } satisfies ModelPrediction];
   })) as ModelPredictionSet;

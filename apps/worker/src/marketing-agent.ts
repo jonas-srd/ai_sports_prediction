@@ -7,7 +7,7 @@ import { randomUUID } from "node:crypto";
 import { mkdir, writeFile } from "node:fs/promises";
 import { resolve } from "node:path";
 import type { PostgresDb } from "@ai-sports-prediction/db";
-import { OpenRouterClient } from "@ai-sports-prediction/llm";
+import { createConfiguredLlmClient } from "@ai-sports-prediction/llm";
 import { PutObjectCommand, S3Client } from "@aws-sdk/client-s3";
 import sharp from "sharp";
 
@@ -266,22 +266,15 @@ export async function selectMarketingPredictions(
 }
 
 export async function createMarketingCopy(prediction: MarketingPrediction): Promise<MarketingCopy> {
-  const apiKey = process.env.OPENROUTER_API_KEY?.trim();
-  const modelId = process.env.MARKETING_OPENROUTER_MODEL?.trim()
+  const openRouterModelId = process.env.MARKETING_OPENROUTER_MODEL?.trim()
     || process.env.OPENROUTER_TEST_MODEL?.trim()
     || "openai/gpt-oss-20b:free";
 
-  if (!apiKey) {
-    return createFallbackMarketingCopy(prediction);
-  }
-
-  const client = new OpenRouterClient({
-    apiKey,
-    siteUrl: process.env.OPENROUTER_SITE_URL,
-    siteName: process.env.OPENROUTER_SITE_NAME
-  });
-
   try {
+    const { client, modelId } = createConfiguredLlmClient({
+      openRouterModelId,
+      bedrockModelId: process.env.MARKETING_BEDROCK_MODEL
+    });
     const response = await client.createChatCompletion(modelId, buildCopyPrompt(prediction), {
       temperature: 0.35,
       maxTokens: 1200,

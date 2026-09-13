@@ -5,6 +5,14 @@ import { join } from "node:path";
 import { tmpdir } from "node:os";
 
 const region = env("AWS_REGION", "eu-central-1");
+const llmProvider = env("LLM_PROVIDER", "openrouter").trim().toLowerCase();
+if (!["openrouter", "bedrock"].includes(llmProvider)) {
+  throw new Error(`Unsupported LLM_PROVIDER=${llmProvider}. Use openrouter or bedrock.`);
+}
+const bedrockModelId = env("BEDROCK_MODEL_ID", "").trim();
+if (llmProvider === "bedrock" && !bedrockModelId) {
+  throw new Error("BEDROCK_MODEL_ID is required when LLM_PROVIDER=bedrock.");
+}
 const cluster = env("ECS_CLUSTER", "ai-sports-prediction");
 const serviceName = env("ECS_EDGE_SERVICE", "ai-sports-prediction-edge");
 const taskFamily = env("ECS_EDGE_TASK_FAMILY", "ai-sports-prediction-edge");
@@ -19,7 +27,11 @@ const subnetIds = env(
   .map((value) => value.trim())
   .filter(Boolean);
 const assignPublicIp = env("ECS_ASSIGN_PUBLIC_IP", "ENABLED");
-const accountId = env("AWS_ACCOUNT_ID", aws(["sts", "get-caller-identity", "--query", "Account", "--output", "text"]));
+const callerAccountId = aws(["sts", "get-caller-identity", "--query", "Account", "--output", "text"]);
+const accountId = env("AWS_ACCOUNT_ID", callerAccountId);
+if (accountId !== callerAccountId) {
+  throw new Error(`AWS credential account ${callerAccountId} does not match AWS_ACCOUNT_ID=${accountId}; refusing to deploy.`);
+}
 const imageUri = env(
   "ECR_IMAGE_URI",
   `${accountId}.dkr.ecr.${region}.amazonaws.com/ai-sports-prediction:latest`
@@ -41,7 +53,9 @@ const secrets = {
   adminAccessEmails: runtimeSecretReference("ai-sports-prediction/admin-access-emails"),
   adminSessionSecret: runtimeSecretReference("ai-sports-prediction/admin-session-secret"),
   adminTotpSecrets: runtimeSecretReference("ai-sports-prediction/admin-totp-secrets"),
-  openrouterApiKey: runtimeSecretReference("ai-sports-prediction/openrouter-api-key"),
+  openrouterApiKey: llmProvider === "openrouter"
+    ? runtimeSecretReference("ai-sports-prediction/openrouter-api-key")
+    : optionalRuntimeSecretReference("ai-sports-prediction/openrouter-api-key"),
   resendApiKey: runtimeSecretReference("ai-sports-prediction/resend-api-key"),
   theOddsApiKey: runtimeSecretReference("ai-sports-prediction/the-odds-api-key"),
   theSportsDbApiKey: runtimeSecretReference("ai-sports-prediction/the-sports-db-api-key"),
@@ -252,6 +266,9 @@ const taskDefinition = {
         ["DATABASE_SSL", "1"],
         ["DATABASE_SSL_REJECT_UNAUTHORIZED", env("DATABASE_SSL_REJECT_UNAUTHORIZED", "1")],
         ["DATABASE_SSL_CA_FILE", "/etc/ssl/certs/aws-rds-global-bundle.pem"],
+        ["LLM_PROVIDER", llmProvider],
+        ["AWS_REGION", region],
+        ["BEDROCK_MODEL_ID", bedrockModelId],
         ["OPENROUTER_MODEL_IDS", env("OPENROUTER_MODEL_IDS", "openai/gpt-oss-20b:free")],
         ["PUBLIC_PREDICTION_OPENROUTER_MODEL", env("PUBLIC_PREDICTION_OPENROUTER_MODEL", "openai/gpt-oss-20b")],
         ["OPENROUTER_SITE_URL", env("OPENROUTER_SITE_URL", "https://residualsports.com")],
@@ -297,7 +314,7 @@ const taskDefinition = {
       secrets: [
         ["DATABASE_URL", secrets.databaseUrl],
         ["REDIS_URL", secrets.redisUrl],
-        ["OPENROUTER_API_KEY", secrets.openrouterApiKey],
+        ...(secrets.openrouterApiKey ? [["OPENROUTER_API_KEY", secrets.openrouterApiKey]] : []),
         ["THE_SPORTS_DB_API_KEY", secrets.theSportsDbApiKey],
         ["THE_ODDS_API_KEY", secrets.theOddsApiKey],
         ["SERPAPI_API_KEY", secrets.serpApiKey],

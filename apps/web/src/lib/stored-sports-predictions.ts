@@ -1,5 +1,5 @@
 /**
- * Loads persisted OpenRouter predictions from the internal API and attaches them
+ * Loads persisted LLM predictions from the internal API and attaches them
  * to live TheSportsDB fixtures by the provider's stable source match id.
  */
 import type { SportApiMatch, SportApiPrediction } from "@/lib/sports-api-data";
@@ -68,8 +68,9 @@ function normalizePrediction(row: StoredPredictionRow): SportApiPrediction | nul
   const predictedHome = numberValue(row.predicted_home);
   const predictedAway = numberValue(row.predicted_away);
   const modelId = stringValue(row.model_id);
+  const provider = normalizeProvider(stringValue(row.model_provider));
   const modelKey = getModelKey(modelId, stringValue(row.model_name));
-  if (predictedHome === null || predictedAway === null || !modelKey) {
+  if (predictedHome === null || predictedAway === null || !modelKey || !provider) {
     return null;
   }
 
@@ -78,7 +79,7 @@ function normalizePrediction(row: StoredPredictionRow): SportApiPrediction | nul
     modelKey,
     modelName: stringValue(row.model_name) || modelKey.toUpperCase(),
     modelVersion: stringValue(row.model_version) || null,
-    provider: "OpenRouter",
+    provider,
     predictedHome,
     predictedAway,
     confidence: numberValue(row.confidence),
@@ -91,7 +92,14 @@ function getModelKey(modelId: string, modelName: string): SportApiPrediction["mo
   const value = `${modelId}:${modelName}`.toLowerCase();
   if (value.includes("pulse")) return "pulse";
   if (value.includes("edge")) return "edge";
-  if (value.includes("nexus") || value.startsWith("openrouter:")) return "nexus";
+  if (value.includes("nexus") || value.startsWith("openrouter:") || value.startsWith("bedrock:")) return "nexus";
+  return null;
+}
+
+function normalizeProvider(value: string): SportApiPrediction["provider"] | null {
+  const normalized = value.toLowerCase();
+  if (normalized === "openrouter") return "OpenRouter";
+  if (normalized === "bedrock" || normalized === "amazon bedrock") return "Bedrock";
   return null;
 }
 

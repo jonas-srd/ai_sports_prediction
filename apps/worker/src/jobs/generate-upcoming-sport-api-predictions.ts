@@ -1,15 +1,15 @@
 /**
- * Purpose: Creates OpenRouter predictions for newly discovered Sport API fixtures.
+ * Purpose: Creates configured LLM predictions for newly discovered Sport API fixtures.
  */
 import {
-  openRouterPredictionProfileExists,
+  predictionProfileExists,
   storeMatchDataSnapshot,
   type PostgresDb,
   upsertPredictionMatch,
   upsertPredictionModel,
   upsertStoredPrediction
 } from "@ai-sports-prediction/db";
-import { generatePublicSportsPredictions, OpenRouterClient } from "@ai-sports-prediction/llm";
+import { createConfiguredLlmClient, generatePublicSportsPredictions } from "@ai-sports-prediction/llm";
 
 export type SportId = "football" | "nfl" | "nba" | "tennis";
 
@@ -64,32 +64,25 @@ export const AUTOMATIC_PREDICTION_LEAD_DAYS = 7;
 
 export async function generateUpcomingSportApiPredictions(db: PostgresDb) {
   const apiKey = getFirstEnv(["THE_SPORTS_DB_API_KEY", "THE_SPORTSDB_API_KEY", "THESPORTSDB_API_KEY"]);
-  const openRouterApiKey = process.env.OPENROUTER_API_KEY;
 
   if (!apiKey) {
     throw new Error("THE_SPORTS_DB_API_KEY is required to generate upcoming predictions.");
   }
 
-  if (!openRouterApiKey) {
-    throw new Error("OPENROUTER_API_KEY is required to generate upcoming predictions.");
-  }
-
-  const modelId = getOpenRouterModelId();
-  await Promise.all(PUBLIC_PREDICTION_PROFILES.map((profile) => upsertPredictionModel(db, {
-    id: getPublicPredictionModelId(modelId, profile),
-    name: profile.toUpperCase(),
-    provider: "OpenRouter",
-    modelVersion: modelId,
-    modelFamily: "openrouter",
-    supportsToolAccess: false,
-    isOpenWeight: modelId.includes("gpt-oss")
-  })));
-
-  const client = new OpenRouterClient({
-    apiKey: openRouterApiKey,
-    siteUrl: process.env.OPENROUTER_SITE_URL,
-    siteName: process.env.OPENROUTER_SITE_NAME
+  const configuredLlm = createConfiguredLlmClient({
+    openRouterModelId: getOpenRouterModelId(),
+    bedrockModelId: process.env.PUBLIC_PREDICTION_BEDROCK_MODEL
   });
+  const { client, modelId, provider, providerLabel } = configuredLlm;
+  await Promise.all(PUBLIC_PREDICTION_PROFILES.map((profile) => upsertPredictionModel(db, {
+    id: getPublicPredictionModelId(provider, modelId, profile),
+    name: profile.toUpperCase(),
+    provider: providerLabel,
+    modelVersion: modelId,
+    modelFamily: provider,
+    supportsToolAccess: false,
+    isOpenWeight: provider === "openrouter" && modelId.includes("gpt-oss")
+  })));
   const fixtures = prioritizeFixturesForCoverage(await fetchUpcomingFixtures(apiKey));
   const fixtureLimit = readPositiveInteger(process.env.PREDICTION_AUTOMATION_MAX_FIXTURES_PER_RUN, 500);
   let created = 0;
@@ -129,7 +122,7 @@ export async function generateUpcomingSportApiPredictions(db: PostgresDb) {
 
     const missingProfiles: Array<typeof PUBLIC_PREDICTION_PROFILES[number]> = [];
     for (const profile of PUBLIC_PREDICTION_PROFILES) {
-      if (await openRouterPredictionProfileExists(db, matchId, profile)) {
+      if (await predictionProfileExists(db, matchId, profile, provider)) {
         skipped += 1;
       } else {
         missingProfiles.push(profile);
@@ -146,7 +139,7 @@ export async function generateUpcomingSportApiPredictions(db: PostgresDb) {
         .filter((prediction) => missingProfiles.includes(prediction.profile))
         .map((prediction) => upsertStoredPrediction(db, {
           matchId,
-          modelId: getPublicPredictionModelId(modelId, prediction.profile),
+          modelId: getPublicPredictionModelId(provider, modelId, prediction.profile),
           predictedHome: prediction.predictedHome,
           predictedAway: prediction.predictedAway,
           confidence: prediction.confidence,
@@ -172,8 +165,12 @@ export async function generateUpcomingSportApiPredictions(db: PostgresDb) {
   console.log(`Upcoming prediction job finished: ${created} created, ${skipped} skipped, ${failed} failed.`);
 }
 
-function getPublicPredictionModelId(modelId: string, profile: typeof PUBLIC_PREDICTION_PROFILES[number]) {
-  return `openrouter:${modelId}:${profile}`;
+function getPublicPredictionModelId(
+  provider: "openrouter" | "bedrock",
+  modelId: string,
+  profile: typeof PUBLIC_PREDICTION_PROFILES[number]
+) {
+  return `${provider}:${modelId}:${profile}`;
 }
 
 export async function fetchUpcomingFixtures(

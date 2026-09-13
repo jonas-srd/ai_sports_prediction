@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { openRouterPredictionProfileExists, type PostgresDb } from "@ai-sports-prediction/db";
+import { predictionProfileExists, type PostgresDb } from "@ai-sports-prediction/db";
 import {
   AUTOMATIC_PREDICTION_LEAD_DAYS,
   fetchUpcomingFixtures,
@@ -46,10 +46,10 @@ test("treats a stored profile as complete even when the configured model version
     }
   } as unknown as PostgresDb;
 
-  assert.equal(await openRouterPredictionProfileExists(db, "sport-api:fixture-1", "nexus"), true);
-  assert.match(sql, /lower\(m\.provider\) = 'openrouter'/u);
+  assert.equal(await predictionProfileExists(db, "sport-api:fixture-1", "nexus", "bedrock"), true);
+  assert.match(sql, /lower\(m\.provider\) = \$3/u);
   assert.match(sql, /lower\(m\.name\) = \$2/u);
-  assert.deepEqual(parameters, ["sport-api:fixture-1", "nexus"]);
+  assert.deepEqual(parameters, ["sport-api:fixture-1", "nexus", "bedrock"]);
 });
 
 test("prioritizes every sport and competition before taking a second fixture from one league", () => {

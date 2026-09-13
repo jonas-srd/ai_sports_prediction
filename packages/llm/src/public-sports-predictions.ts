@@ -1,4 +1,5 @@
-import { OpenRouterResponseError, type OpenRouterClient } from "./openrouter-client";
+import { BedrockResponseError } from "./bedrock-client";
+import { OpenRouterResponseError, type ChatCompletionClient } from "./openrouter-client";
 
 export type PublicPredictionProfileKey = "nexus" | "pulse" | "edge";
 
@@ -31,7 +32,7 @@ export type GeneratedPublicPrediction = {
 const PROFILE_KEYS: PublicPredictionProfileKey[] = ["nexus", "pulse", "edge"];
 
 export async function generatePublicSportsPredictions(
-  client: OpenRouterClient,
+  client: ChatCompletionClient,
   modelId: string,
   fixture: PublicPredictionFixture
 ): Promise<GeneratedPublicPrediction[]> {
@@ -59,7 +60,7 @@ export async function generatePublicSportsPredictions(
         const reason = typeof row.reason === "string" ? row.reason.trim() : "";
 
         if (predictedHome === null || predictedAway === null || confidence === null || !reason) {
-          throw new Error(`OpenRouter returned an invalid ${profile} public prediction.`);
+          throw new Error(`The LLM provider returned an invalid ${profile} public prediction.`);
         }
 
         return {
@@ -84,12 +85,12 @@ export async function generatePublicSportsPredictions(
         };
       });
     } catch (error) {
-      if (error instanceof OpenRouterResponseError) throw error;
+      if (error instanceof OpenRouterResponseError || error instanceof BedrockResponseError) throw error;
       lastError = error;
     }
   }
 
-  throw lastError instanceof Error ? lastError : new Error("OpenRouter public prediction generation failed.");
+  throw lastError instanceof Error ? lastError : new Error("Public prediction generation failed.");
 }
 
 function buildPublicPredictionPrompt(fixture: PublicPredictionFixture) {
@@ -120,7 +121,7 @@ function parseJsonObject(value: string): Record<string, unknown> {
   const cleaned = value.trim().replace(/^```(?:json)?\s*/i, "").replace(/\s*```$/i, "");
   const parsed = JSON.parse(cleaned);
   if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
-    throw new Error("OpenRouter public prediction response was not a JSON object.");
+    throw new Error("Public prediction response was not a JSON object.");
   }
   return parsed as Record<string, unknown>;
 }

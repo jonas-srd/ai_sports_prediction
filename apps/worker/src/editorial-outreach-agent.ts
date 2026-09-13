@@ -4,7 +4,7 @@
  */
 import { randomUUID } from "node:crypto";
 import type { PostgresDb } from "@ai-sports-prediction/db";
-import { OpenRouterClient } from "@ai-sports-prediction/llm";
+import { createConfiguredLlmClient } from "@ai-sports-prediction/llm";
 
 const BOT_NAME = "Residual-Sports-OutreachBot";
 const BOT_CONTACT_URL = process.env.OUTREACH_BOT_CONTACT_URL
@@ -505,20 +505,14 @@ export function parseAiDraft(content: string): { subject: string; textBody: stri
 
 async function createPersonalizedDraft(publisher: ResearchedPublisher): Promise<OutreachDraft> {
   const fallback = buildFallbackDraft(publisher);
-  const apiKey = process.env.OPENROUTER_API_KEY;
-  if (!apiKey) {
-    return { ...fallback, modelId: null, providerResponseId: null };
-  }
-
-  const modelId = process.env.OUTREACH_OPENROUTER_MODEL
+  const openRouterModelId = process.env.OUTREACH_OPENROUTER_MODEL
     ?? process.env.OPENROUTER_MODEL_IDS?.split(",").map((item) => item.trim()).find(Boolean)
     ?? "openai/gpt-oss-20b:free";
-  const client = new OpenRouterClient({
-    apiKey,
-    siteUrl: process.env.OPENROUTER_SITE_URL,
-    siteName: process.env.OPENROUTER_SITE_NAME
-  });
   try {
+    const { client, modelId } = createConfiguredLlmClient({
+      openRouterModelId,
+      bedrockModelId: process.env.OUTREACH_BEDROCK_MODEL
+    });
     const completion = await client.createChatCompletion(modelId, buildDraftPrompt(publisher), {
       temperature: 0.2,
       maxTokens: 800,

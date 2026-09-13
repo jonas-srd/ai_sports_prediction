@@ -17,5 +17,9 @@ Vor dem Update speichert der Workflow die beiden aktiven ECS-Task-Versionen. Fal
 4. Die Berechtigung aus [github-actions-deployment-policy.json](../infra/iam/github-actions-deployment-policy.json) an diese Rolle hängen.
 5. In GitHub unter **Settings → Environments → production** mindestens eine Freigabe durch euch aktivieren.
 6. In GitHub unter **Settings → Secrets and variables → Actions** das Secret `AWS_GITHUB_DEPLOY_ROLE_ARN` mit der ARN dieser Rolle speichern.
+7. Die Produktionsvorgaben sind Konto `186581960948`, Region `eu-central-1`,
+   `LLM_PROVIDER=bedrock` und `BEDROCK_MODEL_ID=eu.amazon.nova-2-lite-v1:0`.
+   Die gleichnamigen Variablen der Umgebung `production` können diese Vorgaben
+   überschreiben. Für eine Rückkehr zu OpenRouter `LLM_PROVIDER=openrouter` setzen.
 
 Es werden keine AWS-Zugangsschlüssel in GitHub gespeichert. GitHub erhält für jeden Deployment-Lauf nur eine kurzlebige, auf dieses Repository beschränkte AWS-Sitzung.

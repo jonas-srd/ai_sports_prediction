@@ -54,7 +54,7 @@ export type SportApiPrediction = {
   modelKey: "nexus" | "pulse" | "edge";
   modelName: string;
   modelVersion: string | null;
-  provider: "OpenRouter";
+  provider: "OpenRouter" | "Bedrock";
   predictedHome: number;
   predictedAway: number;
   confidence: number | null;

@@ -10,7 +10,7 @@ apps/api      dedicated HTTP API backed by Postgres
 apps/worker   queue-backed jobs, migrations, exports, backup verification
 
 packages/db      Postgres client, migrations, API repository helpers
-packages/llm     model configuration, prompts, OpenRouter access
+packages/llm     model configuration, prompts, OpenRouter and Bedrock access
 packages/scorer  deterministic scoring logic
 ```
 
@@ -28,7 +28,10 @@ Required production variables:
 ```text
 DATABASE_URL=
 REDIS_URL=
-OPENROUTER_API_KEY=
+LLM_PROVIDER=openrouter
+AWS_REGION=eu-central-1
+BEDROCK_MODEL_ID=
+OPENROUTER_API_KEY=<required when LLM_PROVIDER=openrouter>
 OPENROUTER_MODEL_IDS=openai/gpt-oss-20b:free
 FOOTBALL_DATA_API_KEY=
 AI_SPORTS_API_URL=
@@ -96,6 +99,7 @@ See `docs/backup_and_restore.md`.
 - `docs/stable_backend_architecture.md`
 - `docs/backup_and_restore.md`
 - `docs/AWS_ECS_FARGATE.md`
+- `docs/AWS_BEDROCK.md`
 - `docs/CLOUDFLARE_TUNNEL.md`
 - `docs/RAILWAY.md`
 - `docs/worldcup2026_benchmark_protocol.md`

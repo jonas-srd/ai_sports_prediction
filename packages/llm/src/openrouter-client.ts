@@ -49,13 +49,29 @@ export type OpenRouterChatResult = {
   toolMetadata: OpenRouterToolMetadata;
 };
 
+/**
+ * Common chat surface implemented by every supported LLM provider.
+ * The OpenRouter-prefixed option/result names remain exported for backwards
+ * compatibility while Bedrock uses the same provider-neutral contract.
+ */
+export type ChatCompletionClient = {
+  createChatCompletion(
+    modelId: string,
+    prompt: string,
+    options?: OpenRouterChatOptions
+  ): Promise<OpenRouterChatResult>;
+};
+
+export type LlmChatOptions = OpenRouterChatOptions;
+export type LlmChatResult = OpenRouterChatResult;
+
 export type OpenRouterClientOptions = {
   apiKey: string;
   siteUrl?: string;
   siteName?: string;
 };
 
-export class OpenRouterClient {
+export class OpenRouterClient implements ChatCompletionClient {
   private readonly apiKey: string;
   private readonly siteUrl?: string;
   private readonly siteName?: string;

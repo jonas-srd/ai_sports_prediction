@@ -89,7 +89,7 @@ Create Secrets Manager entries:
 ```text
 ai-sports-prediction/database-url
 ai-sports-prediction/redis-url
-ai-sports-prediction/openrouter-api-key
+ai-sports-prediction/openrouter-api-key  # only required for LLM_PROVIDER=openrouter
 ai-sports-prediction/football-data-api-key
 ai-sports-prediction/admin-api-token
 ai-sports-prediction/resend-api-key
@@ -102,6 +102,11 @@ should be allowed to write only to:
 ```text
 arn:aws:s3:::ai-sports-prediction/ai-sports-prediction/backups/*
 ```
+
+When `LLM_PROVIDER=bedrock`, the same task role also needs
+`bedrock:InvokeModel` for the exact configured foundation model or inference
+profile. Do not grant `bedrock:*`. Run `npm run aws:configure-bedrock` after
+setting `AWS_REGION` and `BEDROCK_MODEL_ID`; see `docs/AWS_BEDROCK.md`.
 
 ## 4. Container Image
 
@@ -240,7 +245,10 @@ Worker:
 SERVICE_ROLE=worker
 DATABASE_URL=<secret>
 REDIS_URL=<secret>
-OPENROUTER_API_KEY=<secret>
+LLM_PROVIDER=openrouter
+AWS_REGION=eu-central-1
+BEDROCK_MODEL_ID=<required when LLM_PROVIDER=bedrock>
+OPENROUTER_API_KEY=<required when LLM_PROVIDER=openrouter>
 OPENROUTER_MODEL_IDS=openai/gpt-oss-20b:free
 THE_SPORTS_DB_API_KEY=<secret>
 THE_ODDS_API_KEY=<secret>
