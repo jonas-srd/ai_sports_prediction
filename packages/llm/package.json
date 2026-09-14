@@ -9,8 +9,8 @@
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
   "devDependencies": {
-    "@types/node": "latest",
-    "typescript": "latest"
+    "@types/node": "^26.5.1",
+    "typescript": "^7.0.2"
   },
   "dependencies": {
     "@aws-sdk/client-bedrock-runtime": "^3.1131.0"
