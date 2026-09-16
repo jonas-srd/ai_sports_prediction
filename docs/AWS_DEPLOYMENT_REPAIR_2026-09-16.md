@@ -1,6 +1,6 @@
 # Build-/Deployment-Reparatur vom 16.09.2026
 
-Stand: 16.09.2026, 20:29 UTC. Auftrag: alle am 16.09. diagnostizierten Fehler beheben. Lokale Reparaturen und sichere Vorarbeiten sind abgeschlossen; **die Datenbank-Umschaltung ist noch nicht erfolgt**. Die gesonderte Freigabe der kurzen Produktionsunterbrechung wurde erneut angefragt und steht aus.
+Stand: 16.09.2026, 20:47 UTC. **Datenbank-Umschaltung und Live-Abnahme erfolgreich.** Der Nutzer hat nach seinem Push die kurze Produktionsunterbrechung ausdrücklich freigegeben. Revision 66 läuft mit genau einem Task; Website, Datenbank-API, echte neue Bedrock-Prognosen und frisches verifiziertes Backup sind nachgewiesen. Normale CI-Deployments bleiben gesperrt: der GitHub-Rolle fehlt ein Leserecht, und danach greift weiterhin der absichtliche Recovery-Schutz.
 
 ## Implementierte Code-Korrekturen
 
@@ -15,10 +15,10 @@ Stand: 16.09.2026, 20:29 UTC. Auftrag: alle am 16.09. diagnostizierten Fehler be
 
 - TypeScript 6.0.3: gesamtes `npm run typecheck` und Produktions-Build erfolgreich, 4.889 Seiten.
 - TypeScript 7.0.2: isoliert im temporären Verzeichnis installiert, sämtliche Workspace-Typechecks und Nexts tatsächlicher CLI-Prüfer inklusive generierter Routentypen erfolgreich. Keine Änderung der Projekt-Abhängigkeiten oder Lockdatei.
-- 81 Webtests, 67 Worker-/Pakettests und 35 Betriebsskript-Tests erfolgreich (183 insgesamt).
-- `git diff --check` erfolgreich. Kein Commit, Push oder erneuter GitHub-Workflow-Start durchgeführt.
+- 81 Webtests, 67 Worker-/Pakettests und zunächst 35 Betriebsskript-Tests erfolgreich (183 insgesamt). Nach dem zusätzlich diagnostizierten CI-Leserechtfehler bestehen 38 Betriebsskript-Tests (186 insgesamt); `git diff --check` erfolgreich.
+- Nutzer-Push `ecde6f937346b678678fe86e6366a546532ad15b`: [Quality checks](https://github.com/jonas-srd/ai_sports_prediction/actions/runs/35147190460) vollständig erfolgreich. [Deploy production](https://github.com/jonas-srd/ai_sports_prediction/actions/runs/35147190530) bestand ebenfalls Audit, Typecheck, Tests und Build; scheiterte danach vor allen Deployment-Mutationen an fehlendem `ecs:DescribeTaskDefinition`. Diagnose-/Policy-Ergänzung lokal vorbereitet, nicht gepusht und nicht auf IAM angewandt; siehe [CI-Berechtigungen](GITHUB_ACTIONS_DEPLOYMENT.md).
 
-## AWS-Vorarbeiten und neue Nachweise
+## AWS-Vorarbeiten vor der Umschaltung (historisch)
 
 - Konto `186581960948`, Region `eu-central-1` bestätigt.
 - Die durch den fehlerhaften Rollback reaktivierten erfolglosen Startversuche von `ai-sports-prediction-worker:23` wurden beendet: `desired=0`, `running=0`, `pending=0`. Der Web-/Edge-Service blieb unverändert auf Revision 65 mit einem laufenden Task.
@@ -28,14 +28,31 @@ Stand: 16.09.2026, 20:29 UTC. Auftrag: alle am 16.09. diagnostizierten Fehler be
 - Ein vorgeschalteter kurzlebiger No-op-Task `6dd54fdddf9c4be6a1cdca716f9ad564` ebenfalls beendet mit Exitcode 0. Die ersten zwei Registrierungsversuche des Prüf-Tasks scheiterten lokal am nicht lesbaren CLI-stdin-Dateipfad, bevor AWS eine neue Taskdefinition anlegte; anschließend gelang die Registrierung über eine geschützte Datei ohne Secret-Werte.
 - Geschützte aggregierte Nachweise und aktuelle Baseline: `exports/recovery-cutover/2026-09-16/`, aus Git ausgeschlossen. Secret-Parameter unverändert auf Version 1, alter DB-Hostname. Kein Secret-Wert in Dateien, Argumenten oder Protokollen gespeichert.
 
-## Noch erforderlich
+## Umschaltplan und Ausführung
 
-1. Ausdrückliche Freigabe der kurzen Website-Unterbrechung abwarten; nicht durch ein alternatives Deployment umgehen.
+1. Ausdrückliche Freigabe der kurzen Website-Unterbrechung wurde nach dem Nutzer-Push mit „ja“ erteilt.
 2. Unmittelbar davor aktive Dienste/Tasks, DB-Verfügbarkeit und Aktualität des lesenden Nachweises erneut prüfen. Ursprünglichen Bereinigungsnachweis vom 13.09. erhalten; bei veraltetem Nachweis ausschließlich `prove` wiederholen.
 3. Vorherige Task-ARNs erfassen, Edge kontrolliert stoppen und **tatsächlichen STOPPED-Status aller vorherigen Tasks** bestätigen; gewünschter Status oder Service-Zähler alleine reichen nicht.
 4. Nur den Host des bestehenden SecureString-Parameters auf die Recovery-DB wechseln, sonst alle URL-Bestandteile erhalten. Offizielles AWS-SSM-SDK mit Wert ausschließlich im Speicher verwenden; Readback und erhaltene Version 1 prüfen. Bei ungewissem Ergebnis zuerst Metadaten prüfen, nicht blind wiederholen.
-5. Eingeschränkte Revision 66 mit genau einem Task starten, separaten Worker bei null lassen. Nicht automatisch auf Revision 65 mit wiederhergestelltem Datenbankziel zurückrollen, da dies die geschützten Geschäftsfunktionen reaktivieren könnte.
+5. Eingeschränkte Revision 66 mit genau einem Task starten, separaten Worker bei null lassen. **Zuerst bei Taskzahl null auf genau einen abgeschlossenen PRIMARY-Rollout der Zielrevision warten, danach ausschließlich die Taskzahl erhöhen. Revisionswechsel und Erhöhung nicht kombinieren.** Nicht automatisch auf Revision 65 mit wiederhergestelltem Datenbankziel zurückrollen, da dies die geschützten Geschäftsfunktionen reaktivieren könnte.
 6. ECS-Stabilität **und** laufenden Recovery-Worker, dessen Readiness/Jobausgänge, DB-gestützte öffentliche Endpunkte, neue echte Bedrock-Prognosen und frisches verifiziertes Backup nachweisen. Der Worker ist nicht essenziell; ein stabiler ECS-Service allein genügt nicht.
-7. Ergebnis hier und im [Cutover-Protokoll](AWS_RDS_CUTOVER_2026-09-13.md) nachtragen. Standard-Deployment und geschäftliche Nebenwirkungen erst nach eigenständig geprüftem Übergang freigeben.
+7. Abschluss unten dokumentiert und im [Cutover-Protokoll](AWS_RDS_CUTOVER_2026-09-13.md) verlinkt. Standard-Deployment und geschäftliche Nebenwirkungen bleiben bis zu einem eigenständig geprüften Übergang gesperrt.
+
+## Verifizierter Abschluss
+
+- Bisheriger Produktionstask `261faac9deb74a7b85aa1963b405df22` tatsächlich `STOPPED` vor Secret-Wechsel bestätigt. Um 20:38:03.958 UTC ausschließlich den Host im Parameter `/ai-sports-prediction/database-url` ersetzt. SecureString-Version 2, `alias/aws/ssm`, Standard-Tier; URL-Zugangsdaten und Optionen unverändert, Readback erfolgreich, alte Version 1 erhalten. Offizielles SDK hielt den Wert nur im Speicher.
+- Endgültiger Produktionstask `3df49ee24e9841f4bf54527d2157d3a3`, Revision 66, Start 20:42:35.721 UTC. Vier Container (`web`, `api`, `worker`, `cloudflared`) `RUNNING`; einziger PRIMARY-Rollout `COMPLETED`; `desired=running=1`, `pending=0`. Separater Worker-Service weiterhin `desired=running=pending=0`. Abschließendes `list-tasks` zeigt nur diesen Produktionstask; alle Prüf-Tasks sind beendet.
+- Öffentliche Abnahme 20:46:18 UTC: `https://residualsports.com/api/health` HTTP 200, Webdienst gesund; `https://api.residualsports.com/health` HTTP 200, `postgres.ok=true`, aktuelle DB-Uhrzeit. Drei frisch erzeugte Prognosen für reales Quellspiel `2506233` öffentlich über `/v1/predictions` abrufbar, Profile `nexus`, `pulse`, `edge`, Provider `Bedrock`, Modell `eu.amazon.nova-2-lite-v1:0`.
+- Enger Abschlussprüflauf seit dem endgültigen Taskstart: `8d858c7c8ad146e0a92a458bcc1afce1`, Taskdefinition `cutover-check:6`, Exitcode 0. Genau drei neue Prognosen und drei passende Revisionen für ein reales Spiel, alle Profile; sämtliche Integritäts-/Migrations-/Triggerchecks weiterhin erfolgreich, keine künstlichen Datensätze.
+- Frisches Backup nach diesen Prognosen: Artefakt `8e12b9f0-274c-49bf-a090-0ada8eb8acc5`, S3-Key `ai-sports-prediction/backups/recovery-production-20260913/postgres-logical-2026-09-16T20-42-42-636Z.jsonl.gz`, 3.352.055 Bytes, SHA256 `9fcd69e884604227523182a1d0483e941e4f5591b818452b5f8ba64fdadf33a2`, S3-Version `ZbzYrRFLEq7JFQXSGbTH5vqMwHlm5oOO`, SSE-S3/AES256. Download-/temporärer Restore-Audit erfolgreich um 20:43:10 UTC; Existenz, Größe und Verschlüsselung nochmals per S3-Head geprüft. Kein vollständiger Fremdschlüssel-Restore-Nachweis; bestehende Export-/Lifecycle-Grenzen bleiben unverändert.
+- Geschützte aggregierte Nachweise: `secret-switch.json`, `production-proof-passed.json`, `production-proof-final-passed.json`, `final-live-check.json`, `old65-readonly-audit.json` unter `exports/recovery-cutover/2026-09-16/` (nicht in Git).
+
+## Übergangsereignis und Nachprüfung
+
+Beim ersten kombinierten Update auf Revision 66 **und** Taskzahl 1 startete ECS während des Rolling-Übergangs kurz zusätzlich die vorherige Revision 65 (`5f5f507abdf44530a3d4a543d883e904`). Dies war kein Circuit-Breaker-Rollback. Nach Erkennen wurden beide Übergangs-Tasks wieder kontrolliert gestoppt. Revision 65 war um 20:40:16 UTC vollständig gestoppt; anschließend wurde bei Taskzahl null auf genau einen abgeschlossenen Rollout von Revision 66 gewartet und erst dann ausschließlich auf einen Task skaliert.
+
+Der alte Worker lief zwischen 20:38:52 und 20:39:42 UTC und verband die bisherigen Queues. Datenbank-/Logaudit des Zeitfensters 20:38:03–20:40:30 zeigt eine erfolgreiche Spielplansynchronisierung, zwei erfolgreiche Live-Ergebnisläufe und einen begonnenen Prognoselauf. Dieser bleibt in der historischen Job-Buchführung als `running` markiert, ist aber kein aktiver ECS-Prozess; keine Queue oder Auditzeile wurde gelöscht. Die erste Gesamt-Abnahme fand 147 reale neue Bedrock-Prognosen/Revisionen für 49 Spiele im Übergangsfenster, einschließlich des ersten eingeschränkten Prognose-Durchlaufs. Diese echten Prognosen wurden erhalten; die Begrenzung des endgültigen Recovery-Workers ist nicht als Begrenzung des kurzen alten Laufs zu verstehen.
+
+Isolierter Audit-Task `7b8390a9c29a4025b1cbe78f9121faa8`, Exitcode 0, rein lesend: **null Geschäftsjobs und null protokollierte Geschäftsvorgänge in 13 Prüfungen**, darunter Versand, Veröffentlichungen, Umsatzereignisse, Kunden-Login-Token und Kontakt-/Erinnerungsaktionen. Das ist ein Anwendungslog-/Datenbanknachweis, keine unabhängige Prüfung externer Zustellprovider. Der endgültige Recovery-Worker meldet `redisConnected=false`, `externalBusinessJobsEnabled=false`; Geschäfts-Secrets bleiben entfernt.
 
 Die alte defekte Datenbank und alle vorhandenen Backups bleiben erhalten. Der ursprüngliche Daten-Wiederherstellungspunkt bleibt 26.08.2026, 08:48:39 MESZ.

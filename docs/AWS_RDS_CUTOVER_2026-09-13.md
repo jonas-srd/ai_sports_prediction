@@ -1,6 +1,6 @@
 # Produktionsumschaltung auf die wiederhergestellte RDS-Instanz
 
-Nachtrag 16.09.2026: Build-/Rollback-Reparaturen und frischer lesender Integritätscheck abgeschlossen; Umschaltung weiterhin ausstehend. Aktueller Stand und Sicherheitsbedingungen: [Deployment-Reparatur](AWS_DEPLOYMENT_REPAIR_2026-09-16.md).
+Nachtrag 16.09.2026, 20:47 UTC: **Umschaltung nach ausdrücklicher Unterbrechungsfreigabe abgeschlossen.** Secret-Version 2 verweist auf die Recovery-Datenbank; genau ein Task der eingeschränkten Revision 66 läuft. Website/DB-API, neue echte Bedrock-Prognosen und frisches verifiziertes Backup erfolgreich geprüft. Ablauf, kurzes Übergangsereignis und Nachprüfung: [Deployment-Reparatur](AWS_DEPLOYMENT_REPAIR_2026-09-16.md). Die folgenden Abschnitte dokumentieren den historischen Vorbereitungsstand vom 13.09.; ihre damaligen offenen Schritte wurden am 16.09. gemäß dem Nachtrag ausgeführt.
 
 Stand: 13.09.2026, 15:07 UTC. Der Nutzer hat die Produktionsanbindung von Bedrock und der wiederhergestellten Datenbank beauftragt. **Die Umschaltung ist vorbereitet, aber noch nicht ausgeführt:** Die automatische Freigabe hat das Stoppen des bisherigen ECS-Services wegen der kurzfristigen Nichterreichbarkeit abgelehnt. Die ausdrückliche Freigabe dieser Unterbrechung wurde angefragt. Kein Umgehen dieser Sperre.
 

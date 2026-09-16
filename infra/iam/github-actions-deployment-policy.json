@@ -16,6 +16,17 @@
       "Resource": "*"
     },
     {
+      "Sid": "ReadTaskDefinitionsForRecoveryPreflight",
+      "Effect": "Allow",
+      "Action": "ecs:DescribeTaskDefinition",
+      "Resource": "*",
+      "Condition": {
+        "StringEquals": {
+          "aws:RequestedRegion": "eu-central-1"
+        }
+      }
+    },
+    {
       "Sid": "PassOnlyApplicationTaskRoles",
       "Effect": "Allow",
       "Action": "iam:PassRole",

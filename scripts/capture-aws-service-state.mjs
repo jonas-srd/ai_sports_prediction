@@ -7,10 +7,24 @@ export function captureServiceState({ aws, configuration }) {
   assertAccount(aws, configuration);
   const services = currentServices(aws, configuration);
   const edge = services.find((service) => service.key === "edge");
-  const definition = JSON.parse(aws([
-    "ecs", "describe-task-definition", "--task-definition", edge.taskDefinition,
-    "--query", "taskDefinition", "--output", "json"
-  ]));
+  let definition;
+  try {
+    definition = JSON.parse(aws([
+      "ecs", "describe-task-definition", "--task-definition", edge.taskDefinition,
+      "--query", "taskDefinition", "--output", "json"
+    ]));
+  } catch (error) {
+    if (/AccessDenied|not authorized/i.test(String(error?.stderr ?? error?.message ?? ""))) {
+      // Do not bypass the recovery guard or dump the full child-process error.
+      // Reading the definition is essential to distinguish recovery from normal production.
+      throw Object.assign(new Error(
+        "Production preflight cannot inspect the active edge task because the deployment role lacks ecs:DescribeTaskDefinition. "
+        + "Have an AWS administrator apply the read permission from infra/iam/github-actions-deployment-policy.json, then rerun preflight. "
+        + "No image publication, migration, or service update has started. The recovery-profile guard remains enforced."
+      ), { code: "PREFLIGHT_TASK_DEFINITION_READ_DENIED" });
+    }
+    throw error;
+  }
   if (!Array.isArray(definition.containerDefinitions) || !definition.containerDefinitions.length) {
     throw new Error("Cannot inspect the current production task definition; refusing deployment.");
   }

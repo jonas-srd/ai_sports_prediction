@@ -15,13 +15,16 @@ const services = () => [
   { serviceName: configuration.worker, status: "ACTIVE", taskDefinition: arn("worker", 23), desiredCount: 0 }
 ];
 
-function fakeAws({ state = services(), definition = { containerDefinitions: [{ name: "worker", environment: [] }] }, failures = [], failUpdate, failWait = false, account = configuration.accountId } = {}) {
+function fakeAws({ state = services(), definition = { containerDefinitions: [{ name: "worker", environment: [] }] }, failures = [], failUpdate, failWait = false, failDescribeDefinition, account = configuration.accountId } = {}) {
   const calls = [];
   const aws = (args) => {
     calls.push(args);
     if (args[0] === "sts") return account;
     if (args[1] === "describe-services") return JSON.stringify({ services: state, failures });
-    if (args[1] === "describe-task-definition") return JSON.stringify(definition);
+    if (args[1] === "describe-task-definition") {
+      if (failDescribeDefinition) throw failDescribeDefinition;
+      return JSON.stringify(definition);
+    }
     if (args[1] === "update-service") {
       if (args[args.indexOf("--service") + 1] === failUpdate) throw new Error("simulated update failure");
       return "{}";
@@ -159,6 +162,46 @@ test("isolated recovery profile fails preflight before any mutation, detected by
 test("unreadable current task definition fails closed before producing a deployment snapshot", () => {
   const mock = fakeAws({ definition: {} });
   assert.throws(() => captureServiceState({ aws: mock.aws, configuration }), /Cannot inspect/);
+});
+
+test("missing task-definition read permission produces an actionable denial without bypassing preflight", () => {
+  for (const error of [
+    Object.assign(new Error("Command failed: aws ecs describe-task-definition"), {
+      stderr: "An error occurred (AccessDeniedException): not authorized to perform ecs:DescribeTaskDefinition"
+    }),
+    new Error("AccessDeniedException when calling DescribeTaskDefinition")
+  ]) {
+    const mock = fakeAws({ failDescribeDefinition: error });
+    assert.throws(() => captureServiceState({ aws: mock.aws, configuration }), (failure) => {
+      assert.equal(failure.code, "PREFLIGHT_TASK_DEFINITION_READ_DENIED");
+      assert.match(failure.message, /deployment role lacks ecs:DescribeTaskDefinition/);
+      assert.match(failure.message, /AWS administrator/);
+      assert.match(failure.message, /recovery-profile guard remains enforced/);
+      return true;
+    });
+    assert.deepEqual(mock.calls.map((args) => args[1]), ["get-caller-identity", "describe-services", "describe-task-definition"]);
+    assert.equal(updates(mock).length, 0);
+  }
+});
+
+test("other task-definition read failures remain failures, without an unsafe recovery fallback", () => {
+  const error = new Error("simulated AWS network timeout");
+  const mock = fakeAws({ failDescribeDefinition: error });
+  assert.throws(() => captureServiceState({ aws: mock.aws, configuration }), (failure) => failure === error);
+  assert.equal(updates(mock).length, 0);
+});
+
+test("deployment policy grants only the required region-limited task-definition read action", () => {
+  const policy = JSON.parse(readFileSync(new URL("../infra/iam/github-actions-deployment-policy.json", import.meta.url), "utf8"));
+  const statements = policy.Statement.filter((statement) => [statement.Action].flat().includes("ecs:DescribeTaskDefinition"));
+  assert.deepEqual(statements, [{
+    Sid: "ReadTaskDefinitionsForRecoveryPreflight",
+    Effect: "Allow",
+    Action: "ecs:DescribeTaskDefinition",
+    // AWS does not support task-definition ARN scoping for this read action.
+    Resource: "*",
+    Condition: { StringEquals: { "aws:RequestedRegion": "eu-central-1" } }
+  }]);
 });
 
 test("workflow guards rollback behind a service-changing step and wires original capacity", () => {
