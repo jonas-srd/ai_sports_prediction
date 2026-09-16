@@ -47,13 +47,27 @@ Schreibrechte und keinen direkten Zugriff auf Secrets-Manager-/SSM-Geheimwerte.
 Siehe die [offizielle AWS-Autorisierungstabelle für ECS](https://docs.aws.amazon.com/es_es/service-authorization/latest/reference/list_amazonelasticcontainerservice.html),
 Zeile `DescribeTaskDefinition` ohne unterstützten Ressourcentyp.
 
-**Diese Änderung ist nur in der lokalen Policy-Vorlage vorbereitet und wurde
-nicht auf die IAM-Rolle in AWS angewendet.** Ein berechtigter Administrator muss
-die Leseberechtigung separat prüfen und übernehmen. Ein Commit oder Push der
-Vorlage ändert keine IAM-Berechtigung.
+**Am 16.09.2026 um 20:56 UTC nach ausdrücklichem Nutzerauftrag live angewendet:**
+Die Rolle `ai-sports-prediction-github-deploy` im Konto `186581960948` hat die
+zusätzliche Inline-Policy `github-actions-recovery-preflight-read` aus
+[github-actions-recovery-read-policy.json](../infra/iam/github-actions-recovery-read-policy.json)
+erhalten. Diese additive Datei enthält ausschließlich das oben beschriebene
+Leserecht. Die bestehende Policy `github-actions-deployment`, alle bisherigen
+Rechte und die OIDC-Vertrauensbedingungen (`aud` und `sub`) blieben nachweislich
+unverändert. Für bestehende Rollen nicht die gesamte Deployment-Policy ersetzen.
+
+Readback entspricht exakt der Vorlage. Der IAM-Simulator für die **GitHub-Rolle**
+bestätigt `ecs:DescribeTaskDefinition` in `eu-central-1` als `allowed` und in
+`us-east-1` als `implicitDeny`, jeweils ohne fehlenden Bedingungskontext.
+Geschützte Vorher-/Nachher-Nachweise liegen unter
+`exports/recovery-cutover/2026-09-16/iam-readfix-{before,after}.json`.
+Ein Commit/Push der lokalen Vorlagen wäre dafür nicht ausreichend gewesen;
+die AWS-Änderung wurde separat vorgenommen. Kein GitHub-Workflow neu gestartet.
 
 Auch nach Erteilung der Leseberechtigung bleibt ein normales Deployment bewusst
 gesperrt, solange die Edge-Task-Definition `RECOVERY_WORKER_APPROVED` oder den
 Befehl `recovery-worker.mjs` enthält: Das Recovery-Profil verzichtet auf reguläre
 Business-Handler und deren Zugangsdaten. Eine Rückkehr zum vollständigen Service
 benötigt einen separat geprüften Rollout und ist kein Preflight-Bypass.
+Die Sperre wurde anschließend rein lesend gegen die laufende Revision 66 erneut
+bestätigt; Produktionsdienste und Taskzahlen blieben unverändert.

@@ -1,6 +1,6 @@
 # Build-/Deployment-Reparatur vom 16.09.2026
 
-Stand: 16.09.2026, 20:47 UTC. **Datenbank-Umschaltung und Live-Abnahme erfolgreich.** Der Nutzer hat nach seinem Push die kurze Produktionsunterbrechung ausdrücklich freigegeben. Revision 66 läuft mit genau einem Task; Website, Datenbank-API, echte neue Bedrock-Prognosen und frisches verifiziertes Backup sind nachgewiesen. Normale CI-Deployments bleiben gesperrt: der GitHub-Rolle fehlt ein Leserecht, und danach greift weiterhin der absichtliche Recovery-Schutz.
+Stand: 16.09.2026, 20:57 UTC. **Datenbank-Umschaltung und Live-Abnahme erfolgreich.** Der Nutzer hat nach seinem Push die kurze Produktionsunterbrechung ausdrücklich freigegeben. Revision 66 läuft mit genau einem Task; Website, Datenbank-API, echte neue Bedrock-Prognosen und frisches verifiziertes Backup sind nachgewiesen. Das fehlende CI-Leserecht wurde um 20:56 UTC auf weiteren ausdrücklichen Auftrag live ergänzt und per IAM-Simulator bestätigt. Normale CI-Deployments bleiben absichtlich durch den Recovery-Schutz gesperrt.
 
 ## Implementierte Code-Korrekturen
 
@@ -16,7 +16,7 @@ Stand: 16.09.2026, 20:47 UTC. **Datenbank-Umschaltung und Live-Abnahme erfolgrei
 - TypeScript 6.0.3: gesamtes `npm run typecheck` und Produktions-Build erfolgreich, 4.889 Seiten.
 - TypeScript 7.0.2: isoliert im temporären Verzeichnis installiert, sämtliche Workspace-Typechecks und Nexts tatsächlicher CLI-Prüfer inklusive generierter Routentypen erfolgreich. Keine Änderung der Projekt-Abhängigkeiten oder Lockdatei.
 - 81 Webtests, 67 Worker-/Pakettests und zunächst 35 Betriebsskript-Tests erfolgreich (183 insgesamt). Nach dem zusätzlich diagnostizierten CI-Leserechtfehler bestehen 38 Betriebsskript-Tests (186 insgesamt); `git diff --check` erfolgreich.
-- Nutzer-Push `ecde6f937346b678678fe86e6366a546532ad15b`: [Quality checks](https://github.com/jonas-srd/ai_sports_prediction/actions/runs/35147190460) vollständig erfolgreich. [Deploy production](https://github.com/jonas-srd/ai_sports_prediction/actions/runs/35147190530) bestand ebenfalls Audit, Typecheck, Tests und Build; scheiterte danach vor allen Deployment-Mutationen an fehlendem `ecs:DescribeTaskDefinition`. Diagnose-/Policy-Ergänzung lokal vorbereitet, nicht gepusht und nicht auf IAM angewandt; siehe [CI-Berechtigungen](GITHUB_ACTIONS_DEPLOYMENT.md).
+- Nutzer-Push `ecde6f937346b678678fe86e6366a546532ad15b`: [Quality checks](https://github.com/jonas-srd/ai_sports_prediction/actions/runs/35147190460) vollständig erfolgreich. [Deploy production](https://github.com/jonas-srd/ai_sports_prediction/actions/runs/35147190530) bestand ebenfalls Audit, Typecheck, Tests und Build; scheiterte danach vor allen Deployment-Mutationen an fehlendem `ecs:DescribeTaskDefinition`. Dieses Recht wurde später separat als Inline-Policy `github-actions-recovery-preflight-read` auf die bestehende Rolle angewandt: Simulator Frankfurt `allowed`, `us-east-1` weiterhin `implicitDeny`. Alte Policy und OIDC-Vertrauen unverändert; Recovery-Sperre live erneut bestätigt. Diagnose-/Dokumentationsänderungen lokal, nicht gepusht; kein Workflow-Rerun. Siehe [CI-Berechtigungen](GITHUB_ACTIONS_DEPLOYMENT.md).
 
 ## AWS-Vorarbeiten vor der Umschaltung (historisch)
 

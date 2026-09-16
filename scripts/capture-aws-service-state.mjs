@@ -19,7 +19,7 @@ export function captureServiceState({ aws, configuration }) {
       // Reading the definition is essential to distinguish recovery from normal production.
       throw Object.assign(new Error(
         "Production preflight cannot inspect the active edge task because the deployment role lacks ecs:DescribeTaskDefinition. "
-        + "Have an AWS administrator apply the read permission from infra/iam/github-actions-deployment-policy.json, then rerun preflight. "
+        + "Have an AWS administrator add the policy from infra/iam/github-actions-recovery-read-policy.json, then rerun preflight. "
         + "No image publication, migration, or service update has started. The recovery-profile guard remains enforced."
       ), { code: "PREFLIGHT_TASK_DEFINITION_READ_DENIED" });
     }

@@ -202,6 +202,8 @@ test("deployment policy grants only the required region-limited task-definition 
     Resource: "*",
     Condition: { StringEquals: { "aws:RequestedRegion": "eu-central-1" } }
   }]);
+  const additive = JSON.parse(readFileSync(new URL("../infra/iam/github-actions-recovery-read-policy.json", import.meta.url), "utf8"));
+  assert.deepEqual(additive, { Version: "2012-10-17", Statement: statements });
 });
 
 test("workflow guards rollback behind a service-changing step and wires original capacity", () => {
