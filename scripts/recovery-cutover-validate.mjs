@@ -19,16 +19,34 @@ export const MATCH_ID = `recovery-verification:${EXPECTED_RUN}`;
 export const MODEL_IDS = ["nexus", "pulse", "edge"].map((p) => `${MATCH_ID}:${p}`);
 const MODEL_VERSION = "eu.amazon.nova-2-lite-v1:0";
 export const PRODUCTION_MODEL_IDS = ["nexus", "pulse", "edge"].map((p) => `bedrock:${MODEL_VERSION}:${p}`);
-export const PRODUCTION_SINCE = "2026-09-13T15:00:00.000Z";
-const PRODUCTION_BEFORE = "2026-09-14T00:00:00.000Z";
 export const PRODUCTION_BACKUP_PREFIX = "s3://ai-sports-prediction/ai-sports-prediction/backups/recovery-production-20260913/";
 const ROOT = process.env.RECOVERY_APP_ROOT ? resolve(process.env.RECOVERY_APP_ROOT) : resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const emit = (event, fields = {}) => console.log(JSON.stringify({ event, ...fields }));
 export const quoteIdentifier = (value) => '"' + value.replaceAll('"', '""') + '"';
 const qualified = (schema, table) => `${quoteIdentifier(schema)}.${quoteIdentifier(table)}`;
 
-export function prepareTarget(env, phase) {
+export function productionProofWindow(env, now = Date.now()) {
+  const parseUtc = (value) => {
+    assert.ok(typeof value === "string" && /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{3})?Z$/.test(value), "EXPLICIT_PRODUCTION_PROOF_UTC_WINDOW_REQUIRED");
+    const timestamp = Date.parse(value);
+    assert.ok(Number.isFinite(timestamp), "INVALID_PRODUCTION_PROOF_TIMESTAMP");
+    assert.equal(new Date(timestamp).toISOString(), value.includes(".") ? value : value.replace("Z", ".000Z"), "INVALID_PRODUCTION_PROOF_TIMESTAMP");
+    return timestamp;
+  };
+  const sinceMs = parseUtc(env.RECOVERY_PROOF_SINCE_UTC);
+  const beforeMs = parseUtc(env.RECOVERY_PROOF_BEFORE_UTC);
+  const dayMs = 24 * 60 * 60 * 1000;
+  assert.ok(Number.isFinite(now), "INVALID_PRODUCTION_PROOF_CLOCK");
+  assert.ok(sinceMs <= now && now - sinceMs <= dayMs, "PRODUCTION_PROOF_START_STALE_OR_FUTURE");
+  assert.ok(beforeMs > now && beforeMs > sinceMs && beforeMs - sinceMs <= dayMs, "PRODUCTION_PROOF_WINDOW_EXPIRED_OR_UNBOUNDED");
+  return { since: new Date(sinceMs).toISOString(), before: new Date(beforeMs).toISOString() };
+}
+
+export function prepareTarget(env, phase, now = Date.now()) {
   assert.ok(["inspect", "cleanup", "prove", "production-proof"].includes(phase), "INVALID_PHASE");
+  // Validate before the first AWS/DB access; a historical proof cannot stand in
+  // for this deployment's new forecasts and backup.
+  const proofWindow = phase === "production-proof" ? productionProofWindow(env, now) : undefined;
   assert.equal(env.RECOVERY_TARGET_DB_IDENTIFIER, EXPECTED_TARGET, "TARGET_IDENTIFIER_MISMATCH");
   assert.equal(env.RECOVERY_TARGET_HOST, EXPECTED_TARGET_HOST, "TARGET_HOST_MISMATCH");
   for (const key of ["AWS_ACCESS_KEY_ID", "AWS_SECRET_ACCESS_KEY", "AWS_SESSION_TOKEN", "AWS_PROFILE", "AWS_SHARED_CREDENTIALS_FILE", "AWS_CONFIG_FILE", "AWS_WEB_IDENTITY_TOKEN_FILE", "AWS_ROLE_ARN", "AWS_CONTAINER_CREDENTIALS_FULL_URI", "PGOPTIONS", "PGSERVICE", "PGSERVICEFILE"]) {
@@ -51,7 +69,7 @@ export function prepareTarget(env, phase) {
     assert.equal(env.RECOVERY_RUN_ID, EXPECTED_RUN, "RUN_ID_MISMATCH");
   }
   url.hostname = EXPECTED_TARGET_HOST;
-  return { host: url.hostname, connectionString: url.toString() };
+  return { host: url.hostname, connectionString: url.toString(), proofWindow };
 }
 
 async function verifyEcsAccount(env) {
@@ -276,7 +294,10 @@ async function cleanup(client) {
   } catch (error) { await client.query("rollback").catch(() => {}); throw error; }
 }
 
-export function assertProductionEvidence(evidence, backup) {
+export function assertProductionEvidence(evidence, backup, window, now = Date.now()) {
+  const { since, before } = productionProofWindow({ RECOVERY_PROOF_SINCE_UTC: window?.since, RECOVERY_PROOF_BEFORE_UTC: window?.before }, now);
+  const inWindow = (timestamp) => Number.isFinite(timestamp) && timestamp >= Date.parse(since)
+    && timestamp < Date.parse(before) && timestamp <= now + 60_000;
   for (const key of ["prediction_count", "matched_revision_count", "profile_count", "fixture_count"]) {
     assert.ok(Number.isSafeInteger(evidence[key]) && evidence[key] >= 0, "INVALID_PRODUCTION_AGGREGATE");
   }
@@ -284,7 +305,8 @@ export function assertProductionEvidence(evidence, backup) {
   assert.equal(evidence.profile_count, 3, "ALL_THREE_PRODUCTION_PROFILES_REQUIRED");
   assert.ok(evidence.fixture_count >= 1, "REAL_PUBLIC_SPORT_FIXTURE_REQUIRED");
   const firstPredictionAt = new Date(evidence.first_generated_at_utc).getTime();
-  assert.ok(Number.isFinite(firstPredictionAt) && firstPredictionAt >= Date.parse(PRODUCTION_SINCE) && firstPredictionAt < Date.parse(PRODUCTION_BEFORE), "FRESH_PRODUCTION_PREDICTIONS_REQUIRED");
+  const latestPredictionAt = new Date(evidence.latest_generated_at_utc).getTime();
+  assert.ok(inWindow(firstPredictionAt) && inWindow(latestPredictionAt) && latestPredictionAt >= firstPredictionAt, "FRESH_PRODUCTION_PREDICTIONS_REQUIRED");
   assert.ok(backup, "FRESH_PRODUCTION_BACKUP_REQUIRED");
   assert.equal(backup.artifact_type, "logical_export", "PRODUCTION_LOGICAL_BACKUP_REQUIRED");
   assert.equal(backup.verification_status, "succeeded", "PRODUCTION_BACKUP_VERIFICATION_REQUIRED");
@@ -295,7 +317,7 @@ export function assertProductionEvidence(evidence, backup) {
   assert.ok(Number.isSafeInteger(Number(backup.bytes)) && Number(backup.bytes) > 0, "PRODUCTION_BACKUP_SIZE_REQUIRED");
   const createdAt = new Date(backup.created_at_utc).getTime();
   const verifiedAt = new Date(backup.verified_at_utc).getTime();
-  assert.ok(Number.isFinite(createdAt) && createdAt >= firstPredictionAt && Number.isFinite(verifiedAt) && verifiedAt >= createdAt, "PRODUCTION_BACKUP_MUST_FOLLOW_FIRST_PREDICTION");
+  assert.ok(inWindow(createdAt) && createdAt >= firstPredictionAt && inWindow(verifiedAt) && verifiedAt >= createdAt, "PRODUCTION_BACKUP_MUST_FOLLOW_FIRST_PREDICTION");
   assert.ok(backup.row_counts && typeof backup.row_counts === "object" && !Array.isArray(backup.row_counts), "PRODUCTION_BACKUP_COUNTS_REQUIRED");
   for (const [key, value] of Object.entries(backup.row_counts)) {
     assert.match(key, /^[a-z][a-z0-9_]{0,62}$/, "INVALID_PRODUCTION_BACKUP_COUNT_NAME");
@@ -303,7 +325,7 @@ export function assertProductionEvidence(evidence, backup) {
   }
 }
 
-async function productionProof(client) {
+async function productionProof(client, window) {
   await begin(client, true);
   try {
     // A matching archived revision is required for each counted real prediction;
@@ -320,7 +342,7 @@ async function productionProof(client) {
         and p.generated_at_utc >= $2::timestamptz and p.generated_at_utc < $4::timestamptz
         and m.id not like 'recovery-verification:%'
     )`;
-    const params = [PRODUCTION_MODEL_IDS, PRODUCTION_SINCE, MODEL_VERSION, PRODUCTION_BEFORE];
+    const params = [PRODUCTION_MODEL_IDS, window.since, MODEL_VERSION, window.before];
     const evidence = (await client.query(`${cte} select count(*)::int as prediction_count,
       coalesce(sum(revision_count),0)::int as matched_revision_count,
       count(distinct model_id)::int as profile_count,count(distinct source_match_id)::int as fixture_count,
@@ -329,14 +351,15 @@ async function productionProof(client) {
     const sample = (await client.query(`${cte} select distinct source_match_id from real_predictions
       where revision_count>0 order by source_match_id limit 5`, params)).rows
       .map((r) => r.source_match_id).filter((id) => typeof id === "string" && /^[A-Za-z0-9:_-]{1,100}$/.test(id));
-    emit("cutover_real_bedrock_aggregate", { ...evidence, modelIds: PRODUCTION_MODEL_IDS, source: "thesportsdb", since: PRODUCTION_SINCE, samplePublicSourceMatchIds: sample });
+    emit("cutover_real_bedrock_aggregate", { ...evidence, modelIds: PRODUCTION_MODEL_IDS, source: "thesportsdb", since: window.since, before: window.before, samplePublicSourceMatchIds: sample });
     const backup = (await client.query(`select ba.id,ba.artifact_type,ba.storage_url,ba.bytes::text,ba.sha256,
       ba.created_at_utc,bv.status as verification_status,bv.verified_at_utc,bv.row_counts
       from backup_artifacts ba join backup_verifications bv on bv.artifact_id=ba.id
-      where ba.storage_url like $1 and ba.created_at_utc >= $2::timestamptz and bv.status='succeeded'
+      where ba.storage_url like $1 and ba.created_at_utc >= $2::timestamptz
+        and ba.created_at_utc < $3::timestamptz and bv.verified_at_utc < $3::timestamptz and bv.status='succeeded'
       order by ba.created_at_utc desc,bv.verified_at_utc desc limit 1`,
-      [`${PRODUCTION_BACKUP_PREFIX}%`, evidence.first_generated_at_utc])).rows[0];
-    assertProductionEvidence(evidence, backup);
+      [`${PRODUCTION_BACKUP_PREFIX}%`, evidence.first_generated_at_utc, window.before])).rows[0];
+    assertProductionEvidence(evidence, backup, window);
     emit("cutover_production_backup_proof", { artifact: backup, followsFirstNewPrediction: true, temporaryRestoreAudit: "succeeded", fullBackupForeignKeyRestoreProven: false });
     await client.query("rollback");
   } catch (error) { await client.query("rollback").catch(() => {}); throw error; }
@@ -369,7 +392,7 @@ export async function main(phase = process.argv[2], env = process.env) {
     }
     if (phase === "production-proof") {
       stage = "read_only_real_bedrock_and_backup_proof";
-      await productionProof(client);
+      await productionProof(client, target.proofWindow);
     }
     emit("cutover_validation_passed", { phase, productionConfigurationChanged: false, syntheticCleanupCommitted: phase === "cleanup", semanticConstraintChecksPassed: true });
   } catch (error) {

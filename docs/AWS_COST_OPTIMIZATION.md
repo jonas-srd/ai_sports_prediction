@@ -48,10 +48,24 @@ removing features.
 
 ## Rollback
 
-If edge verification fails, the workflow keeps the standalone worker running
-and restores the previous task definitions. If a post-deployment check fails,
-run `npm run aws:rollback`; the rollback script restores desired count one for
-both services.
+Before deployment, the workflow snapshots both task-definition ARNs and both
+desired counts. Rollback is eligible only after edge deployment was attempted;
+a migration-only failure does not restart either service. The rollback script
+compares current state with the snapshot and restores only changed services,
+including their exact previous capacity. A previously dormant standalone worker
+stays at zero, even if its old image has since expired.
+
+For a manual rollback, supply `PREVIOUS_EDGE_TASK_DEFINITION`,
+`PREVIOUS_WORKER_TASK_DEFINITION`, `PREVIOUS_EDGE_DESIRED_COUNT`, and
+`PREVIOUS_WORKER_DESIRED_COUNT` from the pre-deployment snapshot when running
+`npm run aws:rollback`. Missing or invalid snapshot values are rejected; never
+guess the previous counts.
+
+The normal workflow fails preflight before image publication, migrations, or
+service changes when the current edge task uses the isolated recovery profile
+(`RECOVERY_WORKER_APPROVED` or `recovery-worker.mjs`). That profile intentionally
+omits business credentials and handlers. It requires a separately reviewed,
+recovery-aware rollout rather than an automatic return to the full service.
 
 Do not delete the ElastiCache queue as part of this rollout. Replacing a durable
 queue with an in-process cache would reduce resilience and would therefore be a

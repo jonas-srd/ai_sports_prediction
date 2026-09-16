@@ -48,10 +48,8 @@ jobs:
           role-session-name: ai-sports-prediction-github-deploy
 
       - id: previous
-        name: Remember current production versions
-        run: |
-          echo "edge=$(aws ecs describe-services --cluster "$ECS_CLUSTER" --services "$ECS_EDGE_SERVICE" --query 'services[0].taskDefinition' --output text)" >> "$GITHUB_OUTPUT"
-          echo "worker=$(aws ecs describe-services --cluster "$ECS_CLUSTER" --services "$ECS_WORKER_SERVICE" --query 'services[0].taskDefinition' --output text)" >> "$GITHUB_OUTPUT"
+        name: Preflight and remember production versions and capacity
+        run: node scripts/capture-aws-service-state.mjs
 
       - uses: docker/setup-qemu-action@v3
       - uses: docker/setup-buildx-action@v3
@@ -73,7 +71,8 @@ jobs:
           RUN_MIGRATIONS: "1"
           DEPLOY_WORKER_SERVICE: "0"
         run: npm run aws:deploy-worker
-      - name: Deploy public edge with worker
+      - id: deploy_edge
+        name: Deploy public edge with worker
         env:
           ECR_IMAGE_URI: ${{ steps.ecr.outputs.registry }}/${{ env.ECR_REPOSITORY }}:${{ github.sha }}
         run: npm run aws:deploy-cloudflare-edge
@@ -90,9 +89,13 @@ jobs:
           aws ecs update-service --cluster "$ECS_CLUSTER" --service "$ECS_WORKER_SERVICE" --desired-count 0
           aws ecs wait services-stable --cluster "$ECS_CLUSTER" --services "$ECS_WORKER_SERVICE"
 
-      - name: Roll back both services if deployment verification fails
-        if: failure() && steps.previous.outputs.edge != '' && steps.previous.outputs.worker != ''
+      # A migration failure does not change either service. If edge deployment
+      # was attempted, the rollback script restores only actually changed services.
+      - name: Restore changed services if deployment verification fails
+        if: failure() && steps.previous.outcome == 'success' && (steps.deploy_edge.outcome == 'success' || steps.deploy_edge.outcome == 'failure')
         env:
           PREVIOUS_EDGE_TASK_DEFINITION: ${{ steps.previous.outputs.edge }}
           PREVIOUS_WORKER_TASK_DEFINITION: ${{ steps.previous.outputs.worker }}
+          PREVIOUS_EDGE_DESIRED_COUNT: ${{ steps.previous.outputs.edge_desired_count }}
+          PREVIOUS_WORKER_DESIRED_COUNT: ${{ steps.previous.outputs.worker_desired_count }}
         run: npm run aws:rollback
