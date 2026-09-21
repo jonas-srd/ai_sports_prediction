@@ -1,5 +1,6 @@
 import { createHash } from "node:crypto";
 import { NextResponse, type NextRequest } from "next/server";
+import { publicBusinessUnavailable } from "@/lib/public-business";
 import { getWidgetDb } from "@/lib/widget-db";
 import {
   createWidgetCustomerSession,
@@ -11,6 +12,8 @@ import {
 export const runtime = "nodejs";
 
 export async function GET(request: NextRequest) {
+  const businessUnavailable = publicBusinessUnavailable();
+  if (businessUnavailable) return businessUnavailable;
   const token = request.nextUrl.searchParams.get("token") ?? "";
   const locale = request.nextUrl.searchParams.get("locale") === "de" ? "de" : "en";
   const loginPath = locale === "de" ? "/de/widgets/account/login" : "/widgets/account/login";

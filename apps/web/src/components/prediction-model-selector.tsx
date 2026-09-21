@@ -216,7 +216,7 @@ export function OpenRouterPredictionPending({
 
   return (
     <div aria-live="polite" className={`${className} openRouterPredictionPending`}>
-      <span>OpenRouter</span>
+      <span>{t(locale === "de" ? "KI-Prognose" : "AI prediction")}</span>
       <strong>{t(locale === "de" ? "Prognose eine Woche vor Spielbeginn" : "Prediction one week before kickoff")}</strong>
       <p>{t(locale === "de"
         ? "Die Prognose wird automatisch sieben Tage vor Spielbeginn erstellt. Dann stehen aktuellere Team-, Form- und Spieldaten zur Verfügung – für eine möglichst aussagekräftige und verlässliche Einschätzung."

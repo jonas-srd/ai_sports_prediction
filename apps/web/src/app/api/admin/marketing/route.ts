@@ -1,4 +1,5 @@
 import { NextResponse, type NextRequest } from "next/server";
+import { publicBusinessUnavailable } from "@/lib/public-business";
 import { Queue } from "bullmq";
 import {
   disconnectTikTokConnection,
@@ -74,6 +75,8 @@ export async function GET(request: NextRequest) {
 }
 
 export async function PATCH(request: NextRequest) {
+  const businessUnavailable = publicBusinessUnavailable();
+  if (businessUnavailable) return businessUnavailable;
   const session = await getAuthorizedAdminSession(request);
   if (!session) {
     return json({ error: "unauthorized", message: "Bitte melde dich im Admin-Cockpit an." }, 401);

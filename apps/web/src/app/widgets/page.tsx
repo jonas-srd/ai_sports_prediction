@@ -4,6 +4,8 @@ import { Suspense } from "react";
 import { WidgetBuilder } from "@/components/widget-builder";
 import { WidgetFaq } from "@/components/widget-faq";
 import { WidgetGrowthFunnel } from "@/components/widget-growth-funnel";
+import { BusinessUnavailable } from "@/components/business-unavailable";
+import { isPublicBusinessEnabled } from "@/lib/public-business";
 import type { Locale } from "@/lib/i18n";
 import { getWidgetPreviewMatches, type WidgetPreviewMatch, type WidgetPreviewMatches } from "@/lib/widget-data";
 
@@ -156,6 +158,7 @@ export default function WidgetsPage() {
 }
 
 export function WidgetsPageContent({ locale }: { locale: Locale }) {
+  const businessEnabled = isPublicBusinessEnabled();
   const text = pageText[locale];
   const pricingPlans = pricingPlansByLocale[locale];
   const accountHref = locale === "de" ? "/de/widgets/account/login" : "/widgets/account/login";
@@ -183,7 +186,7 @@ export function WidgetsPageContent({ locale }: { locale: Locale }) {
           <ul>{text.heroBenefits.map((benefit) => <li key={benefit}>{benefit}</li>)}</ul>
           <div className="widgetsHeroActions">
             <a className="widgetsPricingCta" href="#widget-pricing-title">{locale === "de" ? "Tarife ansehen" : "View plans"}</a>
-            <Link href={accountHref}>{text.account}</Link>
+            {businessEnabled ? <Link href={accountHref}>{text.account}</Link> : null}
           </div>
         </div>
         <Suspense fallback={<WidgetsPreviewLoading label={text.livePreview} locale={locale} />}>
@@ -195,7 +198,7 @@ export function WidgetsPageContent({ locale }: { locale: Locale }) {
         <div className="widgetsSectionIntro">
           <h2 id="widget-pricing-title">{text.pricing}</h2>
         </div>
-        <WidgetGrowthFunnel locale={locale} plans={pricingPlans} />
+        {businessEnabled ? <WidgetGrowthFunnel locale={locale} plans={pricingPlans} /> : <BusinessUnavailable locale={locale} />}
       </section>
 
       <section className="widgetsPanel" aria-labelledby="widget-options-title">
@@ -223,7 +226,7 @@ export function WidgetsPageContent({ locale }: { locale: Locale }) {
         <WidgetsInteractiveSections locale={locale} />
       </Suspense>
       <WidgetFaq locale={locale} />
-      <script dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData).replace(/</g, "\\u003c") }} type="application/ld+json" />
+      {businessEnabled ? <script dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData).replace(/</g, "\\u003c") }} type="application/ld+json" /> : null}
     </main>
   );
 }
@@ -245,7 +248,7 @@ async function WidgetsInteractiveSections({ locale }: { locale: Locale }) {
 
   return (
     <>
-      <WidgetBuilder locale={locale} previewMatches={previewMatches} />
+      {isPublicBusinessEnabled() ? <WidgetBuilder locale={locale} previewMatches={previewMatches} /> : null}
       <section className="widgetsExamples" aria-label={text.examplesLabel}>
         <div className="widgetsSectionIntro">
           <h2>{text.examplesTitle}</h2>

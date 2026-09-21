@@ -1,10 +1,13 @@
 import { unsubscribeNewsletterSubscriber } from "@ai-sports-prediction/db";
 import { NextResponse, type NextRequest } from "next/server";
+import { publicBusinessUnavailable } from "@/lib/public-business";
 import { getNewsletterDb } from "@/lib/newsletter-db";
 
 export const runtime = "nodejs";
 
 export async function GET(request: NextRequest) {
+  const businessUnavailable = publicBusinessUnavailable();
+  if (businessUnavailable) return businessUnavailable;
   const token = request.nextUrl.searchParams.get("token")?.trim();
 
   if (!token) {

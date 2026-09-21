@@ -1,5 +1,6 @@
 import { randomBytes } from "node:crypto";
 import { NextResponse, type NextRequest } from "next/server";
+import { publicBusinessUnavailable } from "@/lib/public-business";
 import {
   createTikTokAuthorizationUrl,
   readTikTokServerConfig
@@ -14,6 +15,8 @@ export const dynamic = "force-dynamic";
 const STATE_COOKIE = "residual_tiktok_oauth_state";
 
 export async function GET(request: NextRequest) {
+  const businessUnavailable = publicBusinessUnavailable();
+  if (businessUnavailable) return businessUnavailable;
   const session = await getAuthorizedAdminSession(request);
   if (!session) {
     return NextResponse.redirect(getPublicSiteDestination(

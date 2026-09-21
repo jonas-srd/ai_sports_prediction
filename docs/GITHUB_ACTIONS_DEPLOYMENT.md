@@ -71,3 +71,13 @@ Business-Handler und deren Zugangsdaten. Eine Rückkehr zum vollständigen Servi
 benötigt einen separat geprüften Rollout und ist kein Preflight-Bypass.
 Die Sperre wurde anschließend rein lesend gegen die laufende Revision 66 erneut
 bestätigt; Produktionsdienste und Taskzahlen blieben unverändert.
+
+## Öffentliche Sportseite bei weiter gesperrten Geschäftsfunktionen
+
+Die gesonderte [öffentliche Freigabe vom 16.09.2026](AWS_PUBLIC_PRODUCTION_2026-09-16.md)
+verwendet `scripts/deploy-public-production.mjs`, nicht den regulären Workflow.
+Dieser standardmäßig nur lesende Helfer erhält das geprüfte Recovery-Profil und
+setzt `PUBLIC_BUSINESS_ENABLED=0`. Ein Apply verlangt unveränderlichen Image-Digest,
+explizite aktuelle Quellrevision, geschützte Nachweise und bestätigte Unterbrechung.
+Das ist keine allgemeine CI-Freigabe und aktiviert weder Geschäfts-Secrets noch
+Redis-Queues. Bei späteren Änderungen den Recovery-Preflight nicht entfernen.

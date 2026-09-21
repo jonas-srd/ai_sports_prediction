@@ -9,6 +9,7 @@ import { PredictionModelProvider } from "@/components/prediction-model-selector"
 import { SiteChrome } from "@/components/site-chrome";
 import { TimeZoneProvider } from "@/components/time-zone-provider";
 import { isSiteLocale } from "@/lib/i18n";
+import { isPublicBusinessEnabled } from "@/lib/public-business";
 import "./globals.css";
 import "./sportschau-nav.css";
 import "./prediction-layout.css";
@@ -69,7 +70,7 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
               <HtmlLangSync />
               <SiteChrome>{children}</SiteChrome>
               <CookieConsent measurementId={googleAnalyticsMeasurementId} />
-              <NewsletterSignupModal />
+              {isPublicBusinessEnabled() ? <NewsletterSignupModal /> : null}
             </PredictionModelProvider>
           </TimeZoneProvider>
         </LocaleProvider>

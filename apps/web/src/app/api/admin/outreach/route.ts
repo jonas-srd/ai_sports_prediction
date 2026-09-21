@@ -1,5 +1,6 @@
 import { Queue } from "bullmq";
 import { NextResponse, type NextRequest } from "next/server";
+import { publicBusinessUnavailable } from "@/lib/public-business";
 import { isAdminRequestAuthorized } from "@/lib/admin-request-auth";
 import {
   approveOutreachDraft,
@@ -40,6 +41,8 @@ export async function GET(request: NextRequest) {
 }
 
 export async function PATCH(request: NextRequest) {
+  const businessUnavailable = publicBusinessUnavailable();
+  if (businessUnavailable) return businessUnavailable;
   if (!await isAdminRequestAuthorized(request)) {
     return json({ error: "unauthorized", message: "Bitte melde dich im Admin-Cockpit an." }, 401);
   }

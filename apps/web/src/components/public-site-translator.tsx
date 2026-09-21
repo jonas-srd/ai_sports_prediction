@@ -4,6 +4,7 @@ import { useEffect } from "react";
 import { useLocale } from "@/components/locale-provider";
 import { translateText } from "@/lib/site-translations";
 import { localizePath } from "@/lib/i18n";
+import { translatePublicText } from "@/lib/public-text-translation";
 
 const EXCLUDED_TAGS = new Set(["SCRIPT", "STYLE", "NOSCRIPT", "TEXTAREA"]);
 const ORIGINAL_TEXT = new WeakMap<Text, string>();
@@ -42,8 +43,8 @@ export function PublicSiteTranslator() {
       observer?.observe(root, { characterData: true, childList: true, subtree: true });
     };
 
-    // Effects run after hydration. Translate on the next frame so localized routes do not
-    // briefly show English; the observer handles Suspense content that arrives afterwards.
+    // Streamed Suspense content can still be hydrating when this effect runs.
+    // In particular, unchanged labels must retain their exact server text nodes.
     const frame = window.requestAnimationFrame(start);
     return () => {
       window.cancelAnimationFrame(frame);
@@ -67,10 +68,7 @@ function translateElement(element: HTMLElement, locale: Parameters<typeof transl
     const textNode = node as Text;
     const original = ORIGINAL_TEXT.get(textNode) ?? node.textContent;
     ORIGINAL_TEXT.set(textNode, original);
-    const leading = original.match(/^\s*/)?.[0] ?? "";
-    const trailing = original.match(/\s*$/)?.[0] ?? "";
-    const translated = translateText(original, locale);
-    const nextText = `${leading}${translated}${trailing}`;
+    const nextText = translatePublicText(original, locale);
     if (node.textContent !== nextText) node.textContent = nextText;
   });
 

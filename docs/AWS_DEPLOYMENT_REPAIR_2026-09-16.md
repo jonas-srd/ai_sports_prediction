@@ -1,5 +1,9 @@
 # Build-/Deployment-Reparatur vom 16.09.2026
 
+Spätere öffentliche Vollseiten-Freigabe mit weiterhin gesperrten Geschäftsfunktionen:
+[Release- und Prüfprotokoll](AWS_PUBLIC_PRODUCTION_2026-09-16.md). Die folgenden
+Abschnitte dokumentieren den davor abgeschlossenen Datenbank-Cutover auf Revision 66.
+
 Stand: 16.09.2026, 20:57 UTC. **Datenbank-Umschaltung und Live-Abnahme erfolgreich.** Der Nutzer hat nach seinem Push die kurze Produktionsunterbrechung ausdrücklich freigegeben. Revision 66 läuft mit genau einem Task; Website, Datenbank-API, echte neue Bedrock-Prognosen und frisches verifiziertes Backup sind nachgewiesen. Das fehlende CI-Leserecht wurde um 20:56 UTC auf weiteren ausdrücklichen Auftrag live ergänzt und per IAM-Simulator bestätigt. Normale CI-Deployments bleiben absichtlich durch den Recovery-Schutz gesperrt.
 
 ## Implementierte Code-Korrekturen

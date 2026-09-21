@@ -4,6 +4,8 @@ import type { Locale } from "@/lib/i18n";
 import type { WidgetAccessPlan } from "@/lib/widget-access";
 import { parseWidgetBillingInterval } from "@/lib/widget-billing";
 import { getWidgetSellerDetails } from "@/lib/widget-sales-config";
+import { BusinessUnavailable } from "@/components/business-unavailable";
+import { isPublicBusinessEnabled } from "@/lib/public-business";
 
 export const metadata: Metadata = {
   title: "Widget checkout | Residual Sports",
@@ -18,6 +20,7 @@ export default async function WidgetCheckoutPage({ searchParams }: { searchParam
 }
 
 export async function WidgetCheckoutPageContent({ locale, searchParams }: { locale: Locale; searchParams: CheckoutSearchParams }) {
+  if (!isPublicBusinessEnabled()) return <BusinessUnavailable locale={locale} />;
   const params = await searchParams;
   const plan = normalizePlan(single(params.plan));
   const billingInterval = parseWidgetBillingInterval(single(params.billing));

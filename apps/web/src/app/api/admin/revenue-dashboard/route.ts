@@ -1,5 +1,6 @@
 import { randomUUID } from "node:crypto";
 import { NextResponse, type NextRequest } from "next/server";
+import { publicBusinessUnavailable } from "@/lib/public-business";
 import { isAdminRequestAuthorized } from "@/lib/admin-request-auth";
 import { monthlyRecurringRevenueCents, percentage, type RevenueCustomer } from "@/lib/revenue-metrics";
 import { getWidgetDb } from "@/lib/widget-db";
@@ -129,6 +130,8 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
+  const businessUnavailable = publicBusinessUnavailable();
+  if (businessUnavailable) return businessUnavailable;
   if (!await isAdminRequestAuthorized(request)) {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   }

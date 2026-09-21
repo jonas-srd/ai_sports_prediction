@@ -1,5 +1,6 @@
 import { randomUUID } from "node:crypto";
 import { NextResponse, type NextRequest } from "next/server";
+import { publicBusinessUnavailable } from "@/lib/public-business";
 import {
   createWidgetBillingPortalSession,
   updateWidgetStripeCancellation,
@@ -41,6 +42,8 @@ type CustomerRow = {
 };
 
 export async function GET(request: NextRequest) {
+  const businessUnavailable = publicBusinessUnavailable();
+  if (businessUnavailable) return businessUnavailable;
   const authenticated = await getCustomer(request);
   if ("response" in authenticated) return authenticated.response;
   const { customer, db } = authenticated;
@@ -107,6 +110,8 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
+  const businessUnavailable = publicBusinessUnavailable();
+  if (businessUnavailable) return businessUnavailable;
   const authenticated = await getCustomer(request);
   if ("response" in authenticated) return authenticated.response;
   const { customer, db } = authenticated;

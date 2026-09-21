@@ -1,6 +1,7 @@
 import { createHash } from "node:crypto";
 import { upsertNewsletterSubscriber } from "@ai-sports-prediction/db";
 import { NextResponse, type NextRequest } from "next/server";
+import { publicBusinessUnavailable } from "@/lib/public-business";
 import { getNewsletterDb } from "@/lib/newsletter-db";
 
 export const runtime = "nodejs";
@@ -8,6 +9,8 @@ export const runtime = "nodejs";
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 export async function POST(request: NextRequest) {
+  const businessUnavailable = publicBusinessUnavailable();
+  if (businessUnavailable) return businessUnavailable;
   const payload = await request.json().catch(() => null);
 
   if (!payload || typeof payload !== "object") {

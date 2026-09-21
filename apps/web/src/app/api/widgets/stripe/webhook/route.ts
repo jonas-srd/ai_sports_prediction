@@ -1,5 +1,6 @@
 import { randomUUID } from "node:crypto";
 import { NextResponse, type NextRequest } from "next/server";
+import { publicBusinessUnavailable } from "@/lib/public-business";
 import { sendGa4Purchase } from "@ai-sports-prediction/db";
 import type { WidgetAccessPlan } from "@/lib/widget-access";
 import {
@@ -65,6 +66,8 @@ type WidgetLeadBillingRow = {
 };
 
 export async function POST(request: NextRequest) {
+  const businessUnavailable = publicBusinessUnavailable();
+  if (businessUnavailable) return businessUnavailable;
   const rawBody = await request.text();
   if (!verifyWidgetStripeWebhook(rawBody, request.headers.get("stripe-signature"))) {
     return NextResponse.json({ error: "invalid_signature" }, { status: 400 });

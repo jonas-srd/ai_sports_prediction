@@ -1,5 +1,6 @@
 import { timingSafeEqual } from "node:crypto";
 import { NextResponse, type NextRequest } from "next/server";
+import { publicBusinessUnavailable } from "@/lib/public-business";
 import {
   exchangeTikTokAuthorizationCode,
   fetchTikTokProfile,
@@ -16,6 +17,8 @@ export const dynamic = "force-dynamic";
 const STATE_COOKIE = "residual_tiktok_oauth_state";
 
 export async function GET(request: NextRequest) {
+  const businessUnavailable = publicBusinessUnavailable();
+  if (businessUnavailable) return businessUnavailable;
   const destination = getPublicSiteDestination("/admin/marketing", request.url);
   const response = (status: string, reason?: string) => {
     destination.searchParams.set("tiktok", status);

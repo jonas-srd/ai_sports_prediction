@@ -1,5 +1,6 @@
 import { createHash, randomUUID } from "node:crypto";
 import { NextResponse, type NextRequest } from "next/server";
+import { publicBusinessUnavailable } from "@/lib/public-business";
 import { getWidgetDb } from "@/lib/widget-db";
 import type { WidgetAccessPlan } from "@/lib/widget-access";
 import {
@@ -23,6 +24,8 @@ export const runtime = "nodejs";
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 export async function POST(request: NextRequest) {
+  const businessUnavailable = publicBusinessUnavailable();
+  if (businessUnavailable) return businessUnavailable;
   const payload = await request.json().catch(() => null);
   if (!payload || typeof payload !== "object") {
     return NextResponse.json({ error: "invalid_payload" }, { status: 400 });

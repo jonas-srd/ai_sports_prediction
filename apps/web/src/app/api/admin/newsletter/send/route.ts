@@ -6,6 +6,7 @@ import {
   updateNewsletterCampaignStatus
 } from "@ai-sports-prediction/db";
 import { NextResponse, type NextRequest } from "next/server";
+import { publicBusinessUnavailable } from "@/lib/public-business";
 import { getNewsletterDb } from "@/lib/newsletter-db";
 
 export const runtime = "nodejs";
@@ -17,6 +18,8 @@ type ResendResponse = {
 };
 
 export async function POST(request: NextRequest) {
+  const businessUnavailable = publicBusinessUnavailable();
+  if (businessUnavailable) return businessUnavailable;
   if (!isAdminAuthorized(request)) {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   }

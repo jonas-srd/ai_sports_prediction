@@ -22,6 +22,9 @@ RUN npm ci
 
 COPY . .
 
+ARG NEXT_PUBLIC_SHOW_FULL_SITE=1
+ENV NEXT_PUBLIC_SHOW_FULL_SITE=${NEXT_PUBLIC_SHOW_FULL_SITE}
+
 RUN npm run build
 
 RUN npm prune --omit=dev \

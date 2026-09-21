@@ -60,6 +60,18 @@ assert.equal(storedVariants.nexus.score, "2:1");
 assert.equal(storedVariants.pulse.pick, "Draw");
 assert.equal(storedVariants.edge.reason, "Edge reason");
 assert.equal(storedVariants.nexus.source, "openrouter");
+const bedrockVariants = buildStoredModelPredictions({
+  ...storedMatch,
+  predictions: storedMatch.predictions?.map((prediction) => ({
+    ...prediction,
+    provider: "Bedrock",
+    modelVersion: "eu.amazon.nova-2-lite-v1:0"
+  }))
+}, "football", "en");
+assert.ok(bedrockVariants);
+assert.equal(bedrockVariants.nexus.source, "bedrock");
+assert.equal(bedrockVariants.nexus.modelVersion, "eu.amazon.nova-2-lite-v1:0");
+assert.equal(buildStoredModelPredictions({ ...storedMatch, predictions: [] }, "football", "en"), null);
 assert.equal(buildStoredModelPredictions({ ...storedMatch, predictions: storedMatch.predictions?.slice(0, 2) }, "football", "en"), null);
 
 console.log("Prediction model variants passed.");

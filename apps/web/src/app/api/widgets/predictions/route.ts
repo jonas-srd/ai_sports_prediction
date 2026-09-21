@@ -1,4 +1,5 @@
 import { NextResponse, type NextRequest } from "next/server";
+import { publicBusinessUnavailable } from "@/lib/public-business";
 import {
   getPublicWidgetPayload,
   parseWidgetLanguage,
@@ -11,6 +12,8 @@ import {
 import { getWidgetAccessHeaders, verifyWidgetAccess } from "@/lib/widget-access";
 
 export async function GET(request: NextRequest) {
+  const businessUnavailable = publicBusinessUnavailable();
+  if (businessUnavailable) return businessUnavailable;
   const { searchParams } = request.nextUrl;
   const limit = parseWidgetLimit(searchParams.get("limit"));
   const type = parseWidgetType(searchParams.get("type"));

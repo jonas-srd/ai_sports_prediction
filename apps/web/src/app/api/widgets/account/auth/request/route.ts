@@ -1,11 +1,14 @@
 import { createHash, randomBytes, randomUUID } from "node:crypto";
 import { NextResponse, type NextRequest } from "next/server";
+import { publicBusinessUnavailable } from "@/lib/public-business";
 import { getWidgetDb } from "@/lib/widget-db";
 import { getWidgetCustomerSessionSecret } from "@/lib/widget-customer-session";
 
 export const runtime = "nodejs";
 
 export async function POST(request: NextRequest) {
+  const businessUnavailable = publicBusinessUnavailable();
+  if (businessUnavailable) return businessUnavailable;
   const body = await request.json().catch(() => null) as { email?: unknown; locale?: unknown } | null;
   const email = String(body?.email ?? "").trim().toLowerCase();
   const locale = body?.locale === "de" ? "de" : "en";
