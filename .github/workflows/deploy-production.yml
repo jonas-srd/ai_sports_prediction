@@ -52,7 +52,7 @@ jobs:
         run: node scripts/capture-aws-service-state.mjs
 
       - uses: docker/setup-qemu-action@v3
-      - uses: docker/setup-buildx-action@v3
+      - uses: docker/setup-buildx-action@v4
       - id: ecr
         uses: aws-actions/amazon-ecr-login@v2
       - name: Build and publish immutable ARM image
