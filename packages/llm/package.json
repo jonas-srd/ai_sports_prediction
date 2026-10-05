@@ -13,6 +13,6 @@
     "typescript": "latest"
   },
   "dependencies": {
-    "@aws-sdk/client-bedrock-runtime": "^3.1131.0"
+    "@aws-sdk/client-bedrock-runtime": "^3.1145.0"
   }
 }
